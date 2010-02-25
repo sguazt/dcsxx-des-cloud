@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+		   targetNamespace="http://dcs.di.unipmn.it/xml/dcs-epacsim"
+		   xmlns:dcs-epacsim="http://dcs.di.unipmn.it/xml/dcs-epacsim"
+		   elementFormDefault="qualified"
+		   attributeFormDefault="unqualified">
+
+	<xs:complexType name="config_type">
+		<xs:all>
+			<xs:element name="system" type="dcs-epacsim:system_type" />
+			<xs:element name="simulator" type="dcs-epacsim:simulator_type" />
+		</xs:all>
+	</xs:complexType>
+
+
+	<xs:complexType name="system_type">
+		<xs:all>
+			<xs:element name="default-virtual-machine" type="dcs-epacsim:virtual_machine_type" />
+			<xs:element name="default-service" type="dcs-epacsim:service_type" />
+			<xs:element name="energy-cost" type="xs:decimal" />
+			<xs:element name="energy-model" type="dcs-epacsim:energy_model_type" />
+			<xs:element name="num-cores" type="xs:positiveInteger" />
+			<xs:element name="resource-cost" type="xs:decimal" />
+			<xs:element name="services">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="service" type="dcs-epacsim:service_type" minOccurs="1" maxOccurs="unbounded" />
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="virtualization-overhead" type="xs:decimal" />
+			<xs:element name="virtual-machines">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="virtual-machine" type="dcs-epacsim:virtual_machine_type" minOccurs="1" maxOccurs="unbounded" />
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:all>
+	</xs:complexType>
+
+
+	<xs:complexType name="virtual_machine_type">
+		<xs:sequence>
+			<xs:element name="service-distribution">
+				<xs:complexType>
+					<xs:all>
+						<xs:element name="name">
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:enumeration value="exponential" />
+									<xs:enumeration value="gamma" />
+									<xs:enumeration value="pareto" />
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:element>
+						<xs:element name="params" minOccurs="0">
+							<xs:complexType>
+								<xs:sequence>
+									<xs:element name="param" minOccurs="1" maxOccurs="unbounded">
+										<xs:complexType>
+											<xs:sequence>
+												<xs:element name="name">
+													<xs:simpleType>
+														<xs:restriction base="xs:string">
+															<xs:enumeration value="pareto_scale_multiplier" /> <!-- for "gamma" -->
+															<xs:enumeration value="scale_multiplier" /> <!-- for "pareto" -->
+														</xs:restriction>
+													</xs:simpleType>
+												</xs:element>
+												<xs:element name="value" type="xs:decimal" />
+											</xs:sequence>
+										</xs:complexType>
+									</xs:element>
+								</xs:sequence>
+							</xs:complexType>
+						</xs:element>
+					</xs:all>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+
+
+	<xs:complexType name="service_type">
+		<xs:sequence>
+			<xs:element name="sla-cost-model">
+				<xs:complexType>
+					<xs:all>
+						<xs:element name="name">
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:enumeration value="step" />
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:element>
+					</xs:all>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+
+
+	<xs:complexType name="energy_model_type">
+		<xs:all>
+			<xs:element name="name">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="fan2007" />
+						<xs:enumeration value="constant" />
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="params">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="param" minOccurs="1" maxOccurs="unbounded">
+							<xs:complexType>
+								<xs:sequence>
+									<xs:element name="name">
+										<xs:simpleType>
+											<xs:restriction base="xs:string">
+												<xs:enumeration value="p0" /> <!-- for "fan2007" and "constant" -->
+												<xs:enumeration value="p1" /> <!-- for "fan2007" -->
+												<xs:enumeration value="p2" /> <!-- for "fan2007" -->
+												<xs:enumeration value="r" /> <!-- for "fan2007" -->
+											</xs:restriction>
+										</xs:simpleType>
+									</xs:element>
+									<xs:element name="value" type="xs:decimal" />
+								</xs:sequence>
+							</xs:complexType>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:all>
+	</xs:complexType>
+
+
+	<xs:complexType name="simulator_type">
+		<xs:all>
+			<xs:element name="random-number-generator" type="dcs-epacsim:random_number_generator_type" />
+			<xs:element name="output-analysis" type="dcs-epacsim:output_analysis_type" />
+		</xs:all>
+	</xs:complexType>
+
+
+	<xs:complexType name="random_number_generator_type">
+		<xs:all>
+			<xs:element name="engine">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="minstd-rand0" />
+						<xs:enumeration value="minstd-rand1" />
+						<xs:enumeration value="minstd-rand2" />
+						<xs:enumeration value="rand48" />
+						<xs:enumeration value="mt19937" />
+						<xs:enumeration value="mt11213b" />
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="seed" type="xs:positiveInteger" />
+		</xs:all>
+	</xs:complexType>
+
+
+	<xs:complexType name="output_analysis_type">
+		<xs:all>
+			<xs:element name="name">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="batch-means" />
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="output-statistics">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="output-statistic" type="dcs-epacsim:output_statistic_type" minOccurs="1" maxOccurs="unbounded" />
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:all>
+	</xs:complexType>
+
+
+	<xs:complexType name="output_statistic_type">
+		<xs:all>
+			<xs:element name="name">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="throughput" />
+						<xs:enumeration value="response-time" />
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="type">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="mean" />
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="relative-precision" type="xs:float" />
+			<xs:element name="confidence-level" type="xs:float" />
+			<xs:element name="max-trials" type="xs:nonNegativeInteger" />
+		</xs:all>
+	</xs:complexType>
+
+	<xs:element name="config" type="dcs-epacsim:config_type" />
+
+</xs:schema>
