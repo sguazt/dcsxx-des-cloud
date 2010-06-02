@@ -1,4 +1,4 @@
-## Copyright (C) 2009  Distributed Computing System (DCS) Group, Computer
+## Copyright (C) 2009-2010  Distributed Computing System (DCS) Group, Computer
 ## Science Department - University of Piemonte Orientale, Alessandria (Italy).
 ##
 ## This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
 ##
 ##
 ##
-## This is the makefile for the EPACsim project.
+## This is the makefile for the EEsim project.
 ## The primary targets are:
 ## - all: build the entire project in release-mode (alias of 'all-release').
 ## - all-release: build the entire project in release-mode.
@@ -56,17 +56,32 @@
 ## - incdirs: list of include paths.
 ## - libdirs: list of library paths.
 ## - libs: list of libraries to link in.
-## - srcdirs: list of source paths.
+## - srcdirs: list of source paths (relative to $(srcdir)).
 ## - target: target executable's filename.
 
 export target := eesim
 export docdir := ./docs
 export srcdir := ./src
 export builddir := ./build
+export testdir := ./test
+export test_srcdir := $(testdir)/src
+export test_builddir := ./build
+export xmpdir := ./examples
+export xmp_srcdir := $(xmpdir)/src
+export xmp_builddir := ./build
 export srcdirs := .
+export test_srcdirs := . dcs/sysid
+export xmp_srcdirs := . dcs/eesim dcs/sysid
 export libdirs :=
+export test_libdirs :=
+export xmp_libdirs :=
 export incdirs := $(srcdir)
-export libs := m
+export test_incdirs := $(test_srcdir)
+export xmp_incdirs := $(xmp_srcdir)
+export libs := m boost_thread-mt
+#export test_libs := boost_unit_test_framework
+export test_libs :=
+export xmp_libs :=
 
 
 ### ALMOST FIXED SETTINGS
@@ -85,6 +100,10 @@ buildtmpdir := $(builddir)/.build
 bindir_release := $(builddir)/release
 bindir_debug := $(builddir)/debug
 libsdir := ./libs
+test_buildtmpdir := $(test_builddir)/.test_build
+test_bindir := $(test_builddir)/test
+xmp_buildtmpdir := $(xmp_builddir)/.examples_build
+xmp_bindir := $(xmp_builddir)/examples
 bin_ext :=
 obj_ext := o
 pch_ext := hpp.gch
@@ -93,9 +112,13 @@ use_pch := true
 CXXFLAGS_common = -Wall -Wextra -ansi -pedantic -DBOOST_UBLAS_TYPE_CHECK=0 $(addprefix -I, $(incdirs)) -I$(libsdir)/include
 CXXFLAGS_debug := -ggdb -O0 $(CXXFLAGS_common)
 CXXFLAGS_release := -g0 -O3 -DNDEBUG $(CXXFLAGS_common)
+CXXFLAGS_test := -ggdb -O0 $(CXXFLAGS_common)
+CXXFLAGS_xmp := -ggdb -O0 $(CXXFLAGS_common)
 LDFLAGS_common = $(addprefix -L, $(libdirs)) -L$(libsdir)/lib $(addprefix -l,$(libs))
 LDFLAGS_debug := -ggdb -O0 $(LDFLAGS_common)
 LDFLAGS_release := -g0 -O3 $(LDFLAGS_common)
+LDFLAGS_test := -ggdb -O0 $(LDFLAGS_common) $(addprefix -L, $(test_libdirs)) $(addprefix -l,$(test_libs))
+LDFLAGS_xmp := -ggdb -O0 $(LDFLAGS_common) $(addprefix -L, $(xmp_libdirs)) $(addprefix -l,$(xmp_libs))
 CPPFLAGS += -MD
 
 CLEANER := rm -rf
@@ -127,6 +150,8 @@ ifneq (0,$(config_ret))
 endif
 
 include ./config.mk
+include $(testdir)/include.mk
+include $(xmpdir)/include.mk
 
 
 .DEFAULT_GOAL := all
