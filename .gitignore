@@ -2,4 +2,5 @@ build
 config.mk
 config.sh.log
 src/dcs/config
+tags
 user-config.sh
