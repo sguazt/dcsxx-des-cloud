@@ -2,5 +2,6 @@ build
 config.mk
 config.sh.log
 src/dcs/config
+src/dcs/eesim/version.hpp
 tags
 user-config.sh
