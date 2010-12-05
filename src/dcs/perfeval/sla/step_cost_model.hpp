@@ -126,6 +126,19 @@ class step_cost_model
 
 
 	/// A constructor.
+	public: template <typename ForwardIteratorT>
+		step_cost_model(real_type penalty_cost, real_type reward_cost, ForwardIteratorT ref_measures_begin, ForwardIteratorT ref_measures_end, checker_type const& checker=checker_type())
+		: penalty_(penalty_cost),
+		  reward_(reward_cost),
+		  ref_measures_(ref_measures_begin, ref_measures_end),
+		  ref_measures_range_(ref_measures_.begin(), ref_measures_.end()),
+		  checker_(checker)
+	{
+		// empty
+	}
+
+
+	/// A constructor.
 	public: step_cost_model(real_type penalty_cost, real_type reward_cost, measures_iterator_range_type const& ref_measures, checker_type const& checker=checker_type())
 		: penalty_(penalty_cost),
 		  reward_(reward_cost),
@@ -164,6 +177,14 @@ class step_cost_model
 	public: void reward_cost(real_type value)
 	{
 		reward_ = value;
+	}
+
+
+	public: template <typename ForwardIteratorT>
+		void reference_measures(ForwardIteratorT measures_begin, ForwardIteratorT measures_end)
+	{
+		  ref_measures_ = measures_sequence_type(measures_begin, measures_end);
+		  ref_measures_range_ = measures_iterator_range_type(ref_measures_.begin(), ref_measures_.end());
 	}
 
 

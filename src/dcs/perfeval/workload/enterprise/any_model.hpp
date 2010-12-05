@@ -29,6 +29,7 @@
 
 #include <dcs/perfeval/workload/enterprise/base_model.hpp>
 #include <dcs/perfeval/workload/enterprise/model_adaptor.hpp>
+#include <dcs/perfeval/workload/enterprise/user_request.hpp>
 #include <dcs/memory.hpp>
 #include <dcs/util/holder.hpp>
 #include <utility>
@@ -42,12 +43,14 @@ namespace dcs { namespace perfeval { namespace workload { namespace enterprise {
  * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
  */
 template <
-	typename RequestCategoryT,
+	//typename RequestCategoryT,
+	typename IntT,
 	typename RealT
 >
 class any_model
 {
-	public: typedef RequestCategoryT request_category_type;
+	//public: typedef RequestCategoryT request_category_type;
+	public: typedef IntT int_type;
 	public: typedef RealT real_type;
 
 
@@ -81,13 +84,14 @@ class any_model
 
 
 	public: template <typename UniformRandomGeneratorT>
-		::std::pair<request_category_type,real_type> generate(UniformRandomGeneratorT& rng) const
+		//::std::pair<request_category_type,real_type> generate(UniformRandomGeneratorT& rng) const
+		user_request<int_type,real_type> generate(UniformRandomGeneratorT& rng) const
 	{
 		return ptr_model_->generate(rng);
 	}
 
 
-	private: ::dcs::shared_ptr< base_model<request_category_type,real_type> > ptr_model_;
+	private: ::dcs::shared_ptr< base_model<int_type,real_type> > ptr_model_;
 };
 
 
@@ -97,7 +101,7 @@ template <
 struct make_any_model_type
 {
     typedef any_model<
-				typename EnterpriseWorkloadModelTraitsT::request_category_type,
+				typename EnterpriseWorkloadModelTraitsT::int_type,
 				typename EnterpriseWorkloadModelTraitsT::real_type
 			> type;
 };

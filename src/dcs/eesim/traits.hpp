@@ -26,13 +26,17 @@
 #define DCS_EESIM_TRAITS_HPP
 
 
+#include <cstddef>
+
+
 namespace dcs { namespace eesim {
 
 template <
 	typename DesEngineT,
 	typename UniformRandomGeneratorT,
 	typename RealT,
-	typename UIntT
+	typename UIntT,
+	typename IntT
 >
 struct traits
 {
@@ -40,6 +44,14 @@ struct traits
 	typedef UniformRandomGeneratorT uniform_random_generator_type;
 	typedef RealT real_type;
 	typedef UIntT uint_type;
+	typedef IntT int_type;
+	typedef long application_identifier_type;
+	typedef long physical_machine_identifier_type;
+	typedef long virtual_machine_identifier_type;
+
+	static const application_identifier_type invalid_application_id = -1;
+	static const physical_machine_identifier_type invalid_physical_machine_id = -1;
+	static const virtual_machine_identifier_type invalid_virtual_machine_id = -1;
 };
 
 }} // Namespace dcs::eesim

@@ -35,6 +35,7 @@
 #include <boost/utility.hpp>
 #include <boost/thread/once.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <dcs/memory.hpp>
 #include <dcs/type_traits/add_const.hpp>
 #include <dcs/type_traits/add_reference.hpp>
 
@@ -66,14 +67,17 @@ class singleton: ::boost::noncopyable
 {
 	public: static T& instance()
 	{
-		::boost::call_once(init, flag_);
+//		::boost::call_once(init, flag_);
+		::boost::call_once(flag_, init);
 		return *ptr_t_;
 	}
 
 
-	protected: ~singleton() {}
-
 	protected: singleton() {}
+
+
+	protected: virtual ~singleton() {}
+
 
 	private: static void init() // never throws
 	{
@@ -81,6 +85,7 @@ class singleton: ::boost::noncopyable
 
 		ptr_t_.reset(new T());
 	}
+
 
 	private: static ::boost::once_flag flag_;
 	private: static ::boost::scoped_ptr<T> ptr_t_;
@@ -103,74 +108,114 @@ class registry: public detail::singleton< registry<TraitsT> >
 
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::des_engine_type des_engine_type;
-	public: typedef typename ::dcs::type_traits::add_reference<des_engine_type>::type des_engine_reference;
-	public: typedef typename ::dcs::type_traits::add_reference<
-							typename ::dcs::type_traits::add_const<
-								des_engine_type
-							>::type
-						>::type des_engine_const_reference;
+//	public: typedef typename ::dcs::type_traits::add_reference<des_engine_type>::type des_engine_reference;
+//	public: typedef typename ::dcs::type_traits::add_reference<
+//							typename ::dcs::type_traits::add_const<
+//								des_engine_type
+//							>::type
+//						>::type des_engine_const_reference;
+	public: typedef ::dcs::shared_ptr<des_engine_type> des_engine_pointer;
 	public: typedef typename traits_type::uniform_random_generator_type uniform_random_generator_type;
-	public: typedef typename ::dcs::type_traits::add_reference<uniform_random_generator_type>::type uniform_random_generator_reference;
-	public: typedef typename ::dcs::type_traits::add_reference<
-							typename ::dcs::type_traits::add_const<
-								uniform_random_generator_type
-							>::type
-						>::type uniform_random_generator_const_reference;
+//	public: typedef typename ::dcs::type_traits::add_reference<uniform_random_generator_type>::type uniform_random_generator_reference;
+//	public: typedef typename ::dcs::type_traits::add_reference<
+//							typename ::dcs::type_traits::add_const<
+//								uniform_random_generator_type
+//							>::type
+//						>::type uniform_random_generator_const_reference;
+	public: typedef ::dcs::shared_ptr<uniform_random_generator_type> uniform_random_generator_pointer;
 
 
-	public: void des_engine(des_engine_const_reference engine)
-	{
-		des_eng_ = engine;
-	}
-
-
-//	public: void des_engine(des_engine_reference engine)
+//	public: void des_engine(des_engine_const_reference engine)
 //	{
 //		des_eng_ = engine;
 //	}
 
 
-	public: des_engine_reference des_engine()
+////	public: void des_engine(des_engine_reference engine)
+////	{
+////		des_eng_ = engine;
+////	}
+
+
+//	public: des_engine_reference des_engine()
+//	{
+//		return des_eng_;
+//	}
+
+
+//	public: des_engine_const_reference des_engine() const
+//	{
+//		return des_eng_;
+//	}
+
+
+	public: void des_engine(des_engine_pointer const& ptr_engine)
 	{
-		return des_eng_;
+		ptr_des_eng_ = ptr_engine;
 	}
 
 
-	public: des_engine_const_reference des_engine() const
+	public: des_engine_pointer des_engine_ptr() const
 	{
-		return des_eng_;
+		return ptr_des_eng_;
 	}
 
 
-	public: void uniform_random_generator(uniform_random_generator_type const& generator)
+	public: des_engine_pointer des_engine_ptr()
 	{
-		rng_ = generator;
+		return ptr_des_eng_;
 	}
 
 
-//	public: void uniform_random_generator(uniform_random_generator_reference generator)
+	public: void uniform_random_generator(uniform_random_generator_pointer const& ptr_generator)
+	{
+		ptr_rng_ = ptr_generator;
+	}
+
+
+//	public: void uniform_random_generator(uniform_random_generator_type const& generator)
 //	{
 //		rng_ = generator;
 //	}
 
 
-	public: uniform_random_generator_reference uniform_random_generator()
+////	public: void uniform_random_generator(uniform_random_generator_reference generator)
+////	{
+////		rng_ = generator;
+////	}
+
+
+//	public: uniform_random_generator_reference uniform_random_generator()
+//	{
+//		return rng_;
+//	}
+
+
+//	public: uniform_random_generator_const_reference uniform_random_generator() const
+//	{
+//		return rng_;
+//	}
+
+
+	public: uniform_random_generator_pointer uniform_random_generator_ptr() const
 	{
-		return rng_;
+		return ptr_rng_;
 	}
 
 
-	public: uniform_random_generator_const_reference uniform_random_generator() const
+	public: uniform_random_generator_pointer uniform_random_generator_ptr()
 	{
-		return rng_;
+		return ptr_rng_;
 	}
 
 
 	protected: registry() { }
 
 
-	private: des_engine_type des_eng_;
-	private: uniform_random_generator_type rng_;
+	//private: des_engine_type des_eng_;
+	private: des_engine_pointer ptr_des_eng_;
+	//private: uniform_random_generator_type rng_;
+	private: uniform_random_generator_pointer ptr_rng_;
 };
 
 

@@ -49,7 +49,7 @@ namespace dcs { namespace perfeval { namespace workload { namespace enterprise {
  *
  * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
  */
-template <typename RequestCategoryT, typename RealT>
+template <typename IntT, typename RealT>
 struct any_generator
 {
 	//[TODO]
@@ -58,7 +58,8 @@ struct any_generator
 
 
 	/// Alias for the type of user request categories.
-	public: typedef RequestCategoryT request_category_type;
+	//public: typedef RequestCategoryT request_category_type;
+	public: typedef IntT int_type;
 	/// Alias for the type of real numbers.
 	public: typedef RealT real_type;
 
@@ -110,7 +111,8 @@ struct any_generator
 	 * \param u The system utilization.
 	 * \return The workload consumed for the given system utilization.
 	 */
-	public: ::std::pair<request_category_type,real_type> operator()(::dcs::math::random::any_generator<real_type>& rng) const
+	//public: ::std::pair<request_category_type,real_type> operator()(::dcs::math::random::any_generator<real_type>& rng) const
+	public: user_request<int_type,real_type> operator()(::dcs::math::random::any_generator<real_type>& rng) const
 	{
 		return ptr_generator_->operator()(rng);
 	}
@@ -131,7 +133,7 @@ struct any_generator
 					::dcs::math::random::any_generator<real_type>
 				>
 			>,
-			::std::pair<request_category_type,real_type>
+			::std::pair<int_type,real_type>
 		>::type
 		operator()(UniformRandomGeneratorT& rng) const
 	{
@@ -154,7 +156,7 @@ struct any_generator
 	}
 
 
-	private: ::dcs::shared_ptr< base_generator<request_category_type,real_type> > ptr_generator_; // shared_ptr needed in order to keep alive the pointer during object copying
+	private: ::dcs::shared_ptr< base_generator<int_type,real_type> > ptr_generator_; // shared_ptr needed in order to keep alive the pointer during object copying
 };
 
 
@@ -162,7 +164,7 @@ template <typename WorkloadGeneratorT, typename WorkloadGeneratorTraitsT=typenam
 struct make_any_generator_type
 {
 	typedef any_generator<
-				typename WorkloadGeneratorTraitsT::request_category_type,
+				typename WorkloadGeneratorTraitsT::int_type,
 				typename WorkloadGeneratorTraitsT::real_type
 		> type;
 };

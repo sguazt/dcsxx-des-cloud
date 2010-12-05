@@ -28,6 +28,7 @@
 
 #include <functional>
 #include <dcs/assert.hpp>
+#include <dcs/debug.hpp>
 #include <boost/numeric/ublas/detail/temporary.hpp>
 #include <boost/numeric/ublas/expression_types.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
@@ -97,9 +98,9 @@ class open_multi_bcmp_network
 	public: template <typename VE1, typename ME1, typename ME2, typename VE2>
 		//open_multi_bcmp_network(vector_type const& lambda, matrix_type const& S, matrix_type const& V, vector_type const& m)
 		open_multi_bcmp_network(::boost::numeric::ublas::vector_expression<VE1> const& lambda,
-											 ::boost::numeric::ublas::matrix_expression<ME1> const& S,
-											 ::boost::numeric::ublas::matrix_expression<ME2> const& V,
-											 ::boost::numeric::ublas::vector_expression<VE2> const& m)
+								::boost::numeric::ublas::matrix_expression<ME1> const& S,
+								::boost::numeric::ublas::matrix_expression<ME2> const& V,
+								::boost::numeric::ublas::vector_expression<VE2> const& m)
 		: lambda_(lambda),
 		  S_(S),
 		  V_(V),
@@ -125,7 +126,8 @@ class open_multi_bcmp_network
 
 		// precondition: size(lambda_) == num_columns(S_)
 		DCS_ASSERT(
-			::boost::numeric::ublasx::size(lambda_) == ::boost::numeric::ublasx::num_columns(S_),
+//			::boost::numeric::ublasx::size(lambda_) == ::boost::numeric::ublasx::num_columns(S_),
+			nc_ == ::boost::numeric::ublasx::num_rows(S_),
 			throw ::std::invalid_argument("Arrival rates and service times are of non-compliant sizes.")
 		);
 

@@ -27,6 +27,7 @@
 
 
 #include <dcs/macro.hpp>
+#include <dcs/perfeval/energy/base_model.hpp>
 
 
 namespace dcs { namespace perfeval { namespace energy {
@@ -39,14 +40,14 @@ namespace dcs { namespace perfeval { namespace energy {
  * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
  */
 template <typename RealT=double>
-class constant_model//: public base_model<RealT>
+class constant_model: public base_model<RealT>
 {
 	/// Alias for the type of real numbers.
 	public: typedef RealT real_type;
 
 
 	/// A constructor
-	public: constant_model(real_type power)
+	public: explicit constant_model(real_type power=real_type/*zero*/())
 		: power_(power)
 	{
 	}
@@ -55,7 +56,7 @@ class constant_model//: public base_model<RealT>
 	// Compiler-generated copy ctor and assignement are fine
 
 
-	public: real_type consumed_energy(real_type u) const
+	private: real_type do_consumed_energy(real_type u) const
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(u);
 

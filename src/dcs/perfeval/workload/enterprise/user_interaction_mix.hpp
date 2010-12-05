@@ -36,12 +36,13 @@
 namespace dcs { namespace perfeval { namespace workload { namespace enterprise {
 
 template <
-	typename RequestCategoryT,
+	//typename RequestCategoryT,
+	typename IntT,
 	typename RealT
 >
 class user_interaction_mix
 {
-	public: typedef RequestCategoryT request_category_type;
+	public: typedef IntT int_type;
 	public: typedef RealT real_type;
 
 
@@ -55,7 +56,7 @@ class user_interaction_mix
 
 
 	public: template <typename UniformRandomGeneratorT>
-		request_category_type generate(UniformRandomGeneratorT& rng) const
+		int_type generate(UniformRandomGeneratorT& rng) const
 	{
 		::std::size_t req_idx;
 
@@ -65,7 +66,7 @@ class user_interaction_mix
 	}
 
 
-	private: ::std::vector<request_category_type> req_categories_;
+	private: ::std::vector<int_type> req_categories_;
 	private: ::dcs::math::stats::discrete_distribution<real_type> requests_dist_;
 };
 

@@ -85,9 +85,15 @@ class any_virtual_machine_monitor
 //	}
 
 
-	public: uint_type add_virtual_machine(virtual_machine_pointer const& ptr_vm)
+	public: void create_virtual_machine(virtual_machine_pointer const& ptr_vm)
 	{
-		return ptr_vmm_->add_virtual_machine(ptr_vm);
+		ptr_vmm_->create_virtual_machine(ptr_vm);
+	}
+
+
+	public: void destroy_virtual_machine(virtual_machine_pointer const& ptr_vm)
+	{
+		ptr_vmm_->destroy_virtual_machine(ptr_vm);
 	}
 
 
@@ -97,21 +103,27 @@ class any_virtual_machine_monitor
 	}
 
 
-	public: void power_on(uint_type vm_id)
+	public: void power_on(virtual_machine_pointer const& ptr_vm)
 	{
-		ptr_vmm_->power_on(vm_id);
+		ptr_vmm_->power_on(ptr_vm);
 	}
 
 
-	public: void power_off(uint_type vm_id)
+	public: void power_off(virtual_machine_pointer const& ptr_vm)
 	{
-		ptr_vmm_->power_off(vm_id);
+		ptr_vmm_->power_off(ptr_vm);
 	}
 
 
-	public: void suspend(uint_type vm_id)
+	public: void suspend(virtual_machine_pointer const& ptr_vm)
 	{
-		ptr_vmm_->suspend(vm_id);
+		ptr_vmm_->suspend(ptr_vm);
+	}
+
+
+	public: void resume(virtual_machine_pointer const& ptr_vm)
+	{
+		ptr_vmm_->resume(ptr_vm);
 	}
 
 

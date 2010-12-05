@@ -86,7 +86,7 @@ namespace dcs { namespace perfeval { namespace qn {
  */
 template <typename MatrixExprT, typename VectorExprT>
 typename ::boost::numeric::ublas::vector_temporary_traits<VectorExprT>::type visit_ratios(::boost::numeric::ublas::matrix_expression<MatrixExprT> const& P,
-																					  ::boost::numeric::ublas::vector_expression<VectorExprT> const& lambda)
+																						  ::boost::numeric::ublas::vector_expression<VectorExprT> const& lambda)
 {
 	typedef typename ::boost::numeric::ublas::vector_temporary_traits<VectorExprT>::type vector_type;
 	typedef typename ::boost::numeric::ublas::matrix_temporary_traits<MatrixExprT>::type matrix_type;
@@ -289,6 +289,8 @@ template <typename ValueT, typename MatrixExprT>
 typename ::boost::numeric::ublas::matrix_temporary_traits<MatrixExprT>::type visit_ratios(::boost::multi_array<ValueT, 4> const& P,
 																						  ::boost::numeric::ublas::matrix_expression<MatrixExprT> const& L)
 {
+	throw ::std::runtime_error("[dcs::perfeval::qn::visit_ratios] Multi-class visit-ratio solver for closed networks not yet implemented.");
+
 	typedef typename ::boost::multi_array<ValueT, 4>::size_type size_type;
 	size_type const* sizes = P.shape();
 	size_type nn = sizes[0];
@@ -317,10 +319,12 @@ typename ::boost::numeric::ublas::matrix_temporary_traits<MatrixExprT>::type vis
 */
 
 
-template <typename ValueT, typename MatrixExprT>
-typename ::boost::numeric::ublas::matrix_temporary_traits<MatrixExprT>::type visit_ratios(::boost::multi_array<ValueT, 4> const& P)
-{
-}
+//TODO
+//template <typename ValueT, typename MatrixExprT>
+//typename ::boost::numeric::ublas::matrix_temporary_traits<MatrixExprT>::type visit_ratios(::boost::multi_array<ValueT, 4> const& P)
+//{
+//	throw ::std::runtime_error("[dcs::perfeval::qn::visit_ratios] Multi-class visit-ratio solver for closed networks not yet implemented.");
+//}
 
 
 }}} // Namespace dcs::perfeval::qn

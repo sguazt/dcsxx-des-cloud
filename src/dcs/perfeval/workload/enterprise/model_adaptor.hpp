@@ -27,6 +27,7 @@
 
 
 #include <dcs/perfeval/workload/enterprise/base_model.hpp>
+#include <dcs/perfeval/workload/enterprise/user_request.hpp>
 #include <dcs/type_traits/add_const.hpp>
 #include <dcs/type_traits/add_reference.hpp>
 #include <utility>
@@ -39,11 +40,11 @@ template <
 	typename EnterpriseWorkloadModelTraitsT=typename ::dcs::type_traits::remove_reference<EnterpriseWorkloadModelT>::type
 >
 class model_adaptor: public base_model<
-								typename EnterpriseWorkloadModelTraitsT::request_category_type,
+								typename EnterpriseWorkloadModelTraitsT::int_type,
 								typename EnterpriseWorkloadModelTraitsT::real_type
 							>
 {
-	public: typedef typename EnterpriseWorkloadModelTraitsT::request_category_type request_category_type;
+	public: typedef typename EnterpriseWorkloadModelTraitsT::int_type int_type;
 	public: typedef typename EnterpriseWorkloadModelTraitsT::real_type real_type;
 	private: typedef EnterpriseWorkloadModelT model_type;
 	public: typedef typename ::dcs::type_traits::add_reference<EnterpriseWorkloadModelT>::type model_reference;
@@ -57,7 +58,8 @@ class model_adaptor: public base_model<
 	}
 
 
-	private: ::std::pair<request_category_type,real_type> do_generate(::dcs::math::random::any_generator<real_type>& rng) const
+	//private: ::std::pair<request_category_type,real_type> do_generate(::dcs::math::random::any_generator<real_type>& rng) const
+	private: user_request<int_type,real_type> do_generate(::dcs::math::random::any_generator<real_type>& rng) const
 	{
 		return model_.generate(rng);
 	}

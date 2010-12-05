@@ -28,6 +28,7 @@
 
 
 #include <cmath>
+#include <dcs/perfeval/energy/base_model.hpp>
 
 
 namespace dcs { namespace perfeval { namespace energy {
@@ -63,7 +64,7 @@ namespace dcs { namespace perfeval { namespace energy {
  * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
  */
 template <typename RealT>
-class fan2007_model //: public base_model<RealT>
+class fan2007_model: public base_model<RealT>
 {
 	public: typedef RealT real_type;
 
@@ -92,7 +93,7 @@ class fan2007_model //: public base_model<RealT>
 	}
 
 
-	public: real_type consumed_energy(real_type u) const
+	private: real_type do_consumed_energy(real_type u) const
 	{
 		return p0_+p1_*u+p2_*::std::pow(u,r_);
 	}

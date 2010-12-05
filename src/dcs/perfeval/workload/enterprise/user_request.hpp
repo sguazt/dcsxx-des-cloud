@@ -1,7 +1,7 @@
 /**
  * \file dcs/perfeval/workload/enterprise/user_request.hpp
  *
- * \brief Model for user requests.
+ * \brief A user requests.
  *
  * Copyright (C) 2009-2010  Distributed Computing System (DCS) Group, Computer
  * Science Department - University of Piemonte Orientale, Alessandria (Italy).
@@ -28,52 +28,42 @@
 
 namespace dcs { namespace perfeval { namespace workload { namespace enterprise {
 
-template <typename RequestCategoryT, typename RandomNumberDistributionT>
+//template <typename RequestCategoryT, typename RealT>
+template <typename IntT, typename RealT>
 class user_request
 {
-	public: typedef RequestCategoryT request_category_type;
-	public: typedef RandomNumberDistributionT distribution_type;
+	public: typedef IntT int_type;
+	public: typedef RealT real_type;
 
 
 	public: user_request()
 	{
+		// Empty
 	}
 
 
-	public: user_request(request_category_type const& category, distribution_type const& iatime_dist)
+	public: user_request(int_type const& category, real_type iatime)
 		: category_(category),
-		  iatime_dist_(iatime_dist)
+		  iatime_(iatime)
 	{
 		// empty
 	}
 
 
-	public: request_category_type category() const
+	public: int_type category() const
 	{
 		return category_;
 	}
 
 
-//	public: distribution_type& iatime_distribution()
-//	{
-//		return iatime_dist_;
-//	}
-
-
-	public: distribution_type const& iatime_distribution() const
+	public: real_type interarrival_time() const
 	{
-		return iatime_dist_;
+		return iatime_;
 	}
 
 
-//	public: void iatime_distribution(distribution_type const& value)
-//	{
-//		iatime_dist_ = value;
-//	}
-
-
-	private: request_category_type category_;
-	private: distribution_type iatime_dist_;
+	private: int_type category_;
+	private: real_type iatime_;
 };
 
 }}}} // Namespace dcs::perfeval::workload::enterprise

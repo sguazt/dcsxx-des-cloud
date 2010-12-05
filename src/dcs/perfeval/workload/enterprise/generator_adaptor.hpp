@@ -28,6 +28,7 @@
 
 
 #include <dcs/perfeval/workload/enterprise/base_generator.hpp>
+#include <dcs/perfeval/workload/enterprise/user_request.hpp>
 #include <dcs/math/random/any_generator.hpp>
 #include <dcs/type_traits/add_const.hpp>
 #include <dcs/type_traits/add_reference.hpp>
@@ -41,12 +42,12 @@ template <
 	typename WorkloadGeneratorTraitsT=typename ::dcs::type_traits::remove_reference<WorkloadGeneratorT>::type
 >
 class generator_adaptor: public base_generator<
-										typename WorkloadGeneratorTraitsT::request_category_type,
+										typename WorkloadGeneratorTraitsT::int_type,
 										typename WorkloadGeneratorTraitsT::real_type
 									>
 {
 	public: typedef WorkloadGeneratorT generator_type;
-	public: typedef typename WorkloadGeneratorTraitsT::request_category_type request_category_type;
+	public: typedef typename WorkloadGeneratorTraitsT::int_type int_type;
 	public: typedef typename WorkloadGeneratorTraitsT::real_type real_type;
 	public: typedef typename ::dcs::type_traits::add_reference<WorkloadGeneratorT>::type generator_reference;
 	public: typedef typename ::dcs::type_traits::add_reference<typename ::dcs::type_traits::add_const<WorkloadGeneratorT>::type>::type generator_const_reference;
@@ -58,7 +59,8 @@ class generator_adaptor: public base_generator<
 	}
 
 
-	public: ::std::pair<request_category_type,real_type> operator()(::dcs::math::random::any_generator<real_type>& rng) const
+	//public: ::std::pair<request_category_type,real_type> operator()(::dcs::math::random::any_generator<real_type>& rng) const
+	public: user_request<int_type,real_type> operator()(::dcs::math::random::any_generator<real_type>& rng) const
 	{
 		return generator_(rng);
 	}

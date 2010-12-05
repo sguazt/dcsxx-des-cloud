@@ -33,8 +33,8 @@
 
 namespace dcs { namespace perfeval { namespace workload { namespace enterprise {
 
-template <typename RealT>
-user_interaction_mix<tpcw_request_category,RealT> tpcw_browsing_mix()
+template <typename IntT, typename RealT>
+user_interaction_mix<IntT,RealT> tpcw_browsing_mix()
 {
 	static ::std::vector<RealT> weights;
 	if (!weights.size())
@@ -56,7 +56,7 @@ user_interaction_mix<tpcw_request_category,RealT> tpcw_browsing_mix()
 		weights.push_back(0.0009);
 	}
 
-	return user_interaction_mix<tpcw_request_category,RealT>(
+	return user_interaction_mix<IntT,RealT>(
 		tpcw_request_categories().begin(),
 		tpcw_request_categories().end(),
 		weights.begin(),
@@ -65,8 +65,8 @@ user_interaction_mix<tpcw_request_category,RealT> tpcw_browsing_mix()
 }
 
 
-template <typename RealT>
-user_interaction_mix<tpcw_request_category,RealT> tpcw_shopping_mix()
+template <typename IntT, typename RealT>
+user_interaction_mix<IntT,RealT> tpcw_shopping_mix()
 {
 	static ::std::vector<RealT> weights;
 	if (!weights.size())
@@ -88,7 +88,7 @@ user_interaction_mix<tpcw_request_category,RealT> tpcw_shopping_mix()
 		weights.push_back(0.0009);
 	}
 
-	return user_interaction_mix<tpcw_request_category,RealT>(
+	return user_interaction_mix<IntT,RealT>(
 		tpcw_request_categories().begin(),
 		tpcw_request_categories().end(),
 		weights.begin(),
@@ -97,8 +97,8 @@ user_interaction_mix<tpcw_request_category,RealT> tpcw_shopping_mix()
 }
 
 
-template <typename RealT>
-user_interaction_mix<tpcw_request_category,RealT> tpcw_ordering_mix()
+template <typename IntT, typename RealT>
+user_interaction_mix<IntT,RealT> tpcw_ordering_mix()
 {
 	static ::std::vector<RealT> weights;
 	if (!weights.size())
@@ -120,7 +120,7 @@ user_interaction_mix<tpcw_request_category,RealT> tpcw_ordering_mix()
 		weights.push_back(0.0011);
 	}
 
-	return user_interaction_mix<tpcw_request_category,RealT>(
+	return user_interaction_mix<IntT,RealT>(
 		tpcw_request_categories().begin(),
 		tpcw_request_categories().end(),
 		weights.begin(),

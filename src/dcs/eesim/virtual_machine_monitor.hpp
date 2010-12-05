@@ -27,97 +27,194 @@
 
 
 #include <dcs/assert.hpp>
+//#include <dcs/eesim/physical_machine.hpp>
 #include <dcs/eesim/virtual_machine.hpp>
 //#include <map>
 #include <stdexcept>
-#include <vector>
+#include <map>
 
 
 namespace dcs { namespace eesim {
 
 template <typename TraitsT>
-class virtual_machine_monitor
+class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 {
 	//public: typedef any_queue_model queue_model_type;
 	//public: typedef virtual_machine<queue_model_type> virtual_machine_type;
+	//private: typedef base_virtual_machine_monitor<TraitsT> base_type;
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::uint_type uint_type;
 	public: typedef typename traits_type::real_type real_type;
+	public: typedef typename traits_type::virtual_machine_identifier_type virtual_machine_identifier_type;
+//	public: typedef physical_machine<traits_type> physical_machine_type;
+//	public: typedef ::dcs::shared_ptr<physical_machine_type> physical_machine_pointer;
 	public: typedef virtual_machine<traits_type> virtual_machine_type;
 	public: typedef ::dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
 	//private: typedef ::std::map<uint_type,virtual_machine_pointer> virtual_machine_container;
-	private: typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
+	public: typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
+	private: typedef ::std::map<virtual_machine_identifier_type,virtual_machine_pointer> virtual_machine_impl_container;
 
 
 	public: virtual_machine_monitor()
-		: vms_counter_(0)
+//		: vms_counter_(0)
 	{
 	}
 
 
-	public: uint_type add_virtual_machine(virtual_machine_pointer const& ptr_vm)
+//	public: template <typename ForwardIteratorT>
+//		virtual_machine_identifier create_virtual_machine(application_pointer const& ptr_app, ForwardIteratorT resource_shares_first, ForwardIteratorT resource_shares_last)
+//	{
+//		//++vms_counter_;
+//
+//		vms_.push_back(ptr_vm);
+//		//vms_.insert(::std::make_pair(vms_counter_, ptr_vm));
+//		//vm_id_names.insert(::std::make_pair(vms_counter_, ptr_vm->name()));
+//
+//		//return vms_counter_;
+//		return (vms_.size()-1);
+//	}
+
+
+//	public: void hosting_machine(physical_machine_pointer const& ptr_mach)
+//	{
+//		ptr_host_mach_ = ptr_mach;
+//	}
+
+
+//	public: physical_machine_pointer hosting_machine() const
+//	{
+//		return ptr_mach_;
+//	}
+
+
+//	public: physical_machine_pointer hosting_machine()
+//	{
+//		return ptr_mach_;
+//	}
+
+
+	public: void create_domain(virtual_machine_pointer const& ptr_vm)
 	{
-		//++vms_counter_;
+		DCS_ASSERT(
+			ptr_vm,
+			throw ::std::invalid_argument("[dcs::eesim::virtual_machine_monitor::create_domain] Invalid virtual machine pointer.")
+		);
 
-		vms_.push_back(ptr_vm);
-		//vms_.insert(::std::make_pair(vms_counter_, ptr_vm));
-		//vm_id_names.insert(::std::make_pair(vms_counter_, ptr_vm->name()));
-
-		//return vms_counter_;
-		return (vms_.size()-1);
+		vms_[ptr_vm->id()] = ptr_vm;
 	}
 
 
-	public: void overhead(real_type value)
+	public: void destroy_domain(virtual_machine_pointer const& ptr_vm)
 	{
-		overhead_ = value;
+		DCS_ASSERT(
+			ptr_vm,
+			throw ::std::invalid_argument("[dcs::eesim::virtual_machine_monitor::destroy_domain] Invalid virtual machine pointer.")
+		);
+		DCS_ASSERT(
+			vms_.count(ptr_vm->id()) > 0,
+			throw ::std::runtime_error("[dcs::eesim::virtual_machine_monitor::destroy_domain] Unknown virtual machine.")
+		);
+
+		vms_.erase(ptr_vm->id());
 	}
 
 
-	public: real_type overhead() const
+	public: virtual_machine_container virtual_machines() const
 	{
-		return overhead_;
+		virtual_machine_container vms;
+
+		typedef typename virtual_machine_impl_container::const_iterator iterator;
+		iterator end_it = vms_.end();
+		for (iterator it = vms_.begin(); it != end_it; ++it)
+		{
+			vms.push_back(*it);
+		}
+
+		return vms;
 	}
 
 
-	public: void power_on(uint_type vm_id) // throws...
+	public: virtual_machine_container virtual_machines(power_status status) const
+	{
+		typedef typename virtual_machine_container::const_iterator iterator;
+
+		virtual_machine_container vms;
+
+		iterator end_it = vms_.end();
+		for (iterator it = vms_.begin(); it != end_it; ++it)
+		{
+			if ((*it)->power_state() == status)
+			{
+				vms.push_back(*it);
+			}
+		}
+
+		return vms;
+	}
+
+
+//	public: void overhead(real_type value)
+//	{
+//		overhead_ = value;
+//	}
+
+
+//	public: real_type overhead() const
+//	{
+//		return overhead_;
+//	}
+
+
+	public: void power_on(virtual_machine_pointer const& ptr_vm) // throws...
 	{
 		// preconditions
 		DCS_ASSERT(
-			vm_id < vms_.size(),
-			throw ::std::runtime_error("Unknown VM")
+			vms_.count(ptr_vm->id()) > 0,
+			throw ::std::runtime_error("[dcs::eesim::virtual_machine_monitor::power_on] Unknown virtual machine.")
 		);
 
-		vms_[vm_id]->power_on();
+		ptr_vm->power_on();
 	}
 
 
-	public: void power_off(uint_type vm_id) // throws...
+	public: void power_off(virtual_machine_pointer const& ptr_vm) // throws...
 	{
 		// preconditions
 		DCS_ASSERT(
-			vm_id < vms_.size(),
-			throw ::std::runtime_error("Unknown VM")
+			vms_.count(ptr_vm->id()) > 0,
+			throw ::std::runtime_error("[dcs::eesim::virtual_machine_monitor::power_off] Unknown virtual machine.")
 		);
 
-		vms_[vm_id]->power_off();
+		ptr_vm->power_off();
 	}
 
 
-	public: void suspend(uint_type vm_id) // throws...
+	public: void suspend(virtual_machine_pointer const& ptr_vm) // throws...
 	{
 		// preconditions
 		DCS_ASSERT(
-			vm_id < vms_.size(),
-			throw ::std::runtime_error("Unknown VM")
+			vms_.count(ptr_vm->id()) > 0,
+			throw ::std::runtime_error("[dcs::eesim::virtual_machine_monitor::suspend] Unknown virtual machine.")
 		);
 
-		vms_[vm_id]->suspend();
+		ptr_vm->suspend();
 	}
 
 
-	private: uint_type vms_counter_;
-	private: virtual_machine_container vms_;
+	public: void resume(virtual_machine_pointer const& ptr_vm) // throws...
+	{
+		// preconditions
+		DCS_ASSERT(
+			vms_.count(ptr_vm->id()) > 0,
+			throw ::std::runtime_error("[dcs::eesim::virtual_machine_monitor::resume] Unknown virtual machine.")
+		);
+
+		ptr_vm->resume();
+	}
+
+
+//	private: uint_type vms_counter_;
+	private: virtual_machine_impl_container vms_;
 	//private: uint_type_name_container vm_id_names_;
 	/// The performance overhead associated to virtualization
 	private: real_type overhead_;

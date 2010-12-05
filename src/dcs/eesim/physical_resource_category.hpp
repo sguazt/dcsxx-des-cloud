@@ -31,7 +31,7 @@ namespace dcs { namespace eesim {
 enum physical_resource_category
 {
 	cpu_resource_category,
-	memory_resouce_category,
+	memory_resource_category,
 	storage_resource_category
 	//network_resource_category
 	//network_up_resource_category,

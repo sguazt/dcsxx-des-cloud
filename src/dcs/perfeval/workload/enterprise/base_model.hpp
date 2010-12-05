@@ -8,16 +8,16 @@
  * Science Department - University of Piemonte Orientale, Alessandria (Italy).
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
+ * it under the terms of the GNU General Public License as published
  * by the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
@@ -28,6 +28,7 @@
 
 
 #include <dcs/math/random/any_generator.hpp>
+#include <dcs/perfeval/workload/enterprise/user_request.hpp>
 #include <utility>
 
 
@@ -42,7 +43,8 @@ namespace dcs { namespace perfeval { namespace workload { namespace enterprise {
  * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
  */
 template <
-	typename RequestCategoryT,
+	//typename RequestCategoryT,
+	typename IntT,
 	typename RealT
 >
 class base_model
@@ -52,7 +54,7 @@ class base_model
 	//[/TODO]
 
 	/// Alias for the type of request categories.
-	public: typedef RequestCategoryT request_category_type;
+	public: typedef IntT int_type;
 	/// Alias for the type of real numbers.
 	typedef RealT real_type;
 
@@ -61,13 +63,17 @@ class base_model
 
 
 	public: template <typename UniformRandomGeneratorT>
-		::std::pair<request_category_type,real_type> generate(UniformRandomGeneratorT& rng) const
+		//::std::pair<request_category_type,real_type> generate(UniformRandomGeneratorT& rng) const
+		user_request<int_type,real_type> generate(UniformRandomGeneratorT& rng) const
 	{
-		return do_generate(::dcs::math::random::make_any_generator<UniformRandomGeneratorT&>(rng));
+		//return do_generate(::dcs::math::random::make_any_generator<UniformRandomGeneratorT&>(rng));
+		::dcs::math::random::any_generator<real_type> any_rng = ::dcs::math::random::make_any_generator<UniformRandomGeneratorT&>(rng);
+		return do_generate(any_rng);
 	}
 
 
-	private: virtual ::std::pair<request_category_type,real_type>  do_generate(::dcs::math::random::any_generator<real_type>& rng) const = 0;
+	//private: virtual ::std::pair<request_category_type,real_type>  do_generate(::dcs::math::random::any_generator<real_type>& rng) const = 0;
+	private: virtual user_request<int_type,real_type>  do_generate(::dcs::math::random::any_generator<real_type>& rng) const = 0;
 };
 
 }}}} // Namespace dcs::perfeval::workload::enterprise

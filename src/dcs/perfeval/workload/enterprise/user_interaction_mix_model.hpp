@@ -30,6 +30,7 @@
 #include <cstddef>
 #include <dcs/perfeval/workload/enterprise/user_interaction_mix.hpp>
 #include <dcs/perfeval/workload/enterprise/user_request.hpp>
+#include <dcs/perfeval/workload/enterprise/user_request_spec.hpp>
 #include <dcs/container/unordered_map.hpp>
 #include <dcs/math/stats/distribution/discrete.hpp>
 #include <dcs/math/stats/function/rand.hpp>
@@ -85,19 +86,21 @@ namespace dcs { namespace perfeval { namespace workload { namespace enterprise {
  * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
  */
 template <
-	typename RequestCategoryT,
+	//typename RequestCategoryT,
 	typename RandomNumberDistributionT,
+	typename IntT,
 	typename RealT
 >
 class user_interaction_mix_model
 {
-	public: typedef RequestCategoryT request_category_type;
 	public: typedef RandomNumberDistributionT random_distribution_type;
+	public: typedef IntT int_type;
 	public: typedef RealT real_type;
-	public: typedef user_interaction_mix<request_category_type,real_type> interaction_mix_type;
-	public: typedef user_request<request_category_type,random_distribution_type> request_type;
+	public: typedef user_interaction_mix<int_type,real_type> interaction_mix_type;
+	public: typedef user_request_spec<random_distribution_type,int_type> request_spec_type;
+	public: typedef user_request<int_type,real_type> request_type;
 	private: typedef ::std::vector<interaction_mix_type> interaction_mix_container;
-	private: typedef ::dcs::container::unordered_map<request_category_type,request_type> request_container;
+	private: typedef ::dcs::container::unordered_map<int_type,request_spec_type> request_container;
 	private: typedef ::dcs::math::stats::discrete_distribution<real_type> discrete_distribution_type;
 
 
@@ -118,7 +121,7 @@ class user_interaction_mix_model
 			it != last_request;
 			++it
 		) {
-			requests_[it->category()] = *it;
+			request_specs_[it->category()] = *it;
 		}
 
 		mixes_ = interaction_mix_container(first_mix, last_mix);
@@ -127,16 +130,16 @@ class user_interaction_mix_model
 
 
 	public: template <typename ForwardIteratorT>
-		void requests(ForwardIteratorT first, ForwardIteratorT last)
+		void request_specifications(ForwardIteratorT first, ForwardIteratorT last)
 	{
-		requests_.clear();
+		request_specs_.clear();
 
 		for (
 			ForwardIteratorT it = first;
 			it != last;
 			++it
 		) {
-			requests_[it->category()] = *it;
+			request_specs_[it->category()] = *it;
 		}
 	}
 
@@ -166,29 +169,32 @@ class user_interaction_mix_model
 	}
 
 
+//	public: template <typename UniformRandomGeneratorT>
+//		::std::pair<request_category_type,real_type> generate(UniformRandomGeneratorT& rng) const
 	public: template <typename UniformRandomGeneratorT>
-		::std::pair<request_category_type,real_type> generate(UniformRandomGeneratorT& rng) const
+		user_request<int_type,real_type> generate(UniformRandomGeneratorT& rng) const
 	{
 		::std::size_t mix = ::dcs::math::stats::rand(
 				mixes_dist_,
 				rng
 		);
 
-		request_category_type req_category = mixes_[mix].generate(rng);
+		int_type req_category = mixes_[mix].generate(rng);
 
-		real_type iatime = ::dcs::math::stats::rand(
-				requests_.at(req_category).iatime_distribution(),
-				rng
-		);
-
-		return ::std::make_pair(req_category, iatime);
+//		real_type iatime = ::dcs::math::stats::rand(
+//				request_specs_.at(req_category).iatime_distribution(),
+//				rng
+//		);
+//
+//		return ::std::make_pair(req_category, iatime);
+		return request_specs_.at(req_category).generate(rng);
 	}
 
 
 	/// The mixes container.
 	private: interaction_mix_container mixes_;
 	/// The requests container.
-	private: request_container requests_;
+	private: request_container request_specs_;
 	/// The session initial probability distribution.
 	private: discrete_distribution_type mixes_dist_;
 };

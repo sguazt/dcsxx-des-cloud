@@ -26,6 +26,7 @@
 #define DCS_PERFEVAL_WORKLOAD_ENTERPRISE_GENERATOR_HPP
 
 
+#include <dcs/perfeval/workload/enterprise/user_request.hpp>
 #include <utility>
 
 
@@ -82,7 +83,7 @@ template <
 class generator
 {
 	public: typedef WorkloadModelT workload_model_type;
-	public: typedef typename workload_model_type::request_category_type request_category_type;
+	public: typedef typename workload_model_type::int_type int_type;
 	public: typedef typename workload_model_type::real_type real_type;
 
 
@@ -94,7 +95,8 @@ class generator
 
 
 	public: template <typename UniformRandomGeneratorT>
-		::std::pair<request_category_type,real_type> operator()(UniformRandomGeneratorT& rng) const
+		//::std::pair<request_category_type,real_type> operator()(UniformRandomGeneratorT& rng) const
+		user_request<int_type,real_type> operator()(UniformRandomGeneratorT& rng) const
 	{
 		return model_.generate(rng);
 	}
