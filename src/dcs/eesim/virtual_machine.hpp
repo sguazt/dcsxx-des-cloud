@@ -203,7 +203,7 @@ class virtual_machine
 			 ++it)
 		{
 			physical_resource_category category = it->first;
-			real_type ref_capacity = ptr_tier_->application_ptr()->reference_resource(category)->capacity();
+			real_type ref_capacity = ptr_tier_->application_ptr()->reference_resource(category).capacity();
 			real_type actual_capacity = mach.resource(category)->capacity();
 			real_type wanted_share = it->second*ref_capacity/actual_capacity;
 

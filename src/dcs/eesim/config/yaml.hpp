@@ -11,6 +11,8 @@
 #include <dcs/eesim/config/application_sla.hpp>
 #include <dcs/eesim/config/application_tier.hpp>
 #include <dcs/eesim/config/configuration.hpp>
+#include <dcs/eesim/config/data_center.hpp>
+#include <dcs/eesim/config/initial_placement_strategy.hpp>
 #include <dcs/eesim/config/metric_category.hpp>
 #include <dcs/eesim/config/numeric_matrix.hpp>
 #include <dcs/eesim/config/numeric_multiarray.hpp>
@@ -233,6 +235,17 @@ qn_service_strategy_category text_to_qn_service_strategy_category(::std::string 
 	}
 
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_qn_service_strategy_category Unknown queueing network service strategy category.");
+}
+
+
+initial_placement_strategy_category text_to_initial_placement_strategy_category(::std::string const& str)
+{
+	if (!str.compare("first-fit"))
+	{
+		return first_fit_initial_placement_strategy;
+	}
+
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_initial_placement_strategy_category Unknown init VM placement strategy category.");
 }
 
 }} // Namespace detail::<unnamed>
@@ -1249,6 +1262,7 @@ class yaml_reader
 	public: configuration_type read(YAML::Node const& doc)
 	{
 		configuration_type conf;
+		::std::string label;
 
 		// Read random number generation settings
 		{
@@ -1266,33 +1280,66 @@ class yaml_reader
 
 			conf.simulation(sim);
 		}
-		// Read applications
+		// Read data center
 		{
-			::YAML::Node const& node = doc["applications"];
-			::std::size_t n = node.size();
-			for (::std::size_t i = 0; i < n; ++i)
+			::YAML::Node const& node = doc["data-center"];
+
+			typedef typename configuration_type::data_center_config_type data_center_config_type;
+
+			data_center_config_type dc;
+
+			// Read applications
 			{
-				application_config<real_type,uint_type> app;
+				::YAML::Node const& subnode = node["applications"];
+				::std::size_t n = subnode.size();
+				for (::std::size_t i = 0; i < n; ++i)
+				{
+					application_config<real_type,uint_type> app;
 
-				::YAML::Node const& app_node = node[i]["application"];
-				app_node >> app;
+					::YAML::Node const& app_node = subnode[i]["application"];
+					app_node >> app;
 
-				conf.add_application(app);
+					dc.add_application(app);
+				}
 			}
-		}
-		// Read physical machines
-		{
-			::YAML::Node const& node = doc["physical-machines"];
-			::std::size_t n = node.size();
-			for (::std::size_t i = 0; i < n; ++i)
+			// Read physical machines
 			{
-				physical_machine_config<real_type> mach;
+				::YAML::Node const& subnode = node["physical-machines"];
+				::std::size_t n = subnode.size();
+				for (::std::size_t i = 0; i < n; ++i)
+				{
+					physical_machine_config<real_type> mach;
 
-				::YAML::Node const& mach_node = node[i]["physical-machine"];
-				mach_node >> mach;
+					::YAML::Node const& mach_node = subnode[i]["physical-machine"];
+					mach_node >> mach;
 
-				conf.add_physical_machine(mach);
+					dc.add_physical_machine(mach);
+				}
 			}
+			// Initial placement
+			{
+				::YAML::Node const& subnode = node["initial-placement-strategy"];
+				subnode["type"] >> label;
+
+				dc.initial_placement_category(
+					detail::text_to_initial_placement_strategy_category(label)
+				);
+
+				switch (dc.initial_placement_category())
+				{
+					case first_fit_initial_placement_strategy:
+						{
+							typedef first_fit_initial_placement_strategy_config initial_placement_config_type;
+
+							initial_placement_config_type initial_placement_conf;
+
+							dc.initial_placement_strategy_conf(initial_placement_conf);
+						}
+						break;
+				}
+			}
+
+			conf.data_center(dc);
 		}
 
 		return conf;

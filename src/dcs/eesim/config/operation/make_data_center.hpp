@@ -31,6 +31,7 @@
 #include <dcs/eesim/application_tier.hpp>
 #include <dcs/eesim/base_application_performance_model.hpp>
 #include <dcs/eesim/base_application_simulation_model.hpp>
+#include <dcs/eesim/base_initial_placement_strategy.hpp>
 #include <dcs/eesim/config/application.hpp>
 #include <dcs/eesim/config/application_performance_model.hpp>
 #include <dcs/eesim/config/application_simulation_model.hpp>
@@ -41,6 +42,7 @@
 #include <dcs/eesim/config/physical_resource.hpp>
 #include <dcs/eesim/config/probability_distribution.hpp>
 #include <dcs/eesim/data_center.hpp>
+#include <dcs/eesim/first_fit_initial_placement_strategy.hpp>
 #include <dcs/eesim/multi_tier_application.hpp>
 #include <dcs/eesim/open_multi_bcmp_qn_application_performance_model.hpp>
 #include <dcs/eesim/physical_machine.hpp>
@@ -109,7 +111,7 @@ template <typename RealT, typename VariantT>
 			{
 				typedef constant_energy_model_config<RealT> model_config_type;
 				typedef ::dcs::perfeval::energy::constant_model<RealT> model_type;
-				model_config_type model = ::boost::get<model_config_type>(variant_config);
+				model_config_type const& model = ::boost::get<model_config_type>(variant_config);
 				ptr_model = ::dcs::make_shared<model_type>(model.c0);
 			}
 			break;
@@ -117,7 +119,7 @@ template <typename RealT, typename VariantT>
 			{
 				typedef fan2007_energy_model_config<RealT> model_config_type;
 				typedef ::dcs::perfeval::energy::fan2007_model<RealT> model_type;
-				model_config_type model = ::boost::get<model_config_type>(variant_config);
+				model_config_type const& model = ::boost::get<model_config_type>(variant_config);
 				ptr_model = ::dcs::make_shared<model_type>(
 							model.c0,
 							model.c1,
@@ -207,9 +209,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 							model_impl_type
 						> model_type;
 
-				model_impl_config_type model_impl_conf;
-
-				model_impl_conf = ::boost::get<model_impl_config_type>(perf_model_conf.type_conf);
+				model_impl_config_type const& model_impl_conf = ::boost::get<model_impl_config_type>(perf_model_conf.type_conf);
 
 				::boost::numeric::ublas::vector<real_type> lambda(model_impl_conf.arrival_rates.size());
 				::std::copy(model_impl_conf.arrival_rates.begin(),
@@ -294,8 +294,7 @@ template <typename RealT>
 				typedef typename distribution_config_type::exponential_distribution_config_type distribution_config_impl_type;
 				typedef ::dcs::math::stats::exponential_distribution<real_type> distribution_impl_type;
 
-				distribution_config_impl_type distr_conf_impl;
-				distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
+				distribution_config_impl_type const& distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
 				//ptr_distr = ::dcs::make_shared<distribution_impl_type>(distr_conf.rate);
 				distr = ::dcs::math::stats::make_any_distribution(distribution_impl_type(distr_conf_impl.rate));
 			}
@@ -305,8 +304,7 @@ template <typename RealT>
 				typedef typename distribution_config_type::gamma_distribution_config_type distribution_config_impl_type;
 				typedef ::dcs::math::stats::gamma_distribution<real_type> distribution_impl_type;
 
-				distribution_config_impl_type distr_conf_impl;
-				distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
+				distribution_config_impl_type const& distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
 				//ptr_distr = ::dcs::make_shared<distribution_impl_type>(distr_conf.shape, distr_conf.scale);
 				distr = ::dcs::math::stats::make_any_distribution(distribution_impl_type(distr_conf_impl.shape, distr_conf_impl.scale));
 			}
@@ -316,8 +314,7 @@ template <typename RealT>
 				typedef typename distribution_config_type::normal_distribution_config_type distribution_config_impl_type;
 				typedef ::dcs::math::stats::normal_distribution<real_type> distribution_impl_type;
 
-				distribution_config_impl_type distr_conf_impl;
-				distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
+				distribution_config_impl_type const& distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
 				//ptr_distr = ::dcs::make_shared<distribution_impl_type>(distr_conf_impl.mean, distr_conf_impl.sd);
 				distr = ::dcs::math::stats::make_any_distribution(distribution_impl_type(distr_conf_impl.mean, distr_conf_impl.sd));
 			}
@@ -356,9 +353,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 				typedef ::dcs::des::model::qn::network_node<model_impl_traits_type> node_type;
 				typedef ::std::map< ::std::string, typename node_type::identifier_type > name_to_id_container;
 
-				::dcs::shared_ptr<model_impl_type> ptr_model_impl;
-
-				ptr_model_impl = ::dcs::make_shared<model_impl_type>(sim_info.ptr_rng, sim_info.ptr_engine, false);
+				model_impl_type model_impl(sim_info.ptr_rng, sim_info.ptr_engine, false);
 
 				name_to_id_container node_names_ids;
 
@@ -587,7 +582,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 
 					node_names_ids[ptr_node->name()] = ptr_node->id();
 
-					ptr_model_impl->add_node(ptr_node);
+					model_impl.add_node(ptr_node);
 				}
 
 				// Customer classes
@@ -627,8 +622,10 @@ template <typename TraitsT, typename RealT, typename UIntT>
 
 					ptr_customer_class->reference_node(node_names_ids[class_it->ref_node]);
 
-					ptr_model_impl->add_class(ptr_customer_class);
+					model_impl.add_class(ptr_customer_class);
 				}
+
+				ptr_model = ::dcs::make_shared<model_type>(model_impl);
 			}
 			break;
 	}
@@ -675,6 +672,34 @@ template <typename TraitsT, typename RealT, typename UIntT>
 	return ptr_app;
 }
 
+
+template <typename TraitsT, typename RealT, typename UIntT>
+::dcs::shared_ptr< ::dcs::eesim::base_initial_placement_strategy<TraitsT> > make_initial_placement_strategy(data_center_config<RealT,UIntT> const& dc_conf)
+{
+	typedef TraitsT traits_type;
+	typedef ::dcs::eesim::base_initial_placement_strategy<traits_type> strategy_type;
+
+	::dcs::shared_ptr<strategy_type> ptr_strategy;
+
+	switch (dc_conf.initial_placement_category())
+	{
+		case first_fit_initial_placement_strategy:
+			{
+				typedef ::dcs::eesim::first_fit_initial_placement_strategy<traits_type> strategy_impl_type;
+				//typedef first_fit_initial_placement_strategy_config strategy_config_impl_type;
+
+				//strategy_config_impl_type const& strategy_conf_impl = ::boost::get<strategy_config_impl_type>(dc_conf.initial_placement_strategy_conf());
+
+				// Note: there is nothing to configure
+
+				ptr_strategy = ::dcs::make_shared<strategy_impl_type>();
+			}
+			break;
+	}
+
+	return ptr_strategy;
+}
+
 }} // Namespace detail::<unnamed>
 
 
@@ -688,6 +713,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 	typedef UIntT uint_type;
 	typedef ::dcs::eesim::data_center<traits_type> data_center_type;
 	typedef configuration<real_type,uint_type> configuration_type;
+	typedef typename configuration_type::data_center_config_type data_center_config_type;
 
 	::dcs::shared_ptr<data_center_type> ptr_dc = ::dcs::make_shared<data_center_type>();
 
@@ -698,9 +724,9 @@ template <typename TraitsT, typename RealT, typename UIntT>
 
 	// Make physical machines
 	{
-		typedef typename configuration_type::physical_machine_config_container::const_iterator iterator;
-		iterator end_it = conf.physical_machines().end();
-		for (iterator it = conf.physical_machines().begin(); it != end_it; ++it)
+		typedef typename data_center_config_type::physical_machine_config_container::const_iterator iterator;
+		iterator end_it = conf.data_center().physical_machines().end();
+		for (iterator it = conf.data_center().physical_machines().begin(); it != end_it; ++it)
 		{
 			::dcs::shared_ptr< ::dcs::eesim::physical_machine<traits_type> > ptr_mach;
 
@@ -710,14 +736,21 @@ template <typename TraitsT, typename RealT, typename UIntT>
 
 	// Make applications
 	{
-		typedef typename configuration_type::application_config_container::const_iterator iterator;
-		iterator end_it = conf.applications().end();
-		for (iterator it = conf.applications().begin(); it != end_it; ++it)
+		typedef typename data_center_config_type::application_config_container::const_iterator iterator;
+		iterator end_it = conf.data_center().applications().end();
+		for (iterator it = conf.data_center().applications().begin(); it != end_it; ++it)
 		{
 			::dcs::shared_ptr< ::dcs::eesim::multi_tier_application<traits_type> > ptr_app;
 
 			ptr_app = detail::make_application<traits_type>(*it, sim_info);
 		}
+	}
+
+	// Initial placement
+	{
+		::dcs::shared_ptr< ::dcs::eesim::base_initial_placement_strategy<traits_type> > ptr_init_place;
+
+		ptr_init_place = detail::make_initial_placement_strategy<traits_type>(conf.data_center());
 	}
 
 	return ptr_dc;

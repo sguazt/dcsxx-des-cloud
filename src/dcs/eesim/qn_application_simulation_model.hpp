@@ -30,17 +30,18 @@ class application_simulation_model_traits<
 	public: typedef ::dcs::des::model::qn::queueing_network<UIntT,RealT,UniformRandomGeneratorT,DesEngineT> model_type;
 	private: typedef typename traits_type::des_engine_type des_engine_type;
 	public: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_source_type des_event_source_type;
+	public: typedef typename traits_type::uint_type uint_type;
 
 
-	public: static void enable(model_type& model)
+	public: static void enable(model_type& model, bool flag)
 	{
-		model.enable();
+		model.enable(flag);
 	}
 
 
-	public: static void disable(model_type& model)
+	public: static bool enabled(model_type const& model)
 	{
-		model.disable();
+		return model.enabled();
 	}
 
 
@@ -65,6 +66,30 @@ class application_simulation_model_traits<
 	public: static des_event_source_type const& request_departure_event_source(model_type const& model)
 	{
 		return model.departure_event_source();
+	}
+
+
+	public: static des_event_source_type& request_tier_arrival_event_source(model_type& model, uint_type tier_id)
+	{
+		return model.get_node(tier_id).arrival_event_source();
+	}
+
+
+	public: static des_event_source_type const& request_tier_arrival_event_source(model_type const& model, uint_type tier_id)
+	{
+		return model.get_node(tier_id).arrival_event_source();
+	}
+
+
+	public: static des_event_source_type& request_tier_departure_event_source(model_type& model, uint_type tier_id)
+	{
+		return model.get_node(tier_id).departure_event_source();
+	}
+
+
+	public: static des_event_source_type const& request_tier_departure_event_source(model_type const& model, uint_type tier_id)
+	{
+		return model.get_node(tier_id).departure_event_source();
 	}
 };
 

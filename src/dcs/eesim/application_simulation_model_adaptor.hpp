@@ -20,6 +20,7 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 	public: typedef ModelT model_type;
 	public: typedef ModelTraitsT model_traits_type;
 	public: typedef typename base_type::des_event_source_type des_event_source_type;
+	public: typedef typename base_type::uint_type uint_type;
 
 
 	public: explicit application_simulation_model_adaptor(model_type const& model)
@@ -29,15 +30,15 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 	}
 
 
-	private: void do_enable()
+	private: void do_enable(bool flag)
 	{
-		model_traits_type::enable(model_);
+		model_traits_type::enable(model_, flag);
 	}
 
 
-	private: void do_disable()
+	private: bool do_enabled() const
 	{
-		model_traits_type::disable(model_);
+		return model_traits_type::enabled(model_);
 	}
 
 
@@ -62,6 +63,30 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 	private: des_event_source_type const& do_request_departure_event_source() const
 	{
 		return model_traits_type::request_departure_event_source(model_);
+	}
+
+
+	private: des_event_source_type& do_request_tier_arrival_event_source(uint_type tier_id)
+	{
+		return model_traits_type::request_tier_arrival_event_source(model_, tier_id);
+	}
+
+
+	private: des_event_source_type const& do_request_tier_arrival_event_source(uint_type tier_id) const
+	{
+		return model_traits_type::request_tier_arrival_event_source(model_, tier_id);
+	}
+
+
+	private: des_event_source_type& do_request_tier_departure_event_source(uint_type tier_id)
+	{
+		return model_traits_type::request_tier_departure_event_source(model_, tier_id);
+	}
+
+
+	private: des_event_source_type const& do_request_tier_departure_event_source(uint_type tier_id) const
+	{
+		return model_traits_type::request_tier_departure_event_source(model_, tier_id);
 	}
 
 

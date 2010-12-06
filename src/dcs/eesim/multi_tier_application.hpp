@@ -359,9 +359,9 @@ class multi_tier_application
 	}
 
 
-	public: reference_physical_resource reference_resource(physical_resource_category category) const
+	public: reference_physical_resource const& reference_resource(physical_resource_category category) const
 	{
-		return ref_resources_[category];
+		return ref_resources_.at(category);
 	}
 
 

@@ -92,4 +92,6 @@ int main(int argc, char* argv[])
 
 	data_center_pointer ptr_dc;
 	ptr_dc = dcs::eesim::config::make_data_center<traits_type>(conf, ptr_rng, ptr_des_eng);
+
+	ptr_des_eng->run();
 }
