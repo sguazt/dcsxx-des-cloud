@@ -32,6 +32,7 @@
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
+#include <limits>
 
 
 namespace dcs { namespace eesim {
@@ -55,7 +56,7 @@ class base_application_controller
 	/// Default constructor.
 	protected: base_application_controller()
 	: ptr_app_(),
-	  ts_(0),
+	  ts_(::std::numeric_limits<real_type>::infinity()),
 	  ptr_control_evt_src_(new des_event_source_type())
 	{
 		init();
@@ -121,6 +122,12 @@ class base_application_controller
 				)
 			);
 		}
+	}
+
+
+	public:void controlled_application(application_pointer const& ptr_app)
+	{
+		ptr_app_ = ptr_app;
 	}
 
 

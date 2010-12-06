@@ -3,9 +3,9 @@
 
 
 #include <algorithm>
-#include <boost/variant.hpp>
 #include <dcs/eesim/config/application.hpp>
 #include <dcs/eesim/config/initial_placement_strategy.hpp>
+#include <dcs/eesim/config/migration_controller.hpp>
 #include <dcs/eesim/config/physical_machine.hpp>
 #include <iostream>
 #include <iterator>
@@ -23,8 +23,8 @@ class data_center_config
 	public: typedef physical_machine_config<real_type> physical_machine_config_type;
 	public: typedef ::std::vector<application_config_type> application_config_container;
 	public: typedef ::std::vector<physical_machine_config_type> physical_machine_config_container;
-	public: typedef first_fit_initial_placement_strategy_config first_fit_initial_placement_strategy_config_type;
-	public: typedef ::boost::variant<first_fit_initial_placement_strategy_config_type> initial_placement_strategy_config_type;
+	public: typedef initial_placement_strategy_config initial_placement_strategy_config_type;
+	public: typedef migration_controller_config<real_type> migration_controller_config_type;
 
 
 	public: void add_application(application_config_type const& app)
@@ -51,34 +51,34 @@ class data_center_config
 	}
 
 
-	public: void initial_placement_strategy_conf(initial_placement_strategy_config_type const& strategy_conf)
+	public: void initial_placement_strategy(initial_placement_strategy_config_type const& strategy_conf)
 	{
 		init_place_conf_ = strategy_conf;
 	}
 
 
-	public: initial_placement_strategy_config_type const& initial_placement_strategy_conf() const
+	public: initial_placement_strategy_config_type const& initial_placement_strategy() const
 	{
 		return init_place_conf_;
 	}
 
 
-	public: void initial_placement_category(initial_placement_strategy_category category)
+	public: void migration_controller(migration_controller_config_type controller_conf)
 	{
-		init_place_cat_ = category;
+		migr_ctrl_conf_ = controller_conf;
 	}
 
 
-	public: initial_placement_strategy_category initial_placement_category() const
+	public: migration_controller_config_type const& migration_controller() const
 	{
-		return init_place_cat_;
+		return migr_ctrl_conf_;
 	}
 
 
 	private: application_config_container apps_;
 	private: physical_machine_config_container machs_;
-	private: initial_placement_strategy_category init_place_cat_;
 	private: initial_placement_strategy_config_type init_place_conf_;
+	private: migration_controller_config_type migr_ctrl_conf_;
 };
 
 
@@ -102,7 +102,9 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 				::std::ostream_iterator<physical_machine_config_type>(os, ", "));
 	os << "]";
 
-	os << ", " << dc.initial_placement_strategy_conf();
+	os << ", " << dc.initial_placement_strategy();
+
+	os << ", " << dc.migration_controller();
 
 	os << ">";
 

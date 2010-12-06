@@ -2,9 +2,7 @@
 #define DCS_EESIM_CONSERVATIVE_PHYSICAL_MACHINE_CONTROLLER_HPP
 
 
-#include <dcs/eesim/physical_machine.hpp>
 #include <dcs/eesim/base_physical_machine_controller.hpp>
-#include <dcs/memory.hpp>
 
 
 namespace dcs { namespace eesim {
@@ -27,20 +25,21 @@ namespace dcs { namespace eesim {
 template <typename TraitsT>
 class conservative_physical_machine_controller: public base_physical_machine_controller<TraitsT>
 {
-	private: base_physical_machine_controller<TraitsT> base_type;
+	private: typedef base_physical_machine_controller<TraitsT> base_type;
 	public: typedef TraitsT traits_type;
-	private: typedef physical_machine<traits_type> physical_machine_type;
-	public: typedef ::dcs::shared_ptr<physical_machine_type> physical_machine_pointer;
+	public: typedef typename base_type::physical_machine_pointer physical_machine_pointer;
 
 
-	public: conservative_physical_machine_controller(physical_machine_pointer const& ptr_mach)
-	: base_type(),
-	  ptr_mach_(ptr_mach)
+	public: conservative_physical_machine_controller()
+	: base_type()
 	{
 	}
 
 
-	private: physical_machine_pointer ptr_mach_;
+	public: conservative_physical_machine_controller(physical_machine_pointer const& ptr_mach)
+	: base_type(ptr_mach)
+	{
+	}
 };
 
 }} // Namespace dcs::eesim

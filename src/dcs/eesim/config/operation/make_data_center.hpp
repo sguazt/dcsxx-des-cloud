@@ -29,25 +29,35 @@
 #include <dcs/eesim/application_simulation_model_adaptor.hpp>
 #include <dcs/eesim/application_simulation_model_traits.hpp>
 #include <dcs/eesim/application_tier.hpp>
+#include <dcs/eesim/base_application_controller.hpp>
 #include <dcs/eesim/base_application_performance_model.hpp>
 #include <dcs/eesim/base_application_simulation_model.hpp>
 #include <dcs/eesim/base_initial_placement_strategy.hpp>
+#include <dcs/eesim/base_migration_controller.hpp>
+#include <dcs/eesim/base_physical_machine_controller.hpp>
 #include <dcs/eesim/config/application.hpp>
+#include <dcs/eesim/config/application_controller.hpp>
 #include <dcs/eesim/config/application_performance_model.hpp>
 #include <dcs/eesim/config/application_simulation_model.hpp>
 #include <dcs/eesim/config/application_sla.hpp>
 #include <dcs/eesim/config/application_tier.hpp>
 #include <dcs/eesim/config/configuration.hpp>
+#include <dcs/eesim/config/initial_placement_strategy.hpp>
+#include <dcs/eesim/config/migration_controller.hpp>
 #include <dcs/eesim/config/physical_machine.hpp>
 #include <dcs/eesim/config/physical_resource.hpp>
 #include <dcs/eesim/config/probability_distribution.hpp>
+#include <dcs/eesim/conservative_physical_machine_controller.hpp>
 #include <dcs/eesim/data_center.hpp>
 #include <dcs/eesim/first_fit_initial_placement_strategy.hpp>
+#include <dcs/eesim/lp_migration_controller.hpp>
+#include <dcs/eesim/lqr_application_controller.hpp>
 #include <dcs/eesim/multi_tier_application.hpp>
 #include <dcs/eesim/open_multi_bcmp_qn_application_performance_model.hpp>
 #include <dcs/eesim/physical_machine.hpp>
 #include <dcs/eesim/physical_resource.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
+#include <dcs/eesim/proportional_physical_machine_controller.hpp>
 #include <dcs/eesim/qn_application_simulation_model.hpp>
 #include <dcs/math/stats/distributions.hpp>
 #include <dcs/memory.hpp>
@@ -185,6 +195,49 @@ template <typename TraitsT, typename RealT>
 	}
 
 	return ptr_mach;
+}
+
+
+template <typename TraitsT, typename RealT>
+::dcs::shared_ptr< ::dcs::eesim::base_physical_machine_controller<TraitsT> > make_physical_machine_controller(physical_machine_controller_config<RealT> const& controller_conf)
+{
+	typedef TraitsT traits_type;
+	typedef ::dcs::eesim::base_physical_machine_controller<traits_type> controller_type;
+	typedef physical_machine_controller_config<RealT> controller_config_type;
+
+	::dcs::shared_ptr<controller_type> ptr_controller;
+
+	switch (controller_conf.category)
+	{
+		case conservative_physical_machine_controller:
+			{
+				//typedef typename controller_config_type::conservative_controller_config_type controller_config_impl_type;
+				typedef ::dcs::eesim::conservative_physical_machine_controller<traits_type> controller_impl_type;
+
+				//controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
+
+				// Note: there is nothing to configure
+
+				ptr_controller = ::dcs::make_shared<controller_impl_type>();
+			}
+			break;
+		case proportional_physical_machine_controller:
+			{
+				//typedef typename controller_config_type::proportional_controller_config_type controller_config_impl_type;
+				typedef ::dcs::eesim::proportional_physical_machine_controller<traits_type> controller_impl_type;
+
+				//controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
+
+				// Note: there is nothing to configure
+
+				ptr_controller = ::dcs::make_shared<controller_impl_type>();
+			}
+			break;
+	}
+
+	ptr_controller->sampling_time(controller_conf.sampling_time);
+
+	return ptr_controller;
 }
 
 
@@ -634,6 +687,37 @@ template <typename TraitsT, typename RealT, typename UIntT>
 }
 
 
+template <typename TraitsT, typename RealT>
+::dcs::shared_ptr< ::dcs::eesim::base_application_controller<TraitsT> > make_application_controller(application_controller_config<RealT> const& controller_conf)
+{
+	typedef TraitsT traits_type;
+	typedef ::dcs::eesim::base_application_controller<traits_type> controller_type;
+	typedef application_controller_config<RealT> controller_config_type;
+
+	::dcs::shared_ptr<controller_type> ptr_controller;
+
+	switch (controller_conf.category)
+	{
+		case lqr_application_controller:
+			{
+				//typedef typename controller_config_type::lqr_controller_config_type controller_config_impl_type;
+				typedef ::dcs::eesim::lqr_application_controller<traits_type> controller_impl_type;
+
+				//controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
+
+				// Note: there is nothing to configure
+
+				ptr_controller = ::dcs::make_shared<controller_impl_type>();
+			}
+			break;
+	}
+
+	ptr_controller->sampling_time(controller_conf.sampling_time);
+
+	return ptr_controller;
+}
+
+
 //FIXME: utilization threshold not yet handled.
 template <typename TraitsT, typename RealT, typename UIntT>
 ::dcs::shared_ptr< ::dcs::eesim::multi_tier_application<TraitsT> > make_application(application_config<RealT,UIntT> const& app_conf, simulation_info<TraitsT> const& sim_info)
@@ -673,22 +757,23 @@ template <typename TraitsT, typename RealT, typename UIntT>
 }
 
 
-template <typename TraitsT, typename RealT, typename UIntT>
-::dcs::shared_ptr< ::dcs::eesim::base_initial_placement_strategy<TraitsT> > make_initial_placement_strategy(data_center_config<RealT,UIntT> const& dc_conf)
+template <typename TraitsT>
+::dcs::shared_ptr< ::dcs::eesim::base_initial_placement_strategy<TraitsT> > make_initial_placement_strategy(initial_placement_strategy_config const& strategy_conf)
 {
 	typedef TraitsT traits_type;
 	typedef ::dcs::eesim::base_initial_placement_strategy<traits_type> strategy_type;
+	typedef initial_placement_strategy_config strategy_config_type;
 
 	::dcs::shared_ptr<strategy_type> ptr_strategy;
 
-	switch (dc_conf.initial_placement_category())
+	switch (strategy_conf.category)
 	{
 		case first_fit_initial_placement_strategy:
 			{
+				//typedef typename strategy_config_type::first_fit_initial_placement_strategy_config_type strategy_config_impl_type;
 				typedef ::dcs::eesim::first_fit_initial_placement_strategy<traits_type> strategy_impl_type;
-				//typedef first_fit_initial_placement_strategy_config strategy_config_impl_type;
 
-				//strategy_config_impl_type const& strategy_conf_impl = ::boost::get<strategy_config_impl_type>(dc_conf.initial_placement_strategy_conf());
+				//strategy_config_impl_type const& strategy_conf_impl = ::boost::get<strategy_config_impl_type>(strategy_conf.category_conf);
 
 				// Note: there is nothing to configure
 
@@ -698,6 +783,44 @@ template <typename TraitsT, typename RealT, typename UIntT>
 	}
 
 	return ptr_strategy;
+}
+
+
+template <typename TraitsT, typename RealT>
+::dcs::shared_ptr< ::dcs::eesim::base_migration_controller<TraitsT> > make_migration_controller(migration_controller_config<RealT> const& controller_conf)
+{
+	typedef TraitsT traits_type;
+	typedef ::dcs::eesim::base_migration_controller<traits_type> controller_type;
+	typedef migration_controller_config<RealT> controller_config_type;
+
+	::dcs::shared_ptr<controller_type> ptr_controller;
+
+DCS_DEBUG_TRACE("HERE.1");//XXX
+DCS_DEBUG_TRACE("HERE.1.1 ==> " << controller_conf.category);//XXX
+	switch (controller_conf.category)
+	{
+		case lp_migration_controller:
+			{
+				//typedef typename controller_config_type::lp_migration_controller_config_type controller_config_impl_type;
+				typedef ::dcs::eesim::lp_migration_controller<traits_type> controller_impl_type;
+
+				//controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
+
+				// Note: there is nothing to configure
+
+				ptr_controller = ::dcs::make_shared<controller_impl_type>();
+			}
+			break;
+		default:
+DCS_DEBUG_TRACE("MERDA");//XXX
+	}
+DCS_DEBUG_TRACE("HERE.2");//XXX
+DCS_DEBUG_TRACE("HERE.2.1: " << ptr_controller);//XXX
+
+	ptr_controller->sampling_time(controller_conf.sampling_time);
+DCS_DEBUG_TRACE("HERE.3");//XXX
+
+	return ptr_controller;
 }
 
 }} // Namespace detail::<unnamed>
@@ -731,6 +854,13 @@ template <typename TraitsT, typename RealT, typename UIntT>
 			::dcs::shared_ptr< ::dcs::eesim::physical_machine<traits_type> > ptr_mach;
 
 			ptr_mach = detail::make_physical_machine<traits_type>(*it);
+
+			::dcs::shared_ptr< ::dcs::eesim::base_physical_machine_controller<traits_type> > ptr_mach_controller;
+
+			ptr_mach_controller = detail::make_physical_machine_controller<traits_type>(it->controller);
+			ptr_mach_controller->controlled_machine(ptr_mach);
+
+			ptr_dc->add_physical_machine(ptr_mach, ptr_mach_controller);
 		}
 	}
 
@@ -743,14 +873,36 @@ template <typename TraitsT, typename RealT, typename UIntT>
 			::dcs::shared_ptr< ::dcs::eesim::multi_tier_application<traits_type> > ptr_app;
 
 			ptr_app = detail::make_application<traits_type>(*it, sim_info);
+
+			::dcs::shared_ptr< ::dcs::eesim::base_application_controller<traits_type> > ptr_app_controller;
+
+			ptr_app_controller = detail::make_application_controller<traits_type>(it->controller);
+			ptr_app_controller->controlled_application(ptr_app);
+
+			ptr_dc->add_application(ptr_app, ptr_app_controller);
 		}
 	}
 
 	// Initial placement
 	{
-		::dcs::shared_ptr< ::dcs::eesim::base_initial_placement_strategy<traits_type> > ptr_init_place;
+		::dcs::shared_ptr< ::dcs::eesim::base_initial_placement_strategy<traits_type> > ptr_strategy;
 
-		ptr_init_place = detail::make_initial_placement_strategy<traits_type>(conf.data_center());
+		ptr_strategy = detail::make_initial_placement_strategy<traits_type>(
+							conf.data_center().initial_placement_strategy()
+			);
+
+		//TODO: add to the data center object
+	}
+
+	// Migration controller
+	{
+		::dcs::shared_ptr< ::dcs::eesim::base_migration_controller<traits_type> > ptr_controller;
+
+		ptr_controller = detail::make_migration_controller<traits_type>(
+							conf.data_center().migration_controller()
+			);
+
+		//TODO: add to the data center object
 	}
 
 	return ptr_dc;

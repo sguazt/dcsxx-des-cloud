@@ -6,6 +6,7 @@
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/eesim/config/application.hpp>
+#include <dcs/eesim/config/application_controller.hpp>
 #include <dcs/eesim/config/application_performance_model.hpp>
 #include <dcs/eesim/config/application_simulation_model.hpp>
 #include <dcs/eesim/config/application_sla.hpp>
@@ -14,13 +15,16 @@
 #include <dcs/eesim/config/data_center.hpp>
 #include <dcs/eesim/config/initial_placement_strategy.hpp>
 #include <dcs/eesim/config/metric_category.hpp>
+#include <dcs/eesim/config/migration_controller.hpp>
 #include <dcs/eesim/config/numeric_matrix.hpp>
 #include <dcs/eesim/config/numeric_multiarray.hpp>
 #include <dcs/eesim/config/physical_machine.hpp>
+#include <dcs/eesim/config/physical_machine_controller.hpp>
 #include <dcs/eesim/config/physical_resource.hpp>
 #include <dcs/eesim/config/probability_distribution.hpp>
 #include <dcs/eesim/config/rng.hpp>
 #include <dcs/eesim/config/simulation.hpp>
+#include <dcs/string/algorithm/to_lower.hpp>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -36,19 +40,21 @@ namespace detail { namespace /*<unnamed>*/ {
 
 physical_resource_category text_to_physical_resource_category(::std::string const& str)
 {
-	if (!str.compare("cpu"))
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("cpu"))
 	{
 		return cpu_resource;
 	}
-	if (!str.compare("mem"))
+	if (!istr.compare("mem"))
 	{
 		return mem_resource;
 	}
-	if (!str.compare("disk"))
+	if (!istr.compare("disk"))
 	{
 		return disk_resource;
 	}
-	if (!str.compare("nic"))
+	if (!istr.compare("nic"))
 	{
 		return nic_resource;
 	}
@@ -59,11 +65,13 @@ physical_resource_category text_to_physical_resource_category(::std::string cons
 
 metric_category text_to_metric_category(::std::string str)
 {
-	if (!str.compare("response-time"))
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("response-time"))
 	{
 		return response_time_metric;
 	}
-	else if (!str.compare("throughput"))
+	if (!istr.compare("throughput"))
 	{
 		return throughput_metric;
 	}
@@ -74,11 +82,13 @@ metric_category text_to_metric_category(::std::string str)
 
 energy_model_category text_to_energy_model_category(::std::string const& str)
 {
-	if (!str.compare("constant"))
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("constant"))
 	{
 		return constant_energy_model;
 	}
-	if (!str.compare("fan-2007"))
+	if (!istr.compare("fan-2007"))
 	{
 		return fan2007_energy_model;
 	}
@@ -89,27 +99,29 @@ energy_model_category text_to_energy_model_category(::std::string const& str)
 
 rng_engine_category text_to_rng_engine_category(::std::string const& str)
 {
-	if (!str.compare("minstd-rand0"))
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("minstd-rand0"))
 	{
 		return minstd_rand0_rng_engine;
 	}
-	if (!str.compare("minstd-rand1"))
+	if (!istr.compare("minstd-rand1"))
 	{
 		return minstd_rand1_rng_engine;
 	}
-	if (!str.compare("minstd-rand2"))
+	if (!istr.compare("minstd-rand2"))
 	{
 		return minstd_rand2_rng_engine;
 	}
-	if (!str.compare("rand48"))
+	if (!istr.compare("rand48"))
 	{
 		return rand48_rng_engine;
 	}
-	if (!str.compare("mt11213b"))
+	if (!istr.compare("mt11213b"))
 	{
 		return mt11213b_rng_engine;
 	}
-	if (!str.compare("mt19937"))
+	if (!istr.compare("mt19937"))
 	{
 		return mt19937_rng_engine;
 	}
@@ -120,11 +132,13 @@ rng_engine_category text_to_rng_engine_category(::std::string const& str)
 
 rng_seeder_category text_to_rng_seeder_category(::std::string const& str)
 {
-	if (!str.compare("lcg"))
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("lcg"))
 	{
 		return lcg_rng_seeder;
 	}
-	if (!str.compare("none"))
+	if (!istr.compare("none"))
 	{
 		return none_rng_seeder;
 	}
@@ -135,7 +149,9 @@ rng_seeder_category text_to_rng_seeder_category(::std::string const& str)
 
 output_analysis_category text_to_output_analysis_category(::std::string const& str)
 {
-	if (!str.compare("independent-replications"))
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("independent-replications"))
 	{
 		return independent_replications_output_analysis;
 	}
@@ -146,7 +162,9 @@ output_analysis_category text_to_output_analysis_category(::std::string const& s
 
 statistic_category text_to_statistic_category(::std::string const& str)
 {
-	if (!str.compare("mean"))
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("mean"))
 	{
 		return mean_statistic;
 	}
@@ -157,15 +175,17 @@ statistic_category text_to_statistic_category(::std::string const& str)
 
 probability_distribution_category text_to_probability_distribution_category(::std::string const& str)
 {
-	if (!str.compare("exponential"))
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("exponential"))
 	{
 		return exponential_probability_distribution;
 	}
-	if (!str.compare("gamma"))
+	if (!istr.compare("gamma"))
 	{
 		return gamma_probability_distribution;
 	}
-	if (!str.compare("normal"))
+	if (!istr.compare("normal"))
 	{
 		return normal_probability_distribution;
 	}
@@ -176,19 +196,21 @@ probability_distribution_category text_to_probability_distribution_category(::st
 
 qn_node_category text_to_qn_node_category(::std::string const& str)
 {
-	if (!str.compare("delay"))
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("delay"))
 	{
 		return qn_delay_node;
 	}
-	if (!str.compare("queue"))
+	if (!istr.compare("queue"))
 	{
 		return qn_queue_node;
 	}
-	if (!str.compare("source"))
+	if (!istr.compare("source"))
 	{
 		return qn_source_node;
 	}
-	if (!str.compare("sink"))
+	if (!istr.compare("sink"))
 	{
 		return qn_sink_node;
 	}
@@ -199,11 +221,13 @@ qn_node_category text_to_qn_node_category(::std::string const& str)
 
 qn_customer_class_category text_to_qn_customer_class_category(::std::string const& str)
 {
-	if (!str.compare("closed"))
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("closed"))
 	{
 		return qn_closed_customer_class;
 	}
-	if (!str.compare("open"))
+	if (!istr.compare("open"))
 	{
 		return qn_open_customer_class;
 	}
@@ -214,7 +238,9 @@ qn_customer_class_category text_to_qn_customer_class_category(::std::string cons
 
 qn_routing_strategy_category text_to_qn_routing_strategy_category(::std::string const& str)
 {
-	if (!str.compare("probabilistic"))
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("probabilistic"))
 	{
 		return qn_probabilistic_routing_strategy;
 	}
@@ -225,11 +251,13 @@ qn_routing_strategy_category text_to_qn_routing_strategy_category(::std::string 
 
 qn_service_strategy_category text_to_qn_service_strategy_category(::std::string const& str)
 {
-	if (!str.compare("infinite-server"))
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("infinite-server"))
 	{
 		return qn_infinite_server_service_strategy;
 	}
-	if (!str.compare("load-independent"))
+	if (!istr.compare("load-independent"))
 	{
 		return qn_load_independent_service_strategy;
 	}
@@ -240,7 +268,9 @@ qn_service_strategy_category text_to_qn_service_strategy_category(::std::string 
 
 initial_placement_strategy_category text_to_initial_placement_strategy_category(::std::string const& str)
 {
-	if (!str.compare("first-fit"))
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("first-fit"))
 	{
 		return first_fit_initial_placement_strategy;
 	}
@@ -248,7 +278,92 @@ initial_placement_strategy_category text_to_initial_placement_strategy_category(
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_initial_placement_strategy_category Unknown init VM placement strategy category.");
 }
 
+
+migration_controller_category text_to_migration_controller_category(::std::string const& str)
+{
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("lp"))
+	{
+		return lp_migration_controller;
+	}
+
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_migration_controller_category Unknown migration controller category.");
+}
+
+
+application_controller_category text_to_application_controller_category(::std::string const& str)
+{
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("lqr"))
+	{
+		return lqr_application_controller;
+	}
+
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_application_controller_category Unknown application controller category.");
+}
+
+
+physical_machine_controller_category text_to_physical_machine_controller_category(::std::string const& str)
+{
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("conservative"))
+	{
+		return conservative_physical_machine_controller;
+	}
+	if (!istr.compare("proportional"))
+	{
+		return proportional_physical_machine_controller;
+	}
+
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_physical_machine_controller_category Unknown physical machine controller category.");
+}
+
 }} // Namespace detail::<unnamed>
+
+
+template <typename T>
+void operator>>(::YAML::Node const& node, numeric_matrix<T>& m)
+{
+	::std::size_t nr;
+	::std::size_t nc;
+	::std::vector<T> data;
+	bool byrow;
+	node["rows"] >> nr;
+	node["cols"] >> nc;
+	node["byrow"] >> byrow;
+	node["data"] >> data;
+	m = numeric_matrix<T>(nr, nc, data.begin(), data.end(), byrow);
+}
+
+
+template <typename T>
+void operator>>(::YAML::Node const& node, numeric_multiarray<T>& a)
+{
+	typedef ::std::size_t size_type;
+
+	::std::vector<size_type> dims;
+	::std::vector<size_type> bydims;
+	::std::vector<T> data;
+
+	node["dims"] >> dims;
+	if (node.FindValue("bydims"))
+	{
+		node["bydims"] >> bydims;
+	}
+	else
+	{
+		bydims = ::std::vector<size_type>(dims.size());
+		for (size_type i = 0; i < bydims.size(); ++i)
+		{
+			bydims[i] = i;
+		}
+	}
+	node["data"] >> data;
+	a = numeric_multiarray<T>(dims.begin(), dims.end(), data.begin(), data.end(), bydims.begin(), bydims.end());
+}
 
 
 template <typename UIntT>
@@ -370,48 +485,6 @@ void operator>>(::YAML::Node const& node, simulation_config<RealT,UIntT>& sim)
 			}
 			break;
 	}
-}
-
-
-template <typename T>
-void operator>>(::YAML::Node const& node, numeric_matrix<T>& m)
-{
-	::std::size_t nr;
-	::std::size_t nc;
-	::std::vector<T> data;
-	bool byrow;
-	node["rows"] >> nr;
-	node["cols"] >> nc;
-	node["byrow"] >> byrow;
-	node["data"] >> data;
-	m = numeric_matrix<T>(nr, nc, data.begin(), data.end(), byrow);
-}
-
-
-template <typename T>
-void operator>>(::YAML::Node const& node, numeric_multiarray<T>& a)
-{
-	typedef ::std::size_t size_type;
-
-	::std::vector<size_type> dims;
-	::std::vector<size_type> bydims;
-	::std::vector<T> data;
-
-	node["dims"] >> dims;
-	if (node.FindValue("bydims"))
-	{
-		node["bydims"] >> bydims;
-	}
-	else
-	{
-		bydims = ::std::vector<size_type>(dims.size());
-		for (size_type i = 0; i < bydims.size(); ++i)
-		{
-			bydims[i] = i;
-		}
-	}
-	node["data"] >> data;
-	a = numeric_multiarray<T>(dims.begin(), dims.end(), data.begin(), data.end(), bydims.begin(), bydims.end());
 }
 
 
@@ -1060,6 +1133,38 @@ void operator>>(::YAML::Node const& node, application_tier_config<RealT>& tier)
 }
 
 
+template <typename RealT>
+void operator>>(::YAML::Node const& node, application_controller_config<RealT>& controller_conf)
+{
+	typedef application_controller_config<RealT> controller_config_type;
+
+	::std::string label;
+
+	// Read controller category
+	node["type"] >> label;
+	controller_conf.category = detail::text_to_application_controller_category(label);
+	switch (controller_conf.category)
+	{
+		case lqr_application_controller:
+			{
+				typedef typename controller_config_type::lqr_controller_config_type controller_config_impl_type;
+
+				controller_config_impl_type controller_conf_impl;
+
+				controller_conf.category_conf = controller_conf_impl;
+			}
+			break;
+	}
+
+	// Read sampling time
+	node["sampling-time"] >> controller_conf.sampling_time;
+	if (controller_conf.sampling_time <= 0)
+	{
+		throw ::std::runtime_error("[dcs::eesim::config::>>] Invalid sampling time for application controller: non-positive value.");
+	}
+}
+
+
 template <typename RealT, typename UIntT>
 void operator>>(::YAML::Node const& node, application_config<RealT,UIntT>& app)
 {
@@ -1107,6 +1212,8 @@ void operator>>(::YAML::Node const& node, application_config<RealT,UIntT>& app)
 			app.tiers.push_back(tier);
 		}
 	}
+	// Read controller
+	node["controller"] >> app.controller;
 }
 
 
@@ -1168,6 +1275,47 @@ void operator>>(::YAML::Node const& node, physical_resource_config<RealT>& res)
 
 
 template <typename RealT>
+void operator>>(::YAML::Node const& node, physical_machine_controller_config<RealT>& controller_conf)
+{
+	typedef physical_machine_controller_config<RealT> controller_config_type;
+
+	::std::string label;
+
+	// Read controller category
+	node["type"] >> label;
+	controller_conf.category = detail::text_to_physical_machine_controller_category(label);
+	switch (controller_conf.category)
+	{
+		case conservative_physical_machine_controller:
+			{
+				typedef typename controller_config_type::conservative_controller_config_type controller_config_impl_type;
+
+				controller_config_impl_type controller_conf_impl;
+
+				controller_conf.category_conf = controller_conf_impl;
+			}
+			break;
+		case proportional_physical_machine_controller:
+			{
+				typedef typename controller_config_type::proportional_controller_config_type controller_config_impl_type;
+
+				controller_config_impl_type controller_conf_impl;
+
+				controller_conf.category_conf = controller_conf_impl;
+			}
+			break;
+	}
+
+	// Read sampling time
+	node["sampling-time"] >> controller_conf.sampling_time;
+	if (controller_conf.sampling_time <= 0)
+	{
+		throw ::std::runtime_error("[dcs::eesim::config::>>] Invalid sampling time for physical machine controller: non-positive value.");
+	}
+}
+
+
+template <typename RealT>
 void operator>>(::YAML::Node const& node, physical_machine_config<RealT>& mach)
 {
 	// Read (optional) name
@@ -1196,7 +1344,70 @@ void operator>>(::YAML::Node const& node, physical_machine_config<RealT>& mach)
 			mach.resources[category] = resource_conf;
 		}
 	}
+	// Read controller
+	{
+		node["controller"] >> mach.controller;
+	}
 }
+
+
+void operator>>(::YAML::Node const& node, initial_placement_strategy_config& strategy_conf)
+{
+	typedef initial_placement_strategy_config strategy_config_type;
+
+	::std::string label;
+
+	node["type"] >> label;
+
+	strategy_conf.category = detail::text_to_initial_placement_strategy_category(label);
+
+	switch (strategy_conf.category)
+	{
+		case first_fit_initial_placement_strategy:
+			{
+				typedef typename strategy_config_type::first_fit_initial_placement_strategy_config_type strategy_config_impl_type;
+
+				strategy_config_impl_type strategy_conf_impl;
+
+				strategy_conf.category_conf = strategy_conf_impl;
+			}
+			break;
+	}
+}
+
+
+template <typename RealT>
+void operator>>(::YAML::Node const& node, migration_controller_config<RealT>& controller_conf)
+{
+	typedef migration_controller_config<RealT> controller_config_type;
+
+	::std::string label;
+
+	node["type"] >> label;
+
+	controller_conf.category = detail::text_to_migration_controller_category(label);
+
+	switch (controller_conf.category)
+	{
+		case lp_migration_controller:
+			{
+				typedef typename controller_config_type::lp_migration_controller_config_type controller_config_impl_type;
+
+				controller_config_impl_type controller_conf_impl;
+
+				controller_conf.category_conf = controller_conf_impl;
+			}
+			break;
+	}
+
+	// Read sampling time
+	node["sampling-time"] >> controller_conf.sampling_time;
+	if (controller_conf.sampling_time <= 0)
+	{
+		throw ::std::runtime_error("[dcs::eesim::config::>>] Invalid sampling time for migration controller: non-positive value.");
+	}
+}
+
 
 template <typename RealT, typename UIntT>
 class yaml_reader
@@ -1318,25 +1529,27 @@ class yaml_reader
 			}
 			// Initial placement
 			{
+				typedef typename data_center_config_type::initial_placement_strategy_config_type initial_placement_strategy_config_type;
+
 				::YAML::Node const& subnode = node["initial-placement-strategy"];
-				subnode["type"] >> label;
 
-				dc.initial_placement_category(
-					detail::text_to_initial_placement_strategy_category(label)
-				);
+				initial_placement_strategy_config_type strategy;
 
-				switch (dc.initial_placement_category())
-				{
-					case first_fit_initial_placement_strategy:
-						{
-							typedef first_fit_initial_placement_strategy_config initial_placement_config_type;
+				subnode >> strategy;
 
-							initial_placement_config_type initial_placement_conf;
+				dc.initial_placement_strategy(strategy);
+			}
+			// Migration controller
+			{
+				typedef typename data_center_config_type::migration_controller_config_type migration_controller_config_type;
 
-							dc.initial_placement_strategy_conf(initial_placement_conf);
-						}
-						break;
-				}
+				::YAML::Node const& subnode = node["migration-controller"];
+
+				migration_controller_config_type controller;
+
+				subnode >> controller;
+
+				dc.migration_controller(controller);
 			}
 
 			conf.data_center(dc);

@@ -3,6 +3,7 @@
 
 
 #include <algorithm>
+#include <dcs/eesim/config/application_controller.hpp>
 #include <dcs/eesim/config/application_performance_model.hpp>
 #include <dcs/eesim/config/application_simulation_model.hpp>
 #include <dcs/eesim/config/application_sla.hpp>
@@ -24,13 +25,18 @@ struct application_config
 	typedef UIntT uint_type;
 	typedef ::std::map<physical_resource_category,real_type> reference_resource_container;
 	typedef ::std::vector< application_tier_config<real_type> > tier_container;
+	typedef application_performance_model_config<real_type,uint_type> performance_model_config_type;
+	typedef application_simulation_model_config<real_type,uint_type> simulation_model_config_type;
+	typedef application_sla_config<real_type> sla_config_type;
+	typedef application_controller_config<RealT> controller_config_type;
 
 	::std::string name;
-	application_performance_model_config<real_type,uint_type> perf_model;
-	application_simulation_model_config<real_type,uint_type> sim_model;
-	application_sla_config<real_type> sla;
+	performance_model_config_type perf_model;
+	simulation_model_config_type sim_model;
+	sla_config_type sla;
 	reference_resource_container reference_resources;
 	tier_container tiers;
+	controller_config_type controller;
 };
 
 template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
@@ -57,25 +63,28 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 		{
 			os << ", ";
 		}
-		::std::string res;
-		switch (it->first)
-		{
-			case cpu_resource:
-				res = "cpu";
-				break;
-			case mem_resource:
-				res = "mem";
-				break;
-			case disk_resource:
-				res = "disk";
-				break;
-			case nic_resource:
-				res = "nic";
-				break;
-		}
-		os << res << ": " << it->second;
+//		::std::string res;
+//		switch (it->first)
+//		{
+//			case cpu_resource:
+//				res = "cpu";
+//				break;
+//			case mem_resource:
+//				res = "mem";
+//				break;
+//			case disk_resource:
+//				res = "disk";
+//				break;
+//			case nic_resource:
+//				res = "nic";
+//				break;
+//		}
+//		os << res << ": " << it->second;
+		os << it->first << ": " << it->second;
 	}
 	os << "}";
+
+	os << ", " << app.controller;
 
 	os << ">";
 

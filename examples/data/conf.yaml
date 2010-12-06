@@ -32,6 +32,9 @@ simulation:
 data-center:
     initial-placement-strategy:
         type: first-fit
+    migration-controller:
+        type: lp
+        sampling-time: 100
     physical-machines:
         - physical-machine: !dcs-eesim!phymach
             name: Mach 1
@@ -53,6 +56,9 @@ data-center:
                     energy-model:
                         type: constant
                         c0: 1.687
+            controller:
+                type: conservative
+                sampling-time: 10
         - physical-machine: !dcs-eesim!phymach
             name: Mach 2
             resources:
@@ -70,6 +76,9 @@ data-center:
                     energy-model:
                         type: constant
                         c0: 0.687
+            controller:
+                type: conservative
+                sampling-time: 10
         - physical-machine: !dcs-eesim!phymach
             name: Mach 3
             resources:
@@ -87,6 +96,9 @@ data-center:
                     energy-model:
                         type: constant
                         c0: 1.039
+            controller:
+                type: conservative
+                sampling-time: 10
 
 
     applications:
@@ -95,9 +107,12 @@ data-center:
             reference-resources:
                 cpu: 1000
                 mem: 1024
+            controller:
+                type: lqr
+                sampling-time: 10
             sla:
                 response-time:
-    #TODO            type: mean
+#TODO               type: mean
                     value: 0.1
                     cost-model:
                         type: step
@@ -124,11 +139,12 @@ data-center:
             perf-model:
                 type: open-multi-bcmp-qn
                 arrival-rates: [0.157894737]
-    #            routing-probabilities: !dcs-eesim!matrix
-    #                rows: 3
-    #                cols: 1
-    #                byrow: true
-    #                data: [..., ..., ...]
+#Alternative to 'visit-ratios'
+#               routing-probabilities: !dcs-eesim!matrix
+#                   rows: 3
+#                   cols: 1
+#                   byrow: true
+#                   data: [..., ..., ...]
                 visit-ratios:
                     rows: 1
                     cols: 3
