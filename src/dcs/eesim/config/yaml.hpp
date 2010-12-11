@@ -189,6 +189,10 @@ probability_distribution_category text_to_probability_distribution_category(::st
 	{
 		return normal_probability_distribution;
 	}
+	if (!istr.compare("map"))
+	{
+		return map_probability_distribution;
+	}
 
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_probability_distribution_category] Unknown probability distribution category.");
 }
@@ -300,6 +304,10 @@ application_controller_category text_to_application_controller_category(::std::s
 	{
 		return lqr_application_controller;
 	}
+	if (!istr.compare("none") || !istr.compare("dummy"))
+	{
+		return dummy_application_controller;
+	}
 
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_application_controller_category Unknown application controller category.");
 }
@@ -319,6 +327,22 @@ physical_machine_controller_category text_to_physical_machine_controller_categor
 	}
 
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_physical_machine_controller_category Unknown physical machine controller category.");
+}
+
+map_probability_distribution_characterization_category text_to_map_characterization_category(::std::string const& str)
+{
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("standard"))
+	{
+		return standard_map_characterization;
+	}
+	if (!istr.compare("casale-2009"))
+	{
+		return casale2009_map_characterization;
+	}
+
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_map_characterization_category Unknown MAP characterization category.");
 }
 
 }} // Namespace detail::<unnamed>
@@ -389,17 +413,18 @@ void operator>>(::YAML::Node const& node, rng_config<UIntT>& rng)
 template <typename RealT>
 void operator>>(::YAML::Node const& node, statistic_config<RealT>& stat)
 {
+	// Read category
 	if (node.FindValue("type"))
 	{
-		statistic_category category;
 		::std::string label;
 		node["type"] >> label;
-		category = detail::text_to_statistic_category(label);
+		stat.type = detail::text_to_statistic_category(label);
 	}
 	else
 	{
 		stat.type = mean_statistic;
 	}
+	// Read precision
 	if (node.FindValue("precision"))
 	{
 		node["precision"] >> stat.precision;
@@ -408,6 +433,7 @@ void operator>>(::YAML::Node const& node, statistic_config<RealT>& stat)
 	{
 		stat.precision = ::std::numeric_limits<RealT>::infinity();
 	}
+	// Read confidence level
 	if (node.FindValue("confidence-level"))
 	{
 		node["confidence-level"] >> stat.confidence_level;
@@ -469,12 +495,9 @@ void operator>>(::YAML::Node const& node, simulation_config<RealT,UIntT>& sim)
 	::YAML::Node const& subnode = node["output-analysis"];
 	subnode["type"] >> label;
 
-	output_analysis_category category;
-	category = detail::text_to_output_analysis_category(label);
+	sim.output_analysis_type = detail::text_to_output_analysis_category(label);
 
-	sim.output_analysis_type = category;
-
-	switch (category)
+	switch (sim.output_analysis_type)
 	{
 		case independent_replications_output_analysis:
 			{
@@ -549,7 +572,7 @@ void operator>>(::YAML::Node const& node, probability_distribution_config<RealT>
 			{
 				typedef typename distribution_config_type::exponential_distribution_config_type distribution_config_impl_type;
 
-				distribution_config_impl_type& distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
+				distribution_config_impl_type distr_conf_impl;
 
 				node["rate"] >> distr_conf_impl.rate;
 
@@ -560,10 +583,58 @@ void operator>>(::YAML::Node const& node, probability_distribution_config<RealT>
 			{
 				typedef typename distribution_config_type::gamma_distribution_config_type distribution_config_impl_type;
 
-				distribution_config_impl_type& distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
+				distribution_config_impl_type distr_conf_impl;
 
 				node["scale"] >> distr_conf_impl.scale;
 				node["shape"] >> distr_conf_impl.shape;
+
+				distr_conf.category_conf = distr_conf_impl;
+			}
+			break;
+		case map_probability_distribution:
+			{
+				typedef typename distribution_config_type::map_distribution_config_type distribution_config_impl_type;
+
+				distribution_config_impl_type distr_conf_impl;
+
+				if (node.FindValue("characterization"))
+				{
+					node["characterization"] >> label;
+				}
+				else
+				{
+					label = "standard";
+				}
+				distr_conf_impl.characterization_category = detail::text_to_map_characterization_category(label);
+
+				switch (distr_conf_impl.characterization_category)
+				{
+					case standard_map_characterization:
+						{
+							typedef typename distribution_config_impl_type::standard_characterization_config_type characterization_type;
+
+							characterization_type characterization;
+
+							node["D0"] >> characterization.D0;
+							node["D1"] >> characterization.D1;
+
+							distr_conf_impl.characterization_conf = characterization;
+						}
+						break;
+					case casale2009_map_characterization:
+						{
+							typedef typename distribution_config_impl_type::casale2009_characterization_config_type characterization_type;
+
+							characterization_type characterization;
+
+							node["order"] >> characterization.order;
+							node["m"] >> characterization.mean;
+							node["id"] >> characterization.id;
+
+							distr_conf_impl.characterization_conf = characterization;
+						}
+						break;
+				}
 
 				distr_conf.category_conf = distr_conf_impl;
 			}
@@ -572,7 +643,7 @@ void operator>>(::YAML::Node const& node, probability_distribution_config<RealT>
 			{
 				typedef typename distribution_config_type::normal_distribution_config_type distribution_config_impl_type;
 
-				distribution_config_impl_type& distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
+				distribution_config_impl_type distr_conf_impl;
 
 				node["mean"] >> distr_conf_impl.mean;
 				node["sd"] >> distr_conf_impl.sd;
@@ -1154,13 +1225,29 @@ void operator>>(::YAML::Node const& node, application_controller_config<RealT>& 
 				controller_conf.category_conf = controller_conf_impl;
 			}
 			break;
+		case dummy_application_controller:
+			{
+				typedef typename controller_config_type::dummy_controller_config_type controller_config_impl_type;
+
+				controller_config_impl_type controller_conf_impl;
+
+				controller_conf.category_conf = controller_conf_impl;
+			}
+			break;
 	}
 
 	// Read sampling time
-	node["sampling-time"] >> controller_conf.sampling_time;
-	if (controller_conf.sampling_time <= 0)
+	if (controller_conf.category != dummy_application_controller)
 	{
-		throw ::std::runtime_error("[dcs::eesim::config::>>] Invalid sampling time for application controller: non-positive value.");
+		node["sampling-time"] >> controller_conf.sampling_time;
+		if (controller_conf.sampling_time <= 0)
+		{
+			throw ::std::runtime_error("[dcs::eesim::config::>>] Invalid sampling time for application controller: non-positive value.");
+		}
+	}
+	else
+	{
+		controller_conf.sampling_time = 0;
 	}
 }
 

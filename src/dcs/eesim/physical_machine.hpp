@@ -64,7 +64,8 @@ class physical_machine
 		: id_(traits_type::invalid_physical_machine_id),
 		  name_(name),
 		  power_status_(powered_off_power_status),
-		  cost_(0)
+		  cost_(0),
+		  ptr_vmm_(::dcs::make_shared<vmm_type>())
 	{
 	}
 

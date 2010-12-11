@@ -129,9 +129,10 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, simulation_config<RealT,UIntT> const& sim)
 {
 	os << "<(simulation)"
-	   << " output-analysis: " << sim.output_analysis_type;
-
-	os << ", ";
+	   << " " << sim.output_analysis_conf
+	   << ">";
+//	   << " output-analysis: " << sim.output_analysis_type;
+/*
 	switch (sim.output_analysis_type)
 	{
 		case independent_replications_output_analysis:
@@ -144,6 +145,7 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 	}
 
 	os << ">";
+*/
 
 	return os;
 }

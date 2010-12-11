@@ -32,8 +32,6 @@
 #include <dcs/eesim/base_application_controller.hpp>
 #include <dcs/eesim/base_application_performance_model.hpp>
 #include <dcs/eesim/base_application_simulation_model.hpp>
-#include <dcs/eesim/base_initial_placement_strategy.hpp>
-#include <dcs/eesim/base_migration_controller.hpp>
 #include <dcs/eesim/base_physical_machine_controller.hpp>
 #include <dcs/eesim/config/application.hpp>
 #include <dcs/eesim/config/application_controller.hpp>
@@ -42,15 +40,12 @@
 #include <dcs/eesim/config/application_sla.hpp>
 #include <dcs/eesim/config/application_tier.hpp>
 #include <dcs/eesim/config/configuration.hpp>
-#include <dcs/eesim/config/initial_placement_strategy.hpp>
-#include <dcs/eesim/config/migration_controller.hpp>
 #include <dcs/eesim/config/physical_machine.hpp>
 #include <dcs/eesim/config/physical_resource.hpp>
 #include <dcs/eesim/config/probability_distribution.hpp>
 #include <dcs/eesim/conservative_physical_machine_controller.hpp>
 #include <dcs/eesim/data_center.hpp>
-#include <dcs/eesim/first_fit_initial_placement_strategy.hpp>
-#include <dcs/eesim/lp_migration_controller.hpp>
+#include <dcs/eesim/dummy_application_controller.hpp>
 #include <dcs/eesim/lqr_application_controller.hpp>
 #include <dcs/eesim/multi_tier_application.hpp>
 #include <dcs/eesim/open_multi_bcmp_qn_application_performance_model.hpp>
@@ -83,6 +78,28 @@ struct simulation_info
 	::dcs::shared_ptr<uniform_random_generator_type> ptr_rng;
 	::dcs::shared_ptr<des_engine_type> ptr_engine;
 };
+
+
+template <typename T>
+::boost::numeric::ublas::matrix<T> make_ublas_matrix(numeric_matrix<T> const& m)
+{
+	typedef typename numeric_matrix<T>::size_type size_type;
+
+	size_type nr = m.num_rows();
+	size_type nc = m.num_columns();
+
+	::boost::numeric::ublas::matrix<T> res(nr, nc);
+
+	for (size_type r = 0; r < nr; ++r)
+	{
+		for (size_type c = 0; c < nc; ++c)
+		{
+			res(r,c) = m(r,c);
+		}
+	}
+
+	return res;
+}
 
 
 ::dcs::eesim::physical_resource_category make_physical_resource_category(::dcs::eesim::config::physical_resource_category category)
@@ -191,7 +208,9 @@ template <typename TraitsT, typename RealT>
 	iterator end_it = machine_conf.resources.end();
 	for (iterator it = machine_conf.resources.begin(); it != end_it; ++it)
 	{
-		make_physical_resource<TraitsT>(it->second);
+		ptr_mach->add_resource(
+			make_physical_resource<TraitsT>(it->second)
+		);
 	}
 
 	return ptr_mach;
@@ -372,6 +391,40 @@ template <typename RealT>
 				distr = ::dcs::math::stats::make_any_distribution(distribution_impl_type(distr_conf_impl.mean, distr_conf_impl.sd));
 			}
 			break;
+		case map_probability_distribution:
+			{
+				typedef typename distribution_config_type::map_distribution_config_type distribution_config_impl_type;
+				typedef ::dcs::math::stats::map_distribution<real_type> distribution_impl_type;
+
+				distribution_config_impl_type const& distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
+				//ptr_distr = ::dcs::make_shared<distribution_impl_type>(distr_conf_impl.mean, distr_conf_impl.sd);
+
+				switch (distr_conf_impl.characterization_category)
+				{
+					case standard_map_characterization:
+						{
+							typedef typename distribution_config_impl_type::standard_characterization_config_type characterization_config_impl_type;
+							typedef ::boost::numeric::ublas::matrix<real_type> matrix_type;
+
+							characterization_config_impl_type const& characterization_conf_impl = ::boost::get<characterization_config_impl_type>(distr_conf_impl.characterization_conf);
+
+							matrix_type D0;
+							matrix_type D1;
+
+							D0 = make_ublas_matrix(characterization_conf_impl.D0);
+							D1 = make_ublas_matrix(characterization_conf_impl.D1);
+
+							distr = ::dcs::math::stats::make_any_distribution(distribution_impl_type(D0, D1));
+						}
+						break;
+					case casale2009_map_characterization:
+						{
+							throw ::std::runtime_error("CASALE2009 not yet handled");
+						}
+						break;
+				}
+			}
+			break;
 	}
 
 	return distr;
@@ -470,8 +523,8 @@ template <typename TraitsT, typename RealT, typename UIntT>
 											{
 												ptr_routing_impl->add_route(node_it->id,
 																			(route_it.index())[0],
-																			(route_it.index())[1],
 																			(route_it.index())[2],
+																			(route_it.index())[1],
 																			*route_it);
 											}
 											ptr_routing = ptr_routing_impl;
@@ -548,8 +601,8 @@ template <typename TraitsT, typename RealT, typename UIntT>
 											{
 												ptr_routing_impl->add_route(node_it->id,
 																			(route_it.index())[0],
-																			(route_it.index())[1],
 																			(route_it.index())[2],
+																			(route_it.index())[1],
 																			*route_it);
 											}
 											ptr_routing = ptr_routing_impl;
@@ -618,8 +671,8 @@ template <typename TraitsT, typename RealT, typename UIntT>
 											{
 												ptr_routing_impl->add_route(node_it->id,
 																			(route_it.index())[0],
-																			(route_it.index())[1],
 																			(route_it.index())[2],
+																			(route_it.index())[1],
 																			*route_it);
 											}
 											ptr_routing = ptr_routing_impl;
@@ -710,6 +763,18 @@ template <typename TraitsT, typename RealT>
 				ptr_controller = ::dcs::make_shared<controller_impl_type>();
 			}
 			break;
+		case dummy_application_controller:
+			{
+				//typedef typename controller_config_type::dummy_controller_config_type controller_config_impl_type;
+				typedef ::dcs::eesim::dummy_application_controller<traits_type> controller_impl_type;
+
+				//controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
+
+				// Note: there is nothing to configure
+
+				ptr_controller = ::dcs::make_shared<controller_impl_type>();
+			}
+			break;
 	}
 
 	ptr_controller->sampling_time(controller_conf.sampling_time);
@@ -722,105 +787,76 @@ template <typename TraitsT, typename RealT>
 template <typename TraitsT, typename RealT, typename UIntT>
 ::dcs::shared_ptr< ::dcs::eesim::multi_tier_application<TraitsT> > make_application(application_config<RealT,UIntT> const& app_conf, simulation_info<TraitsT> const& sim_info)
 {
-	typedef ::dcs::eesim::multi_tier_application<TraitsT> application_type;
-	typedef application_config<RealT,UIntT> application_config_type;
+	typedef TraitsT traits_type;
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+	typedef ::dcs::eesim::multi_tier_application<traits_type> application_type;
+	typedef application_config<real_type,uint_type> application_config_type;
 
 	::dcs::shared_ptr<application_type> ptr_app;
 
 	ptr_app = ::dcs::make_shared<application_type>();
 
+	// Name
 	if (!app_conf.name.empty())
 	{
 		ptr_app->name(app_conf.name);
 	}
 
-	typedef typename application_config_type::reference_resource_container::const_iterator iterator;
-	iterator end_it = app_conf.reference_resources.end();
-	for (iterator it = app_conf.reference_resources.begin(); it != end_it; ++it)
+	// Tiers
 	{
-		ptr_app->reference_resource(
-			make_physical_resource_category(it->first),
-			it->second,
-			RealT(1)
-		);
+		typedef ::dcs::eesim::application_tier<traits_type> tier_type;
+		typedef typename application_config_type::tier_config_type tier_config_type;
+		typedef typename application_config_type::tier_container::const_iterator iterator;
+		typedef typename tier_config_type::share_container::const_iterator share_iterator;
+
+		iterator end_it = app_conf.tiers.end();
+		for (iterator it = app_conf.tiers.begin(); it != end_it; ++it)
+		{
+			::dcs::shared_ptr<tier_type> ptr_tier;
+
+			ptr_tier = ::dcs::make_shared<tier_type>();
+
+			ptr_tier->name(it->name);
+
+			share_iterator share_end_it = it->shares.end();
+			for (share_iterator share_it = it->shares.begin(); share_it != share_end_it; ++share_it)
+			{
+				ptr_tier->resource_share(
+					make_physical_resource_category(share_it->first),
+					share_it->second
+				);
+			}
+
+			ptr_app->tier(ptr_tier);
+		}
 	}
 
+	// Reference resources
+	{
+		typedef typename application_config_type::reference_resource_container::const_iterator iterator;
+		iterator end_it = app_conf.reference_resources.end();
+		for (iterator it = app_conf.reference_resources.begin(); it != end_it; ++it)
+		{
+			ptr_app->reference_resource(
+				make_physical_resource_category(it->first),
+				it->second,
+				RealT(1)
+			);
+		}
+	}
+
+	// Performance model
 	ptr_app->performance_model(
 		make_application_performance_model<TraitsT>(app_conf.perf_model)
 	);
 
+	// Simulation model
 	ptr_app->simulation_model(
 		make_application_simulation_model<TraitsT>(app_conf.sim_model, sim_info)
 	);
 
 	return ptr_app;
-}
-
-
-template <typename TraitsT>
-::dcs::shared_ptr< ::dcs::eesim::base_initial_placement_strategy<TraitsT> > make_initial_placement_strategy(initial_placement_strategy_config const& strategy_conf)
-{
-	typedef TraitsT traits_type;
-	typedef ::dcs::eesim::base_initial_placement_strategy<traits_type> strategy_type;
-	typedef initial_placement_strategy_config strategy_config_type;
-
-	::dcs::shared_ptr<strategy_type> ptr_strategy;
-
-	switch (strategy_conf.category)
-	{
-		case first_fit_initial_placement_strategy:
-			{
-				//typedef typename strategy_config_type::first_fit_initial_placement_strategy_config_type strategy_config_impl_type;
-				typedef ::dcs::eesim::first_fit_initial_placement_strategy<traits_type> strategy_impl_type;
-
-				//strategy_config_impl_type const& strategy_conf_impl = ::boost::get<strategy_config_impl_type>(strategy_conf.category_conf);
-
-				// Note: there is nothing to configure
-
-				ptr_strategy = ::dcs::make_shared<strategy_impl_type>();
-			}
-			break;
-	}
-
-	return ptr_strategy;
-}
-
-
-template <typename TraitsT, typename RealT>
-::dcs::shared_ptr< ::dcs::eesim::base_migration_controller<TraitsT> > make_migration_controller(migration_controller_config<RealT> const& controller_conf)
-{
-	typedef TraitsT traits_type;
-	typedef ::dcs::eesim::base_migration_controller<traits_type> controller_type;
-	typedef migration_controller_config<RealT> controller_config_type;
-
-	::dcs::shared_ptr<controller_type> ptr_controller;
-
-DCS_DEBUG_TRACE("HERE.1");//XXX
-DCS_DEBUG_TRACE("HERE.1.1 ==> " << controller_conf.category);//XXX
-	switch (controller_conf.category)
-	{
-		case lp_migration_controller:
-			{
-				//typedef typename controller_config_type::lp_migration_controller_config_type controller_config_impl_type;
-				typedef ::dcs::eesim::lp_migration_controller<traits_type> controller_impl_type;
-
-				//controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
-
-				// Note: there is nothing to configure
-
-				ptr_controller = ::dcs::make_shared<controller_impl_type>();
-			}
-			break;
-		default:
-DCS_DEBUG_TRACE("MERDA");//XXX
-	}
-DCS_DEBUG_TRACE("HERE.2");//XXX
-DCS_DEBUG_TRACE("HERE.2.1: " << ptr_controller);//XXX
-
-	ptr_controller->sampling_time(controller_conf.sampling_time);
-DCS_DEBUG_TRACE("HERE.3");//XXX
-
-	return ptr_controller;
 }
 
 }} // Namespace detail::<unnamed>
@@ -837,6 +873,17 @@ template <typename TraitsT, typename RealT, typename UIntT>
 	typedef ::dcs::eesim::data_center<traits_type> data_center_type;
 	typedef configuration<real_type,uint_type> configuration_type;
 	typedef typename configuration_type::data_center_config_type data_center_config_type;
+
+	// pre: random number generator pointer must be a valid pointer
+	DCS_ASSERT(
+		ptr_rng,
+		throw ::std::invalid_argument("[dcs::eesim::config::make_data_center] Invalid random number generator.")
+	);
+	// pre: DES engine pointer must be a valid pointer
+	DCS_ASSERT(
+		ptr_des_eng,
+		throw ::std::invalid_argument("[dcs::eesim::config::make_data_center] Invalid DES engine.")
+	);
 
 	::dcs::shared_ptr<data_center_type> ptr_dc = ::dcs::make_shared<data_center_type>();
 
@@ -881,28 +928,6 @@ template <typename TraitsT, typename RealT, typename UIntT>
 
 			ptr_dc->add_application(ptr_app, ptr_app_controller);
 		}
-	}
-
-	// Initial placement
-	{
-		::dcs::shared_ptr< ::dcs::eesim::base_initial_placement_strategy<traits_type> > ptr_strategy;
-
-		ptr_strategy = detail::make_initial_placement_strategy<traits_type>(
-							conf.data_center().initial_placement_strategy()
-			);
-
-		//TODO: add to the data center object
-	}
-
-	// Migration controller
-	{
-		::dcs::shared_ptr< ::dcs::eesim::base_migration_controller<traits_type> > ptr_controller;
-
-		ptr_controller = detail::make_migration_controller<traits_type>(
-							conf.data_center().migration_controller()
-			);
-
-		//TODO: add to the data center object
 	}
 
 	return ptr_dc;

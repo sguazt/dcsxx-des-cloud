@@ -260,21 +260,34 @@ class data_center
 		typedef typename deployed_application_container::const_iterator app_iterator;
 		typedef typename ::std::vector<virtual_machine_identifier_type>::const_iterator vm_iterator;
 
+DCS_DEBUG_TRACE("Starting applications");//XXX
+DCS_DEBUG_TRACE("Current placement: " << placement_);//XXX
 		app_iterator app_end_it(deployed_apps_.end());
+DCS_DEBUG_TRACE("HERE.1");//XXX
 		for (app_iterator app_it(deployed_apps_.begin()); app_it != app_end_it; ++app_it)
 		{
+DCS_DEBUG_TRACE("HERE.1.1");//XXX
 			application_identifier_type app_id(app_it->first);
+DCS_DEBUG_TRACE("HERE.1.2");//XXX
 
 			vm_iterator vm_end_it(app_it->second.end());
+DCS_DEBUG_TRACE("HERE.1.3");//XXX
 			bool startable(true);
+DCS_DEBUG_TRACE("HERE.1.4");//XXX
 			for (vm_iterator vm_it(app_it->second.begin()); startable && vm_it != vm_end_it; ++vm_it)
 			{
+DCS_DEBUG_TRACE("HERE.1.4.1");//XXX
 				startable = placement_.placed(*vm_it);
+DCS_DEBUG_TRACE("HERE.1.4.2");//XXX
 			}
+DCS_DEBUG_TRACE("HERE.1.5");//XXX
 
 			if (startable)
 			{
+DCS_DEBUG_TRACE("HERE.1.6");//XXX
+DCS_DEBUG_TRACE("HERE.1.6.... " << this->application_ptr(app_id));//XXX
 				this->application_ptr(app_id)->start();
+DCS_DEBUG_TRACE("HERE.1.7");//XXX
 			}
 #ifdef DCS_DEBUG
 			else
@@ -283,6 +296,7 @@ class data_center
 			}
 #endif // DCS_DEBUG
 		}
+DCS_DEBUG_TRACE("HERE.2");//XXX
 	}
 
 

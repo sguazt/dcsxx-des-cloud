@@ -23,16 +23,16 @@ template <typename RealT>
 struct physical_resource_config
 {
 	typedef RealT real_type;
+	typedef constant_energy_model_config<real_type> constant_energy_model_config_type;
+	typedef fan2007_energy_model_config<real_type> fan2007_energy_model_config_type;
 
 	::std::string name;
 	physical_resource_category type;
 	real_type capacity;
 	real_type threshold;
 	energy_model_category energy_model_type;
-	::boost::variant<
-			constant_energy_model_config<RealT>,
-			fan2007_energy_model_config<RealT>
-		> energy_model_conf;
+	::boost::variant<constant_energy_model_config_type,
+					 fan2007_energy_model_config_type> energy_model_conf;
 };
 
 
@@ -67,27 +67,33 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 	   << ", type: " << res.type
 	   << ", capacity: " << res.capacity
 	   << ", threshold: " << res.threshold
-	   << ", energy-model: ";
-
-	switch (res.energy_model_type)
-	{
-		case constant_energy_model:
-			{
-				constant_energy_model_config<RealT> model;
-				model = ::boost::get< constant_energy_model_config<RealT> >(res.energy_model_conf);
-				os << model;
-			}
-			break;
-		case fan2007_energy_model:
-			{
-				fan2007_energy_model_config<RealT> model;
-				model = ::boost::get< fan2007_energy_model_config<RealT> >(res.energy_model_conf);
-				os << model;
-			}
-			break;
-	}
-
-	os << ">";
+	   << ", " << res.energy_model_conf
+	   << ">";
+//	   << ", energy-model: ";
+//
+//	switch (res.energy_model_type)
+//	{
+//		case constant_energy_model:
+//			{
+//				typedef physical_resource_type::constant_energy_model_config_type energy_model_config_type;
+//
+//				energy_model_config_type const& model = ::boost::get<energy_model_config_type>(res.energy_model_conf);
+//
+//				os << model;
+//			}
+//			break;
+//		case fan2007_energy_model:
+//			{
+//				typedef physical_resource_type::fan2007_energy_model_config_type energy_model_config_type;
+//
+//				energy_model_config_type const& model = ::boost::get<energy_model_config_type>(res.energy_model_conf);
+//
+//				os << model;
+//			}
+//			break;
+//	}
+//
+//	os << ">";
 
 	return os;
 }

@@ -81,10 +81,12 @@ class data_center_manager
 		// precondition: pointer to vm initial placer must be a valid pointer
 		DCS_DEBUG_ASSERT( ptr_dc_ );
 
+DCS_DEBUG_TRACE("HERE.1");//XXX
 		ptr_dc_->place_virtual_machines(
 			ptr_init_placement_->placement(*ptr_dc_)
 		);
 
+DCS_DEBUG_TRACE("HERE.2");//XXX
 		ptr_dc_->start_applications();
 	}
 

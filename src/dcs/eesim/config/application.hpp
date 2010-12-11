@@ -24,6 +24,7 @@ struct application_config
 	typedef RealT real_type;
 	typedef UIntT uint_type;
 	typedef ::std::map<physical_resource_category,real_type> reference_resource_container;
+	typedef application_tier_config<real_type> tier_config_type;
 	typedef ::std::vector< application_tier_config<real_type> > tier_container;
 	typedef application_performance_model_config<real_type,uint_type> performance_model_config_type;
 	typedef application_simulation_model_config<real_type,uint_type> simulation_model_config_type;

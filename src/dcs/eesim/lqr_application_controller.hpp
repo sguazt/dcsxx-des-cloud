@@ -33,7 +33,6 @@
 //#include <boost/numeric/ublas/matrix_expression.hpp>
 #include <dcs/control/design/dlqr.hpp>
 #include <dcs/eesim/base_application_controller.hpp>
-#include <dcs/eesim/multi_tier_application.hpp>
 #include <dcs/eesim/performance_measure.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>

@@ -26,6 +26,96 @@
 #define DCS_EESIM_REGISTRY_HPP
 
 
+#define DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
+//#undef DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
+
+
+#ifdef DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
+
+
+#include <dcs/config/boost.hpp>
+
+#if !DCS_CONFIG_BOOST_CHECK_VERSION(103200) // 1.32
+#	error "Required Boost libraries >= 1.32."
+#endif
+
+#include <boost/serialization/singleton.hpp>
+
+
+namespace dcs { namespace eesim {
+
+template <typename TraitsT>
+class registry: public ::boost::serialization::singleton< registry<TraitsT> >
+{
+	private: typedef ::boost::serialization::singleton< registry<TraitsT> > base_type;
+	public: typedef TraitsT traits_type;
+	public: typedef typename traits_type::des_engine_type des_engine_type;
+	public: typedef ::dcs::shared_ptr<des_engine_type> des_engine_pointer;
+	public: typedef typename traits_type::uniform_random_generator_type uniform_random_generator_type;
+	public: typedef ::dcs::shared_ptr<uniform_random_generator_type> uniform_random_generator_pointer;
+
+
+	public: static registry& instance()
+	{
+		return base_type::get_mutable_instance();
+	}
+
+
+	public: static registry const& const_instance()
+	{
+		return base_type::get_const_instance();
+	}
+
+
+	public: void des_engine(des_engine_pointer const& ptr_engine)
+	{
+		ptr_des_eng_ = ptr_engine;
+	}
+
+
+	public: des_engine_pointer des_engine_ptr() const
+	{
+		return ptr_des_eng_;
+	}
+
+
+	public: des_engine_pointer des_engine_ptr()
+	{
+		return ptr_des_eng_;
+	}
+
+
+	public: void uniform_random_generator(uniform_random_generator_pointer const& ptr_generator)
+	{
+		ptr_rng_ = ptr_generator;
+	}
+
+
+	public: uniform_random_generator_pointer uniform_random_generator_ptr() const
+	{
+		return ptr_rng_;
+	}
+
+
+	public: uniform_random_generator_pointer uniform_random_generator_ptr()
+	{
+		return ptr_rng_;
+	}
+
+
+	protected: registry() { }
+
+
+	private: des_engine_pointer ptr_des_eng_;
+	private: uniform_random_generator_pointer ptr_rng_;
+};
+
+}} // Namespace dcs::eesim
+
+
+#else // DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
+
+
 #include <dcs/config/boost.hpp>
 
 #if !DCS_CONFIG_BOOST_CHECK_VERSION(102500) // 1.25
@@ -73,15 +163,23 @@ class singleton: ::boost::noncopyable
 	}
 
 
+	public: static T const& const_instance()
+	{
+//		::boost::call_once(init, flag_);
+		::boost::call_once(flag_, init);
+		return *ptr_t_;
+	}
+
+
 	protected: singleton() {}
 
 
-	protected: virtual ~singleton() {}
+	protected: virtual ~singleton() { }
 
 
 	private: static void init() // never throws
 	{
-		DCS_DEBUG_TRACE("Singleton initialization");
+		DCS_DEBUG_TRACE("Singleton initialization");//XXX
 
 		ptr_t_.reset(new T());
 	}
@@ -218,8 +316,10 @@ class registry: public detail::singleton< registry<TraitsT> >
 	private: uniform_random_generator_pointer ptr_rng_;
 };
 
-
 }} // Namespace dcs::eesim
+
+
+#endif // DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
 
 
 #endif // DCS_EESIM_REGISTRY_HPP

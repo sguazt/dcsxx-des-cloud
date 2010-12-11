@@ -27,6 +27,8 @@
 
 
 #include <cstddef>
+#include <dcs/assert.hpp>
+#include <dcs/debug.hpp>
 #include <dcs/eesim/application_tier.hpp>
 #include <dcs/eesim/base_application_performance_model.hpp>
 #include <dcs/eesim/base_application_simulation_model.hpp>
@@ -37,13 +39,14 @@
 #include <dcs/eesim/registry.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/perfeval/sla/any_cost_model.hpp>
-#include <dcs/perfeval/workload/enterprise/any_model.hpp>
-#include <dcs/perfeval/workload/enterprise/user_request.hpp>
+//#include <dcs/perfeval/workload/enterprise/any_model.hpp>
+//#include <dcs/perfeval/workload/enterprise/user_request.hpp>
 //#include <dcs/perfeval/workload/generator.hpp>
 #include <dcs/math/stats/function/rand.hpp>
 #include <dcs/memory.hpp>
 #include <iostream>
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -95,7 +98,7 @@ class multi_tier_application
 	public: typedef ::dcs::shared_ptr<application_tier_type> application_tier_pointer;
 //	public: typedef physical_resource<traits_type> physical_resource_type;
 //	public: typedef ::dcs::shared_ptr<physical_resource_type> physical_resource_pointer;
-	public: typedef ::dcs::perfeval::workload::enterprise::any_model<int_type,real_type> workload_model_type;
+//	public: typedef ::dcs::perfeval::workload::enterprise::any_model<int_type,real_type> workload_model_type;
 	public: typedef ::dcs::perfeval::sla::any_cost_model<real_type> sla_cost_model_type;
 	public: typedef base_application_performance_model<traits_type> performance_model_type;
 	public: typedef ::dcs::shared_ptr<performance_model_type> performance_model_pointer;
@@ -205,45 +208,69 @@ class multi_tier_application
 
 	public: void performance_model(performance_model_pointer const& ptr_model)
 	{
+		// pre: pointer to performance model must be a valid pointer
+		DCS_ASSERT(
+			ptr_model,
+			throw ::std::invalid_argument("[dcs::eesim::multi_tier_application::performance model] Invalid performance model.")
+		);
+
 		ptr_perf_model_ = ptr_model;
 	}
 
 
 	public: performance_model_type& performance_model()
 	{
+		// check: pointer to performance model must be a valid pointer.
+		DCS_DEBUG_ASSERT( ptr_perf_model_ );
+
 		return *ptr_perf_model_;
 	}
 
 
 	public: performance_model_type const& performance_model() const
 	{
+		// check: pointer to performance model must be a valid pointer.
+		DCS_DEBUG_ASSERT( ptr_perf_model_ );
+
 		return *ptr_perf_model_;
 	}
 
 
 	public: void simulation_model(simulation_model_pointer const& ptr_model)
 	{
+		// pre: pointer to simulation model must be a valid pointer
+		DCS_ASSERT(
+			ptr_model,
+			throw ::std::invalid_argument("[dcs::eesim::multi_tier_application::simulation model] Invalid simulation model.")
+		);
+
 		ptr_sim_model_ = ptr_model;
 	}
 
 
 	public: simulation_model_type& simulation_model()
 	{
+		// check: pointer to simulation model must be a valid pointer.
+		DCS_DEBUG_ASSERT( ptr_sim_model_ );
+
 		return *ptr_sim_model_;
 	}
 
 
 	public: simulation_model_type const& simulation_model() const
 	{
+		// check: pointer to simulation model must be a valid pointer.
+		DCS_DEBUG_ASSERT( ptr_sim_model_ );
+
 		return *ptr_sim_model_;
 	}
 
 
-	public: template <typename EnterpriseWorkloadModelT>
-		void workload_model(EnterpriseWorkloadModelT const& model)
-	{
-		workload_ = ::dcs::perfeval::workload::enterprise::make_any_model<EnterpriseWorkloadModelT>(model);
-	}
+//	public: template <typename EnterpriseWorkloadModelT>
+//		void workload_model(EnterpriseWorkloadModelT const& model)
+//	{
+//		workload_ = ::dcs::perfeval::workload::enterprise::make_any_model<EnterpriseWorkloadModelT>(model);
+//	}
 
 
 	public: template <typename SlaCostModelT>
@@ -279,14 +306,20 @@ class multi_tier_application
 
 	public: uint_type num_tiers() const
 	{
-		return ptr_tiers_.size();
+		return tiers_.size();
 	}
 
 
 	public: void tier(application_tier_pointer const& ptr_tier)
 	{
+		// pre: pointer to tier must be a valid pointer
+		DCS_ASSERT(
+			ptr_tier,
+			throw ::std::invalid_argument("[dcs::eesim::multi_tier_application::tier] Invalid tier.")
+		);
+
 		ptr_tier->application(this);
-		ptr_tiers_.push_back(ptr_tier);
+		tiers_.push_back(ptr_tier);
 //		ptr_tier_request_evt_srcs_.push_back(::dcs::make_shared<des_event_source_type>());
 //		ptr_tier_response_evt_srcs_.push_back(::dcs::make_shared<des_event_source_type>());
 	}
@@ -294,19 +327,25 @@ class multi_tier_application
 
 	public: application_tier_pointer const& tier(uint_type id)
 	{
-		return ptr_tiers_[id];
+		// check: id must be in a valid range
+		DCS_DEBUG_ASSERT( id < tiers_.size() );
+
+		return tiers_[id];
 	}
 
 
 	public: application_tier_pointer const& tier(uint_type id) const
 	{
-		return ptr_tiers_[id];
+		// check: id must be in a valid range
+		DCS_DEBUG_ASSERT( id < tiers_.size() );
+
+		return tiers_[id];
 	}
 
 
 	public: ::std::vector<application_tier_pointer> tiers() const
 	{
-		return ptr_tiers_;
+		return tiers_;
 	}
 
 
@@ -355,6 +394,17 @@ class multi_tier_application
 
 	public: void reference_resource(physical_resource_category category, real_type capacity, real_type threshold = real_type(1))
 	{
+		// pre: capacity > 0
+		DCS_ASSERT(
+			capacity > 0,
+			throw ::std::invalid_argument("[dcs::eesim::multi_tier_application::reference_resource] Capacity must a non-negative value.")
+		);
+		// pre: threshold > 0
+		DCS_ASSERT(
+			threshold > 0,
+			throw ::std::invalid_argument("[dcs::eesim::multi_tier_application::reference_resource] Chreshold must a non-negative value.")
+		);
+
 		ref_resources_[category] = reference_physical_resource(category, capacity, threshold);
 	}
 
@@ -433,13 +483,25 @@ class multi_tier_application
 
 	public: void start()
 	{
-		ptr_sim_model_->enable();
+		// check: pointer to simulation model is a valid pointer
+		DCS_DEBUG_ASSERT( ptr_sim_model_ );
+
+DCS_DEBUG_TRACE("STARTING APP ---> sim_ptr: " << ptr_sim_model_);//XXX
+typedef typename traits_type::uniform_random_generator_type uniform_random_generator_type;
+::dcs::shared_ptr<uniform_random_generator_type> ptr_rng = registry<traits_type>::instance().uniform_random_generator_ptr();//XXX
+DCS_DEBUG_TRACE("STARTING APP ---> ptr_rng: " << ptr_rng);//XXX
+DCS_DEBUG_TRACE("STARTING APP ---> ptr_rng::min: " << ptr_rng->min());//XXX
+DCS_DEBUG_TRACE("STARTING APP ---> ptr_rng::max: " << ptr_rng->max());//XXX
+		ptr_sim_model_->enable(true);
 	}
 
 
 	public: void stop()
 	{
-		ptr_sim_model_->disable();
+		// check: pointer to simulation model is a valid pointer
+		DCS_DEBUG_ASSERT( ptr_sim_model_ );
+
+		ptr_sim_model_->enable(false);
 	}
 
 
@@ -508,7 +570,7 @@ class multi_tier_application
 /*
 	private: void prepare_run()
 	{
-		size_type num_tiers = ptr_tiers_.size();
+		size_type num_tiers = tiers_.size();
 
 		for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 		{
@@ -548,7 +610,7 @@ class multi_tier_application
 		uniform_random_generator_pointer ptr_urng = registry<traits_type>::instance().uniform_random_generator_ptr();
 		des_engine_pointer ptr_des_engine = registry<traits_type>::instance().des_engine_ptr();
 
-		application_tier_pointer tier = ptr_tiers_.at(tier_id);
+		application_tier_pointer tier = tiers_.at(tier_id);
 
 //		// Generate service time for this tier
 //		real_type svc_time(0);
@@ -568,7 +630,7 @@ class multi_tier_application
 //		request_state request_info = evt.template unfolded_state<request_state>();
 //		request_info.svctimes[tier_id] = svc_time;
 
-		if (tier_id == (ptr_tiers_.size()-1))
+		if (tier_id == (tiers_.size()-1))
 		{
 			// The last (back-end) tier
 
@@ -586,7 +648,7 @@ class multi_tier_application
 			while (svc_time < 0);
 
 			// Save the service time of this tier
-			request_info.svctimes.resize(ptr_tiers_.size());
+			request_info.svctimes.resize(tiers_.size());
 			request_info.svctimes[tier_id] = svc_time;
 
 			// Begin the response chain
@@ -610,9 +672,9 @@ class multi_tier_application
 		// forward the incoming request to each tier by generating many
 		// sub-requests (one for each tier).
 
-//		typename tier_container::iterator it_begin = ptr_tiers_.begin();
-//		typename tier_container::iterator it_end = ptr_tiers_.end();
-//		typename tier_container::iterator it_prev = ptr_tiers_.begin();
+//		typename tier_container::iterator it_begin = tiers_.begin();
+//		typename tier_container::iterator it_end = tiers_.end();
+//		typename tier_container::iterator it_prev = tiers_.begin();
 //		for (
 //			typename tier_container::iterator it = it_begin;
 //			it != it_end;
@@ -653,7 +715,7 @@ class multi_tier_application
 		uniform_random_generator_pointer ptr_urng = registry<traits_type>::instance().uniform_random_generator_ptr();
 		des_engine_pointer ptr_des_engine = registry<traits_type>::instance().des_engine_ptr();
 
-		application_tier_pointer tier = ptr_tiers_.at(tier_id);
+		application_tier_pointer tier = tiers_.at(tier_id);
 
 		real_type svc_time(0);
 
@@ -672,7 +734,7 @@ class multi_tier_application
 
 		// Save the service time of this tier
 		request_info.svctimes[tier_id] = svc_time;
-		if (tier_id < (ptr_tiers_.size()-1))
+		if (tier_id < (tiers_.size()-1))
 		{
 			// Not in the last tier: the service time of tier k is the sum of service time of tiers k,k+1,..N
 			request_info.svctimes[tier_id] += request_info.svctimes[tier_id+1];
@@ -740,8 +802,8 @@ class multi_tier_application
 
 	private: identifier_type id_;
 	private: ::std::string name_;
-	private: tier_container ptr_tiers_;
-	private: workload_model_type workload_;
+	private: tier_container tiers_;
+//	private: workload_model_type workload_;
 	private: sla_cost_model_type sla_cost_;
 //	private: controller_type controller_;
 	private: resource_container ref_resources_;

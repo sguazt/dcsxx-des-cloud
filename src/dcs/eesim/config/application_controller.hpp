@@ -11,7 +11,13 @@ namespace dcs { namespace eesim { namespace config {
 
 enum application_controller_category
 {
+	dummy_application_controller,
 	lqr_application_controller
+};
+
+
+struct dummy_application_controller_config
+{
 };
 
 
@@ -25,10 +31,12 @@ struct application_controller_config
 {
 	typedef RealT real_type;
 	typedef lqr_application_controller_config lqr_controller_config_type;
+	typedef dummy_application_controller_config dummy_controller_config_type;
 
 	real_type sampling_time;
 	application_controller_category category;
-	::boost::variant<lqr_controller_config_type> category_conf;
+	::boost::variant<lqr_controller_config_type,
+					 dummy_controller_config_type> category_conf;
 };
 
 
@@ -40,7 +48,21 @@ template <typename CharT, typename CharTraitsT>
 		case lqr_application_controller:
 			os << "lqr";
 			break;
+		case dummy_application_controller:
+			os << "lqr";
+			break;
 	}
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, dummy_application_controller_config const& controller)
+{
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( controller );
+
+	os << "<(dummy-application-controller)>";
 
 	return os;
 }

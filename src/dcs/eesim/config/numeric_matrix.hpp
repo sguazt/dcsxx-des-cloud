@@ -19,6 +19,7 @@ class numeric_matrix
 	public: typedef T value_type;
 
 
+	/// A constructor
 	public: numeric_matrix()
 	: nr_(0),
 	  nc_(0),
@@ -27,89 +28,85 @@ class numeric_matrix
 	}
 
 
+	/// A constructor
 	public: template <typename ForwardIterT>
 		numeric_matrix(size_type r, size_type c, ForwardIterT data_first, ForwardIterT data_last, bool byrow)
 		: nr_(r),
 		  nc_(c),
 		  data_(0)
+	{
+		// pre: #rows > 0
+		DCS_ASSERT(
+			nr_ > 0,
+			throw ::std::invalid_argument("[dcs::eesim::config::numeric_matrix::ctor] Invalid number of rows.")
+		);
+		// pre: #columns > 0
+		DCS_ASSERT(
+			nc_ > 0,
+			throw ::std::invalid_argument("[dcs::eesim::config::numeric_matrix::ctor] Invalid number of columns.")
+		);
+		// pre: size == distance of data_last from data_first
+		DCS_ASSERT(
+			static_cast< ::std::ptrdiff_t >(nr_*nc_) == ::std::distance(data_first, data_last),
+			throw ::std::invalid_argument("[dcs::eesim::config::numeric_matrix::ctor] Unsufficient number of data.")
+		);
+
+		size_type sz = nr_*nc_;
+		//::std::ptrdiff_t datasz = ::std::distance(data_first, data_last);
+
+		data_ = new value_type[sz];
+
+		if (byrow)
 		{
-			// pre: #rows > 0
-			DCS_ASSERT(
-				nr_ > 0,
-				throw ::std::invalid_argument("[dcs::eesim::config::numeric_matrix::ctor] Invalid number of rows.")
-			);
-			// pre: #columns > 0
-			DCS_ASSERT(
-				nc_ > 0,
-				throw ::std::invalid_argument("[dcs::eesim::config::numeric_matrix::ctor] Invalid number of columns.")
-			);
-			// pre: size == distance of data_last from data_first
-			DCS_ASSERT(
-				static_cast< ::std::ptrdiff_t >(nr_*nc_) == ::std::distance(data_first, data_last),
-				throw ::std::invalid_argument("[dcs::eesim::config::numeric_matrix::ctor] Unsufficient number of data.")
-			);
-
-			size_type sz = nr_*nc_;
-			//::std::ptrdiff_t datasz = ::std::distance(data_first, data_last);
-
-			data_ = new value_type[sz];
-			if (!data_)
-			{
-				throw ::std::runtime_error("[dcs::eesim::config::numeric_matrix::ctor] Insufficient space for storing the matrix.");
-			}
-
-			if (byrow)
-			{
-				for (size_type r = 0; r < nr_; ++r)
-				{
-					for (size_type c = 0; c < nc_; ++c)
-					{
-						if (data_first != data_last)
-						{
-							data_[index(r,c)] = *data_first;
-							++data_first;
-						}
-						else
-						{
-							data_[index(r,c)] = value_type/*zero*/();
-						}
-					}
-				}
-			}
-			else
+			for (size_type r = 0; r < nr_; ++r)
 			{
 				for (size_type c = 0; c < nc_; ++c)
 				{
-					for (size_type r = 0; r < nr_; ++r)
+					if (data_first != data_last)
 					{
-						if (data_first != data_last)
-						{
-							data_[index(r,c)] = *data_first;
-							++data_first;
-						}
-						else
-						{
-							data_[index(r,c)] = value_type/*zero*/();
-						}
+						data_[make_index(r,c)] = *data_first;
+						++data_first;
+					}
+					else
+					{
+						data_[make_index(r,c)] = value_type/*zero*/();
 					}
 				}
 			}
 		}
+		else
+		{
+			for (size_type c = 0; c < nc_; ++c)
+			{
+				for (size_type r = 0; r < nr_; ++r)
+				{
+					if (data_first != data_last)
+					{
+						data_[make_index(r,c)] = *data_first;
+						++data_first;
+					}
+					else
+					{
+						data_[make_index(r,c)] = value_type/*zero*/();
+					}
+				}
+			}
+		}
+	}
 
+
+	/// Copy constructor.
 	public: numeric_matrix(numeric_matrix const& that)
 	{
 		nr_ = that.nr_;
 		nc_ = that.nc_;
 		size_type sz = nr_*nc_;
 		data_ = new value_type[sz];
-		if (!data_)
-		{
-			throw ::std::runtime_error("[dcs::eesim::config::numeric_matrix::copy_ctor] Insufficient space for storing the matrix.");
-		}
 		::std::copy(that.data_, that.data_+sz, data_);
 	}
 
 
+	/// The destructor.
 	public: virtual ~numeric_matrix()
 	{
 		if (data_)
@@ -119,6 +116,7 @@ class numeric_matrix
 	}
 
 
+	/// The copy assignement.
 	public: numeric_matrix& operator=(numeric_matrix const& rhs)
 	{
 		if (&rhs != this)
@@ -131,10 +129,6 @@ class numeric_matrix
 			}
 			size_type sz = nr_*nc_;
 			data_ = new value_type[sz];
-			if (!data_)
-			{
-				throw ::std::runtime_error("[dcs::eesim::config::numeric_matrix::=] Insufficient space for storing the matrix.");
-			}
 			::std::copy(rhs.data_, rhs.data_+sz, data_);
 		}
 		return *this;
@@ -171,7 +165,7 @@ class numeric_matrix
 			throw ::std::invalid_argument("[dcs::des::eesim::config::numeric_matrix::()] Columns out of range.")
 		);
 
-		return data_[index(r,c)];
+		return data_[make_index(r,c)];
 	}
 
 
@@ -193,7 +187,7 @@ class numeric_matrix
 			throw ::std::invalid_argument("[dcs::des::eesim::config::numeric_matrix::()] Columns out of range.")
 		);
 
-		return data_[index(r,c)];
+		return data_[make_index(r,c)];
 	}
 
 
@@ -203,7 +197,7 @@ class numeric_matrix
 	}
 
 
-	private: size_type index(size_type r, size_type c) const
+	private: size_type make_index(size_type r, size_type c) const
 	{
 		// Use the row-major order
 		return r*nc_+c;
