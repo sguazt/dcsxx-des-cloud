@@ -30,11 +30,8 @@ template <typename RealT>
 struct sla_metric_config
 {
 	typedef RealT real_type;
-	typedef step_sla_model_config<real_type> step_sla_model_config_type;
 
 	real_type value;
-	sla_model_category model_type;
-	::boost::variant<step_sla_model_config_type> model_conf;
 };
 
 
@@ -43,8 +40,11 @@ struct application_sla_config
 {
 	typedef RealT real_type;
 	typedef sla_metric_config<real_type> sla_metric_config_type;
+	typedef step_sla_model_config<real_type> step_sla_model_config_type;
 	typedef ::std::map<metric_category,sla_metric_config_type> metric_container;
 
+	sla_model_category category;
+	::boost::variant<step_sla_model_config_type> category_conf;
 	metric_container metrics;
 };
 
@@ -66,6 +66,7 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 {
 	os << "<(sla)";
 	typedef typename  application_sla_config<RealT>::metric_container::const_iterator iterator;
+	os << " " << sla.category_conf;
 	iterator begin_it = sla.metrics.begin();
 	iterator end_it = sla.metrics.end();
 	os << " {";
@@ -77,21 +78,6 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 		}
 		os << it->first << ": {";
 		os << "value: " << it->second.value;
-		os << ", " << it->second.model_conf;
-/*
-		switch (it->second.model_type)
-		{
-			case step_sla_model:
-				{
-					os << ", <(step)";
-					step_sla_model_config<RealT> const& model_conf = ::boost::get< step_sla_model_config<RealT> >(it->second.model_conf);
-					os <<  " revenue: " << model_conf.revenue
-					   << ", penalty: " << model_conf.penalty;
-					os << ">";
-				}
-				break;
-		}
-*/
 		os << "}";
 	}
 	os << "}";

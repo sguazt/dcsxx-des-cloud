@@ -31,6 +31,8 @@
 #include <dcs/iterator/iterator_range.hpp>
 #include <dcs/type_traits/add_const.hpp>
 #include <dcs/type_traits/add_reference.hpp>
+#include <dcs/type_traits/remove_reference.hpp>
+#include <vector>
 
 
 namespace dcs { namespace perfeval { namespace sla {
@@ -39,12 +41,20 @@ template <
 	typename SlaCostModelT,
 	 typename SlaCostModelTraitsT=typename ::dcs::type_traits::remove_reference<SlaCostModelT>::type
 >
-class cost_model_adaptor: public base_cost_model<typename SlaCostModelTraitsT::real_type>
+class cost_model_adaptor: public base_cost_model<typename SlaCostModelTraitsT::metric_category_type,
+												 typename SlaCostModelTraitsT::value_type,
+												 typename SlaCostModelTraitsT::real_type>
 {
+	public: typedef SlaCostModelT model_type;
+	public: typedef typename SlaCostModelTraitsT::metric_category_type metric_category_type;
+	public: typedef typename SlaCostModelTraitsT::value_type value_type;
 	public: typedef typename SlaCostModelTraitsT::real_type real_type;
-	private: typedef SlaCostModelT model_type;
 	private: typedef typename ::dcs::type_traits::add_reference<SlaCostModelT>::type model_reference;
 	private: typedef typename ::dcs::type_traits::add_reference<typename ::dcs::type_traits::add_const<SlaCostModelT>::type>::type model_const_reference;
+	private: typedef base_cost_model<metric_category_type,value_type,real_type> base_type;
+	private: typedef typename base_type::metric_category_iterator metric_category_iterator;
+	private: typedef typename base_type::metric_iterator metric_iterator;
+	private: typedef typename base_type::slo_model_type slo_model_type;
 
 
 	public: cost_model_adaptor()
@@ -53,21 +63,40 @@ class cost_model_adaptor: public base_cost_model<typename SlaCostModelTraitsT::r
 
 
 	public: cost_model_adaptor(model_const_reference model)
-		: model_(model)
+		: base_type(),
+		  model_(model)
 	{
 		// empty;
 	}
 
 
-	public: real_type cost(::dcs::iterator::iterator_range< ::dcs::iterator::any_forward_iterator<real_type> > const& measures) const
+    private: void do_add_slo(slo_model_type const& slo)
 	{
-		return model_.cost(measures);
+		model_.add_slo(slo.category(), slo.reference_value(), slo.checker());
 	}
 
 
-	public: bool satisfied(::dcs::iterator::iterator_range< ::dcs::iterator::any_forward_iterator<real_type> > const& measures) const
+	private: bool do_has_slo(metric_category_type category) const
 	{
-		return model_.satisfied(measures);
+		return model_.has_slo(category);
+	}
+
+
+	private: ::std::vector<metric_category_type> do_slo_categories() const
+	{
+		return model_.slo_categories();
+	}
+
+
+    private: real_type do_score(metric_category_iterator category_first, metric_category_iterator category_last, metric_iterator metric_first) const
+	{
+		return model_.score(category_first, category_last, metric_first);
+	}
+
+
+    private: bool do_satisfied(metric_category_iterator category_first, metric_category_iterator category_last, metric_iterator metric_first) const
+	{
+		return model_.satisfied(category_first, category_last, metric_first);
 	}
 
 

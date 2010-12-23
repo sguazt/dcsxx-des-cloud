@@ -439,7 +439,7 @@ class open_multi_bcmp_network
 	/// Average number of customers in system.
 	public: real_type system_customers_number() const
 	{
-		return ::boost::numeric::ublasx::sum(K_);
+		return ::boost::numeric::ublasx::sum_all(K_);
 	}
 
 

@@ -3,6 +3,7 @@
 
 
 #include <boost/variant.hpp>
+#include <dcs/eesim/config/numeric_matrix.hpp>
 #include <dcs/macro.hpp>
 #include <iostream>
 
@@ -21,8 +22,14 @@ struct dummy_application_controller_config
 };
 
 
+template <typename RealT>
 struct lqr_application_controller_config
 {
+	typedef RealT real_type;
+
+	numeric_matrix<real_type> Q; // state weighting matrix
+	numeric_matrix<real_type> R; // control weighting matrix
+	numeric_matrix<real_type> N; // state-control cross-coupling matrix
 };
 
 
@@ -30,7 +37,7 @@ template <typename RealT>
 struct application_controller_config
 {
 	typedef RealT real_type;
-	typedef lqr_application_controller_config lqr_controller_config_type;
+	typedef lqr_application_controller_config<real_type> lqr_controller_config_type;
 	typedef dummy_application_controller_config dummy_controller_config_type;
 
 	real_type sampling_time;
@@ -68,12 +75,16 @@ template <typename CharT, typename CharTraitsT>
 }
 
 
-template <typename CharT, typename CharTraitsT>
-::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, lqr_application_controller_config const& controller)
+template <typename CharT, typename CharTraitsT, typename RealT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, lqr_application_controller_config<RealT> const& controller)
 {
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( controller );
 
-	os << "<(lqr-application-controller)>";
+	os << "<(lqr-application-controller)"
+	   << " Q: " << controller.Q
+	   << ", R: " << controller.R
+	   << ", N: " << controller.N
+	   << ">";
 
 	return os;
 }

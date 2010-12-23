@@ -95,6 +95,31 @@ class numeric_matrix
 	}
 
 
+	/// A constructor
+	public: numeric_matrix(size_type r, size_type c, value_type v)
+		: nr_(r),
+		  nc_(c),
+		  data_(0)
+	{
+		// pre: #rows > 0
+		DCS_ASSERT(
+			nr_ > 0,
+			throw ::std::invalid_argument("[dcs::eesim::config::numeric_matrix::ctor] Invalid number of rows.")
+		);
+		// pre: #columns > 0
+		DCS_ASSERT(
+			nc_ > 0,
+			throw ::std::invalid_argument("[dcs::eesim::config::numeric_matrix::ctor] Invalid number of columns.")
+		);
+
+		size_type sz = nr_*nc_;
+
+		data_ = new value_type[sz];
+
+		::std::fill(data_, data_+sz, v);
+	}
+
+
 	/// Copy constructor.
 	public: numeric_matrix(numeric_matrix const& that)
 	{

@@ -45,6 +45,8 @@ class application_tier
 {
 	/// The traits type.
 	public: typedef TraitsT traits_type;
+	/// The type for unsigned integral numbers
+	public: typedef typename traits_type::uint_type uint_type;
 	/// The type for real numbers
 	public: typedef typename traits_type::real_type real_type;
 	public: typedef multi_tier_application<traits_type> application_type;
@@ -66,7 +68,8 @@ class application_tier
 
 
 	public: application_tier()
-	: name_("Unnamed Tier")
+	: id_(0),
+	  name_("Unnamed Tier")
 	{
 	}
 
@@ -80,6 +83,18 @@ class application_tier
 	public: void name(::std::string const& s)
 	{
 		name_ = s;
+	}
+
+
+	public: void id(uint_type id)
+	{
+		id_ = id;
+	}
+
+
+	public: uint_type id() const
+	{
+		return id_;
 	}
 
 
@@ -199,6 +214,7 @@ class application_tier
 //	}
 
 
+	private: uint_type id_;
 	private: ::std::string name_;
 //	private: des_event_source_pointer ptr_arrival_evt_src_;
 //	private: des_event_source_pointer ptr_departure_evt_src_;

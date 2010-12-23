@@ -29,21 +29,23 @@
 #include <cstddef>
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
+#include <dcs/des/engine_traits.hpp>
 #include <dcs/eesim/application_tier.hpp>
 #include <dcs/eesim/base_application_performance_model.hpp>
 #include <dcs/eesim/base_application_simulation_model.hpp>
-#include <dcs/eesim/performance_measure.hpp>
+//#include <dcs/eesim/performance_measure.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
 //#include <dcs/eesim/physical_resource.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/registry.hpp>
+#include <dcs/eesim/user_request.hpp>
 #include <dcs/functional/bind.hpp>
-#include <dcs/perfeval/sla/any_cost_model.hpp>
 //#include <dcs/perfeval/workload/enterprise/any_model.hpp>
 //#include <dcs/perfeval/workload/enterprise/user_request.hpp>
 //#include <dcs/perfeval/workload/generator.hpp>
 #include <dcs/math/stats/function/rand.hpp>
 #include <dcs/memory.hpp>
+#include <dcs/perfeval/sla/any_cost_model.hpp>
 #include <iostream>
 #include <map>
 #include <stdexcept>
@@ -53,6 +55,9 @@
 
 
 namespace dcs { namespace eesim { 
+
+template <typename TraitsT>
+class base_application_simulation_model;
 
 /**
  * \brief Model for multi-tier applications.
@@ -84,7 +89,7 @@ namespace dcs { namespace eesim {
 template <typename TraitsT>
 class multi_tier_application
 {
-	private: struct request_state;
+//	private: struct request_state;
 	public: class reference_physical_resource;
 
 
@@ -99,10 +104,10 @@ class multi_tier_application
 //	public: typedef physical_resource<traits_type> physical_resource_type;
 //	public: typedef ::dcs::shared_ptr<physical_resource_type> physical_resource_pointer;
 //	public: typedef ::dcs::perfeval::workload::enterprise::any_model<int_type,real_type> workload_model_type;
-	public: typedef ::dcs::perfeval::sla::any_cost_model<real_type> sla_cost_model_type;
+	public: typedef ::dcs::perfeval::sla::any_cost_model<performance_measure_category,real_type,real_type> sla_cost_model_type;
 	public: typedef base_application_performance_model<traits_type> performance_model_type;
 	public: typedef ::dcs::shared_ptr<performance_model_type> performance_model_pointer;
-	public: typedef performance_measure<traits_type> performance_measure_type;
+//	public: typedef performance_measure<traits_type> performance_measure_type;
 	public: typedef base_application_simulation_model<traits_type> simulation_model_type;
 	public: typedef ::dcs::shared_ptr<simulation_model_type> simulation_model_pointer;
 //	private: typedef ::std::map<
@@ -114,19 +119,23 @@ class multi_tier_application
 						reference_physical_resource
 				> resource_container;
 	private: typedef ::std::vector<application_tier_pointer> tier_container;
-	private: typedef ::std::map<
-						performance_measure_category,
-						performance_measure_type
-				> performance_measure_container;
-//	private: typedef typename traits_type::des_engine_type des_engine_type;
-//	private: typedef typename des_engine_type::engine_context_type des_engine_context_type;
-//	private: typedef typename des_engine_type::event_type des_event_type;
+//	private: typedef ::std::map<
+//						performance_measure_category,
+//						performance_measure_type
+//				> performance_measure_container;
+	private: typedef typename traits_type::des_engine_type des_engine_type;
+	private: typedef typename des_engine_type::engine_context_type des_engine_context_type;
+	private: typedef typename des_engine_type::event_type des_event_type;
 //	private: typedef typename des_engine_type::event_source_type des_event_source_type;
 //	private: typedef ::dcs::shared_ptr<des_engine_type> des_engine_pointer;
 //	private: typedef ::dcs::shared_ptr<des_event_source_type> des_event_source_pointer;
 //	private: typedef typename traits_type::uniform_random_generator_type uniform_random_generator_type;
 //	private: typedef ::dcs::shared_ptr<uniform_random_generator_type> uniform_random_generator_pointer;
 	private: typedef ::std::size_t size_type;
+	private: typedef user_request<real_type> user_request_type;
+	public: typedef ::dcs::des::base_statistic<real_type,uint_type> output_statistic_type;
+	public: typedef ::dcs::shared_ptr<output_statistic_type> output_statistic_pointer;
+
 
 
 	public: struct reference_physical_resource
@@ -245,6 +254,7 @@ class multi_tier_application
 		);
 
 		ptr_sim_model_ = ptr_model;
+		ptr_sim_model_->application(this);
 	}
 
 
@@ -319,6 +329,7 @@ class multi_tier_application
 		);
 
 		ptr_tier->application(this);
+		ptr_tier->id(tiers_.size());
 		tiers_.push_back(ptr_tier);
 //		ptr_tier_request_evt_srcs_.push_back(::dcs::make_shared<des_event_source_type>());
 //		ptr_tier_response_evt_srcs_.push_back(::dcs::make_shared<des_event_source_type>());
@@ -432,34 +443,34 @@ class multi_tier_application
 	}
 
 
-	/**
-	 * \brief Set the application-level reference performance measures.
-	 *
-	 * Each element pointed by the iterator must be a pair of
-	 *   <category,value>
-	 * Each performance measure represents the aggregated performance measure
-	 * from each tier.
-	 */
-	public: void add_reference_performance_measure(performance_measure_type const& measure)
-	{
-		ref_measures_[measure.category()] = measure;
-	}
-
-
-	public: ::std::vector<performance_measure_type> reference_performance_measures() const
-	{
-		typedef typename performance_measure_container::const_iterator iterator;
-
-		::std::vector<performance_measure_type> measures;
-
-		iterator end_it = ref_measures_.end();
-		for (iterator it = ref_measures_.begin(); it != end_it; ++it)
-		{
-			measures.push_back(it->second);
-		}
-
-		return measures;
-	}
+//	/**
+//	 * \brief Set the application-level reference performance measures.
+//	 *
+//	 * Each element pointed by the iterator must be a pair of
+//	 *   <category,value>
+//	 * Each performance measure represents the aggregated performance measure
+//	 * from each tier.
+//	 */
+//	public: void add_reference_performance_measure(performance_measure_type const& measure)
+//	{
+//		ref_measures_[measure.category()] = measure;
+//	}
+//
+//
+//	public: ::std::vector<performance_measure_type> reference_performance_measures() const
+//	{
+//		typedef typename performance_measure_container::const_iterator iterator;
+//
+//		::std::vector<performance_measure_type> measures;
+//
+//		iterator end_it = ref_measures_.end();
+//		for (iterator it = ref_measures_.begin(); it != end_it; ++it)
+//		{
+//			measures.push_back(it->second);
+//		}
+//
+//		return measures;
+//	}
 
 
 	/**
@@ -483,59 +494,48 @@ class multi_tier_application
 
 	public: void start()
 	{
+		DCS_DEBUG_TRACE("BEGIN Starting Application: '" << name_ << "'");
+
 		// check: pointer to simulation model is a valid pointer
 		DCS_DEBUG_ASSERT( ptr_sim_model_ );
 
-DCS_DEBUG_TRACE("STARTING APP ---> sim_ptr: " << ptr_sim_model_);//XXX
-typedef typename traits_type::uniform_random_generator_type uniform_random_generator_type;
-::dcs::shared_ptr<uniform_random_generator_type> ptr_rng = registry<traits_type>::instance().uniform_random_generator_ptr();//XXX
-DCS_DEBUG_TRACE("STARTING APP ---> ptr_rng: " << ptr_rng);//XXX
-DCS_DEBUG_TRACE("STARTING APP ---> ptr_rng::min: " << ptr_rng->min());//XXX
-DCS_DEBUG_TRACE("STARTING APP ---> ptr_rng::max: " << ptr_rng->max());//XXX
+//		// Connect to some simulation event sources
+//		ptr_sim_model_->request_departure_event_source().connect(
+//			::dcs::functional::bind(
+//				&self_type::process_request_departure,
+//				this,
+//				::dcs::functional::placeholders::_1,
+//				::dcs::functional::placeholders::_2
+//			)
+//		);
+
 		ptr_sim_model_->enable(true);
+
+		DCS_DEBUG_TRACE("END Starting Application: '" << name_ << "'");
 	}
 
 
 	public: void stop()
 	{
+		DCS_DEBUG_TRACE("BEGIN Stopping Application: '" << name_ << "'");
+
 		// check: pointer to simulation model is a valid pointer
 		DCS_DEBUG_ASSERT( ptr_sim_model_ );
 
 		ptr_sim_model_->enable(false);
+
+//		// Disconnect from previously registered simulation event sources
+//		ptr_sim_model_->request_departure_event_source().disconnect(
+//			::dcs::functional::bind(
+//				&self_type::process_request_departure,
+//				this,
+//				::dcs::functional::placeholders::_1,
+//				::dcs::functional::placeholders::_2
+//			)
+//		);
+
+		DCS_DEBUG_TRACE("END Stopping Application: '" << name_ << "'");
 	}
-
-
-/*
-	private: void schedule_request()
-	{
-		DCS_DEBUG_TRACE("Scheduling Request for Application: " << id_);//XXX
-		typedef ::dcs::shared_ptr<des_engine_type> des_engine_pointer;
-		typedef ::dcs::shared_ptr<des_event_source_type> des_event_source_pointer;
-		typedef typename traits_type::uniform_random_generator_type uniform_random_generator_type;
-		typedef ::dcs::shared_ptr<uniform_random_generator_type> uniform_random_generator_pointer;
-
-		::dcs::perfeval::workload::enterprise::user_request<int_type,real_type> request;
-
-		uniform_random_generator_pointer ptr_urng = registry<traits_type>::instance().uniform_random_generator_ptr();
-		des_engine_pointer ptr_des_engine = registry<traits_type>::instance().des_engine_ptr();
-
-		do
-		{
-			request = workload_.generate(*ptr_urng);
-		}
-		while (request.interarrival_time() < 0);
-
-		request_state request_info;
-		request_info.category = request.category();
-		request_info.iatime = request.interarrival_time();
-
-		des_engine->schedule_event(
-			ptr_request_evt_src_,
-			ptr_des_engine->sim_time() + request.interarrival_time(),
-			request_info
-		);
-	}
-*/
 
 
 	private: void init()
@@ -799,6 +799,30 @@ DCS_DEBUG_TRACE("STARTING APP ---> ptr_rng::max: " << ptr_rng->max());//XXX
 	};
 */
 
+//	private: void process_request_departure(des_event_type const& evt, des_engine_context_type& ctx)
+//	{
+//		user_request_type req = ptr_sim_model_->request_state(evt);
+//
+//		check_sla(req);
+//	}
+
+
+//	private: void check_sla(user_request_type const& req) const
+//	{
+//		real_type perf_meas(0);
+//
+//		switch ()
+//		{
+//			case
+//				perf_meas = req.departure_time()-req.arrival_time();
+//				break;
+//		}
+//
+//		if (sla_cost_.satisfied(perf_meas))
+//		{
+//		}
+//	}
+
 
 	private: identifier_type id_;
 	private: ::std::string name_;
@@ -807,7 +831,7 @@ DCS_DEBUG_TRACE("STARTING APP ---> ptr_rng::max: " << ptr_rng->max());//XXX
 	private: sla_cost_model_type sla_cost_;
 //	private: controller_type controller_;
 	private: resource_container ref_resources_;
-	private: performance_measure_container ref_measures_;
+//	private: performance_measure_container ref_measures_;
 	private: performance_model_pointer ptr_perf_model_;
 	private: simulation_model_pointer ptr_sim_model_;
 //	private: des_event_source_pointer ptr_request_evt_src_;

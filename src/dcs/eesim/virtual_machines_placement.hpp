@@ -202,7 +202,7 @@ DCS_DEBUG_TRACE("TRUE");//XXX
 		// precondition: virtual machine must do exist
 		DCS_ASSERT(
 			by_vm_idx_.count(vm.id()) > 0,
-			throw ::std::logic_argument("[dcs::eesim::virtual_machines_placement::displace] Unknown virtual machine.")
+			throw ::std::invalid_argument("[dcs::eesim::virtual_machines_placement::displace] Unknown virtual machine.")
 		);
 
 		virtual_machine_identifier_type vm_id = vm.id();

@@ -3,10 +3,12 @@
 
 
 #include <boost/variant.hpp>
+#include <dcs/eesim/config/metric_category.hpp>
 #include <dcs/eesim/config/numeric_multiarray.hpp>
 #include <dcs/eesim/config/probability_distribution.hpp>
 #include <dcs/macro.hpp>
 #include <iostream>
+#include <map>
 
 
 namespace dcs { namespace eesim { namespace config {
@@ -142,6 +144,7 @@ struct qn_node_config
 
 	uint_type id;
 	::std::string name;
+	::std::string ref_tier;
 	qn_node_category category;
 	::boost::variant<delay_node_config_type,
 					 queue_node_config_type,
@@ -201,15 +204,35 @@ struct qn_model_config
 };
 
 
+enum statistic_category
+{
+	mean_statistic
+};
+
+
+template <typename RealT>
+struct statistic_config
+{
+	typedef RealT real_type;
+
+	statistic_category category;
+	real_type precision;
+	real_type confidence_level;
+};
+
+
 template <typename RealT, typename UIntT>
 struct application_simulation_model_config
 {
 	typedef RealT real_type;
 	typedef UIntT uint_type;
+	typedef statistic_config<real_type> statistic_config_type;
+	typedef ::std::map<metric_category,statistic_config_type> statistic_container;
 	typedef qn_model_config<real_type,uint_type> qn_model_config_type;
 
 	application_simulation_model_category category;
 	::boost::variant<qn_model_config_type> category_conf;
+	statistic_container statistics;
 };
 
 
@@ -410,41 +433,9 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 			node_config_type const& node = (model_config.nodes)[i];
 			os << "<(node)"
 			   << " id: " << node.id
-			   << ", name: " << node.name;
-			os << ", " << node.category_conf;
-//			os << ", type: ";
-//			switch (node.category)
-//			{
-//				case qn_delay_node:
-//					{
-//						typedef typename node_config_type::delay_node_config_type node_config_impl_type;
-//
-//						os << "delay";
-//
-//						node_config_impl_type const& node_config_impl = ::boost::get<node_config_impl_type>(node.category_conf);
-//
-//						os << ", " << node_config_impl;
-//					}
-//					break;
-//				case qn_queue_node:
-//					{
-//						typedef typename node_config_type::queue_node_config_type node_config_impl_type;
-//
-//						os << "queue";
-//
-//						node_config_impl_type const& node_config_impl = ::boost::get<node_config_impl_type>(node.category_conf);
-//
-//						os << ", " << node_config_impl;
-//					}
-//					break;
-//				case qn_sink_node:
-//					os << "sink";
-//					break;
-//				case qn_source_node:
-//					os << "source";
-//					break;
-//			}
-//			os << ">";
+			   << ", name: " << node.name
+			   << ", reference-tier: " << node.ref_tier
+			   << ", " << node.category_conf;
 		}
 		os << "]";
 	}
@@ -473,6 +464,33 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 	return os;
 }
 
+template <typename CharT, typename CharTraitsT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, statistic_category category)
+{
+	switch (category)
+	{
+		case mean_statistic:
+			os << "mean";
+			break;
+	}
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT, typename RealT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, statistic_config<RealT> const& stat)
+{
+	os << "<(statistic)"
+	   << " category: " << stat.category
+	   << ", precision: " << stat.precision
+	   << ", confidence-level: " << stat.confidence_level
+	   << ">";
+
+	return os;
+}
+
+
 template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, application_simulation_model_config<RealT,UIntT> const& model)
 {
@@ -483,6 +501,23 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 	os << "<(application_simulation_model)";
 
 	os << " " << model.category_conf;
+
+	// Statistics
+	{
+		typedef typename sim_model_type::statistic_container::const_iterator iterator;
+		iterator begin_it = model.statistics.begin();
+		iterator end_it = model.statistics.end();
+		os << ", {";
+		for (iterator it = begin_it; it != end_it; ++it)
+		{
+			if (it != begin_it)
+			{
+				os << ", ";
+			}
+			os << it->first << ": " << it->second;
+		}
+		os << "}";
+	}
 
 	os << ">";
 

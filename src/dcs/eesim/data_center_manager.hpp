@@ -81,13 +81,20 @@ class data_center_manager
 		// precondition: pointer to vm initial placer must be a valid pointer
 		DCS_DEBUG_ASSERT( ptr_dc_ );
 
-DCS_DEBUG_TRACE("HERE.1");//XXX
 		ptr_dc_->place_virtual_machines(
 			ptr_init_placement_->placement(*ptr_dc_)
 		);
 
-DCS_DEBUG_TRACE("HERE.2");//XXX
-		ptr_dc_->start_applications();
+		typename traits_type::uint_type started_apps;
+
+		started_apps = ptr_dc_->start_applications();
+
+		if (!started_apps)
+		{
+			registry<traits_type>::instance().des_engine_ptr()->stop_now();
+
+			DCS_DEBUG_TRACE("Warning: Unable to start any application.");
+		}
 	}
 
 

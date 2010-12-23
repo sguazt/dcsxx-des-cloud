@@ -15,7 +15,8 @@ enum probability_distribution_category
 	exponential_probability_distribution,
 	gamma_probability_distribution,
 	normal_probability_distribution,
-	map_probability_distribution
+	map_probability_distribution,
+	degenerate_probability_distribution
 };
 
 
@@ -89,20 +90,42 @@ struct map_probability_distribution_config
 
 
 template <typename RealT>
+struct degenerate_probability_distribution_config
+{
+	typedef RealT real_type;
+
+	real_type k;
+};
+
+
+template <typename RealT>
 struct probability_distribution_config
 {
 	typedef RealT real_type;
+	typedef degenerate_probability_distribution_config<RealT> degenerate_distribution_config_type;
 	typedef exponential_probability_distribution_config<RealT> exponential_distribution_config_type;
 	typedef gamma_probability_distribution_config<RealT> gamma_distribution_config_type;
 	typedef map_probability_distribution_config<RealT> map_distribution_config_type;
 	typedef normal_probability_distribution_config<RealT> normal_distribution_config_type;
 
 	probability_distribution_category category;
-	::boost::variant<exponential_distribution_config_type,
+	::boost::variant<degenerate_distribution_config_type,
+					 exponential_distribution_config_type,
 					 gamma_distribution_config_type,
 					 map_distribution_config_type,
 					 normal_distribution_config_type> category_conf;
 };
+
+
+template <typename CharT, typename CharTraitsT, typename RealT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, degenerate_probability_distribution_config<RealT> const& config)
+{
+	os << "<(degenerate-distribution)"
+	   << " k: " << config.k
+	   << ">";
+
+	return os;
+}
 
 
 template <typename CharT, typename CharTraitsT, typename RealT>

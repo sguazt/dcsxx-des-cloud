@@ -64,6 +64,16 @@ class base_application_controller
 
 
 	/// A constructor.
+	protected: explicit base_application_controller(real_type ts)
+	: ptr_app_(),
+	  ts_(ts),
+	  ptr_control_evt_src_(new des_event_source_type())
+	{
+		init();
+	}
+
+
+	/// A constructor.
 	protected: base_application_controller(application_pointer const& ptr_app, real_type ts)
 	: ptr_app_(ptr_app),
 	  ts_(ts),
@@ -125,7 +135,7 @@ class base_application_controller
 	}
 
 
-	public:void controlled_application(application_pointer const& ptr_app)
+	public: void controlled_application(application_pointer const& ptr_app)
 	{
 		ptr_app_ = ptr_app;
 	}

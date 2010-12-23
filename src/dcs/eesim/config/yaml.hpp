@@ -177,6 +177,10 @@ probability_distribution_category text_to_probability_distribution_category(::st
 {
 	::std::string istr = ::dcs::string::to_lower_copy(str);
 
+	if (!istr.compare("degenerate"))
+	{
+		return degenerate_probability_distribution;
+	}
 	if (!istr.compare("exponential"))
 	{
 		return exponential_probability_distribution;
@@ -291,6 +295,10 @@ migration_controller_category text_to_migration_controller_category(::std::strin
 	{
 		return lp_migration_controller;
 	}
+	if (!istr.compare("dummy"))
+	{
+		return dummy_migration_controller;
+	}
 
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_migration_controller_category Unknown migration controller category.");
 }
@@ -325,9 +333,14 @@ physical_machine_controller_category text_to_physical_machine_controller_categor
 	{
 		return proportional_physical_machine_controller;
 	}
+	if (!istr.compare("dummy"))
+	{
+		return dummy_physical_machine_controller;
+	}
 
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_physical_machine_controller_category Unknown physical machine controller category.");
 }
+
 
 map_probability_distribution_characterization_category text_to_map_characterization_category(::std::string const& str)
 {
@@ -343,6 +356,19 @@ map_probability_distribution_characterization_category text_to_map_characterizat
 	}
 
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_map_characterization_category Unknown MAP characterization category.");
+}
+
+
+sla_model_category text_to_sla_model_category(::std::string const& str)
+{
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("step"))
+	{
+		return step_sla_model;
+	}
+
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_sla_model_category Unknown SLA model category.");
 }
 
 }} // Namespace detail::<unnamed>
@@ -418,11 +444,11 @@ void operator>>(::YAML::Node const& node, statistic_config<RealT>& stat)
 	{
 		::std::string label;
 		node["type"] >> label;
-		stat.type = detail::text_to_statistic_category(label);
+		stat.category = detail::text_to_statistic_category(label);
 	}
 	else
 	{
-		stat.type = mean_statistic;
+		stat.category = mean_statistic;
 	}
 	// Read precision
 	if (node.FindValue("precision"))
@@ -465,24 +491,6 @@ void operator>>(::YAML::Node const& node, independent_replications_output_analys
 	else
 	{
 		analysis.replication_duration = 1000;
-	}
-	// Read statistics
-	::YAML::Node const& subnode = node["statistics"];
-	for (::YAML::Iterator it = subnode.begin(); it != subnode.end(); ++it)
-	{
-		::YAML::Node const& key_node = it.first();
-		::YAML::Node const& value_node = it.second();
-
-		::std::string label;
-		metric_category category;
-		statistic_config<RealT> stat;
-
-		key_node >> label;
-		category = detail::text_to_metric_category(label);
-
-		value_node >> stat;
-
-		analysis.statistics[category] = stat;
 	}
 }
 
@@ -568,6 +576,17 @@ void operator>>(::YAML::Node const& node, probability_distribution_config<RealT>
 
 	switch (distr_conf.category)
 	{
+		case degenerate_probability_distribution:
+			{
+				typedef typename distribution_config_type::degenerate_distribution_config_type distribution_config_impl_type;
+
+				distribution_config_impl_type distr_conf_impl;
+
+				node["k"] >> distr_conf_impl.k;
+
+				distr_conf.category_conf = distr_conf_impl;
+			}
+			break;
 		case exponential_probability_distribution:
 			{
 				typedef typename distribution_config_type::exponential_distribution_config_type distribution_config_impl_type;
@@ -956,6 +975,12 @@ void operator>>(::YAML::Node const& node, qn_node_config<RealT,UIntT>& node_conf
 			}
 			break;
 	}
+
+	if (node.FindValue("reference-tier"))
+	{
+		::YAML::Node const& ref_node = node["reference-tier"];
+		ref_node["name"] >> node_conf.ref_tier;
+	}
 }
 
 
@@ -1124,8 +1149,29 @@ void operator>>(::YAML::Node const& node, application_simulation_model_config<Re
 				model.category_conf = conf;
 			}
 			break;
-		default:
-			break;
+	}
+
+	// Read statistics
+	{
+		typedef statistic_config<real_type> statistic_config_type;
+
+		::YAML::Node const& subnode = node["statistics"];
+		for (::YAML::Iterator it = subnode.begin(); it != subnode.end(); ++it)
+		{
+			::YAML::Node const& key_node = it.first();
+			::YAML::Node const& value_node = it.second();
+
+			::std::string label;
+			metric_category category;
+			statistic_config_type stat_conf;
+
+			key_node >> label;
+			category = detail::text_to_metric_category(label);
+
+			value_node >> stat_conf;
+
+			model.statistics[category] = stat_conf;
+		}
 	}
 }
 
@@ -1134,42 +1180,52 @@ template <typename RealT>
 void operator>>(::YAML::Node const& node, sla_metric_config<RealT>& metric)
 {
 	node["value"] >> metric.value;
-
-	::YAML::Node const& subnode = node["cost-model"];
-	::std::string label;
-	subnode["type"] >> label;
-	if (!label.compare("step"))
-	{
-		step_sla_model_config<RealT> model;
-		subnode["penalty"] >> model.penalty;
-		subnode["revenue"] >> model.revenue;
-
-		metric.model_type = step_sla_model;
-		metric.model_conf = model;
-	}
-	else
-	{
-		throw ::std::runtime_error("[dcs::eesim::config::>>] Unknown SLA cost model.");
-	}
 }
 
 
 template <typename RealT>
-void operator>>(::YAML::Node const& node, application_sla_config<RealT>& sla)
+void operator>>(::YAML::Node const& node, application_sla_config<RealT>& sla_conf)
 {
-	for(::YAML::Iterator it = node.begin(); it != node.end(); ++it)
+	// Read cost model
 	{
-		::YAML::Node const& key_node = it.first();
-		::YAML::Node const& value_node = it.second();
-
+		::YAML::Node const& subnode = node["cost-model"];
 		::std::string label;
-		metric_category category;
-		key_node >> label;
-		category = detail::text_to_metric_category(label);
+		subnode["type"] >> label;
+		sla_conf.category = detail::text_to_sla_model_category(label);
+		switch (sla_conf.category)
+		{
+			case step_sla_model:
+				{
+					typedef step_sla_model_config<RealT> model_config_impl_type;
 
-		sla_metric_config<RealT> metric_conf;
-		value_node >> metric_conf;
-		sla.metrics[category] = metric_conf;
+					model_config_impl_type model_conf_impl;
+
+					subnode["penalty"] >> model_conf_impl.penalty;
+					subnode["revenue"] >> model_conf_impl.revenue;
+
+					sla_conf.category_conf = model_conf_impl;
+				}
+				break;
+		}
+	}
+
+	// Read performance metrics
+	{
+		::YAML::Node const& subnode = node["performance-metrics"];
+		for(::YAML::Iterator it = subnode.begin(); it != subnode.end(); ++it)
+		{
+			::YAML::Node const& key_node = it.first();
+			::YAML::Node const& value_node = it.second();
+
+			::std::string label;
+			metric_category category;
+			key_node >> label;
+			category = detail::text_to_metric_category(label);
+
+			sla_metric_config<RealT> metric_conf;
+			value_node >> metric_conf;
+			sla_conf.metrics[category] = metric_conf;
+		}
 	}
 }
 
@@ -1207,7 +1263,8 @@ void operator>>(::YAML::Node const& node, application_tier_config<RealT>& tier)
 template <typename RealT>
 void operator>>(::YAML::Node const& node, application_controller_config<RealT>& controller_conf)
 {
-	typedef application_controller_config<RealT> controller_config_type;
+	typedef RealT real_type;
+	typedef application_controller_config<real_type> controller_config_type;
 
 	::std::string label;
 
@@ -1221,6 +1278,22 @@ void operator>>(::YAML::Node const& node, application_controller_config<RealT>& 
 				typedef typename controller_config_type::lqr_controller_config_type controller_config_impl_type;
 
 				controller_config_impl_type controller_conf_impl;
+
+				node["Q"] >> controller_conf_impl.Q;
+				node["R"] >> controller_conf_impl.R;
+				if (node.FindValue("N"))
+				{
+					node["N"] >> controller_conf_impl.N;
+				}
+				else
+				{
+					// default to N=[0...0;...;0...0]
+					controller_conf_impl.N = numeric_matrix<real_type>(
+							controller_conf_impl.Q.num_rows(),
+							controller_conf_impl.R.num_rows(),
+							real_type/*zero*/()
+						);
+				}
 
 				controller_conf.category_conf = controller_conf_impl;
 			}
@@ -1391,13 +1464,29 @@ void operator>>(::YAML::Node const& node, physical_machine_controller_config<Rea
 				controller_conf.category_conf = controller_conf_impl;
 			}
 			break;
+		case dummy_physical_machine_controller:
+			{
+				typedef typename controller_config_type::proportional_controller_config_type controller_config_impl_type;
+
+				controller_config_impl_type controller_conf_impl;
+
+				controller_conf.category_conf = controller_conf_impl;
+			}
+			break;
 	}
 
 	// Read sampling time
-	node["sampling-time"] >> controller_conf.sampling_time;
-	if (controller_conf.sampling_time <= 0)
+	if (controller_conf.category != dummy_physical_machine_controller)
 	{
-		throw ::std::runtime_error("[dcs::eesim::config::>>] Invalid sampling time for physical machine controller: non-positive value.");
+		node["sampling-time"] >> controller_conf.sampling_time;
+		if (controller_conf.sampling_time <= 0)
+		{
+			throw ::std::runtime_error("[dcs::eesim::config::>>] Invalid sampling time for physical machine controller: non-positive value.");
+		}
+	}
+	else
+	{
+		controller_conf.sampling_time = 0;
 	}
 }
 
@@ -1485,13 +1574,29 @@ void operator>>(::YAML::Node const& node, migration_controller_config<RealT>& co
 				controller_conf.category_conf = controller_conf_impl;
 			}
 			break;
+		case dummy_migration_controller:
+			{
+				typedef typename controller_config_type::dummy_migration_controller_config_type controller_config_impl_type;
+
+				controller_config_impl_type controller_conf_impl;
+
+				controller_conf.category_conf = controller_conf_impl;
+			}
+			break;
 	}
 
 	// Read sampling time
-	node["sampling-time"] >> controller_conf.sampling_time;
-	if (controller_conf.sampling_time <= 0)
+	if (controller_conf.category != dummy_migration_controller)
 	{
-		throw ::std::runtime_error("[dcs::eesim::config::>>] Invalid sampling time for migration controller: non-positive value.");
+		node["sampling-time"] >> controller_conf.sampling_time;
+		if (controller_conf.sampling_time <= 0)
+		{
+			throw ::std::runtime_error("[dcs::eesim::config::>>] Invalid sampling time for migration controller: non-positive value.");
+		}
+	}
+	else
+	{
+		controller_conf.sampling_time = 0;
 	}
 }
 

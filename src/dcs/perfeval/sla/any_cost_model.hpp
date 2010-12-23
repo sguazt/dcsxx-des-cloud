@@ -44,10 +44,14 @@ namespace dcs { namespace perfeval { namespace sla {
  *
  * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
  */
-template <typename RealT=double>
+template <typename CategoryT, typename ValueT, typename RealT=ValueT>
 class any_cost_model
 {
+	public: typedef CategoryT metric_category_type;
+	public: typedef ValueT value_type;
 	public: typedef RealT real_type;
+	private: typedef base_cost_model<metric_category_type,value_type,real_type> cost_model_type;
+	private: typedef ::dcs::shared_ptr<cost_model_type> cost_model_pointer;
 
 
 	public: any_cost_model()
@@ -79,15 +83,36 @@ class any_cost_model
 	}
 
 
-	public: real_type cost(::dcs::iterator::iterator_range< ::dcs::iterator::any_forward_iterator<real_type> > const& measures) const
+	public: template <typename CheckerT>
+		void add_slo(metric_category_type category, value_type value, CheckerT const& checker)
 	{
-		return ptr_model_->cost(measures);
+		return ptr_model_->add_slo(category, value, checker);
 	}
 
 
-	public: bool satisfied(::dcs::iterator::iterator_range< ::dcs::iterator::any_forward_iterator<real_type> > const& measures) const
+	public: bool has_slo(metric_category_type category) const
 	{
-		return ptr_model_->satisfied(measures);
+		return ptr_model_->has_slo(category);
+	}
+
+
+	public: ::std::vector<metric_category_type> slo_categories() const
+	{
+		return ptr_model_->slo_categories();
+	}
+
+
+	public: template <typename CategoryFwdIterT, typename MeasureFwdIterT>
+		real_type score(CategoryFwdIterT category_first, CategoryFwdIterT category_last, MeasureFwdIterT metric_first) const
+	{
+		return ptr_model_->score(category_first, category_last, metric_first);
+	}
+
+
+	public: template <typename CategoryFwdIterT, typename MeasureFwdIterT>
+		bool satisfied(CategoryFwdIterT category_first, CategoryFwdIterT category_last, MeasureFwdIterT metric_first) const
+	{
+		return ptr_model_->satisfied(category_first, category_last, metric_first);
 	}
 
 
@@ -97,40 +122,16 @@ class any_cost_model
 //	}
 
 
-	// convenience method
-	public: template <typename ForwardIteratorT>
-		real_type cost(::dcs::iterator::iterator_range<ForwardIteratorT> const& measures) const
-	{
-		return ptr_model_->cost(
-			::dcs::iterator::make_iterator_range(
-				::dcs::iterator::make_any_forward_iterator<ForwardIteratorT>(measures.begin()),
-				::dcs::iterator::make_any_forward_iterator<ForwardIteratorT>(measures.end())
-			)
-		);
-	}
-
-
-	// convenience method
-	public: template <typename ForwardIteratorT>
-		bool satisfied(::dcs::iterator::iterator_range<ForwardIteratorT> const& measures) const
-	{
-		return ptr_model_->satisfied(
-			::dcs::iterator::make_iterator_range(
-				::dcs::iterator::make_any_forward_iterator<ForwardIteratorT>(measures.begin()),
-				::dcs::iterator::make_any_forward_iterator<ForwardIteratorT>(measures.end())
-			)
-		);
-	}
-
-
-	private: ::dcs::shared_ptr< base_cost_model<real_type> > ptr_model_;
+	private: cost_model_pointer ptr_model_;
 };
 
 
 template <typename SlaCostModelT, typename SlaCostModelTraitsT=typename ::dcs::type_traits::remove_reference<SlaCostModelT>::type>
 struct make_any_cost_model_type
 {
-	typedef any_cost_model<typename SlaCostModelTraitsT::real_type> type;
+	typedef any_cost_model<typename SlaCostModelTraitsT::metric_category_type,
+						   typename SlaCostModelTraitsT::value_type,
+						   typename SlaCostModelTraitsT::real_type> type;
 };
 
 
@@ -144,6 +145,7 @@ template <typename SlaCostModelT, typename SlaCostModelTraitsT>
 struct make_any_cost_model_impl
 {
 	typedef typename make_any_cost_model_type<SlaCostModelT,SlaCostModelTraitsT>::type any_cost_model_type;
+
 	static any_cost_model_type apply(SlaCostModelT& model)
 	{
 		return any_cost_model_type(model);
@@ -155,10 +157,28 @@ template <typename SlaCostModelT, typename SlaCostModelTraitsT>
 struct make_any_cost_model_impl<SlaCostModelT&,SlaCostModelTraitsT>
 {
 	typedef typename make_any_cost_model_type<SlaCostModelT,SlaCostModelTraitsT>::type any_cost_model_type;
+
 	static any_cost_model_type apply(SlaCostModelT& model)
 	{
 		::dcs::util::holder<SlaCostModelT&> wrap_model(model);
 		return any_cost_model_type(wrap_model);
+	}
+};
+
+
+template <typename CategoryT, typename ValueT, typename RealT>
+struct make_any_cost_model_impl< any_cost_model<CategoryT,ValueT,RealT>, any_cost_model<CategoryT,ValueT,RealT> >
+{
+	typedef any_cost_model<CategoryT,ValueT,RealT> any_cost_model_type;
+
+	static any_cost_model_type apply(any_cost_model<CategoryT,ValueT,RealT>& model)
+	{
+		return model;
+	}
+
+	static any_cost_model_type const& apply(any_cost_model<CategoryT,ValueT,RealT> const& model)
+	{
+		return model;
 	}
 };
 

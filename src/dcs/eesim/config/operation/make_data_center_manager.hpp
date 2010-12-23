@@ -72,6 +72,18 @@ template <typename TraitsT, typename RealT>
 				ptr_controller = ::dcs::make_shared<controller_impl_type>();
 			}
 			break;
+		case dummy_migration_controller:
+			{
+				//typedef typename controller_config_type::lp_migration_controller_config_type controller_config_impl_type;
+				typedef ::dcs::eesim::dummy_migration_controller<traits_type> controller_impl_type;
+
+				//controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
+
+				// Note: there is nothing to configure
+
+				ptr_controller = ::dcs::make_shared<controller_impl_type>();
+			}
+			break;
 	}
 
 	ptr_controller->sampling_time(controller_conf.sampling_time);

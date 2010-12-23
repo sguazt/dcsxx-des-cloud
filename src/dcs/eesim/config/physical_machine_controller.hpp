@@ -12,7 +12,8 @@ namespace dcs { namespace eesim { namespace config {
 enum physical_machine_controller_category
 {
 	conservative_physical_machine_controller,
-	proportional_physical_machine_controller
+	proportional_physical_machine_controller,
+	dummy_physical_machine_controller
 };
 
 
@@ -26,17 +27,24 @@ struct proportional_physical_machine_controller_config
 };
 
 
+struct dummy_physical_machine_controller_config
+{
+};
+
+
 template <typename RealT>
 struct physical_machine_controller_config
 {
 	typedef RealT real_type;
 	typedef conservative_physical_machine_controller_config conservative_controller_config_type;
 	typedef proportional_physical_machine_controller_config proportional_controller_config_type;
+	typedef dummy_physical_machine_controller_config dummy_controller_config_type;
 
 	real_type sampling_time;
 	physical_machine_controller_category category;
 	::boost::variant<conservative_controller_config_type,
-					 proportional_controller_config_type> category_conf;
+					 proportional_controller_config_type,
+					 dummy_controller_config_type> category_conf;
 };
 
 
@@ -50,6 +58,9 @@ template <typename CharT, typename CharTraitsT>
 			break;
 		case proportional_physical_machine_controller:
 			os << "proportional";
+			break;
+		case dummy_physical_machine_controller:
+			os << "dummy";
 			break;
 	}
 
@@ -74,6 +85,17 @@ template <typename CharT, typename CharTraitsT>
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( controller );
 
 	os << "<(proportional-physical-machine-controller)>";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, dummy_physical_machine_controller_config const& controller)
+{
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( controller );
+
+	os << "<(dummy-physical-machine-controller)>";
 
 	return os;
 }

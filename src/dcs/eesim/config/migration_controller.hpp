@@ -11,11 +11,17 @@ namespace dcs { namespace eesim { namespace config {
 
 enum migration_controller_category
 {
-	lp_migration_controller
+	lp_migration_controller,
+	dummy_migration_controller
 };
 
 
 struct lp_migration_controller_config
+{
+};
+
+
+struct dummy_migration_controller_config
 {
 };
 
@@ -25,10 +31,12 @@ struct migration_controller_config
 {
 	typedef RealT real_type;
 	typedef lp_migration_controller_config lp_migration_controller_config_type;
+	typedef dummy_migration_controller_config dummy_migration_controller_config_type;
 
 	real_type sampling_time;
 	migration_controller_category category;
-	::boost::variant<lp_migration_controller_config_type> category_conf;
+	::boost::variant<lp_migration_controller_config_type,
+					 dummy_migration_controller_config_type> category_conf;
 };
 
 
@@ -39,6 +47,9 @@ template <typename CharT, typename CharTraitsT>
 	{
 		case lp_migration_controller:
 			os << "lp";
+			break;
+		case dummy_migration_controller:
+			os << "dummy";
 			break;
 	}
 
@@ -52,6 +63,17 @@ template <typename CharT, typename CharTraitsT>
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( conf );
 
 	os << "<(lp-migration-controller)>";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, dummy_migration_controller_config const& conf)
+{
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( conf );
+
+	os << "<(dummy-migration-controller)>";
 
 	return os;
 }
