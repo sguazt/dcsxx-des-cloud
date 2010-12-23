@@ -160,6 +160,7 @@ fi
 
 # Create base config dir
 #mkdir -p "$basesrcdir/config"
+mkdir -p $basesrcdir/$prjsubdir/detail
 
 cat > $basedir/config.mk <<EOT
 ## \file config.mk
