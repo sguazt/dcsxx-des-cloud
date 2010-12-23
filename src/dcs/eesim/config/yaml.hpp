@@ -1541,7 +1541,7 @@ void operator>>(::YAML::Node const& node, initial_placement_strategy_config& str
 	{
 		case first_fit_initial_placement_strategy:
 			{
-				typedef typename strategy_config_type::first_fit_initial_placement_strategy_config_type strategy_config_impl_type;
+				typedef strategy_config_type::first_fit_initial_placement_strategy_config_type strategy_config_impl_type;
 
 				strategy_config_impl_type strategy_conf_impl;
 
