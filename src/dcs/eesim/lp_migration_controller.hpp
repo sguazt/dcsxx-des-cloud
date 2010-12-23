@@ -31,7 +31,7 @@
 #include <dcs/eesim/base_migration_controller.hpp>
 #include <dcs/eesim/detail/config.hpp>
 #if defined(DCS_EESIM_CONFIG_USE_GLPK) && DCS_EESIM_CONFIG_USE_GLPK
-# include <glpk.h>
+# include <glpk/glpk.h>
 #elif defined(DCS_EESIM_CONFIG_USE_LPSOLVE) && DCS_EESIM_CONFIG_USE_LPSOLVE
 # include <lpsolve/lp_lib.h>
 #else
