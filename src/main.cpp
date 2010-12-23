@@ -67,8 +67,8 @@ typedef ::dcs::math::random::minstd_rand1 random_seeder_type;
 
 namespace detail {
 
-typedef typename ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
-typedef typename ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
+typedef ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
+typedef ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
 
 
 void process_sys_init_sim_event(des_event_type const& evt, des_engine_context_type& ctx, random_seeder_type& seeder)
@@ -76,7 +76,7 @@ void process_sys_init_sim_event(des_event_type const& evt, des_engine_context_ty
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
-	typedef typename random_seeder_type::result_type seed_type;
+	typedef random_seeder_type::result_type seed_type;
 
 	DCS_DEBUG_TRACE("BEGIN Process System Initialization at Clock: " << ctx.simulated_time());
 
