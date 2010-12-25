@@ -286,19 +286,19 @@ class multi_tier_application
 	public: template <typename SlaCostModelT>
 		void sla_cost_model(SlaCostModelT const& model)
 	{
-		sla_cost_ = ::dcs::perfeval::sla::make_any_cost_model(model);
+		sla_cost_model_ = ::dcs::perfeval::sla::make_any_cost_model(model);
 	}
 
 
 	public: sla_cost_model_type& sla_cost_model()
 	{
-		return sla_cost_;
+		return sla_cost_model_;
 	}
 
 
 	public: sla_cost_model_type const& sla_cost_model() const
 	{
-		return sla_cost_;
+		return sla_cost_model_;
 	}
 
 
@@ -828,7 +828,7 @@ class multi_tier_application
 	private: ::std::string name_;
 	private: tier_container tiers_;
 //	private: workload_model_type workload_;
-	private: sla_cost_model_type sla_cost_;
+	private: sla_cost_model_type sla_cost_model_;
 //	private: controller_type controller_;
 	private: resource_container ref_resources_;
 //	private: performance_measure_container ref_measures_;

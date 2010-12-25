@@ -56,6 +56,12 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 	}
 
 
+	public: ~application_simulation_model_adaptor()
+	{
+		disconnect_from_event_sources();
+	}
+
+
 	public: void tier_mapping(uint_type tier_id, foreign_identifier_type foreign_id)
 	{
 		tier_map_[tier_id] = foreign_id;
@@ -133,8 +139,6 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 	private: void do_enable(bool flag)
 	{
 		model_traits_type::enable(model_, flag);
-
-		registry_type& ref_reg = registry_type::instance();
 
 		if (flag)
 		{
@@ -278,7 +282,7 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 	{
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing System Initialization (Clock: " << ctx.simulated_time() << ")");
 
-::std::cerr << "-------" << ::std::endl;//XXX
+::std::cerr << ">>>>" << ::std::endl;//XXX
 		num_sla_viols_ = uint_type/*zero*/();
 
 		DCS_DEBUG_TRACE("(" << this << ") END Processing System Initialization (Clock: " << ctx.simulated_time() << ")");
@@ -289,6 +293,7 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 	{
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing System Finalization (Clock: " << ctx.simulated_time() << ")");
 
+::std::cerr << "<<<<" << ::std::endl;//XXX
 		(*ptr_num_sla_viols_stat_)(num_sla_viols_);
 		(*ptr_num_arrs_stat_)(model_.num_arrivals());
 		(*ptr_num_deps_stat_)(model_.num_departures());

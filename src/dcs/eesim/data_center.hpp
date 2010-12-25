@@ -255,6 +255,12 @@ class data_center
 	}
 
 
+	public: virtual_machines_placement<traits_type> const& current_virtual_machines_placement() const
+	{
+		return placement_;
+	}
+
+
 	public: uint_type start_applications()
 	{
 		typedef typename deployed_application_container::const_iterator app_iterator;

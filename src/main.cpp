@@ -101,6 +101,9 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 	typedef TraitsT traits_type;
 	typedef ::dcs::eesim::data_center<traits_type> data_center_type;
 
+	// VM Placement
+	os << "Last Virtual Machines Placement: " << ptr_dc->current_virtual_machines_placement() << ::std::endl;
+
 	// Application statistics
 	{
 		typedef typename data_center_type::application_type application_type;

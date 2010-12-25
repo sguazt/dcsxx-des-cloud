@@ -30,9 +30,56 @@ template <typename RealT, typename UIntT>
 
 				output_analysis_config_type const& analysis = ::boost::get<output_analysis_config_type>(conf.simulation().output_analysis_conf);
 
+				real_type min_replication_size;
+				uint_type min_num_replications;
+
+				switch (analysis.num_replications_category)
+				{
+					case constant_num_replications_detector:
+						{
+							typedef typename output_analysis_config_type::constant_num_replications_detector_type num_replications_detector_config_type;
+
+							num_replications_detector_config_type const& num_replications_detector_conf = ::boost::get<num_replications_detector_config_type>(analysis.num_replications_category_conf);
+
+							min_num_replications = num_replications_detector_conf.num_replications;
+						}
+						break;
+					case banks2005_num_replications_detector:
+						{
+							typedef typename output_analysis_config_type::banks2005_num_replications_detector_type num_replications_detector_config_type;
+
+							num_replications_detector_config_type const& num_replications_detector_conf = ::boost::get<num_replications_detector_config_type>(analysis.num_replications_category_conf);
+
+							min_num_replications = num_replications_detector_conf.min_num_replications;
+						}
+						break;
+				}
+				switch (analysis.replication_size_category)
+				{
+					case fixed_duration_replication_size_detector:
+						{
+							typedef typename output_analysis_config_type::fixed_duration_replication_size_detector_type replication_size_detector_config_type;
+
+							replication_size_detector_config_type const& replication_size_detector_conf = ::boost::get<replication_size_detector_config_type>(analysis.replication_size_category_conf);
+
+							min_replication_size = replication_size_detector_conf.replication_duration;
+						}
+						break;
+					case fixed_num_obs_replication_size_detector:
+						{
+							typedef typename output_analysis_config_type::fixed_num_obs_replication_size_detector_type replication_size_detector_config_type;
+
+							replication_size_detector_config_type const& replication_size_detector_conf = ::boost::get<replication_size_detector_config_type>(analysis.replication_size_category_conf);
+
+							//min_replication_size = ::dcs::math::constants::infinity<uint_type>::value;
+							min_replication_size = uint_type(1);
+						}
+						break;
+				}
+
 				ptr_eng = ::dcs::make_shared<engine_impl_type>(
-					analysis.replication_duration,
-					analysis.num_replications
+					min_replication_size,
+					min_num_replications
 				);
 			}
 			break;

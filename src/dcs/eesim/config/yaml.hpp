@@ -24,6 +24,7 @@
 #include <dcs/eesim/config/probability_distribution.hpp>
 #include <dcs/eesim/config/rng.hpp>
 #include <dcs/eesim/config/simulation.hpp>
+#include <dcs/math/constants.hpp>
 #include <dcs/string/algorithm/to_lower.hpp>
 #include <fstream>
 #include <iostream>
@@ -371,6 +372,40 @@ sla_model_category text_to_sla_model_category(::std::string const& str)
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_sla_model_category Unknown SLA model category.");
 }
 
+
+num_replications_detector_category text_to_num_replications_detector_category(::std::string const& str)
+{
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("constant"))
+	{
+		return constant_num_replications_detector;
+	}
+	if (!istr.compare("banks2005"))
+	{
+		return banks2005_num_replications_detector;
+	}
+
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_num_replications_detector_category Unknown number of replications detector category.");
+}
+
+
+replication_size_detector_category text_to_replication_size_detector_category(::std::string const& str)
+{
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("fixed-duration"))
+	{
+		return fixed_duration_replication_size_detector;
+	}
+	if (!istr.compare("fixed-num-observations"))
+	{
+		return fixed_num_obs_replication_size_detector;
+	}
+
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_replication_size_detector_category Unknown replication size detector category.");
+}
+
 }} // Namespace detail::<unnamed>
 
 
@@ -474,6 +509,7 @@ void operator>>(::YAML::Node const& node, statistic_config<RealT>& stat)
 template <typename RealT, typename UIntT>
 void operator>>(::YAML::Node const& node, independent_replications_output_analysis_config<RealT,UIntT>& analysis)
 {
+/*old
 	// Read number of replications
 	if (node.FindValue("num-replications"))
 	{
@@ -490,7 +526,146 @@ void operator>>(::YAML::Node const& node, independent_replications_output_analys
 	}
 	else
 	{
-		analysis.replication_duration = 1000;
+		analysis.replication_duration = 0;
+	}
+	// Read length of each replication
+	if (node.FindValue("num-observations"))
+	{
+		node["num-observations"] >> analysis.num_observations;
+	}
+	else
+	{
+		analysis.num_observations = 0;
+	}
+*/
+
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+	typedef independent_replications_output_analysis_config<real_type,uint_type> output_analysis_config_type;
+
+	// Read Number of Replications
+	{
+		::YAML::Node const& subnode = node["num-replications"];
+		::std::string label;
+
+		subnode["type"] >> label;
+		analysis.num_replications_category = detail::text_to_num_replications_detector_category(label);
+
+		switch (analysis.num_replications_category)
+		{
+			case constant_num_replications_detector:
+				{
+					typedef typename output_analysis_config_type::constant_num_replications_detector_type num_replications_detector_type;
+
+					num_replications_detector_type num_replications_detector;
+
+					if (subnode.FindValue("value"))
+					{
+						subnode["value"] >> num_replications_detector.num_replications;
+					}
+					else
+					{
+						// See Banks et al "Discrete-Event System Simulation" (2005) for the
+						// reason of why of choosing 25 as the number of replications
+						num_replications_detector.num_replications = 25;
+					}
+
+					analysis.num_replications_category_conf = num_replications_detector;
+				}
+				break;
+			case banks2005_num_replications_detector:
+				{
+					typedef typename output_analysis_config_type::banks2005_num_replications_detector_type num_replications_detector_type;
+
+					num_replications_detector_type num_replications_detector;
+
+					if (subnode.FindValue("relative-precision"))
+					{
+						subnode["relative-precision"] >> num_replications_detector.relative_precision;
+					}
+					else
+					{
+						// Default to 4%
+						num_replications_detector.relative_precision = 0.04;
+					}
+					if (subnode.FindValue("confidence-level"))
+					{
+						subnode["confidence-level"] >> num_replications_detector.confidence_level;
+					}
+					else
+					{
+						// Default to 95%
+						num_replications_detector.confidence_level = 0.95;
+					}
+					if (subnode.FindValue("min-value"))
+					{
+						subnode["min-value"] >> num_replications_detector.min_num_replications;
+					}
+					else
+					{
+						num_replications_detector.min_num_replications = 1;
+					}
+					if (subnode.FindValue("max-value"))
+					{
+						subnode["max-value"] >> num_replications_detector.max_num_replications;
+					}
+					else
+					{
+						num_replications_detector.max_num_replications = ::dcs::math::constants::infinity<uint_type>::value;
+					}
+
+					analysis.num_replications_category_conf = num_replications_detector;
+				}
+				break;
+		}
+	}
+	// Read Number of Replications
+	{
+		::YAML::Node const& subnode = node["replication-size"];
+		::std::string label;
+
+		subnode["type"] >> label;
+		analysis.replication_size_category = detail::text_to_replication_size_detector_category(label);
+
+		switch (analysis.replication_size_category)
+		{
+			case fixed_duration_replication_size_detector:
+				{
+					typedef typename output_analysis_config_type::fixed_duration_replication_size_detector_type replication_size_detector_type;
+
+					replication_size_detector_type replication_size_detector;
+
+					if (subnode.FindValue("duration"))
+					{
+						subnode["duration"] >> replication_size_detector.replication_duration;
+					}
+					else
+					{
+						replication_size_detector.replication_duration = 1000;
+					}
+
+					analysis.replication_size_category_conf = replication_size_detector;
+				}
+				break;
+			case fixed_num_obs_replication_size_detector:
+				{
+					typedef typename output_analysis_config_type::fixed_num_obs_replication_size_detector_type replication_size_detector_type;
+
+					replication_size_detector_type replication_size_detector;
+
+					if (subnode.FindValue("num-observations"))
+					{
+						subnode["num-observations"] >> replication_size_detector.num_observations;
+					}
+					else
+					{
+						replication_size_detector.num_observations = ::dcs::math::constants::infinity<uint_type>::value;
+					}
+
+					analysis.replication_size_category_conf = replication_size_detector;
+				}
+				break;
+		}
 	}
 }
 

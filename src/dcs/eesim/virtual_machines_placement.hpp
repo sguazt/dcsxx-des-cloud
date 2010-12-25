@@ -2,18 +2,9 @@
 #define DCS_EESIM_VIRTUAL_MACHINES_PLACEMENT_HPP
 
 
-//#ifdef DCS_DEBUG
-//# include <boost/numeric/ublas/io.hpp>
-//#endif
-//#include <boost/numeric/ublas/matrix.hpp>
-//#include <boost/numeric/ublas/matrix_proxy.hpp>
-//#include <boost/numeric/ublasx/operation/any.hpp>
 #include <cstddef>
-//#include <dcs/container/unordered_map.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
-#ifdef DCS_DEBUG
 # include <iostream>
-#endif // DCS_DEBUG
 #include <map>
 #include <set>
 #include <stdexcept>
@@ -256,14 +247,12 @@ DCS_DEBUG_TRACE("TRUE");//XXX
 	}
 
 
-#ifdef DCS_DEBUG
 	template <
 		typename CharT,
 		typename CharTraitsT,
 		typename ATraitsT
 	>
 	friend ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, virtual_machines_placement<ATraitsT> const& placement);
-#endif // DCS_DEBUG
 
 
 	//private: matrix_type P_;
@@ -273,7 +262,6 @@ DCS_DEBUG_TRACE("TRUE");//XXX
 };
 
 
-#ifdef DCS_DEBUG
 template <
 	typename CharT,
 	typename CharTraitsT,
@@ -310,7 +298,6 @@ template <
 
 	return os;
 }
-#endif // DCS_DEBUG
 
 }} // Namespace dcs::eesim
 
