@@ -16,7 +16,8 @@ class performance_measure
 
 
 	public: performance_measure()
-	: category_(unknown_performance_measure),
+//	: category_(unknown_performance_measure),
+	: category_(),
 	  value_(::std::numeric_limits<real_type>::quiet_NaN())
 	{
 	}

@@ -43,8 +43,8 @@ struct banks2005_num_replications_detector_config
 	typedef RealT real_type;
 	typedef UIntT uint_type;
 
-	real_type confidence_level;
-	real_type relative_precision;
+//	real_type confidence_level;
+//	real_type relative_precision;
 	uint_type min_num_replications;
 	uint_type max_num_replications;
 };
@@ -88,14 +88,27 @@ struct independent_replications_output_analysis_config
 
 
 template <typename RealT, typename UIntT>
+struct simulation_output_analysis_config
+{
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+	typedef independent_replications_output_analysis_config<real_type,uint_type> independent_replications_config_type;
+
+	real_type confidence_level;
+	real_type relative_precision;
+	output_analysis_category category;
+	::boost::variant<independent_replications_config_type> category_conf;
+};
+
+
+template <typename RealT, typename UIntT>
 struct simulation_config
 {
 	typedef RealT real_type;
 	typedef UIntT uint_type;
-	typedef independent_replications_output_analysis_config<real_type,uint_type> independent_replications_output_analysis_config_type;
+	typedef simulation_output_analysis_config<real_type,uint_type> output_analysis_config_type;
 
-	output_analysis_category output_analysis_type;
-	::boost::variant<independent_replications_output_analysis_config_type> output_analysis_conf;
+	output_analysis_config_type output_analysis;
 };
 
 
@@ -128,9 +141,9 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, banks2005_num_replications_detector_config<RealT,UIntT> const& conf)
 {
 	os << "<(banks2005-num-replications-detector)"
-	   << " confidence-level: " << conf.confidence_level
-	   << ", relative-precision: " << conf.relative_precision
-	   << ", min-num-replications: " << conf.min_num_replications
+//	   << " confidence-level: " << conf.confidence_level
+//	   << ", relative-precision: " << conf.relative_precision
+	   << " min-num-replications: " << conf.min_num_replications
 	   << ", max-num-replications: " << conf.max_num_replications
 	   << ">";
 
@@ -173,26 +186,24 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 
 
 template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
-::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, simulation_config<RealT,UIntT> const& sim)
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, simulation_output_analysis_config<RealT,UIntT> const& conf)
+{
+	os << "<(output-analysis)"
+	   << " confidence-level: " << conf.confidence_level
+	   << " relative-precision: " << conf.relative_precision
+	   << ", method: " << conf.category_conf
+	   << ">";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, simulation_config<RealT,UIntT> const& conf)
 {
 	os << "<(simulation)"
-	   << " " << sim.output_analysis_conf
+	   << " output-analysis: " << conf.output_analysis
 	   << ">";
-//	   << " output-analysis: " << sim.output_analysis_type;
-/*
-	switch (sim.output_analysis_type)
-	{
-		case independent_replications_output_analysis:
-			{
-				independent_replications_output_analysis_config<RealT,UIntT> conf;
-				conf = ::boost::get< independent_replications_output_analysis_config<RealT,UIntT> >(sim.output_analysis_conf);
-				os << conf;
-			}
-			break;
-	}
-
-	os << ">";
-*/
 
 	return os;
 }

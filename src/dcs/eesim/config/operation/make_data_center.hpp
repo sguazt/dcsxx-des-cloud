@@ -758,20 +758,24 @@ template <
 		typename TraitsT::uint_type
 	>
 > make_independent_replications_output_statistic(::dcs::des::statistic_category stat_category, 
-												 independent_replications_output_analysis_config<RealT,UIntT> const& output_analysis_conf,
+												 simulation_config<RealT,UIntT> const& simulation_conf,
 												 simulation_info<TraitsT> const& sim_info,
 												 bool primary)
 {
 	typedef RealT real_type;
 	typedef UIntT uint_type;
 	typedef TraitsT traits_type;
-	typedef independent_replications_output_analysis_config<real_type,uint_type> output_analysis_config_type;
-	typedef configuration<real_type,uint_type> configuration_type;
+	typedef simulation_config<RealT,UIntT> simulation_config_type;
+	typedef typename simulation_config_type::output_analysis_config_type::independent_replications_config_type output_analysis_config_type;
 	typedef simulation_info<traits_type> simulation_info_type;
 	typedef typename traits_type::uint_type target_uint_type;
 	typedef typename traits_type::real_type target_real_type;
 	typedef typename traits_type::des_engine_type des_engine_type;
 	typedef ::dcs::des::base_statistic<target_real_type,target_uint_type> output_statistic_type;
+
+	typedef independent_replications_output_analysis_config<real_type,uint_type> output_analysis_config_impl_type;
+
+	output_analysis_config_impl_type const& output_analysis_conf_impl = ::boost::get<output_analysis_config_impl_type>(simulation_conf.output_analysis.category_conf);
 
 	::dcs::shared_ptr<output_statistic_type> ptr_stat;
 
@@ -783,26 +787,27 @@ template <
 				typedef ::dcs::des::null_transient_detector<target_real_type,target_uint_type> transient_detector_type;
 				typedef ::dcs::des::replications::engine<target_real_type,target_uint_type> des_engine_impl_type;
 
-				output_statistic_impl_type stat(0.95);//FIXME: confidence-level is hard-coded
+				target_real_type confidence_level(simulation_conf.output_analysis.confidence_level);
+				target_real_type relative_precision(simulation_conf.output_analysis.relative_precision);
 				transient_detector_type trans_detect;
 				target_uint_type max_num_obs(::dcs::math::constants::infinity<target_uint_type>::value);
 				des_engine_impl_type* ptr_des_eng(dynamic_cast<des_engine_impl_type*>(sim_info.ptr_engine.get()));
-				target_real_type precision(0.04);//FIXME: relative precision is hard-coded
+				output_statistic_impl_type stat(confidence_level);
 
 				if (primary)
 				{
-					switch (output_analysis_conf.num_replications_category)
+					switch (output_analysis_conf_impl.num_replications_category)
 					{
 						case constant_num_replications_detector:
 							{
 								typedef ::dcs::des::replications::constant_num_replications_detector<target_real_type,target_uint_type> num_replications_detector_type;
 								typedef typename output_analysis_config_type::constant_num_replications_detector_type num_replications_detector_config_impl_type;
 
-								num_replications_detector_config_impl_type const& num_replications_detector_conf_impl = ::boost::get<num_replications_detector_config_impl_type>(output_analysis_conf.num_replications_category_conf);
+								num_replications_detector_config_impl_type const& num_replications_detector_conf_impl = ::boost::get<num_replications_detector_config_impl_type>(output_analysis_conf_impl.num_replications_category_conf);
 
 								num_replications_detector_type num_reps_detect(num_replications_detector_conf_impl.num_replications);
 
-								switch (output_analysis_conf.replication_size_category)
+								switch (output_analysis_conf_impl.replication_size_category)
 								{
 									case fixed_duration_replication_size_detector:
 										{
@@ -813,7 +818,7 @@ template <
 													> replication_size_detector_type;
 											typedef typename output_analysis_config_type::fixed_duration_replication_size_detector_type replication_size_detector_config_impl_type;
 
-											replication_size_detector_config_impl_type const& replication_size_detector_conf_impl = ::boost::get<replication_size_detector_config_impl_type>(output_analysis_conf.replication_size_category_conf);
+											replication_size_detector_config_impl_type const& replication_size_detector_conf_impl = ::boost::get<replication_size_detector_config_impl_type>(output_analysis_conf_impl.replication_size_category_conf);
 
 											replication_size_detector_type rep_size_detect(replication_size_detector_conf_impl.replication_duration,
 																						   sim_info.ptr_engine);
@@ -824,7 +829,7 @@ template <
 													rep_size_detect,
 													num_reps_detect,
 													*ptr_des_eng,
-													precision,
+													relative_precision,
 													max_num_obs
 												);
 										}
@@ -837,7 +842,7 @@ template <
 													> replication_size_detector_type;
 											typedef typename output_analysis_config_type::fixed_num_obs_replication_size_detector_type replication_size_detector_config_impl_type;
 
-											replication_size_detector_config_impl_type const& replication_size_detector_conf_impl = ::boost::get<replication_size_detector_config_impl_type>(output_analysis_conf.replication_size_category_conf);
+											replication_size_detector_config_impl_type const& replication_size_detector_conf_impl = ::boost::get<replication_size_detector_config_impl_type>(output_analysis_conf_impl.replication_size_category_conf);
 
 											replication_size_detector_type rep_size_detect(replication_size_detector_conf_impl.num_observations);
 
@@ -847,12 +852,12 @@ template <
 													rep_size_detect,
 													num_reps_detect,
 													*ptr_des_eng,
-													precision,
+													relative_precision,
 													max_num_obs
 												);
 										}
 										break;
-								} // switch (output_analysis_conf.replication_size_category) ...
+								} // switch (output_analysis_conf_impl.replication_size_category) ...
 							}
 							break;
 						case banks2005_num_replications_detector:
@@ -860,14 +865,14 @@ template <
 								typedef ::dcs::des::replications::banks2005_num_replications_detector<target_real_type,target_uint_type> num_replications_detector_type;
 								typedef typename output_analysis_config_type::banks2005_num_replications_detector_type num_replications_detector_config_impl_type;
 
-								num_replications_detector_config_impl_type const& num_replications_detector_conf_impl = ::boost::get<num_replications_detector_config_impl_type>(output_analysis_conf.num_replications_category_conf);
+								num_replications_detector_config_impl_type const& num_replications_detector_conf_impl = ::boost::get<num_replications_detector_config_impl_type>(output_analysis_conf_impl.num_replications_category_conf);
 
-								num_replications_detector_type num_reps_detect(num_replications_detector_conf_impl.confidence_level,
-																			   num_replications_detector_conf_impl.relative_precision,
+								num_replications_detector_type num_reps_detect(confidence_level,
+																			   relative_precision,
 																			   num_replications_detector_conf_impl.min_num_replications,
 																			   num_replications_detector_conf_impl.max_num_replications);
 
-								switch (output_analysis_conf.replication_size_category)
+								switch (output_analysis_conf_impl.replication_size_category)
 								{
 									case fixed_duration_replication_size_detector:
 										{
@@ -878,7 +883,7 @@ template <
 													> replication_size_detector_type;
 											typedef typename output_analysis_config_type::fixed_duration_replication_size_detector_type replication_size_detector_config_impl_type;
 
-											replication_size_detector_config_impl_type const& replication_size_detector_conf_impl = ::boost::get<replication_size_detector_config_impl_type>(output_analysis_conf.replication_size_category_conf);
+											replication_size_detector_config_impl_type const& replication_size_detector_conf_impl = ::boost::get<replication_size_detector_config_impl_type>(output_analysis_conf_impl.replication_size_category_conf);
 
 											replication_size_detector_type rep_size_detect(replication_size_detector_conf_impl.replication_duration,
 																						   sim_info.ptr_engine);
@@ -889,7 +894,7 @@ template <
 													rep_size_detect,
 													num_reps_detect,
 													*ptr_des_eng,
-													precision,
+													relative_precision,
 													max_num_obs
 												);
 										}
@@ -902,7 +907,7 @@ template <
 													> replication_size_detector_type;
 											typedef typename output_analysis_config_type::fixed_num_obs_replication_size_detector_type replication_size_detector_config_impl_type;
 
-											replication_size_detector_config_impl_type const& replication_size_detector_conf_impl = ::boost::get<replication_size_detector_config_impl_type>(output_analysis_conf.replication_size_category_conf);
+											replication_size_detector_config_impl_type const& replication_size_detector_conf_impl = ::boost::get<replication_size_detector_config_impl_type>(output_analysis_conf_impl.replication_size_category_conf);
 
 											replication_size_detector_type rep_size_detect(replication_size_detector_conf_impl.num_observations);
 
@@ -912,15 +917,15 @@ template <
 													rep_size_detect,
 													num_reps_detect,
 													*ptr_des_eng,
-													precision,
+													relative_precision,
 													max_num_obs
 												);
 										}
 										break;
-								} // switch (output_analysis_conf.replication_size_category) ...
+								} // switch (output_analysis_conf_impl.replication_size_category) ...
 							}
 							break;
-					} // switch (output_analysis_conf.num_replications_category) ...
+					} // switch (output_analysis_conf_impl.num_replications_category) ...
 				}
 				else
 				{
@@ -936,12 +941,14 @@ template <
 							replication_size_detector_type(),
 							num_replications_detector_type(),
 							*ptr_des_eng,
-							precision,
+							relative_precision,
 							max_num_obs
 						);
 				}
 			}
 			break;
+		default:
+			throw ::std::runtime_error("[dcs::eesim::config::detail::make_independent_replications_output_statistic] Statistic type not hanlded.");
 	} // switch (stat_category) ...
 
 	return ptr_stat;
@@ -975,16 +982,12 @@ template <
 
 	if (analyzable)
 	{
-		switch (simulation_conf.output_analysis_type)
+		switch (simulation_conf.output_analysis.category)
 		{
 			case independent_replications_output_analysis:
 				{
-					typedef independent_replications_output_analysis_config<real_type,uint_type> output_analysis_config_impl_type;
-
-					output_analysis_config_impl_type const& output_analysis_conf_impl = ::boost::get<output_analysis_config_impl_type>(simulation_conf.output_analysis_conf);
-
 					ptr_stat = make_independent_replications_output_statistic(stat_category,
-																			  output_analysis_conf_impl,
+																			  simulation_conf,
 																			  sim_info,
 																			  primary);
 				}
@@ -999,9 +1002,11 @@ template <
 				{
 					typedef ::dcs::des::mean_estimator<target_real_type,target_uint_type> output_statistic_impl_type;
 
-					ptr_stat = ::dcs::make_shared<output_statistic_impl_type>(0.95);//FIXME: confidence-level is hard-coded
+					ptr_stat = ::dcs::make_shared<output_statistic_impl_type>(simulation_conf.output_analysis.confidence_level);
 				}
 				break;
+			default:
+				throw ::std::runtime_error("[dcs::eesim::config::detail::make_output_statistic] Statistic type not hanlded.");
 		}
 	}
 
@@ -1434,7 +1439,7 @@ template <typename TraitsT, typename RealT>
 	::dcs::eesim::performance_measure_category,
 	typename TraitsT::real_type,
 	typename TraitsT::real_type
-> make_application_sla_cost_model(application_sla_config<RealT> const& sla_conf, ::dcs::eesim::multi_tier_application<TraitsT> const& app)
+> make_application_sla_cost_model(application_sla_config<RealT> const& sla_conf)
 {
 	typedef TraitsT traits_type;
 	typedef application_sla_config<RealT> sla_config_type;
@@ -1596,7 +1601,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 
 	// SLA
 	ptr_app->sla_cost_model(
-		make_application_sla_cost_model<TraitsT>(app_conf.sla, *ptr_app)
+		make_application_sla_cost_model<TraitsT>(app_conf.sla)
 	);
 
 	// Performance model

@@ -30,8 +30,8 @@ class application_performance_model_traits<
 				return model.system_response_time();
 			case throughput_performance_measure:
 				return model.system_throughput();
-			case unknown_performance_measure:
-				break;
+//			case unknown_performance_measure:
+//				break;
 		}
 
 		return ::std::numeric_limits<real_type>::quiet_NaN();
@@ -46,8 +46,8 @@ class application_performance_model_traits<
 				return model.station_response_times()(tier_id);
 			case throughput_performance_measure:
 				return model.station_throughputs()(tier_id);
-			case unknown_performance_measure:
-				break;
+//			case unknown_performance_measure:
+//				break;
 		}
 
 		return ::std::numeric_limits<real_type>::quiet_NaN();

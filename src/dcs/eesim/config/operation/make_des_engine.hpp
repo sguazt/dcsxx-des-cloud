@@ -6,6 +6,7 @@
 #include <dcs/des/engine.hpp>
 #include <dcs/des/replications/engine.hpp>
 #include <dcs/eesim/config/configuration.hpp>
+#include <dcs/eesim/config/simulation.hpp>
 #include <dcs/memory.hpp>
 #include <stdexcept>
 
@@ -21,14 +22,14 @@ template <typename RealT, typename UIntT>
 
 	::dcs::shared_ptr<engine_type> ptr_eng;
 
-	switch (conf.simulation().output_analysis_type)
+	switch (conf.simulation().output_analysis.category)
 	{
 		case independent_replications_output_analysis:
 			{
 				typedef independent_replications_output_analysis_config<real_type,uint_type> output_analysis_config_type;
 				typedef ::dcs::des::replications::engine<real_type,uint_type> engine_impl_type;
 
-				output_analysis_config_type const& analysis = ::boost::get<output_analysis_config_type>(conf.simulation().output_analysis_conf);
+				output_analysis_config_type const& analysis = ::boost::get<output_analysis_config_type>(conf.simulation().output_analysis.category_conf);
 
 				real_type min_replication_size;
 				uint_type min_num_replications;
@@ -69,7 +70,7 @@ template <typename RealT, typename UIntT>
 						{
 							typedef typename output_analysis_config_type::fixed_num_obs_replication_size_detector_type replication_size_detector_config_type;
 
-							replication_size_detector_config_type const& replication_size_detector_conf = ::boost::get<replication_size_detector_config_type>(analysis.replication_size_category_conf);
+							//replication_size_detector_config_type const& replication_size_detector_conf = ::boost::get<replication_size_detector_config_type>(analysis.replication_size_category_conf);
 
 							//min_replication_size = ::dcs::math::constants::infinity<uint_type>::value;
 							min_replication_size = uint_type(1);

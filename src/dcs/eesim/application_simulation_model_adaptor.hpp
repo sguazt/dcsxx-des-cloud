@@ -2,12 +2,14 @@
 #define DCS_EESIM_APPLICATION_SIMULATION_MODEL_ADAPTOR_HPP
 
 
+#include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/mean_estimator.hpp>
 #include <dcs/eesim/application_simulation_model_traits.hpp>
 #include <dcs/eesim/base_application_simulation_model.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
 #include <dcs/eesim/registry.hpp>
+#include <dcs/macro.hpp>
 //#include <map>
 #include <stdexcept>
 #include <vector>
@@ -280,6 +282,9 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 
 	private: void process_sys_init(des_event_type const& evt, des_engine_context_type& ctx)
 	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing System Initialization (Clock: " << ctx.simulated_time() << ")");
 
 ::std::cerr << ">>>>" << ::std::endl;//XXX
@@ -291,6 +296,9 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 
 	private: void process_sys_finit(des_event_type const& evt, des_engine_context_type& ctx)
 	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing System Finalization (Clock: " << ctx.simulated_time() << ")");
 
 ::std::cerr << "<<<<" << ::std::endl;//XXX
@@ -304,6 +312,8 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 
 	private: void process_request_departure(des_event_type const& evt, des_engine_context_type& ctx)
 	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing Request Departure (Clock: " << ctx.simulated_time() << ")");
 
 		typedef ::std::vector<performance_measure_category> category_container;
@@ -327,12 +337,11 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 ::std::cerr << rt << ::std::endl;//XXX
 					}
 					break;
-//				case throughput_performance_measure:
-//					{
-//						real_type tp = (num_arrivals_-num_departies)/simulated_time;
-//						measures.push_back(rt);
-//					}
-//					break;
+				case throughput_performance_measure:
+					// Nothing to do since throughput is already an aggregate metric
+					////real_type tp = (num_arrivals_-num_departies)/simulated_time;
+					////measures.push_back(tp);
+					break;
 			}
 		}
 

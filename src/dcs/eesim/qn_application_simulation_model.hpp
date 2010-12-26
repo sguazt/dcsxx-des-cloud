@@ -10,6 +10,7 @@
 #include <dcs/eesim/application_simulation_model_traits.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
 #include <dcs/eesim/user_request.hpp>
+#include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
 #include <stdexcept>
 #include <vector>
@@ -142,6 +143,8 @@ class application_simulation_model_traits<
 
 	public: static user_request_type request_state(model_type const& model, des_event_type const& evt)
 	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( model );
+
 		user_request_type req;
 
 		customer_pointer ptr_customer = evt.template unfolded_state<customer_pointer>();

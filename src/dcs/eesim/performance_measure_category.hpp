@@ -30,8 +30,8 @@ namespace dcs { namespace eesim {
 enum performance_measure_category
 {
 	response_time_performance_measure = 0,
-	throughput_performance_measure,
-	unknown_performance_measure
+	throughput_performance_measure/*,
+	unknown_performance_measure*/
 };
 
 }} // Namespace dcs::eesim

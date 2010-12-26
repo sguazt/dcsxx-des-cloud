@@ -579,31 +579,31 @@ void operator>>(::YAML::Node const& node, independent_replications_output_analys
 
 					num_replications_detector_type num_replications_detector;
 
-					if (subnode.FindValue("relative-precision"))
-					{
-						subnode["relative-precision"] >> num_replications_detector.relative_precision;
-					}
-					else
-					{
-						// Default to 4%
-						num_replications_detector.relative_precision = 0.04;
-					}
-					if (subnode.FindValue("confidence-level"))
-					{
-						subnode["confidence-level"] >> num_replications_detector.confidence_level;
-					}
-					else
-					{
-						// Default to 95%
-						num_replications_detector.confidence_level = 0.95;
-					}
+//					if (subnode.FindValue("relative-precision"))
+//					{
+//						subnode["relative-precision"] >> num_replications_detector.relative_precision;
+//					}
+//					else
+//					{
+//						// Default to 4%
+//						num_replications_detector.relative_precision = 0.04;
+//					}
+//					if (subnode.FindValue("confidence-level"))
+//					{
+//						subnode["confidence-level"] >> num_replications_detector.confidence_level;
+//					}
+//					else
+//					{
+//						// Default to 95%
+//						num_replications_detector.confidence_level = 0.95;
+//					}
 					if (subnode.FindValue("min-value"))
 					{
 						subnode["min-value"] >> num_replications_detector.min_num_replications;
 					}
 					else
 					{
-						num_replications_detector.min_num_replications = 1;
+						num_replications_detector.min_num_replications = 2;
 					}
 					if (subnode.FindValue("max-value"))
 					{
@@ -673,23 +673,56 @@ void operator>>(::YAML::Node const& node, independent_replications_output_analys
 template <typename RealT, typename UIntT>
 void operator>>(::YAML::Node const& node, simulation_config<RealT,UIntT>& sim)
 {
-	::std::string label;
+	typedef simulation_config<RealT,UIntT> simulation_config_type;
 
-	::YAML::Node const& subnode = node["output-analysis"];
-	subnode["type"] >> label;
-
-	sim.output_analysis_type = detail::text_to_output_analysis_category(label);
-
-	switch (sim.output_analysis_type)
+	// Read Output Analysis
 	{
-		case independent_replications_output_analysis:
-			{
-				independent_replications_output_analysis_config<RealT,UIntT> conf;
-				subnode >> conf;
+		typedef typename simulation_config_type::output_analysis_config_type output_analysis_config_type;
 
-				sim.output_analysis_conf = conf;
-			}
-			break;
+		output_analysis_config_type output_analysis_conf;
+
+		::YAML::Node const& subnode = node["output-analysis"];
+
+		::std::string label;
+
+		// Read Output Analysis method
+		subnode["type"] >> label;
+		output_analysis_conf.category = detail::text_to_output_analysis_category(label);
+		switch (output_analysis_conf.category)
+		{
+			case independent_replications_output_analysis:
+				{
+					independent_replications_output_analysis_config<RealT,UIntT> conf;
+					subnode >> conf;
+
+					output_analysis_conf.category_conf = conf;
+				}
+				break;
+		}
+
+		// Read Confidence Level
+		if (subnode.FindValue("confidence-level"))
+		{
+			subnode["confidence-level"] >> output_analysis_conf.confidence_level;
+		}
+		else
+		{
+			// Default to 95%
+			output_analysis_conf.confidence_level = 0.95;
+		}
+
+		// Read Relative Precision
+		if (subnode.FindValue("relative-precision"))
+		{
+			subnode["relative-precision"] >> output_analysis_conf.relative_precision;
+		}
+		else
+		{
+			// Default to 4%
+			output_analysis_conf.relative_precision = 0.04;
+		}
+
+		sim.output_analysis = output_analysis_conf;
 	}
 }
 
@@ -1326,28 +1359,28 @@ void operator>>(::YAML::Node const& node, application_simulation_model_config<Re
 			break;
 	}
 
-	// Read statistics
-	{
-		typedef statistic_config<real_type> statistic_config_type;
-
-		::YAML::Node const& subnode = node["statistics"];
-		for (::YAML::Iterator it = subnode.begin(); it != subnode.end(); ++it)
-		{
-			::YAML::Node const& key_node = it.first();
-			::YAML::Node const& value_node = it.second();
-
-			::std::string label;
-			metric_category category;
-			statistic_config_type stat_conf;
-
-			key_node >> label;
-			category = detail::text_to_metric_category(label);
-
-			value_node >> stat_conf;
-
-			model.statistics[category] = stat_conf;
-		}
-	}
+//	// Read statistics
+//	{
+//		typedef statistic_config<real_type> statistic_config_type;
+//
+//		::YAML::Node const& subnode = node["statistics"];
+//		for (::YAML::Iterator it = subnode.begin(); it != subnode.end(); ++it)
+//		{
+//			::YAML::Node const& key_node = it.first();
+//			::YAML::Node const& value_node = it.second();
+//
+//			::std::string label;
+//			metric_category category;
+//			statistic_config_type stat_conf;
+//
+//			key_node >> label;
+//			category = detail::text_to_metric_category(label);
+//
+//			value_node >> stat_conf;
+//
+//			model.statistics[category] = stat_conf;
+//		}
+//	}
 }
 
 

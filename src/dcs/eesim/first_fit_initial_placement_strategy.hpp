@@ -39,21 +39,17 @@ class first_fit_initial_placement_strategy: public base_initial_placement_strate
 
 		pm_container machs =  dc.physical_machines();
 		vm_container vms =  dc.virtual_machines();
-		::std::size_t nmachs = machs.size();
-		::std::size_t nvms = vms.size();
 
 DCS_DEBUG_TRACE("BEGIN Initial Placement");//XXX
-DCS_DEBUG_TRACE("#Machines: " << nmachs);//XXX
-DCS_DEBUG_TRACE("#VMs: " << nvms);//XXX
+DCS_DEBUG_TRACE("#Machines: " << machs.size());//XXX
+DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 
-		//virtual_machines_placement<traits_type> deployment(nvms, nmachs);
 		virtual_machines_placement<traits_type> deployment;
 
 		vm_iterator vm_end_it = vms.end();
 		for (vm_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
 		{
 			virtual_machine_pointer ptr_vm = *vm_it;
-			vm_identifier_type vm_id = ptr_vm->id();
 			//pm_identifier_type mach_id;
 			physical_machine_pointer ptr_mach;
 			bool placed = false;
@@ -82,7 +78,7 @@ DCS_DEBUG_TRACE("#VMs: " << nvms);//XXX
 //								 shares.begin(),
 //								 shares.end());
 //			}
-DCS_DEBUG_TRACE("Placed: VM(" << vm_id << ") -> PM(" << ptr_mach->id() << ") ==> OK? " <<  std::boolalpha << placed);///XXX
+DCS_DEBUG_TRACE("Placed: VM(" << ptr_vm->id() << ") -> PM(" << ptr_mach->id() << ") ==> OK? " <<  std::boolalpha << placed);///XXX
 		}
 
 DCS_DEBUG_TRACE("END Initial Placement ==> " << deployment);///XXX
