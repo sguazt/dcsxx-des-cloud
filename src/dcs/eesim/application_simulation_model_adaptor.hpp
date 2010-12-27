@@ -15,6 +15,11 @@
 #include <vector>
 
 
+//TODO:
+// - Output statistic category is currently fixed to mean_estimator, but
+//   maybe we want to handles some other kind of stats.
+
+
 namespace dcs { namespace eesim {
 
 template <
@@ -39,25 +44,27 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 	private: typedef ::std::map<uint_type,foreign_identifier_type> tier_mapping_container;
 	private: typedef typename base_type::user_request_type user_request_type;
 	private: typedef registry<traits_type> registry_type;
-//	private: typedef ::std::vector<output_statistic_pointer> output_statistic_container;
-//	private: typedef ::std::map<performance_measure_category,output_statistic_container> output_statistic_category_container;
 	private: typedef typename traits_type::des_engine_type des_engine_type;
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
+	private: typedef ::dcs::des::mean_estimator<real_type,uint_type> mean_estimator_statistic_type;
+	private: typedef ::std::vector<output_statistic_pointer> output_statistic_container;
 
 
+	/// A constructor.
 	public: explicit application_simulation_model_adaptor(model_type const& model)
 	: base_type(),
 	  model_(model),
 	  tier_map_(),
 	  num_sla_viols_(0),
-	  ptr_num_arrs_stat_(new ::dcs::des::mean_estimator<real_type,uint_type>()),
-	  ptr_num_deps_stat_(new ::dcs::des::mean_estimator<real_type,uint_type>()),
-	  ptr_num_sla_viols_stat_(new ::dcs::des::mean_estimator<real_type,uint_type>())
+	  ptr_num_arrs_stat_(new mean_estimator_statistic_type()),
+	  ptr_num_deps_stat_(new mean_estimator_statistic_type()),
+	  ptr_num_sla_viols_stat_(new mean_estimator_statistic_type())
 	{
 		init();
 	}
 
 
+	/// The destructor.
 	public: ~application_simulation_model_adaptor()
 	{
 		disconnect_from_event_sources();
@@ -67,6 +74,17 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 	public: void tier_mapping(uint_type tier_id, foreign_identifier_type foreign_id)
 	{
 		tier_map_[tier_id] = foreign_id;
+
+		if (tier_num_arrs_stats_.size() <= tier_id)
+		{
+			tier_num_arrs_stats_.resize(tier_id+1);
+			tier_num_arrs_stats_[tier_id] = ::dcs::make_shared<mean_estimator_statistic_type>();
+		}
+		if (tier_num_deps_stats_.size() <= tier_id)
+		{
+			tier_num_deps_stats_.resize(tier_id+1);
+			tier_num_deps_stats_[tier_id] = ::dcs::make_shared<mean_estimator_statistic_type>();
+		}
 	}
 
 
@@ -111,6 +129,14 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 	{
 		registry_type& ref_reg = registry_type::instance();
 
+		ref_reg.des_engine_ptr()->begin_of_sim_event_source().disconnect(
+			::dcs::functional::bind(
+				&self_type::process_begin_of_sim,
+				this,
+				::dcs::functional::placeholders::_1,
+				::dcs::functional::placeholders::_2
+			)
+		);
 		ref_reg.des_engine_ptr()->system_initialization_event_source().disconnect(
 			::dcs::functional::bind(
 				&self_type::process_sys_init,
@@ -137,6 +163,8 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 		);
 	}
 
+
+	//@{ Interface Member Functions
 
 	private: void do_enable(bool flag)
 	{
@@ -180,6 +208,30 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 	private: output_statistic_type const& do_num_sla_violations() const
 	{
 		return *ptr_num_sla_viols_stat_;
+	}
+
+
+	private: output_statistic_type const& do_tier_num_arrivals(uint_type tier_id) const
+	{
+		// pre: tier_id is a valid tier identifier.
+		DCS_ASSERT(
+			tier_id < tier_num_arrs_stats_.size(),
+			throw ::std::invalid_argument("[dcs::eesim::application_simulation_model_adaptor::do_tier_num_arrivals] Invalid tier identifier.")
+		);
+
+		return *tier_num_arrs_stats_[tier_id];
+	}
+
+
+	private: output_statistic_type const& do_tier_num_departures(uint_type tier_id) const
+	{
+		// pre: tier_id is a valid tier identifier.
+		DCS_ASSERT(
+			tier_id < tier_num_arrs_stats_.size(),
+			throw ::std::invalid_argument("[dcs::eesim::application_simulation_model_adaptor::do_tier_num_departures] Invalid tier identifier.")
+		);
+
+		return *tier_num_deps_stats_[tier_id];
 	}
 
 
@@ -277,8 +329,26 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 		return model_traits_type::request_state(model_, evt);
 	}
 
+	//@} Interface Member Functions
+
 
 	//@{ Event Handlers
+
+	private: void process_begin_of_sim(des_event_type const& evt, des_engine_context_type& ctx)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing Begin-of-Simulation (Clock: " << ctx.simulated_time() << ")");
+
+		// Reset stats
+		ptr_num_sla_viols_stat_->reset();
+		ptr_num_arrs_stat_->reset();
+		ptr_num_deps_stat_->reset();
+
+		DCS_DEBUG_TRACE("(" << this << ") END Processing Begin-of-Simulation (Clock: " << ctx.simulated_time() << ")");
+	}
+
 
 	private: void process_sys_init(des_event_type const& evt, des_engine_context_type& ctx)
 	{
@@ -300,11 +370,26 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing System Finalization (Clock: " << ctx.simulated_time() << ")");
-
 ::std::cerr << "<<<<" << ::std::endl;//XXX
+
+		// Update stats
+		typedef typename tier_mapping_container::const_iterator tier_map_iterator;
+
+		// - System-level stats
 		(*ptr_num_sla_viols_stat_)(num_sla_viols_);
-		(*ptr_num_arrs_stat_)(model_.num_arrivals());
-		(*ptr_num_deps_stat_)(model_.num_departures());
+		(*ptr_num_arrs_stat_)(model_traits_type::num_arrivals(model_));
+		(*ptr_num_deps_stat_)(model_traits_type::num_departures(model_));
+
+		// - Per-tier stats
+		tier_map_iterator tier_map_end_it = tier_map_.end();
+		for (tier_map_iterator it = tier_map_.begin(); it != tier_map_end_it; ++it)
+		{
+			uint_type native_id(it->first);
+			uint_type foreign_id(it->second);
+
+			(*tier_num_arrs_stats_[native_id])(model_traits_type::tier_num_arrivals(model_, foreign_id));
+			(*tier_num_deps_stats_[native_id])(model_traits_type::tier_num_departures(model_, foreign_id));
+		}
 
 		DCS_DEBUG_TRACE("(" << this << ") END Processing System Finalization (Clock: " << ctx.simulated_time() << ")");
 	}
@@ -358,6 +443,8 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 	//@} Event Handlers
 
 
+	//@{ Data Members
+
 	private: model_type model_;
 	private: tier_mapping_container tier_map_;
 //	private: output_statistic_category_container stats_;
@@ -365,6 +452,10 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 	private: output_statistic_pointer ptr_num_arrs_stat_;
 	private: output_statistic_pointer ptr_num_deps_stat_;
 	private: output_statistic_pointer ptr_num_sla_viols_stat_;
+	private: output_statistic_container tier_num_arrs_stats_;
+	private: output_statistic_container tier_num_deps_stats_;
+
+	//@} Data Members
 };
 
 }} // Namespace dcs::eesim

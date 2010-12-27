@@ -99,6 +99,8 @@ template <
 void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr< ::dcs::eesim::data_center<TraitsT> > const& ptr_dc)
 {
 	typedef TraitsT traits_type;
+	typedef typename traits_type::uint_type uint_type;
+	typedef typename traits_type::real_type real_type;
 	typedef ::dcs::eesim::data_center<traits_type> data_center_type;
 
 	// VM Placement
@@ -159,15 +161,19 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 				}
 			}
 
+			// Tier statistics
 			tier_container tiers;
 			tiers = ptr_app->tiers();
 			tier_iterator tier_end_it = tiers.end();
 			for (tier_iterator tier_it = tiers.begin(); tier_it != tier_end_it; ++tier_it)
 			{
 				application_tier_pointer ptr_tier(*tier_it);
+				uint_type tier_id(ptr_tier->id());
 
 				os << " Tier '" << ptr_tier->name() << "': " << ::std::endl;
 
+				os << "   # Arrivals: " << ptr_app->simulation_model().tier_num_arrivals(tier_id) << ::std::endl;
+				os << "   # Departures: " << ptr_app->simulation_model().tier_num_departures(tier_id) << ::std::endl;
 				statistic_category_iterator stat_cat_end_it = stat_categories.end();
 				for (statistic_category_iterator stat_cat_it = stat_categories.begin(); stat_cat_it != stat_cat_end_it; ++stat_cat_it)
 				{
@@ -176,7 +182,7 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 					os << "   Response Time: " << ::std::endl;//FIXME: statistic category name is hard-coded
 
 					statistic_container ptr_tier_stats;
-					ptr_tier_stats = ptr_app->simulation_model().tier_statistic(ptr_tier->id(), stat_category);
+					ptr_tier_stats = ptr_app->simulation_model().tier_statistic(tier_id, stat_category);
 					statistic_iterator tier_stat_end_it = ptr_tier_stats.end();
 					for (statistic_iterator tier_stat_it = ptr_tier_stats.begin(); tier_stat_it != tier_stat_end_it; ++tier_stat_it)
 					{

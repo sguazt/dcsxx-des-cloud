@@ -172,6 +172,30 @@ class application_simulation_model_traits<
 	}
 
 
+	public: static uint_type num_arrivals(model_type const& model)
+	{
+		return model.num_arrivals();
+	}
+
+
+	public: static uint_type num_departures(model_type const& model)
+	{
+		return model.num_departures();
+	}
+
+
+	public: static uint_type tier_num_arrivals(model_type const& model, foreign_identifier_type foreign_id)
+	{
+		return model.get_node(foreign_id).num_arrivals();
+	}
+
+
+	public: static uint_type tier_num_departures(model_type const& model, foreign_identifier_type foreign_id)
+	{
+		return model.get_node(foreign_id).num_departures();
+	}
+
+
 //	private: static bool has_foreign_network_category(performance_measure_category category)
 //	{
 //		switch (category)

@@ -63,8 +63,19 @@ class application_simulation_model_traits
 
 
 	public: static user_request_type request_state(model_type const& model, des_event_type const& evt);
-};
 
+
+	public: static uint_type num_arrivals(model_type const& model);
+
+
+	public: static uint_type num_departures(model_type const& model);
+
+
+	public: static uint_type tier_num_arrivals(model_type const& model, foreign_identifier_type foreign_id);
+
+
+	public: static uint_type tier_num_departures(model_type const& model, foreign_identifier_type foreign_id);
+};
 
 }} // Namespace dcs::eesim
 

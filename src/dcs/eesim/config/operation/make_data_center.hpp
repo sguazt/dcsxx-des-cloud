@@ -12,6 +12,8 @@
 #include <dcs/des/base_statistic.hpp>
 #include <dcs/des/base_analyzable_statistic.hpp>
 #include <dcs/des/mean_estimator.hpp>
+#include <dcs/des/model/qn/base_routing_strategy.hpp>
+#include <dcs/des/model/qn/base_service_strategy.hpp>
 #include <dcs/des/model/qn/closed_customer_class.hpp>
 #include <dcs/des/model/qn/customer_class.hpp>
 #include <dcs/des/model/qn/delay_station_node.hpp>
@@ -23,8 +25,6 @@
 #include <dcs/des/model/qn/queueing_network.hpp>
 #include <dcs/des/model/qn/queueing_station_node.hpp>
 #include <dcs/des/model/qn/queueing_strategy.hpp>
-#include <dcs/des/model/qn/routing_strategy.hpp>
-#include <dcs/des/model/qn/service_strategy.hpp>
 #include <dcs/des/model/qn/sink_node.hpp>
 #include <dcs/des/model/qn/source_node.hpp>
 #include <dcs/des/null_transient_detector.hpp>
@@ -941,7 +941,7 @@ template <
 							replication_size_detector_type(),
 							num_replications_detector_type(),
 							*ptr_des_eng,
-							relative_precision,
+							::dcs::math::constants::infinity<real_type>::value,
 							max_num_obs
 						);
 				}
@@ -1078,7 +1078,7 @@ template <
 								typedef typename node_config_type::delay_node_config_type node_config_impl_type;
 								typedef ::dcs::math::stats::any_distribution<real_type> distribution_type;
 								typedef ::std::vector<distribution_type> distribution_container;
-								typedef ::dcs::des::model::qn::routing_strategy<model_impl_traits_type> routing_strategy_type;
+								typedef ::dcs::des::model::qn::base_routing_strategy<model_impl_traits_type> routing_strategy_type;
 
 								//::dcs::shared_ptr<node_impl_type> ptr_node_impl;
 								::dcs::shared_ptr<routing_strategy_type> ptr_routing;
@@ -1133,8 +1133,8 @@ template <
 							{
 								typedef ::dcs::des::model::qn::queueing_station_node<model_impl_traits_type> node_impl_type;
 								typedef typename node_config_type::queue_node_config_type node_config_impl_type;
-								typedef ::dcs::des::model::qn::service_strategy<model_impl_traits_type> service_strategy_type;
-								typedef ::dcs::des::model::qn::routing_strategy<model_impl_traits_type> routing_strategy_type;
+								typedef ::dcs::des::model::qn::base_service_strategy<model_impl_traits_type> service_strategy_type;
+								typedef ::dcs::des::model::qn::base_routing_strategy<model_impl_traits_type> routing_strategy_type;
 								typedef ::dcs::des::model::qn::queueing_strategy<model_impl_traits_type> queueing_strategy_type;
 
 								//::dcs::shared_ptr<node_impl_type> ptr_node_impl;
@@ -1240,7 +1240,7 @@ template <
 							{
 								typedef ::dcs::des::model::qn::source_node<model_impl_traits_type> node_impl_type;
 								typedef typename node_config_type::source_node_config_type node_config_impl_type;
-								typedef ::dcs::des::model::qn::routing_strategy<model_impl_traits_type> routing_strategy_type;
+								typedef ::dcs::des::model::qn::base_routing_strategy<model_impl_traits_type> routing_strategy_type;
 
 								node_config_impl_type const& node_conf_impl = ::boost::get<node_config_impl_type>(node_it->category_conf);
 

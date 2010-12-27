@@ -66,6 +66,18 @@ class base_application_simulation_model: public ::dcs::des::entity
 	}
 
 
+	public: output_statistic_type const& tier_num_arrivals(uint_type tier_id) const
+	{
+		return do_tier_num_arrivals(tier_id);
+	}
+
+
+	public: output_statistic_type const& tier_num_departures(uint_type tier_id) const
+	{
+		return do_tier_num_departures(tier_id);
+	}
+
+
 	public: des_event_source_type& request_arrival_event_source()
 	{
 		return do_request_arrival_event_source();
@@ -163,6 +175,12 @@ class base_application_simulation_model: public ::dcs::des::entity
 
 
 	private: virtual output_statistic_type const& do_num_sla_violations() const = 0;
+
+
+	private: virtual output_statistic_type const& do_tier_num_arrivals(uint_type tier_id) const = 0;
+
+
+	private: virtual output_statistic_type const& do_tier_num_departures(uint_type tier_id) const = 0;
 
 
 	private: virtual des_event_source_type& do_request_arrival_event_source() = 0;
