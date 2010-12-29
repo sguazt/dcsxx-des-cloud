@@ -28,8 +28,8 @@ class data_center_manager
 	public: typedef ::dcs::shared_ptr<initial_placement_strategy_type> initial_placement_strategy_pointer;
 	private: typedef typename traits_type::des_engine_type des_engine_type;
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
-//	private: typedef ::dcs::des::engine_traits<des_engine_type>::event_source_type des_event_source_type;
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
+//	private: typedef ::dcs::des::engine_traits<des_engine_type>::event_source_type des_event_source_type;
 //	private: typedef ::dcs::shared_ptr<des_event_source_type> des_event_source_pointer;
 
 
@@ -78,9 +78,15 @@ class data_center_manager
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");//XXX
+
 		// precondition: pointer to vm initial placer must be a valid pointer
 		DCS_DEBUG_ASSERT( ptr_dc_ );
 
+//		// Remove all previously placed VM
+//		ptr_dc_->displace_virtual_machines();
+
+		// Create a new VM placement
 		ptr_dc_->place_virtual_machines(
 			ptr_init_placement_->placement(*ptr_dc_)
 		);
@@ -93,8 +99,10 @@ class data_center_manager
 		{
 			registry<traits_type>::instance().des_engine_ptr()->stop_now();
 
-			DCS_DEBUG_TRACE("Warning: Unable to start any application.");
+			::std::cerr << "[Warning] Unable to start any application." << ::std::endl;
 		}
+
+		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");//XXX
 	}
 
 

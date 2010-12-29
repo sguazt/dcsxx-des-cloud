@@ -104,7 +104,19 @@ class application_tier
 	}
 
 
-	public: application_pointer application_ptr() const
+	public: application_type const& application() const
+	{
+		return *ptr_app_;
+	}
+
+
+	public: application_type& application()
+	{
+		return *ptr_app_;
+	}
+
+
+	protected: application_pointer application_ptr() const
 	{
 		return ptr_app_;
 	}

@@ -279,6 +279,10 @@ initial_placement_strategy_category text_to_initial_placement_strategy_category(
 {
 	::std::string istr = ::dcs::string::to_lower_copy(str);
 
+	if (!istr.compare("best-fit"))
+	{
+		return best_fit_initial_placement_strategy;
+	}
 	if (!istr.compare("first-fit"))
 	{
 		return first_fit_initial_placement_strategy;
@@ -1747,6 +1751,15 @@ void operator>>(::YAML::Node const& node, initial_placement_strategy_config& str
 
 	switch (strategy_conf.category)
 	{
+		case best_fit_initial_placement_strategy:
+			{
+				typedef strategy_config_type::best_fit_initial_placement_strategy_config_type strategy_config_impl_type;
+
+				strategy_config_impl_type strategy_conf_impl;
+
+				strategy_conf.category_conf = strategy_conf_impl;
+			}
+			break;
 		case first_fit_initial_placement_strategy:
 			{
 				typedef strategy_config_type::first_fit_initial_placement_strategy_config_type strategy_config_impl_type;

@@ -48,6 +48,48 @@ class base_application_simulation_model: public ::dcs::des::entity
 	}
 
 
+	public: uint_type actual_num_arrivals() const
+	{
+		return do_actual_num_arrivals();
+	}
+
+
+	public: uint_type actual_num_departures() const
+	{
+		return do_actual_num_departures();
+	}
+
+
+	public: uint_type actual_num_sla_violations() const
+	{
+		return do_actual_num_sla_violations();
+	}
+
+
+//	public: real_type actual_busy_time() const
+//	{
+//		return do_actual_busy_time();
+//	}
+
+
+	public: uint_type actual_tier_num_arrivals(uint_type tier_id) const
+	{
+		return do_actual_tier_num_arrivals(tier_id);
+	}
+
+
+	public: uint_type actual_tier_num_departures(uint_type tier_id) const
+	{
+		return do_actual_tier_num_departures(tier_id);
+	}
+
+
+	public: real_type actual_tier_busy_time(uint_type tier_id) const
+	{
+		return do_actual_tier_busy_time(tier_id);
+	}
+
+
 	public: output_statistic_type const& num_arrivals() const
 	{
 		return do_num_arrivals();
@@ -166,6 +208,27 @@ class base_application_simulation_model: public ::dcs::des::entity
 	{
 		return ptr_app_;
 	}
+
+
+	private: virtual uint_type do_actual_num_arrivals() const = 0;
+
+
+	private: virtual uint_type do_actual_num_departures() const = 0;
+
+
+	private: virtual uint_type do_actual_num_sla_violations() const = 0;
+
+
+//	private: virtual real_type do_actual_busy_time() const = 0;
+
+
+	private: virtual uint_type do_actual_tier_num_arrivals(uint_type tier_id) const = 0;
+
+
+	private: virtual uint_type do_actual_tier_num_departures(uint_type tier_id) const = 0;
+
+
+	private: virtual real_type do_actual_tier_busy_time(uint_type tier_id) const = 0;
 
 
 	private: virtual output_statistic_type const& do_num_arrivals() const = 0;

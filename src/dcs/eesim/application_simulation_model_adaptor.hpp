@@ -9,6 +9,7 @@
 #include <dcs/eesim/base_application_simulation_model.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
 #include <dcs/eesim/registry.hpp>
+#include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 //#include <map>
 #include <stdexcept>
@@ -56,8 +57,8 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 	  model_(model),
 	  tier_map_(),
 	  num_sla_viols_(0),
-	  ptr_num_arrs_stat_(new mean_estimator_statistic_type()),
-	  ptr_num_deps_stat_(new mean_estimator_statistic_type()),
+	  ptr_num_arrs_stat_(new mean_estimator_statistic_type()),//FIXME: this should be forwarded to the adaptee object
+	  ptr_num_deps_stat_(new mean_estimator_statistic_type()),//FIXME: this should be forwarded to the adaptee object
 	  ptr_num_sla_viols_stat_(new mean_estimator_statistic_type())
 	{
 		init();
@@ -98,6 +99,14 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 	{
 		registry_type& ref_reg = registry_type::instance();
 
+		ref_reg.des_engine_ptr()->begin_of_sim_event_source().connect(
+			::dcs::functional::bind(
+				&self_type::process_begin_of_sim,
+				this,
+				::dcs::functional::placeholders::_1,
+				::dcs::functional::placeholders::_2
+			)
+		);
 		ref_reg.des_engine_ptr()->system_initialization_event_source().connect(
 			::dcs::functional::bind(
 				&self_type::process_sys_init,
@@ -190,6 +199,47 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 	private: bool do_enabled() const
 	{
 		return model_traits_type::enabled(model_);
+	}
+
+
+	private: uint_type do_actual_num_arrivals() const
+	{
+		return model_traits_type::actual_num_arrivals(model_);
+	}
+
+
+	private: uint_type do_actual_num_departures() const
+	{
+		return model_traits_type::actual_num_departures(model_);
+	}
+
+
+	private: uint_type do_actual_num_sla_violations() const
+	{
+		return num_sla_viols_;
+	}
+
+
+//	private: real_type do_actual_busy_time() const
+//	{
+//	}
+
+
+	private: uint_type do_actual_tier_num_arrivals(uint_type tier_id) const
+	{
+		return model_traits_type::actual_tier_num_arrivals(model_, tier_map_.at(tier_id));
+	}
+
+
+	private: uint_type do_actual_tier_num_departures(uint_type tier_id) const
+	{
+		return model_traits_type::actual_tier_num_departures(model_, tier_map_.at(tier_id));
+	}
+
+
+	private: real_type do_actual_tier_busy_time(uint_type tier_id) const
+	{
+		return model_traits_type::actual_tier_busy_time(model_, tier_map_.at(tier_id));
 	}
 
 
@@ -339,14 +389,14 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
-		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing Begin-of-Simulation (Clock: " << ctx.simulated_time() << ")");
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing BEGIN-OF-SIMULATION (Clock: " << ctx.simulated_time() << ")");
 
 		// Reset stats
 		ptr_num_sla_viols_stat_->reset();
 		ptr_num_arrs_stat_->reset();
 		ptr_num_deps_stat_->reset();
 
-		DCS_DEBUG_TRACE("(" << this << ") END Processing Begin-of-Simulation (Clock: " << ctx.simulated_time() << ")");
+		DCS_DEBUG_TRACE("(" << this << ") END Processing BEGIN-OF-SIMULATION (Clock: " << ctx.simulated_time() << ")");
 	}
 
 
@@ -355,12 +405,12 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
-		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing System Initialization (Clock: " << ctx.simulated_time() << ")");
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");
 
 ::std::cerr << ">>>>" << ::std::endl;//XXX
 		num_sla_viols_ = uint_type/*zero*/();
 
-		DCS_DEBUG_TRACE("(" << this << ") END Processing System Initialization (Clock: " << ctx.simulated_time() << ")");
+		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");
 	}
 
 
@@ -369,29 +419,29 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
-		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing System Finalization (Clock: " << ctx.simulated_time() << ")");
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing SYSTEM-FINALIZATION (Clock: " << ctx.simulated_time() << ")");
 ::std::cerr << "<<<<" << ::std::endl;//XXX
 
 		// Update stats
-		typedef typename tier_mapping_container::const_iterator tier_map_iterator;
 
 		// - System-level stats
 		(*ptr_num_sla_viols_stat_)(num_sla_viols_);
-		(*ptr_num_arrs_stat_)(model_traits_type::num_arrivals(model_));
-		(*ptr_num_deps_stat_)(model_traits_type::num_departures(model_));
+		(*ptr_num_arrs_stat_)(model_traits_type::actual_num_arrivals(model_));
+		(*ptr_num_deps_stat_)(model_traits_type::actual_num_departures(model_));
 
 		// - Per-tier stats
+		typedef typename tier_mapping_container::const_iterator tier_map_iterator;
 		tier_map_iterator tier_map_end_it = tier_map_.end();
 		for (tier_map_iterator it = tier_map_.begin(); it != tier_map_end_it; ++it)
 		{
 			uint_type native_id(it->first);
 			uint_type foreign_id(it->second);
 
-			(*tier_num_arrs_stats_[native_id])(model_traits_type::tier_num_arrivals(model_, foreign_id));
-			(*tier_num_deps_stats_[native_id])(model_traits_type::tier_num_departures(model_, foreign_id));
+			(*tier_num_arrs_stats_[native_id])(model_traits_type::actual_tier_num_arrivals(model_, foreign_id));
+			(*tier_num_deps_stats_[native_id])(model_traits_type::actual_tier_num_departures(model_, foreign_id));
 		}
 
-		DCS_DEBUG_TRACE("(" << this << ") END Processing System Finalization (Clock: " << ctx.simulated_time() << ")");
+		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-FINALIZATION (Clock: " << ctx.simulated_time() << ")");
 	}
 
 
@@ -399,7 +449,7 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
-		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing Request Departure (Clock: " << ctx.simulated_time() << ")");
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing REQUEST-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
 
 		typedef ::std::vector<performance_measure_category> category_container;
 		typedef typename category_container::const_iterator category_iterator;
@@ -415,6 +465,8 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 		{
 			switch (*it)
 			{
+				case busy_time_performance_measure:
+					throw ::std::runtime_error("[dcs::eesim::application_simulation_model_adaptor::process_request_departure] Busy time as SLO category has not been implemented yet.");//FIXME
 				case response_time_performance_measure:
 					{
 						real_type rt = req.departure_time()-req.arrival_time();
@@ -427,6 +479,8 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 					////real_type tp = (num_arrivals_-num_departies)/simulated_time;
 					////measures.push_back(tp);
 					break;
+				case utilization_performance_measure:
+					throw ::std::runtime_error("[dcs::eesim::application_simulation_model_adaptor::process_request_departure] Utilization as SLO category has not been implemented yet.");//FIXME
 			}
 		}
 
@@ -437,7 +491,7 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 			++num_sla_viols_;
 		}
 
-		DCS_DEBUG_TRACE("(" << this << ") END Processing Request Departure (Clock: " << ctx.simulated_time() << ")");
+		DCS_DEBUG_TRACE("(" << this << ") END Processing REQUEST-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
 	}
 
 	//@} Event Handlers

@@ -26,6 +26,7 @@
 #define DCS_EESIM_DATA_CENTER_HPP
 
 
+#include <dcs/des/engine_traits.hpp>
 #include <dcs/eesim/base_application_controller.hpp>
 #include <dcs/eesim/base_physical_machine_controller.hpp>
 #include <dcs/eesim/multi_tier_application.hpp>
@@ -45,6 +46,7 @@ namespace dcs { namespace eesim {
 template <typename TraitsT>
 class data_center
 {
+	private: typedef data_center<TraitsT> self_type;
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::application_identifier_type application_identifier_type;
 	public: typedef typename traits_type::physical_machine_identifier_type physical_machine_identifier_type;
@@ -57,6 +59,7 @@ class data_center
 	public: typedef base_physical_machine_controller<traits_type> physical_machine_controller_type;
 	public: typedef ::dcs::shared_ptr<application_controller_type> application_controller_pointer;
 	public: typedef ::dcs::shared_ptr<physical_machine_controller_type> physical_machine_controller_pointer;
+	public: typedef virtual_machines_placement<traits_type> virtual_machines_placement_type;
 	private: typedef ::std::vector<application_pointer> application_container;
 	private: typedef ::std::vector<application_controller_pointer> application_controller_container;
 	private: typedef ::std::vector<physical_machine_pointer> physical_machine_container;
@@ -72,6 +75,16 @@ class data_center
 						application_identifier_type,
 						::std::vector<virtual_machine_identifier_type>
 					> deployed_application_container;
+	private: typedef typename traits_type::des_engine_type des_engine_type;
+	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
+	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
+
+
+
+	public: data_center()
+	{
+		init();
+	}
 
 
 	public: application_identifier_type add_application(application_pointer const& ptr_app,
@@ -186,10 +199,10 @@ class data_center
 	}
 
 
-	public: void place_virtual_machines(virtual_machines_placement<traits_type> const& placement,
+	public: void place_virtual_machines(virtual_machines_placement_type const& placement,
 										bool power_on = false)
 	{
-		typedef typename virtual_machines_placement<traits_type>::const_iterator iterator;
+		typedef typename virtual_machines_placement_type::const_iterator iterator;
 
 		iterator end_it = placement.end();
 		for (iterator it = placement.begin(); it != end_it; ++it)
@@ -232,30 +245,54 @@ class data_center
 			ptr_pm->power_on();
 		}
 		ptr_vm->resource_shares(first_share, last_share);
-		ptr_pm->vmm_ptr()->create_domain(ptr_vm);
+		ptr_pm->vmm().create_domain(ptr_vm);
 
 		if (power_on)
 		{
-			ptr_pm->vmm_ptr()->power_on(ptr_vm);
+			ptr_pm->vmm().power_on(ptr_vm);
 		}
 	}
 
 
 	public: void displace_virtual_machine(virtual_machine_pointer const& ptr_vm)
 	{
-		typedef typename virtual_machines_placement<traits_type>::const_iterator iterator;
+		typedef typename virtual_machines_placement_type::const_iterator iterator;
 		iterator it = placement_.find(*ptr_vm);
 		if (it != placement_.end())
 		{
-			physical_machine_identifier_type pm_id = it->first.first;
-			pms_[pm_id]->vmm_ptr()->power_off(ptr_vm);
-			pms_[pm_id]->vmm_ptr()->destroy_domain(ptr_vm);
+			// safety-check: the identifier of the input VM must be the same of
+			//               the one of the retrieved VM.
+			DCS_DEBUG_ASSERT( ptr_vm->id() == it->first.first );
+
+			physical_machine_identifier_type pm_id(it->first.second);
+			physical_machine_pointer ptr_pm(pms_[pm_id]);
+
+			ptr_pm->vmm().power_off(ptr_vm);
+			ptr_pm->vmm().destroy_domain(ptr_vm);
 			placement_.displace(*ptr_vm);
 		}
 	}
 
 
-	public: virtual_machines_placement<traits_type> const& current_virtual_machines_placement() const
+	public: void displace_virtual_machines()
+	{
+		typedef typename virtual_machines_placement_type::const_iterator iterator;
+		iterator end_it = placement_.end();
+		for (iterator it = placement_.begin(); it != end_it; ++it)
+		{
+			virtual_machine_identifier_type vm_id(it->first.first);
+			physical_machine_identifier_type pm_id(it->first.second);
+			physical_machine_pointer ptr_pm(pms_[pm_id]);
+			virtual_machine_pointer ptr_vm(vms_[vm_id]);
+
+			pms_[pm_id]->vmm().power_off(ptr_vm);
+			pms_[pm_id]->vmm().destroy_domain(ptr_vm);
+			placement_.displace(*ptr_vm);
+		}
+	}
+
+
+	public: virtual_machines_placement_type const& current_virtual_machines_placement() const
 	{
 		return placement_;
 	}
@@ -275,13 +312,22 @@ class data_center
 
 			vm_iterator vm_end_it(app_it->second.end());
 			bool startable(true);
-			for (vm_iterator vm_it(app_it->second.begin()); startable && vm_it != vm_end_it; ++vm_it)
+			for (vm_iterator vm_it = app_it->second.begin(); startable && vm_it != vm_end_it; ++vm_it)
 			{
 				startable = placement_.placed(*vm_it);
 			}
 
 			if (startable)
 			{
+				typedef typename virtual_machines_placement_type::const_iterator vm_placement_iterator;
+				for (vm_iterator vm_it = app_it->second.begin(); startable && vm_it != vm_end_it; ++vm_it)
+				{
+//					vm_placement_iterator vm_place_it(placement_.find(*vm_it));
+//					physical_machine_pointer ptr_pm(pms_[placement_.pm_id(vm_place_it->first)]);
+//					virtual_machine_pointer ptr_vm(mms_[placement_.vm_id(vm_place_it->first)]);
+//					ptr_pm->vmm().power_on(ptr_vm);
+					vms_[*vm_it]->power_on();
+				}
 				this->application_ptr(app_id)->start();
 				++started_apps;
 			}
@@ -297,13 +343,41 @@ class data_center
 	}
 
 
-	private: application_pointer application_ptr(application_identifier_type id)
+	private: void init()
+	{
+		registry<traits_type>& ref_reg = registry<traits_type>::instance();
+
+		ref_reg.des_engine_ptr()->system_initialization_event_source().connect(
+			::dcs::functional::bind(
+				&self_type::process_sys_init,
+				this,
+				::dcs::functional::placeholders::_1,
+				::dcs::functional::placeholders::_2
+			)
+		);
+	}
+
+
+	private: void process_sys_init(des_event_type const& evt, des_engine_context_type& ctx)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");//XXX
+
+		displace_virtual_machines();
+
+		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");//XXX
+	}
+
+
+	protected: application_pointer application_ptr(application_identifier_type id)
 	{
 		return apps_[id];
 	}
 
 
-	private: application_pointer application_ptr(application_identifier_type id) const
+	protected: application_pointer application_ptr(application_identifier_type id) const
 	{
 		return apps_[id];
 	}
@@ -365,7 +439,7 @@ class data_center
 	private: physical_machine_container pms_;
 	private: physical_machine_controller_container pm_ctrls_;
 	private: virtual_machine_container vms_;
-	private: virtual_machines_placement<traits_type> placement_;
+	private: virtual_machines_placement_type placement_;
 	private: deployed_application_container deployed_apps_;
 };
 

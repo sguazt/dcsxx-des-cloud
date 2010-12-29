@@ -29,9 +29,11 @@
 #include <dcs/assert.hpp>
 //#include <dcs/eesim/physical_machine.hpp>
 #include <dcs/eesim/virtual_machine.hpp>
+#include <dcs/memory.hpp>
 //#include <map>
 #include <stdexcept>
 #include <map>
+#include <vector>
 
 
 namespace dcs { namespace eesim {
@@ -121,13 +123,16 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 
 	public: virtual_machine_container virtual_machines() const
 	{
+		typedef typename virtual_machine_impl_container::const_iterator iterator;
+
 		virtual_machine_container vms;
 
-		typedef typename virtual_machine_impl_container::const_iterator iterator;
 		iterator end_it = vms_.end();
 		for (iterator it = vms_.begin(); it != end_it; ++it)
 		{
-			vms.push_back(*it);
+			virtual_machine_pointer ptr_vm(it->second);
+
+			vms.push_back(ptr_vm);
 		}
 
 		return vms;
@@ -136,16 +141,18 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 
 	public: virtual_machine_container virtual_machines(power_status status) const
 	{
-		typedef typename virtual_machine_container::const_iterator iterator;
+		typedef typename virtual_machine_impl_container::const_iterator iterator;
 
 		virtual_machine_container vms;
 
 		iterator end_it = vms_.end();
 		for (iterator it = vms_.begin(); it != end_it; ++it)
 		{
-			if ((*it)->power_state() == status)
+			virtual_machine_pointer ptr_vm(it->second);
+
+			if (ptr_vm->power_state() == status)
 			{
-				vms.push_back(*it);
+				vms.push_back(ptr_vm);
 			}
 		}
 

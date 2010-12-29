@@ -1,11 +1,12 @@
-#ifndef OPEN_MULTI_BCMP_QN_APPLICATION_PERFORMANCE_MODEL_HPP
-#define OPEN_MULTI_BCMP_QN_APPLICATION_PERFORMANCE_MODEL_HPP
+#ifndef DCS_EESIM_OPEN_MULTI_BCMP_QN_APPLICATION_PERFORMANCE_MODEL_HPP
+#define DCS_EESIM_OPEN_MULTI_BCMP_QN_APPLICATION_PERFORMANCE_MODEL_HPP
 
 
 #include <dcs/eesim/application_performance_model_traits.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
 #include <dcs/perfeval/qn/open_multi_bcmp_network.hpp>
 #include <limits>
+#include <stdexcept>
 
 
 namespace dcs { namespace eesim {
@@ -26,10 +27,14 @@ class application_performance_model_traits<
 	{
 		switch (category)
 		{
+			case busy_time_performance_measure:
+				throw ::std::runtime_error("[dcs::eesim::open_multi_bcmp_qn_application_performance_model::application_measure] Busy time measure has not been implemented yet.");
 			case response_time_performance_measure:
 				return model.system_response_time();
 			case throughput_performance_measure:
 				return model.system_throughput();
+			case utilization_performance_measure:
+				throw ::std::runtime_error("[dcs::eesim::open_multi_bcmp_qn_application_performance_model::application_measure] Utilization measure not defined for the whole application.");
 //			case unknown_performance_measure:
 //				break;
 		}
@@ -42,10 +47,14 @@ class application_performance_model_traits<
 	{
 		switch (category)
 		{
+			case busy_time_performance_measure:
+				throw ::std::runtime_error("[dcs::eesim::open_multi_bcmp_qn_application_performance_model::tier_measure] Busy time measure has not been implemented yet.");//FIXME
 			case response_time_performance_measure:
 				return model.station_response_times()(tier_id);
 			case throughput_performance_measure:
 				return model.station_throughputs()(tier_id);
+			case utilization_performance_measure:
+				return model.station_utilizations()(tier_id);
 //			case unknown_performance_measure:
 //				break;
 		}
@@ -57,4 +66,4 @@ class application_performance_model_traits<
 }} // Namespace dcs::eesim
 
 
-#endif // OPEN_MULTI_BCMP_QN_APPLICATION_PERFORMANCE_MODEL_HPP
+#endif // DCS_EESIM_OPEN_MULTI_BCMP_QN_APPLICATION_PERFORMANCE_MODEL_HPP

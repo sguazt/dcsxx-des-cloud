@@ -106,9 +106,11 @@ DCS_DEBUG_TRACE("FALSE");//XXX
 		pm_vm_iterator pm_vm_end_it = by_pm_idx_[pm_id].end();
 		for (pm_vm_iterator pm_vm_it = by_pm_idx_[pm_id].begin(); pm_vm_it != pm_vm_end_it; ++pm_vm_it)
 		{
-			// Iterate over each VM deployed on this machine
+			// Iterate over each VM deployed on this machine (but the one we
+			// currently want to place)
 
-			vm_pm_pair_type key = ::std::make_pair(*pm_vm_it, pm_id);
+			//vm_pm_pair_type key = ::std::make_pair(*pm_vm_it, pm_id);
+			vm_pm_pair_type key = make_vm_pm_pair(*pm_vm_it, pm_id);
 
 			if (*pm_vm_it != vm_id)
 			{
@@ -161,7 +163,8 @@ DCS_DEBUG_TRACE("TRUE");//XXX
 			return false;
 		}
 
-		vm_pm_pair_type key = ::std::make_pair(vm_id, pm_id);
+		//vm_pm_pair_type key = ::std::make_pair(vm_id, pm_id);
+		vm_pm_pair_type key = make_vm_pm_pair(vm_id, pm_id);
 		placements_[key] = share_container(first_share, last_share);
 		by_vm_idx_[vm_id] = pm_id;
 		by_pm_idx_[pm_id].insert(vm_id);
@@ -199,7 +202,8 @@ DCS_DEBUG_TRACE("TRUE");//XXX
 		virtual_machine_identifier_type vm_id = vm.id();
 		physical_machine_identifier_type pm_id = by_vm_idx_[vm_id];
 
-		placements_.erase(::std::make_pair(vm_id, pm_id));
+		//placements_.erase(::std::make_pair(vm_id, pm_id));
+		placements_.erase(make_vm_pm_pair(vm_id, pm_id));
 		by_vm_idx_.erase(vm_id);
 		by_pm_idx_.erase(pm_id);
 	}
@@ -208,6 +212,14 @@ DCS_DEBUG_TRACE("TRUE");//XXX
 	public: bool placed(virtual_machine_identifier_type vm_id)
 	{
 		return by_vm_idx_.count(vm_id) != 0;
+	}
+
+
+	public: void displace_all()
+	{
+		placements_.clear();
+		by_vm_idx_.clear();
+		by_pm_idx_.clear();
 	}
 
 
@@ -235,15 +247,61 @@ DCS_DEBUG_TRACE("TRUE");//XXX
 	}
 
 
+	public: iterator find(virtual_machine_identifier_type const& vm)
+	{
+		//return placements_.find(::std::make_pair(vm_id, by_vm_idx_[vm_id]));
+		return placements_.find(make_vm_pm_pair_by_vm(vm_id));
+	}
+
+
+	public: const_iterator find(virtual_machine_identifier_type const& vm) const
+	{
+		//return placements_.find(::std::make_pair(vm_id, by_vm_idx_[vm_id]));
+		return placements_.find(make_vm_pm_pair_by_vm(vm_id));
+	}
+
+
 	public: iterator find(virtual_machine_type const& vm)
 	{
-		return placements_.find(::std::make_pair(vm.id(), by_vm_idx_[vm.id()]));
+		//return placements_.find(::std::make_pair(vm.id(), by_vm_idx_[vm.id()]));
+		return placements_.find(make_vm_pm_pair_by_vm(vm.id()));
 	}
 
 
 	public: const_iterator find(virtual_machine_type const& vm) const
 	{
-		return placements_.find(::std::make_pair(vm.id(), by_vm_idx_[vm.id()]));
+		//return placements_.find(::std::make_pair(vm.id(), by_vm_idx_[vm.id()]));
+		return placements_.find(make_vm_pm_pair_by_vm(vm.id()));
+	}
+
+
+	public: virtual_machine_identifier_type vm_id(vm_pm_pair_type const& pair) const
+	{
+		return pair.first;
+	}
+
+
+	public: virtual_machine_identifier_type pm_id(vm_pm_pair_type const& pair) const
+	{
+		return pair.second;
+	}
+
+
+	private: vm_pm_pair_type make_vm_pm_pair(virtual_machine_identifier_type vm_id, physical_machine_identifier_type pm_id)
+	{
+		return ::std::make_pair(vm_id, pm_id);
+	}
+
+
+	private: vm_pm_pair_type make_vm_pm_pair_by_vm(virtual_machine_identifier_type vm_id)
+	{
+		return ::std::make_pair(vm_id, by_vm_idx_[vm_id]);
+	}
+
+
+	private: vm_pm_pair_type make_vm_pm_pair_by_pm(physical_machine_identifier_type pm_id)
+	{
+		return ::std::make_pair(by_pm_idx_[pm_id], pm_id);
 	}
 
 
@@ -282,7 +340,7 @@ template <
 		{
 			os << ";";
 		}
-		os << "(VM: " << place_it->first.first << ")->(PM:" << place_it->first.second << "): <";
+		os << "(VM: " << placement.vm_id(place_it->first) << ")->(PM:" << placement.pm_id(place_it->first) << "): <";
 		share_iterator share_begin_it = place_it->second.begin();
 		share_iterator share_end_it = place_it->second.end();
 		for (share_iterator share_it = share_begin_it; share_it != share_end_it; ++share_it)
@@ -291,7 +349,7 @@ template <
 			{
 				os << ",";
 			}
-			os << share_it->first << "::" << share_it->second;
+			os << "(resource: " << share_it->first << ",share: " << share_it->second << ")";
 		}
 		os << ">";
 	}

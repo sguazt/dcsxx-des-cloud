@@ -25,14 +25,51 @@
 #define DCS_EESIM_PERFORMANCE_MEASURE_CATEGORY_HPP
 
 
+#include <dcs/macro.hpp>
+#include <vector>
+
+
 namespace dcs { namespace eesim {
 
 enum performance_measure_category
 {
-	response_time_performance_measure = 0,
-	throughput_performance_measure/*,
-	unknown_performance_measure*/
+	busy_time_performance_measure,
+	response_time_performance_measure,
+	throughput_performance_measure,
+	utilization_performance_measure
+//	unknown_performance_measure*/
 };
+
+
+inline
+::std::vector<performance_measure_category> performance_measure_categories()
+{
+	::std::vector<performance_measure_category> cats;
+
+	cats.push_back(busy_time_performance_measure);
+	cats.push_back(response_time_performance_measure);
+	cats.push_back(throughput_performance_measure);
+	cats.push_back(utilization_performance_measure);
+
+	return cats;
+}
+
+
+inline
+bool for_application(performance_measure_category category)
+{
+	return category != busy_time_performance_measure
+		   && category != utilization_performance_measure;
+}
+
+
+inline
+bool for_application_tier(performance_measure_category category)
+{
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( category );
+
+	return true;
+}
 
 }} // Namespace dcs::eesim
 

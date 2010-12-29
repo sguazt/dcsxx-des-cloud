@@ -9,6 +9,7 @@
 #include <dcs/eesim/config/yaml.hpp>
 #include <dcs/eesim/data_center.hpp>
 #include <dcs/eesim/data_center_manager.hpp>
+#include <dcs/eesim/performance_measure_category.hpp>
 #include <dcs/eesim/registry.hpp>
 #include <dcs/eesim/traits.hpp>
 #include <dcs/functional/bind.hpp>
@@ -91,6 +92,26 @@ void process_sys_init_sim_event(des_event_type const& evt, des_engine_context_ty
 }
 
 
+::std::string to_string(::dcs::eesim::performance_measure_category category)
+{
+	switch (category)
+	{
+		case ::dcs::eesim::busy_time_performance_measure:
+			return ::std::string("Busy Time");
+		case ::dcs::eesim::response_time_performance_measure:
+			return ::std::string("Response Time");
+		case ::dcs::eesim::throughput_performance_measure:
+			return ::std::string("Throughput");
+		case ::dcs::eesim::utilization_performance_measure:
+			return ::std::string("Utilization");
+		default:
+			break;
+	}
+
+	return ::std::string("Unknown Performance Measure");
+}
+
+
 template <
 	typename CharT,
 	typename CharTraitsT,
@@ -125,6 +146,7 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 
 		application_container apps = ptr_dc->applications();
 		application_iterator app_end_it = apps.end();
+		os << "-- Applications --" << ::std::endl;
 		for (application_iterator app_it = apps.begin(); app_it != app_end_it; ++app_it)
 		{
 			application_pointer ptr_app = *app_it;
@@ -140,24 +162,28 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 			statistic_category_container stat_categories;
 
 			//[FIXME] statistic categories are hard-coded
-			stat_categories.push_back(::dcs::eesim::response_time_performance_measure);
+			//stat_categories.push_back(::dcs::eesim::response_time_performance_measure);
 			//[/FIXME]
 
+			stat_categories = ::dcs::eesim::performance_measure_categories();
 			statistic_category_iterator stat_cat_end_it = stat_categories.end();
 			for (statistic_category_iterator stat_cat_it = stat_categories.begin(); stat_cat_it != stat_cat_end_it; ++stat_cat_it)
 			{
 				statistic_category_type stat_category(*stat_cat_it);
 
-				os << "   Response Time: " << ::std::endl;//FIXME: statistic category name is hard-coded
-
-				statistic_container ptr_stats;
-				ptr_stats = ptr_app->simulation_model().statistic(stat_category);
-				statistic_iterator stat_end_it = ptr_stats.end();
-				for (statistic_iterator stat_it = ptr_stats.begin(); stat_it != stat_end_it; ++stat_it)
+				if (::dcs::eesim::for_application(stat_category))
 				{
-					output_statistic_pointer ptr_stat(*stat_it);
+					os << "   " << to_string(stat_category) << ": " << ::std::endl;
 
- 					os << "     Mean estimator: " << *ptr_stat << ::std::endl;//FIXME: statistic type is hard-coded
+					statistic_container ptr_stats;
+					ptr_stats = ptr_app->simulation_model().statistic(stat_category);
+					statistic_iterator stat_end_it = ptr_stats.end();
+					for (statistic_iterator stat_it = ptr_stats.begin(); stat_it != stat_end_it; ++stat_it)
+					{
+						output_statistic_pointer ptr_stat(*stat_it);
+
+						os << "     Mean estimator: " << *ptr_stat << ::std::endl;//FIXME: statistic type is hard-coded
+					}
 				}
 			}
 
@@ -174,24 +200,48 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 
 				os << "   # Arrivals: " << ptr_app->simulation_model().tier_num_arrivals(tier_id) << ::std::endl;
 				os << "   # Departures: " << ptr_app->simulation_model().tier_num_departures(tier_id) << ::std::endl;
+
 				statistic_category_iterator stat_cat_end_it = stat_categories.end();
 				for (statistic_category_iterator stat_cat_it = stat_categories.begin(); stat_cat_it != stat_cat_end_it; ++stat_cat_it)
 				{
 					statistic_category_type stat_category(*stat_cat_it);
 
-					os << "   Response Time: " << ::std::endl;//FIXME: statistic category name is hard-coded
-
-					statistic_container ptr_tier_stats;
-					ptr_tier_stats = ptr_app->simulation_model().tier_statistic(tier_id, stat_category);
-					statistic_iterator tier_stat_end_it = ptr_tier_stats.end();
-					for (statistic_iterator tier_stat_it = ptr_tier_stats.begin(); tier_stat_it != tier_stat_end_it; ++tier_stat_it)
+					if (::dcs::eesim::for_application_tier(stat_category))
 					{
-						output_statistic_pointer ptr_tier_stat(*tier_stat_it);
+						os << "   " << to_string(stat_category) << ": " << ::std::endl;
 
-						os << "     Mean estimator: " << *ptr_tier_stat << ::std::endl;//FIXME: statistic type is hard-coded
+						statistic_container ptr_tier_stats;
+						ptr_tier_stats = ptr_app->simulation_model().tier_statistic(tier_id, stat_category);
+						statistic_iterator tier_stat_end_it = ptr_tier_stats.end();
+						for (statistic_iterator tier_stat_it = ptr_tier_stats.begin(); tier_stat_it != tier_stat_end_it; ++tier_stat_it)
+						{
+							output_statistic_pointer ptr_tier_stat(*tier_stat_it);
+
+							os << "     Mean estimator: " << *ptr_tier_stat << ::std::endl;//FIXME: statistic type is hard-coded
+						}
 					}
 				}
 			}
+		}
+	}
+
+	// Machine statistics
+	{
+		typedef typename data_center_type::physical_machine_type physical_machine_type;
+		typedef typename data_center_type::physical_machine_pointer physical_machine_pointer;
+		typedef ::std::vector<physical_machine_pointer> physical_machine_container;
+		typedef typename physical_machine_container::const_iterator physical_machine_iterator;
+
+		physical_machine_container machs = ptr_dc->physical_machines();
+		physical_machine_iterator mach_end_it = machs.end();
+		os << "-- Physical Machines --" << ::std::endl;
+		for (physical_machine_iterator mach_it = machs.begin(); mach_it != mach_end_it; ++mach_it)
+		{
+			physical_machine_pointer ptr_mach = *mach_it;
+
+			os << "Physical Machine: '" << ptr_mach->name() << "'" << ::std::endl;
+			os << " Uptime: " << ptr_mach->simulation_model().uptime() << ::std::endl;
+			os << " Consumed Energy: " << ptr_mach->simulation_model().consumed_energy() << ::std::endl;
 		}
 	}
 }

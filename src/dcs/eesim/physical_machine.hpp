@@ -26,9 +26,12 @@
 #define DCS_EESIM_PHYSICAL_MACHINE_HPP
 
 
-#include <dcs/eesim/virtual_machine_monitor.hpp>
+#include <dcs/debug.hpp>
+#include <dcs/eesim/base_physical_machine_simulation_model.hpp>
+#include <dcs/eesim/default_physical_machine_simulation_model.hpp>
 #include <dcs/eesim/physical_resource.hpp>
 #include <dcs/eesim/power_status.hpp>
+#include <dcs/eesim/virtual_machine_monitor.hpp>
 #include <iostream>
 #include <map>
 #include <stdexcept>
@@ -37,6 +40,10 @@
 
 
 namespace dcs { namespace eesim {
+
+template <typename TraitsT>
+class base_physical_machine_simulation_model;
+
 
 //NOTE: for each resource category it is possible to associate at most one resource object.
 //      So if you multiple CPUs, you have to create only one CPU resource object with the aggregated capacity.
@@ -56,6 +63,8 @@ class physical_machine
 	//private: typedef any_virtual_machine_monitor<traits_type> virtual_machine_monitor_type;
 	public: typedef virtual_machine_monitor<traits_type> vmm_type;
 	public: typedef ::dcs::shared_ptr<vmm_type> vmm_pointer;
+	public: typedef base_physical_machine_simulation_model<traits_type> simulation_model_type;
+	public: typedef ::dcs::shared_ptr<simulation_model_type> simulation_model_pointer;
 	private: typedef typename resource_container::iterator resource_iterator;
 	private: typedef typename resource_container::const_iterator resource_const_iterator;
 
@@ -63,10 +72,14 @@ class physical_machine
 	public: explicit physical_machine(::std::string const& name = "Unnamed Physical Machine")
 		: id_(traits_type::invalid_physical_machine_id),
 		  name_(name),
-		  power_status_(powered_off_power_status),
+//		  power_status_(powered_off_power_status),
 		  cost_(0),
-		  ptr_vmm_(::dcs::make_shared<vmm_type>())
+		  ptr_vmm_(::dcs::make_shared<vmm_type>()),
+		  ptr_sim_model_()
 	{
+		//FIXME: simulation model is hard-coded
+		simulation_model_pointer ptr_sim_model(new default_physical_machine_simulation_model<traits_type>());
+		this->simulation_model(ptr_sim_model);
 	}
 
 
@@ -147,6 +160,31 @@ class physical_machine
 	}
 
 
+	public: void simulation_model(simulation_model_pointer const& ptr_model)
+	{
+		ptr_sim_model_ = ptr_model;
+		ptr_sim_model_->machine(this);
+	}
+
+
+	public: simulation_model_type const& simulation_model() const
+	{
+		// pre: pointer to simulation model is a valid pointer
+		DCS_DEBUG_ASSERT( ptr_sim_model_ );
+
+		return *ptr_sim_model_;
+	}
+
+
+	public: simulation_model_type& simulation_model()
+	{
+		// pre: pointer to simulation model is a valid pointer
+		DCS_DEBUG_ASSERT( ptr_sim_model_ );
+
+		return *ptr_sim_model_;
+	}
+
+
 	public: void cost(real_type value)
 	{
 		cost_ = value;
@@ -185,61 +223,82 @@ class physical_machine
 	}
 
 
-	public: vmm_pointer vmm() const
+	public: vmm_type const& vmm() const
 	{
-		return ptr_vmm_;
+		return *ptr_vmm_;
 	}
 
 
-	public: vmm_pointer vmm_ptr()
+	public: vmm_type& vmm()
 	{
-		return ptr_vmm_;
+		return *ptr_vmm_;
 	}
 
 
 	public: void power_on()
 	{
-		power_status_ = powered_on_power_status;
+//		power_status_ = powered_on_power_status;
+		ptr_sim_model_->power_on();
 	}
 
 
 	public: void power_off()
 	{
-		power_status_ = powered_off_power_status;
+//		power_status_ = powered_off_power_status;
+		ptr_sim_model_->power_off();
 	}
 
 
 	public: void suspend()
 	{
-		power_status_ = suspended_power_status;
+		//FIXME
+		throw ::std::runtime_error("[dcs::eesim::physical_machine::suspend] Not yet implemented in simulation model.");
+
+//		power_status_ = suspended_power_status;
 	}
 
 
 	public: void resume()
 	{
-		power_status_ = powered_on_power_status;
+		//FIXME
+		throw ::std::runtime_error("[dcs::eesim::physical_machine::resume] Not yet implemented in simulation model.");
+
+//		power_status_ = powered_on_power_status;
 	}
 
 
 	public: power_status power_state() const
 	{
-		return power_status_;
+//		return power_status_;
+		return ptr_sim_model_->power_state();
 	}
 
 
 	//FIXME: assume that total energy is additive
 	public: real_type consumed_energy(real_type u) const
 	{
-		resource_iterator it_end = resources_.end();
+		resource_const_iterator it_end = resources_.end();
 
 		real_type energy = 0;
 
-		for (resource_iterator it = resources_.begin(); it != it_end; ++it)
+		for (resource_const_iterator it = resources_.begin(); it != it_end; ++it)
 		{
-			energy += (*it)->consumed_energy(u);
+			energy += it->second->consumed_energy(u);
 		}
 
 		return energy;
+	}
+
+
+	protected: vmm_pointer vmm_ptr() const
+	{
+		return ptr_vmm_;
+	}
+
+
+	protected: vmm_pointer vmm_ptr()
+	{
+		return ptr_vmm_;
 	}
 
 
@@ -247,14 +306,16 @@ class physical_machine
 	private: identifier_type id_;
 	/// The mnemonic name for this machine.
 	private: ::std::string name_;
-	/// Tell if this machine is powered on.
-	private: power_status power_status_;
+//	/// Tell if this machine is powered on.
+//	private: power_status power_status_;
 	/// The cost for using this machine.
 	private: real_type cost_;
 	/// The set of physical resources this machine is equipped.
 	private: resource_container resources_;
 	/// The virtual machine monitor.
 	private: vmm_pointer ptr_vmm_;
+	/// The simulaiton model.
+	private: simulation_model_pointer ptr_sim_model_;
 };
 
 

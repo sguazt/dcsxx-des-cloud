@@ -11,7 +11,13 @@ namespace dcs { namespace eesim { namespace config {
 
 enum initial_placement_strategy_category
 {
+	best_fit_initial_placement_strategy,
 	first_fit_initial_placement_strategy
+};
+
+
+struct best_fit_initial_placement_strategy_config
+{
 };
 
 
@@ -22,11 +28,13 @@ struct first_fit_initial_placement_strategy_config
 
 struct initial_placement_strategy_config
 {
+    typedef best_fit_initial_placement_strategy_config best_fit_initial_placement_strategy_config_type;
     typedef first_fit_initial_placement_strategy_config first_fit_initial_placement_strategy_config_type;
 
 
 	initial_placement_strategy_category category;
-    ::boost::variant<first_fit_initial_placement_strategy_config_type> category_conf;
+    ::boost::variant<best_fit_initial_placement_strategy_config_type,
+					 first_fit_initial_placement_strategy_config_type> category_conf;
 
 };
 
@@ -36,10 +44,24 @@ template <typename CharT, typename CharTraitsT>
 {
 	switch (category)
 	{
+		case best_fit_initial_placement_strategy:
+			os << "best-fit";
+			break;
 		case first_fit_initial_placement_strategy:
 			os << "first-fit";
 			break;
 	}
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, best_fit_initial_placement_strategy_config const& strategy)
+{
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( strategy );
+
+	os << "<(best-fit-initial-placement)>";
 
 	return os;
 }

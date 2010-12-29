@@ -112,15 +112,15 @@ class virtual_machine
 	}
 
 
-	public: application_tier_pointer guest_system_ptr() const
+	public: application_tier_type const& guest_system() const
 	{
-		return ptr_tier_;
+		return *ptr_tier_;
 	}
 
 
-	public: application_tier_pointer guest_system_ptr()
+	public: application_tier_type& guest_system()
 	{
-		return ptr_tier_;
+		return *ptr_tier_;
 	}
 
 
@@ -203,7 +203,7 @@ class virtual_machine
 			 ++it)
 		{
 			physical_resource_category category = it->first;
-			real_type ref_capacity = ptr_tier_->application_ptr()->reference_resource(category).capacity();
+			real_type ref_capacity = ptr_tier_->application().reference_resource(category).capacity();
 			real_type actual_capacity = mach.resource(category)->capacity();
 			real_type wanted_share = it->second*ref_capacity/actual_capacity;
 
@@ -240,12 +240,14 @@ class virtual_machine
 
 	public: void power_on()
 	{
+DCS_DEBUG_TRACE("Powering-on VM: " << this->id());//XXX
 		power_status_ = powered_on_power_status;
 	}
 
 
 	public: void power_off()
 	{
+DCS_DEBUG_TRACE("Powering-off VM: " << this->id());//XXX
 		power_status_ = powered_off_power_status;
 	}
 
@@ -277,6 +279,18 @@ class virtual_machine
 	public: power_status power_state() const
 	{
 		return power_status_;
+	}
+
+
+	protected: application_tier_pointer guest_system_ptr() const
+	{
+		return ptr_tier_;
+	}
+
+
+	protected: application_tier_pointer guest_system_ptr()
+	{
+		return ptr_tier_;
 	}
 
 

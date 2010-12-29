@@ -80,6 +80,7 @@
 #include <dcs/perfeval/qn/operation/visit_ratios.hpp>
 #include <dcs/perfeval/sla.hpp>
 #include <map>
+#include <set>
 #include <stdexcept>
 #include <vector>
 
@@ -1381,38 +1382,53 @@ template <
 	}
 */
 	{
-        ::std::vector<performance_measure_category> perf_metrics(app.sla_cost_model().slo_categories());
+        ::std::vector<performance_measure_category> perf_metrics(performance_measure_categories());
+        ::std::vector<performance_measure_category> sla_perf_metrics_vec(app.sla_cost_model().slo_categories());
+        ::std::set<performance_measure_category> sla_perf_metrics(sla_perf_metrics_vec.begin(), sla_perf_metrics_vec.end());
+		sla_perf_metrics_vec.clear();
         typedef typename ::std::vector<performance_measure_category>::const_iterator iterator;
         iterator end_it = perf_metrics.end();
         for (iterator it = perf_metrics.begin(); it != end_it; ++it)
 		{
 			performance_measure_category category(*it);
+			bool analyzable(false);
 
-			ptr_model->statistic(
-					category,
-					make_output_statistic(
-							::dcs::des::mean_statistic,//FIXME: statistic category is hard-coded
-							conf.simulation(),
-							sim_info,
-							true,
-							true
-						)
-				);
-
-			::std::size_t num_tiers = app.num_tiers();
-			for (::std::size_t tier_id = 0; tier_id < num_tiers; ++tier_id)
+			if (sla_perf_metrics.count(category) > 0)
 			{
-				ptr_model->tier_statistic(
-						tier_id,
+				analyzable = true;
+			}
+
+			if (::dcs::eesim::for_application(category))
+			{
+				ptr_model->statistic(
 						category,
 						make_output_statistic(
 								::dcs::des::mean_statistic,//FIXME: statistic category is hard-coded
 								conf.simulation(),
 								sim_info,
-								true,
-								false
+								analyzable,
+								true
 							)
 					);
+			}
+
+			if (::dcs::eesim::for_application_tier(category))
+			{
+				::std::size_t num_tiers = app.num_tiers();
+				for (::std::size_t tier_id = 0; tier_id < num_tiers; ++tier_id)
+				{
+					ptr_model->tier_statistic(
+							tier_id,
+							category,
+							make_output_statistic(
+									::dcs::des::mean_statistic,//FIXME: statistic category is hard-coded
+									conf.simulation(),
+									sim_info,
+									analyzable,
+									false
+								)
+						);
+				}
 			}
 		}
 	}

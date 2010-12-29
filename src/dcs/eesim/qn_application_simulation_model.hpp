@@ -160,9 +160,13 @@ class application_simulation_model_traits<
 	{
 		switch (category)
 		{
+			case busy_time_performance_measure:
+				return true;
 			case response_time_performance_measure:
 				return true;
 			case throughput_performance_measure:
+				return true;
+			case utilization_performance_measure:
 				return true;
 			default:
 				break;
@@ -172,27 +176,39 @@ class application_simulation_model_traits<
 	}
 
 
-	public: static uint_type num_arrivals(model_type const& model)
+	public: static uint_type actual_num_arrivals(model_type const& model)
 	{
 		return model.num_arrivals();
 	}
 
 
-	public: static uint_type num_departures(model_type const& model)
+	public: static uint_type actual_num_departures(model_type const& model)
 	{
 		return model.num_departures();
 	}
 
 
-	public: static uint_type tier_num_arrivals(model_type const& model, foreign_identifier_type foreign_id)
+	public: static uint_type actual_tier_num_arrivals(model_type const& model, foreign_identifier_type foreign_id)
 	{
 		return model.get_node(foreign_id).num_arrivals();
 	}
 
 
-	public: static uint_type tier_num_departures(model_type const& model, foreign_identifier_type foreign_id)
+	public: static uint_type actual_tier_num_departures(model_type const& model, foreign_identifier_type foreign_id)
 	{
 		return model.get_node(foreign_id).num_departures();
+	}
+
+
+	public: static real_type actual_tier_busy_time(model_type const& model, foreign_identifier_type foreign_id)
+	{
+		return model.get_node(foreign_id).busy_time();
+	}
+
+
+	public: static real_type actual_tier_utilization(model_type const& model, foreign_identifier_type foreign_id)
+	{
+		return model.get_node(foreign_id).utilization();
 	}
 
 
@@ -248,10 +264,14 @@ class application_simulation_model_traits<
 	{
 		switch (category)
 		{
+			case busy_time_performance_measure:
+				return ::dcs::des::model::qn::busy_time_statistic_category;
 			case response_time_performance_measure:
 				return ::dcs::des::model::qn::response_time_statistic_category;
 			case throughput_performance_measure:
 				return ::dcs::des::model::qn::throughput_statistic_category;
+			case utilization_performance_measure:
+				return ::dcs::des::model::qn::utilization_statistic_category;
 			default:
 				break;
 		}
