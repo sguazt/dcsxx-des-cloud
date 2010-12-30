@@ -11,6 +11,7 @@
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
+#include <iostream>
 
 
 namespace dcs { namespace eesim {
@@ -99,7 +100,7 @@ class data_center_manager
 		{
 			registry<traits_type>::instance().des_engine_ptr()->stop_now();
 
-			::std::cerr << "[Warning] Unable to start any application." << ::std::endl;
+			::std::clog << "[Warning] Unable to start any application." << ::std::endl;
 		}
 
 		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");//XXX

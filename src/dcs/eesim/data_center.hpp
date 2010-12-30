@@ -35,8 +35,7 @@
 #include <dcs/eesim/virtual_machines_placement.hpp>
 #include <dcs/eesim/registry.hpp>
 #include <dcs/memory.hpp>
-#include <set>
-//#include <utility>
+#include <iostream>
 #include <vector>
 
 
@@ -359,12 +358,10 @@ class data_center
 				this->application_ptr(app_id)->start();
 				++started_apps;
 			}
-#ifdef DCS_DEBUG
 			else
 			{
-				DCS_DEBUG_TRACE("Application " << app_id << " cannot be started since at least on VM has not been placed yet");
+				::std::clog << "[Warning] Application " << app_id << " '" << apps_[app_id] << "' cannot be started: at least one VM has not been placed." << ::std::endl;
 			}
-#endif // DCS_DEBUG
 		}
 
 		return started_apps;
