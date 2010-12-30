@@ -360,7 +360,7 @@ class data_center
 			}
 			else
 			{
-				::std::clog << "[Warning] Application " << app_id << " '" << apps_[app_id] << "' cannot be started: at least one VM has not been placed." << ::std::endl;
+				::std::clog << "[Warning] Application " << app_id << " '" << *(apps_[app_id]) << "' cannot be started: at least one VM has not been placed." << ::std::endl;
 			}
 		}
 
