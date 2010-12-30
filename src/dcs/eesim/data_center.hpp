@@ -118,6 +118,20 @@ class data_center
 	}
 
 
+//FIXME: name-clash between method name and type name
+//	public: physical_machine_type const& physical_machine(physical_machine_identifier_type id) const
+//	{
+//		return *(pms_[id]);
+//	}
+
+
+//FIXME: name-clash between method name and type name
+//	public: physical_machine_type& physical_machine(physical_machine_identifier_type id)
+//	{
+//		return *(pms_[id]);
+//	}
+
+
 	public: physical_machine_pointer physical_machine_ptr(physical_machine_identifier_type id) const
 	{
 		return pms_[id];
@@ -179,6 +193,20 @@ class data_center
 	{
 		return apps_;
 	}
+
+
+//FIXME: name-clash between method name and type name
+//	public: virtual_machine_type const& virtual_machine(virtual_machine_identifier_type id) const
+//	{
+//		return *(vms_[id]);
+//	}
+
+
+//FIXME: name-clash between method name and type name
+//	public: virtual_machine_type& virtual_machine(virtual_machine_identifier_type id)
+//	{
+//		return *(vms_[id]);
+//	}
 
 
 	public: virtual_machine_pointer virtual_machine_ptr(virtual_machine_identifier_type id) const

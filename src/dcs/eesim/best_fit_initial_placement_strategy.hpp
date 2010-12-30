@@ -38,6 +38,7 @@ struct pm_comparator
 }} // Namespace detail::<unnamed>
 
 
+/// This is substantially a First-Fit decreasing heuristic.
 template <typename TraitsT>
 class best_fit_initial_placement_strategy: public base_initial_placement_strategy<TraitsT>
 {

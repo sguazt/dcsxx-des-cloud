@@ -9,6 +9,7 @@
 #include <dcs/eesim/config/yaml.hpp>
 #include <dcs/eesim/data_center.hpp>
 #include <dcs/eesim/data_center_manager.hpp>
+#include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
 #include <dcs/eesim/registry.hpp>
 #include <dcs/eesim/traits.hpp>
@@ -124,8 +125,42 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 	typedef typename traits_type::real_type real_type;
 	typedef ::dcs::eesim::data_center<traits_type> data_center_type;
 
+	::std::string indent("  ");
+
 	// VM Placement
-	os << "Last Virtual Machines Placement: " << ptr_dc->current_virtual_machines_placement() << ::std::endl;
+	{
+		typedef typename data_center_type::physical_machine_identifier_type pm_identifier_type;
+		typedef typename data_center_type::virtual_machine_identifier_type vm_identifier_type;
+		typedef typename data_center_type::virtual_machines_placement_type vm_placement_type;
+		typedef typename vm_placement_type::const_iterator vm_placement_iterator;
+		typedef typename vm_placement_type::share_const_iterator vm_share_iterator;
+
+		os << ::std::endl << "-- Last Virtual Machines Placement --" << ::std::endl;
+
+		vm_placement_type const& vm_placement = ptr_dc->current_virtual_machines_placement();
+		vm_placement_iterator place_end_it = vm_placement.end();
+		for (vm_placement_iterator place_it = vm_placement.begin(); place_it != place_end_it; ++place_it)
+		{
+			vm_identifier_type vm_id(vm_placement.vm_id(place_it));
+			vm_identifier_type pm_id(vm_placement.pm_id(place_it));
+
+			os << indent
+			   << "VM: " << vm_id << " ('" << ptr_dc->virtual_machine_ptr(vm_id)->name() << "')"
+			   << " --> "
+			   << "PM: " << pm_id << " ('" << ptr_dc->physical_machine_ptr(pm_id)->name() << "')"
+			   << ::std::endl;
+
+			vm_share_iterator share_end_it = vm_placement.shares_end(place_it);
+			for (vm_share_iterator share_it = vm_placement.shares_begin(place_it); share_it != share_end_it; ++share_it)
+			{
+				::dcs::eesim::physical_resource_category category(vm_placement.resource_category(share_it));
+				real_type share(vm_placement.resource_share(share_it));
+
+				os << indent << indent
+				   << "Resource: " << category << ", Share: " << share << ::std::endl;
+			}
+		}
+	}
 
 	// Application statistics
 	{
@@ -144,20 +179,26 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 		typedef ::std::vector<statistic_category_type> statistic_category_container;
 		typedef typename statistic_category_container::const_iterator statistic_category_iterator;
 
+		os << ::std::endl << "-- Applications --" << ::std::endl;
+
 		application_container apps = ptr_dc->applications();
 		application_iterator app_end_it = apps.end();
-		os << "-- Applications --" << ::std::endl;
 		for (application_iterator app_it = apps.begin(); app_it != app_end_it; ++app_it)
 		{
 			application_pointer ptr_app = *app_it;
 
-			os << "Application: '" << ptr_app->name() << "'" << ::std::endl;
-			os << " Overall: " << ::std::endl;
+			os << indent
+			   << "Application: '" << ptr_app->name() << "'" << ::std::endl;
+			os << indent << indent
+			   << "Overall: " << ::std::endl;
 
 
-			os << "   # Arrivals: " << ptr_app->simulation_model().num_arrivals() << ::std::endl;
-			os << "   # Departures: " << ptr_app->simulation_model().num_departures() << ::std::endl;
-			os << "   # SLA violations: " << ptr_app->simulation_model().num_sla_violations() << ::std::endl;
+			os << indent << indent << indent
+			   << "# Arrivals: " << ptr_app->simulation_model().num_arrivals() << ::std::endl;
+			os << indent << indent << indent
+			   << "# Departures: " << ptr_app->simulation_model().num_departures() << ::std::endl;
+			os << indent << indent << indent
+			   << "# SLA violations: " << ptr_app->simulation_model().num_sla_violations() << ::std::endl;
 
 			statistic_category_container stat_categories;
 
@@ -173,7 +214,8 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 
 				if (::dcs::eesim::for_application(stat_category))
 				{
-					os << "   " << to_string(stat_category) << ": " << ::std::endl;
+					os << indent << indent << indent
+					   << to_string(stat_category) << ": " << ::std::endl;
 
 					statistic_container ptr_stats;
 					ptr_stats = ptr_app->simulation_model().statistic(stat_category);
@@ -182,7 +224,8 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 					{
 						output_statistic_pointer ptr_stat(*stat_it);
 
-						os << "     Mean estimator: " << *ptr_stat << ::std::endl;//FIXME: statistic type is hard-coded
+						os << indent << indent << indent << indent
+						   << "Mean estimator: " << *ptr_stat << ::std::endl;//FIXME: statistic type is hard-coded
 					}
 				}
 			}
@@ -196,10 +239,13 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 				application_tier_pointer ptr_tier(*tier_it);
 				uint_type tier_id(ptr_tier->id());
 
-				os << " Tier '" << ptr_tier->name() << "': " << ::std::endl;
+				os << indent << indent
+				   << "Tier '" << ptr_tier->name() << "': " << ::std::endl;
 
-				os << "   # Arrivals: " << ptr_app->simulation_model().tier_num_arrivals(tier_id) << ::std::endl;
-				os << "   # Departures: " << ptr_app->simulation_model().tier_num_departures(tier_id) << ::std::endl;
+				os << indent << indent << indent
+				   << "# Arrivals: " << ptr_app->simulation_model().tier_num_arrivals(tier_id) << ::std::endl;
+				os << indent << indent << indent
+				   << "# Departures: " << ptr_app->simulation_model().tier_num_departures(tier_id) << ::std::endl;
 
 				statistic_category_iterator stat_cat_end_it = stat_categories.end();
 				for (statistic_category_iterator stat_cat_it = stat_categories.begin(); stat_cat_it != stat_cat_end_it; ++stat_cat_it)
@@ -208,7 +254,8 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 
 					if (::dcs::eesim::for_application_tier(stat_category))
 					{
-						os << "   " << to_string(stat_category) << ": " << ::std::endl;
+						os << indent << indent << indent
+						   << to_string(stat_category) << ": " << ::std::endl;
 
 						statistic_container ptr_tier_stats;
 						ptr_tier_stats = ptr_app->simulation_model().tier_statistic(tier_id, stat_category);
@@ -217,7 +264,8 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 						{
 							output_statistic_pointer ptr_tier_stat(*tier_stat_it);
 
-							os << "     Mean estimator: " << *ptr_tier_stat << ::std::endl;//FIXME: statistic type is hard-coded
+							os << indent << indent << indent << indent
+							   << "Mean estimator: " << *ptr_tier_stat << ::std::endl;//FIXME: statistic type is hard-coded
 						}
 					}
 				}
@@ -232,16 +280,20 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 		typedef ::std::vector<physical_machine_pointer> physical_machine_container;
 		typedef typename physical_machine_container::const_iterator physical_machine_iterator;
 
+		os << ::std::endl << "-- Physical Machines --" << ::std::endl;
+
 		physical_machine_container machs = ptr_dc->physical_machines();
 		physical_machine_iterator mach_end_it = machs.end();
-		os << "-- Physical Machines --" << ::std::endl;
 		for (physical_machine_iterator mach_it = machs.begin(); mach_it != mach_end_it; ++mach_it)
 		{
 			physical_machine_pointer ptr_mach = *mach_it;
 
-			os << "Physical Machine: '" << ptr_mach->name() << "'" << ::std::endl;
-			os << " Uptime: " << ptr_mach->simulation_model().uptime() << ::std::endl;
-			os << " Consumed Energy: " << ptr_mach->simulation_model().consumed_energy() << ::std::endl;
+			os << indent
+			   << "Physical Machine: '" << ptr_mach->name() << "'" << ::std::endl;
+			os << indent << indent
+			   << "Uptime: " << ptr_mach->simulation_model().uptime() << ::std::endl;
+			os << indent << indent
+			   << "Consumed Energy: " << ptr_mach->simulation_model().consumed_energy() << ::std::endl;
 		}
 	}
 }

@@ -100,6 +100,18 @@ class virtual_machine
 	}
 
 
+	public: void name(::std::string const& name)
+	{
+		name_ = name;
+	}
+
+
+	public: ::std::string const& name() const
+	{
+		return name_;
+	}
+
+
 //	public: void application(application_pointer const& ptr_app)
 //	{
 //		ptr_app_ = ptr_app;
@@ -240,14 +252,12 @@ class virtual_machine
 
 	public: void power_on()
 	{
-DCS_DEBUG_TRACE("Powering-on VM: " << this->id());//XXX
 		power_status_ = powered_on_power_status;
 	}
 
 
 	public: void power_off()
 	{
-DCS_DEBUG_TRACE("Powering-off VM: " << this->id());//XXX
 		power_status_ = powered_off_power_status;
 	}
 

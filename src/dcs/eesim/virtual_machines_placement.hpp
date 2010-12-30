@@ -46,6 +46,8 @@ class virtual_machines_placement
 	private: typedef ::std::map<physical_machine_identifier_type,by_pm_index_subcontainer> by_pm_index_container;
 	public: typedef typename placement_container::iterator iterator;
 	public: typedef typename placement_container::const_iterator const_iterator;
+	public: typedef typename share_container::iterator share_iterator;
+	public: typedef typename share_container::const_iterator share_const_iterator;
 
 
 //	public: virtual_machines_placement(::std::size_t nvms, ::std::size_t npms)
@@ -275,15 +277,87 @@ DCS_DEBUG_TRACE("TRUE");//XXX
 	}
 
 
+	public: share_iterator shares_begin(iterator it)
+	{
+		return it->second.begin();
+	}
+
+
+	public: share_const_iterator shares_begin(const_iterator it) const
+	{
+		return it->second.begin();
+	}
+
+
+	public: share_iterator shares_end(iterator it)
+	{
+		return it->second.end();
+	}
+
+
+	public: share_const_iterator shares_end(const_iterator it) const
+	{
+		return it->second.end();
+	}
+
+
 	public: virtual_machine_identifier_type vm_id(vm_pm_pair_type const& pair) const
 	{
 		return pair.first;
 	}
 
 
-	public: virtual_machine_identifier_type pm_id(vm_pm_pair_type const& pair) const
+	public: virtual_machine_identifier_type vm_id(iterator it) const
+	{
+		return it->first.first;
+	}
+
+
+	public: virtual_machine_identifier_type vm_id(const_iterator it) const
+	{
+		return it->first.first;
+	}
+
+
+	public: physical_machine_identifier_type pm_id(vm_pm_pair_type const& pair) const
 	{
 		return pair.second;
+	}
+
+
+	public: physical_machine_identifier_type pm_id(iterator it) const
+	{
+		return it->first.second;
+	}
+
+
+	public: physical_machine_identifier_type pm_id(const_iterator it) const
+	{
+		return it->first.second;
+	}
+
+
+	public: physical_resource_category resource_category(share_iterator it) const
+	{
+		return it->first;
+	}
+
+
+	public: physical_resource_category resource_category(share_const_iterator it) const
+	{
+		return it->first;
+	}
+
+
+	public: real_type resource_share(share_iterator it) const
+	{
+		return it->second;
+	}
+
+
+	public: real_type resource_share(share_const_iterator it) const
+	{
+		return it->second;
 	}
 
 
@@ -340,7 +414,7 @@ template <
 		{
 			os << ";";
 		}
-		os << "(VM: " << placement.vm_id(place_it->first) << ")->(PM:" << placement.pm_id(place_it->first) << "): <";
+		os << "(VM: " << placement.vm_id(place_it->first) << ")->(PM: " << placement.pm_id(place_it->first) << "): <";
 		share_iterator share_begin_it = place_it->second.begin();
 		share_iterator share_end_it = place_it->second.end();
 		for (share_iterator share_it = share_begin_it; share_it != share_end_it; ++share_it)
