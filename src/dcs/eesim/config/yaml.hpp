@@ -198,6 +198,10 @@ probability_distribution_category text_to_probability_distribution_category(::st
 	{
 		return map_probability_distribution;
 	}
+	if (!istr.compare("pmpp"))
+	{
+		return pmpp_probability_distribution;
+	}
 
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_probability_distribution_category] Unknown probability distribution category.");
 }
@@ -878,6 +882,19 @@ void operator>>(::YAML::Node const& node, probability_distribution_config<RealT>
 
 				node["mean"] >> distr_conf_impl.mean;
 				node["sd"] >> distr_conf_impl.sd;
+
+				distr_conf.category_conf = distr_conf_impl;
+			}
+			break;
+		case pmpp_probability_distribution:
+			{
+				typedef typename distribution_config_type::pmpp_distribution_config_type distribution_config_impl_type;
+
+				distribution_config_impl_type distr_conf_impl;
+
+				node["rates"] >> distr_conf_impl.rates;
+				node["shape"] >> distr_conf_impl.shape;
+				node["min"] >> distr_conf_impl.min;
 
 				distr_conf.category_conf = distr_conf_impl;
 			}

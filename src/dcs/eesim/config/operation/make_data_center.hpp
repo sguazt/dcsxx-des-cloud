@@ -448,16 +448,6 @@ template <typename RealT>
 				distr = ::dcs::math::stats::make_any_distribution(distribution_impl_type(distr_conf_impl.shape, distr_conf_impl.scale));
 			}
 			break;
-		case normal_probability_distribution:
-			{
-				typedef typename distribution_config_type::normal_distribution_config_type distribution_config_impl_type;
-				typedef ::dcs::math::stats::normal_distribution<real_type> distribution_impl_type;
-
-				distribution_config_impl_type const& distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
-				//ptr_distr = ::dcs::make_shared<distribution_impl_type>(distr_conf_impl.mean, distr_conf_impl.sd);
-				distr = ::dcs::math::stats::make_any_distribution(distribution_impl_type(distr_conf_impl.mean, distr_conf_impl.sd));
-			}
-			break;
 		case map_probability_distribution:
 			{
 				typedef typename distribution_config_type::map_distribution_config_type distribution_config_impl_type;
@@ -486,10 +476,42 @@ template <typename RealT>
 						break;
 					case casale2009_map_characterization:
 						{
-							throw ::std::runtime_error("CASALE2009 not yet handled");
+							throw ::std::runtime_error("[dcs::eesim::config::detail::<unnamed>::make_probability_distribution] casale-2009 MAP characterization has not been handled yet.");
 						}
 						break;
 				}
+			}
+			break;
+		case normal_probability_distribution:
+			{
+				typedef typename distribution_config_type::normal_distribution_config_type distribution_config_impl_type;
+				typedef ::dcs::math::stats::normal_distribution<real_type> distribution_impl_type;
+
+				distribution_config_impl_type const& distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
+				//ptr_distr = ::dcs::make_shared<distribution_impl_type>(distr_conf_impl.mean, distr_conf_impl.sd);
+				distr = ::dcs::math::stats::make_any_distribution(distribution_impl_type(distr_conf_impl.mean, distr_conf_impl.sd));
+			}
+			break;
+		case pmpp_probability_distribution:
+			{
+				typedef typename distribution_config_type::pmpp_distribution_config_type distribution_config_impl_type;
+				typedef ::dcs::math::stats::pmpp_distribution<real_type> distribution_impl_type;
+
+				distribution_config_impl_type const& distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
+
+				if (distr_conf_impl.rates.size() > 2)
+				{
+					throw ::std::runtime_error("[dcs::eesim::config::detail::<unnamed>::make_probability_distribution] PMPP processes with a number of states > 2 have not been handled yet.");
+				}
+
+				distr = ::dcs::math::stats::make_any_distribution(
+							distribution_impl_type(
+									distr_conf_impl.rates[0],
+									distr_conf_impl.rates[1],
+									distr_conf_impl.shape,
+									distr_conf_impl.min
+								)
+					);
 			}
 			break;
 	}

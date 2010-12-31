@@ -2,21 +2,33 @@
 #define DCS_EESIM_CONFIG_PROBABILITY_DISTRIBUTION_HPP
 
 
+#include <algorithm>
 #include <boost/variant.hpp>
 #include <cstddef>
 #include <dcs/eesim/config/numeric_matrix.hpp>
 #include <iostream>
+#include <iterator>
 
 
 namespace dcs { namespace eesim { namespace config {
 
 enum probability_distribution_category
 {
+	degenerate_probability_distribution,
 	exponential_probability_distribution,
 	gamma_probability_distribution,
-	normal_probability_distribution,
 	map_probability_distribution,
-	degenerate_probability_distribution
+	normal_probability_distribution,
+	pmpp_probability_distribution
+};
+
+
+template <typename RealT>
+struct degenerate_probability_distribution_config
+{
+	typedef RealT real_type;
+
+	real_type k;
 };
 
 
@@ -36,16 +48,6 @@ struct gamma_probability_distribution_config
 
 	real_type shape;
 	real_type scale;
-};
-
-
-template <typename RealT>
-struct normal_probability_distribution_config
-{
-	typedef RealT real_type;
-
-	real_type mean;
-	real_type sd;
 };
 
 
@@ -90,11 +92,24 @@ struct map_probability_distribution_config
 
 
 template <typename RealT>
-struct degenerate_probability_distribution_config
+struct normal_probability_distribution_config
 {
 	typedef RealT real_type;
 
-	real_type k;
+	real_type mean;
+	real_type sd;
+};
+
+
+template <typename RealT>
+struct pmpp_probability_distribution_config
+{
+	typedef RealT real_type;
+	typedef ::std::vector<real_type> rate_container;
+
+	rate_container rates;
+	real_type shape;
+	real_type min;
 };
 
 
@@ -107,13 +122,15 @@ struct probability_distribution_config
 	typedef gamma_probability_distribution_config<RealT> gamma_distribution_config_type;
 	typedef map_probability_distribution_config<RealT> map_distribution_config_type;
 	typedef normal_probability_distribution_config<RealT> normal_distribution_config_type;
+	typedef pmpp_probability_distribution_config<RealT> pmpp_distribution_config_type;
 
 	probability_distribution_category category;
 	::boost::variant<degenerate_distribution_config_type,
 					 exponential_distribution_config_type,
 					 gamma_distribution_config_type,
 					 map_distribution_config_type,
-					 normal_distribution_config_type> category_conf;
+					 normal_distribution_config_type,
+					 pmpp_distribution_config_type> category_conf;
 };
 
 
@@ -145,18 +162,6 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 	os << "<(gamma-distribution)"
 	   << " shape: " << config.shape
 	   << ", scale: " << config.scale
-	   << ">";
-
-	return os;
-}
-
-
-template <typename CharT, typename CharTraitsT, typename RealT>
-::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, normal_probability_distribution_config<RealT> const& config)
-{
-	os << "<(normal-distribution)"
-	   << " mean: " << config.mean
-	   << ", sd: " << config.sd
 	   << ">";
 
 	return os;
@@ -196,6 +201,33 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 	}
 
 	os << ">";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT, typename RealT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, normal_probability_distribution_config<RealT> const& config)
+{
+	os << "<(normal-distribution)"
+	   << " mean: " << config.mean
+	   << ", sd: " << config.sd
+	   << ">";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT, typename RealT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, pmpp_probability_distribution_config<RealT> const& config)
+{
+	os << "<(pmpp-distribution)";
+	::std::copy(config.rates.begin(),
+				config.rates.end(),
+				::std::ostream_iterator<RealT>(os, ", "));
+	os << ", shape: " << config.shape
+	   << ", min: " << config.min
+	   << ">";
 
 	return os;
 }
