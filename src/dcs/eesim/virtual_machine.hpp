@@ -27,6 +27,7 @@
 
 
 #include <algorithm>
+#include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/math/stats/function/rand.hpp>
 #include <dcs/eesim/application_tier.hpp>
@@ -34,9 +35,10 @@
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/physical_machine.hpp>
 #include <dcs/eesim/power_status.hpp>
-//#include <dcs/eesim/virtual_machine_monitor.hpp>
+#include <dcs/eesim/virtual_machine_monitor.hpp>
 #include <dcs/memory.hpp>
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -46,8 +48,10 @@ namespace dcs { namespace eesim {
 
 //template <typename TraitsT>
 //class physical_machine;
-//template <typename TraitsT>
-//class virtual_machine_monitor;
+
+template <typename TraitsT>
+class virtual_machine_monitor;
+
 
 /**
  * \brief Model for virtual machines.
@@ -70,14 +74,15 @@ class virtual_machine
 //	public: typedef ::std::vector< physical_resource<traits_type> > resource_container;
 	private: typedef typename application_tier_type::application_type application_type;
 	public: typedef ::std::vector<typename application_type::reference_physical_resource> resource_container;
-//	public: typedef virtual_machine_monitor<traits_type> virtual_machine_monitor_type;
-//	public: typedef ::dcs::shared_ptr<virtual_machine_monitor_type> virtual_machine_monitor_pointer;
+	public: typedef virtual_machine_monitor<traits_type> virtual_machine_monitor_type;
+	public: typedef virtual_machine_monitor_type* virtual_machine_monitor_pointer;
 
 
 	public: explicit virtual_machine(std::string const& name="Unnamed VM")
 		: id_(traits_type::invalid_virtual_machine_id),
 		  name_(name),
-		  power_status_(powered_off_power_status)
+		  power_status_(powered_off_power_status),
+		  ptr_vmm_(0)
 	{
 	}
 
@@ -121,6 +126,12 @@ class virtual_machine
 	public: void guest_system(application_tier_pointer const& ptr_tier)
 	{
 		ptr_tier_ = ptr_tier;
+
+		if (ptr_tier_)
+		{
+			resource_share_container wanted_shares(ptr_tier_->resource_shares());
+			wanted_resource_shares(wanted_shares.begin(), wanted_shares.end());
+		}
 	}
 
 
@@ -136,22 +147,34 @@ class virtual_machine
 	}
 
 
-//	public: void vmm(virtual_machine_monitor_pointer const& ptr_vmm)
-//	{
-//		ptr_vmm_ = ptr_vmm;
-//	}
+	public: void vmm(virtual_machine_monitor_pointer const& ptr_vmm)
+	{
+		ptr_vmm_ = ptr_vmm;
+	}
 
 
-//	public: virtual_machine_monitor_pointer vmm_ptr() const
-//	{
-//		return ptr_vmm_;
-//	}
+	public: virtual_machine_monitor_type& vmm()
+	{
+		// pre: VMM must already be set
+		DCS_ASSERT(
+			ptr_vmm_,
+			throw ::std::logic_error("[dcs::eesim::virtual_machine::vmm] Virtual Machine Monitor not set.")
+		);
+
+		return *ptr_vmm_;
+	}
 
 
-//	public: virtual_machine_monitor_pointer vmm_ptr()
-//	{
-//		return ptr_vmm_;
-//	}
+	public: virtual_machine_monitor_type const& vmm() const
+	{
+		// pre: VMM must already be set
+		DCS_ASSERT(
+			ptr_vmm_,
+			throw ::std::logic_error("[dcs::eesim::virtual_machine::vmm] Virtual Machine Monitor not set.")
+		);
+
+		return *ptr_vmm_;
+	}
 
 
 //	public: void host_machine(physical_machine_pointer const& ptr_mach)
@@ -181,34 +204,47 @@ class virtual_machine
 	}
 
 
-//	public: void wanted_resource_share(physical_resource_category category, real_type fraction)
-//	{
-//		wanted_res_shares_[category] = fraction;
-//	}
+	public: void wanted_resource_share(physical_resource_category category, real_type fraction)
+	{
+		wanted_res_shares_[category] = fraction;
+	}
 
 
-//	public: template <typename ForwardIteratorT>
-//		void wanted_resource_shares(ForwardIteratorT first, ForwardIteratorT last)
-//	{
-//		wanted_res_shares_ = resource_container(first, last);
-//	}
+	public: template <typename ForwardIteratorT>
+		void wanted_resource_shares(ForwardIteratorT first, ForwardIteratorT last)
+	{
+		wanted_res_shares_ = resource_share_impl_container(first, last);
+	}
 
 
 	public: resource_share_container wanted_resource_shares() const
 	{
-		// precondition: tier pointer must be a valid pointer
-		DCS_DEBUG_ASSERT( ptr_tier_ );
+//		// precondition: tier pointer must be a valid pointer
+//		DCS_DEBUG_ASSERT( ptr_tier_ );
+//
+//		return ptr_tier_->resource_shares();
+		return wanted_res_shares_;
+	}
 
-		return ptr_tier_->resource_shares();
+
+	public: real_type wanted_resource_share(physical_resource_category category) const
+	{
+		DCS_ASSERT(
+			wanted_res_shares_.count(category) > 0,
+			throw ::std::invalid_argument("[dcs::eesim::virtual_machine::wanted_resource_share] Unhandled resource category.")
+		);
+
+		return wanted_res_shares_.at(category);
 	}
 
 
 	public: resource_share_container wanted_resource_shares(physical_machine_type const& mach) const
 	{
-		// precondition: tier pointer must be a valid pointer
-		DCS_DEBUG_ASSERT( ptr_tier_ );
+//		// precondition: tier pointer must be a valid pointer
+//		DCS_DEBUG_ASSERT( ptr_tier_ );
 
-		resource_share_container wanted_shares = ptr_tier_->resource_shares();
+//		resource_share_container wanted_shares = ptr_tier_->resource_shares();
+		resource_share_container wanted_shares(wanted_res_shares_.begin(), wanted_res_shares_.end());
 		typename resource_share_container::iterator end_it = wanted_shares.end();
 		for (typename resource_share_container::iterator it = wanted_shares.begin();
 			 it != end_it;
@@ -225,6 +261,23 @@ class virtual_machine
 		}
 
 		return wanted_shares;
+	}
+
+
+	public: real_type wanted_resource_share(physical_machine_type const& mach, physical_resource_category category) const
+	{
+//		// precondition: tier pointer must be a valid pointer
+//		DCS_DEBUG_ASSERT( ptr_tier_ );
+
+//		real_type wanted_share(ptr_tier_->resource_share(category));
+		real_type wanted_share(wanted_res_shares_.at(category));
+		real_type ref_capacity(ptr_tier_->application().reference_resource(category).capacity());
+		real_type actual_capacity(mach.resource(category)->capacity());
+		wanted_share *= ref_capacity/actual_capacity;
+
+		real_type max_share = mach.resource(category)->utilization_threshold();
+
+		return ::std::min(wanted_share, max_share);
 	}
 
 
@@ -247,6 +300,17 @@ class virtual_machine
 	public: resource_share_container resource_shares() const
 	{
 		return resource_share_container(res_shares_.begin(), res_shares_.end());
+	}
+
+
+	public: real_type resource_share(physical_resource_category category) const
+	{
+		DCS_ASSERT(
+			res_shares_.count(category) > 0,
+			throw ::std::invalid_argument("[dcs::eesim::virtual_machine::resource_share] Unhandled resource category.")
+		);
+
+		return res_shares_.at(category);
 	}
 
 
@@ -304,14 +368,28 @@ class virtual_machine
 	}
 
 
+	protected: virtual_machine_monitor_pointer vmm_ptr() const
+	{
+		return ptr_vmm_;
+	}
+
+
+	protected: virtual_machine_monitor_pointer vmm_ptr()
+	{
+		return ptr_vmm_;
+	}
+
+
 	private: identifier_type id_;
 	private: ::std::string name_;
 //	private: queue_model_type queue_;
 	private: power_status power_status_;
 	private: resource_share_impl_container res_shares_;
+	private: resource_share_impl_container wanted_res_shares_;
 	private: application_tier_pointer ptr_tier_;
 //	private: physical_machine_pointer ptr_mach_;
 //	private: virtual_machine_monitor_pointer ptr_vmm_;
+	private: virtual_machine_monitor_pointer ptr_vmm_;
 };
 
 }} // Namespace dcs::eesim

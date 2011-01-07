@@ -64,6 +64,18 @@ function dcs_log_warn()
 }
 
 
+## Return yes or no
+function dcs_yes_no()
+{
+	declare -l v=$1
+	if [ "$v" = "yes" ] || [ "$v" = "true" ] || [ "$v" = "1" ]; then
+		echo -n "yes"
+	else
+		echo -n "no"
+	fi
+}
+
+
 ## Check if your system has the Boost libraries installed
 function dcs_check_boost()
 {
@@ -91,13 +103,74 @@ EOT
 }
 
 
+## Check if your system has the lp_solve libraries installed
+function dcs_check_lpsolve()
+{
+	src_temp_file=`mktemp tmp.XXXXXXXXXX`
+	out_temp_file=`mktemp tmp.XXXXXXXXXX`
+	cat > $src_temp_file <<EOT
+#include <lpsolve/lp_lib.h>
+
+int main(int argc, char* argv[])
+{
+	return 0;
+}
+EOT
+
+	compile_test=(`$CXX $CXXFLAGS -x 'c++' -o $out_temp_file $src_temp_file 2>&1 >/dev/null`)
+	ret=$?
+
+	rm -f $out_temp_file $src_temp_file
+
+	if [ $ret == 0 ]; then
+		echo -n "yes"
+	else
+		echo -n "no"
+	fi
+}
+
+
+## Check if your system has the GLPK libraries installed
+function dcs_check_glpk()
+{
+	src_temp_file=`mktemp tmp.XXXXXXXXXX`
+	out_temp_file=`mktemp tmp.XXXXXXXXXX`
+	cat > $src_temp_file <<EOT
+#include <glpk/glpk.h>
+
+int main(int argc, char* argv[])
+{
+	return 0;
+}
+EOT
+
+	compile_test=(`$CXX $CXXFLAGS -x 'c++' -o $out_temp_file $src_temp_file 2>&1 >/dev/null`)
+	ret=$?
+
+	rm -f $out_temp_file $src_temp_file
+
+	if [ $ret == 0 ]; then
+		echo -n "yes"
+	else
+		echo -n "no"
+	fi
+}
+
+
 ## Script starts here
 
 dcs_log_init
 dcs_log_info "Starting configuration maker..."
 
 ## Control variables
+have_boost=
 have_boost_bool=
+want_lpsolve=$(dcs_yes_no $USR_EESIM_USE_LPSOLVE)
+have_lpsolve=
+have_lpsolve_bool=
+want_glpk=$(dcs_yes_no $USR_EESIM_USE_LPSOLVE)
+have_glpk=
+have_glpk_bool=
 basesrcdir=
 
 
@@ -132,16 +205,46 @@ fi
 
 
 ## Check for Boost
-have_boost=`dcs_check_boost`
+have_boost=$(dcs_check_boost)
 if [ "$have_boost" = "yes" ]; then
 	have_boost_bool='true'
 else
 	have_boost_bool='false'
 
-	dcs_log_error "Wanted Boost but Boost not found."
+	dcs_log_error "Wanted 'Boost' but 'Boost' not found."
 	found_errors=yes
 fi
 
+
+## Check for lp_solve
+have_lpsolve=$(dcs_check_lpsolve)
+if [ "$have_lpsolve" = "yes" ]; then
+	have_lpsolve_bool='true'
+else
+	have_lpsolve_bool='false'
+fi
+
+## Check for GLPK
+have_lpsolve=$(dcs_check_lpsolve)
+if [ "$have_glpk" = "yes" ]; then
+	have_glpk_bool='true'
+else
+	have_glpk_bool='false'
+fi
+
+if [ "$want_lpsolve" = "yes" ] && [ "$have_lpsolve" != "yes" ]; then
+	dcs_log_error "Wanted 'lp_solve' but 'lp_solve' not found."
+	found_errors=yes
+elif [ "$want_glpk" = "yes" ] && [ "$have_glpk" != "yes" ]; then
+	dcs_log_error "Wanted 'GLPK' but 'GLPK' not found."
+	found_errors=yes
+elif [ "$want_lpsolve" = "yes" ] && [ "$want_glpk" = "yes" ]; then
+	have_lpsolve_bool='true'
+	have_glpk_bool='false'
+elif [ "$want_lpsolve" != "yes" ] && [ "$want_glpk" != "yes" ]; then
+	have_lpsolve_bool='true'
+	have_glpk_bool='false'
+fi
 
 ## Get version
 version=$(cat $basedir/VERSION)
@@ -206,8 +309,8 @@ cat > $basesrcdir/$prjsubdir/detail/config.hpp <<EOT
 #define DCS_EESIM_CONFIG_HPP
 
 
-#define DCS_EESIM_CONFIG_USE_GLPK true
-#define DCS_EESIM_CONFIG_USE_LPSOLVE false
+#define DCS_EESIM_CONFIG_USE_GLPK $have_glpk_bool
+#define DCS_EESIM_CONFIG_USE_LPSOLVE $have_lpsolve_bool
 
 
 #endif // DCS_EESIM_CONFIG_HPP

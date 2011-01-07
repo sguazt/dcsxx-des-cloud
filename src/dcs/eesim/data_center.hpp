@@ -26,6 +26,8 @@
 #define DCS_EESIM_DATA_CENTER_HPP
 
 
+#include <dcs/assert.hpp>
+#include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/eesim/base_application_controller.hpp>
 #include <dcs/eesim/base_physical_machine_controller.hpp>
@@ -35,7 +37,7 @@
 #include <dcs/eesim/virtual_machines_placement.hpp>
 #include <dcs/eesim/registry.hpp>
 #include <dcs/memory.hpp>
-#include <iostream>
+#include <stdexcept>
 #include <vector>
 
 
@@ -70,9 +72,10 @@ class data_center
 	private: typedef typename traits_type::uint_type uint_type;
 	private: typedef typename application_type::application_tier_type application_tier_type;
 	private: typedef ::dcs::shared_ptr<application_tier_type> application_tier_pointer;
+	private: typedef ::std::vector<virtual_machine_identifier_type> deployed_application_vm_container;
 	private: typedef ::std::map<
 						application_identifier_type,
-						::std::vector<virtual_machine_identifier_type>
+						deployed_application_vm_container
 					> deployed_application_container;
 	private: typedef typename traits_type::des_engine_type des_engine_type;
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
@@ -87,8 +90,19 @@ class data_center
 
 
 	public: application_identifier_type add_application(application_pointer const& ptr_app,
-												   application_controller_pointer const& ptr_app_control)
+														application_controller_pointer const& ptr_app_control)
 	{
+		// pre: ptr_app must be a valid application pointer.
+		DCS_ASSERT(
+			ptr_app,
+			throw ::std::invalid_argument("[dcs::eesim::add_application] Invalid application.")
+		);
+		// pre: ptr_app_control must be a valid application controller pointer.
+		DCS_ASSERT(
+			ptr_app_control,
+			throw ::std::invalid_argument("[dcs::eesim::add_application] Invalid application controller.")
+		);
+
 		application_identifier_type id;
 
 		id = apps_.size();
@@ -102,10 +116,34 @@ class data_center
 	}
 
 
-	public: physical_machine_identifier_type add_physical_machine(
-						physical_machine_pointer const& ptr_mach,
-						physical_machine_controller_pointer const& ptr_mach_control)
+	public: void remove_application(application_identifier_type app_id)
 	{
+		// pre: app_id must be a valid application identifier.
+		DCS_ASSERT(
+			app_id < apps_.size(),
+			throw ::std::invalid_argument("[dcs::eesim::remove_application] Invalid application identifier.")
+		);
+
+		undeploy_application(app_id);
+
+		apps_.erase(apps_.begin()+app_id);
+	}
+
+
+	public: physical_machine_identifier_type add_physical_machine(physical_machine_pointer const& ptr_mach,
+																  physical_machine_controller_pointer const& ptr_mach_control)
+	{
+		// pre: ptr_mach must be a valid physical machine pointer.
+		DCS_ASSERT(
+			ptr_mach,
+			throw ::std::invalid_argument("[dcs::eesim::add_physical_machine] Invalid physical machine.")
+		);
+		// pre: ptr_mach_control must be a valid physical machine controller pointer.
+		DCS_ASSERT(
+			ptr_mach_control,
+			throw ::std::invalid_argument("[dcs::eesim::add_physical_machine] Invalid physical machine controller.")
+		);
+
 		physical_machine_identifier_type id;
 
 		id = pms_.size();
@@ -114,6 +152,20 @@ class data_center
 		pms_.back()->id(id);
 
 		return id;
+	}
+
+
+	public: void remove_physical_machine(physical_machine_identifier_type mach_id)
+	{
+		// pre: mach_id must be a valid physical machine identifier.
+		DCS_ASSERT(
+			mach_id < pms_.size(),
+			throw ::std::invalid_argument("[dcs::eesim::remove_application] Invalid physical machine identifier.")
+		);
+
+		undeploy_application(mach_id);
+
+		pms_.erase(pms_.begin()+mach_id);
 	}
 
 
@@ -242,7 +294,7 @@ class data_center
 			{
 				// Power off this VM and remove from the related PM
 
-				ptr_vm->power_off();
+				//ptr_vm->power_off();
 				displace_virtual_machine(ptr_vm);
 			}
 
@@ -328,7 +380,8 @@ class data_center
 	public: uint_type start_applications()
 	{
 		typedef typename deployed_application_container::const_iterator app_iterator;
-		typedef typename ::std::vector<virtual_machine_identifier_type>::const_iterator vm_iterator;
+		//typedef typename ::std::vector<virtual_machine_identifier_type>::const_iterator vm_iterator;
+		typedef typename deployed_application_vm_container::const_iterator vm_iterator;
 
 		uint_type started_apps(0);
 
@@ -337,34 +390,124 @@ class data_center
 		{
 			application_identifier_type app_id(app_it->first);
 
-			vm_iterator vm_end_it(app_it->second.end());
-			bool startable(true);
-			for (vm_iterator vm_it = app_it->second.begin(); startable && vm_it != vm_end_it; ++vm_it)
-			{
-				startable = placement_.placed(*vm_it);
-			}
+			bool started;
 
-			if (startable)
+			started = start_application(app_id);
+
+			if (started)
 			{
-				typedef typename virtual_machines_placement_type::const_iterator vm_placement_iterator;
-				for (vm_iterator vm_it = app_it->second.begin(); startable && vm_it != vm_end_it; ++vm_it)
-				{
-//					vm_placement_iterator vm_place_it(placement_.find(*vm_it));
-//					physical_machine_pointer ptr_pm(pms_[placement_.pm_id(vm_place_it->first)]);
-//					virtual_machine_pointer ptr_vm(mms_[placement_.vm_id(vm_place_it->first)]);
-//					ptr_pm->vmm().power_on(ptr_vm);
-					vms_[*vm_it]->power_on();
-				}
-				this->application_ptr(app_id)->start();
 				++started_apps;
-			}
-			else
-			{
-				::std::clog << "[Warning] Application " << app_id << " '" << *(apps_[app_id]) << "' cannot be started: at least one VM has not been placed." << ::std::endl;
 			}
 		}
 
 		return started_apps;
+	}
+
+
+	public: bool start_application(application_identifier_type app_id)
+	{
+		typedef typename deployed_application_container::const_iterator app_iterator;
+		typedef typename deployed_application_vm_container::const_iterator vm_iterator;
+
+		app_iterator app_it(deployed_apps_.find(app_id));
+		if (app_it == deployed_apps_.end())
+		{
+			::std::invalid_argument("[dcs::eesim::start_application] Invalid application identifier.");
+		}
+
+		bool startable(true);
+
+		vm_iterator vm_end_it(app_it->second.end());
+		for (vm_iterator vm_it = app_it->second.begin(); startable && vm_it != vm_end_it; ++vm_it)
+		{
+			startable = placement_.placed(*vm_it);
+		}
+
+		if (startable)
+		{
+			typedef typename virtual_machines_placement_type::const_iterator vm_placement_iterator;
+			::std::vector<virtual_machine_pointer> app_vms;
+			for (vm_iterator vm_it = app_it->second.begin(); vm_it != vm_end_it; ++vm_it)
+			{
+//				vm_placement_iterator vm_place_it(placement_.find(*vm_it));
+//				physical_machine_pointer ptr_pm(pms_[placement_.pm_id(vm_place_it->first)]);
+//				virtual_machine_pointer ptr_vm(mms_[placement_.vm_id(vm_place_it->first)]);
+//				ptr_pm->vmm().power_on(ptr_vm);
+				virtual_machine_pointer ptr_vm(vms_[*vm_it]);
+				ptr_vm->power_on();
+				app_vms.push_back(ptr_vm);
+			}
+			this->application_ptr(app_id)->start(app_vms.begin(), app_vms.end());
+		}
+		else
+		{
+			::std::clog << "[Warning] Application " << app_id << " '" << *(apps_[app_id]) << "' cannot be started: at least one VM has not been placed." << ::std::endl;
+		}
+
+		return startable;
+	}
+
+
+	public: uint_type stop_applications()
+	{
+		typedef typename deployed_application_container::const_iterator app_iterator;
+		typedef typename deployed_application_vm_container::const_iterator vm_iterator;
+
+		uint_type stopped_apps(0);
+
+		app_iterator app_end_it(deployed_apps_.end());
+		for (app_iterator app_it(deployed_apps_.begin()); app_it != app_end_it; ++app_it)
+		{
+			application_identifier_type app_id(app_it->first);
+
+			bool stopped;
+
+			stopped = start_application(app_id);
+
+			if (stopped)
+			{
+				++stopped_apps;
+			}
+		}
+
+		return stopped_apps;
+	}
+
+
+	public: bool stop_applicaion(application_identifier_type app_id)
+	{
+		typedef typename deployed_application_container::const_iterator app_iterator;
+		typedef typename deployed_application_vm_container::const_iterator vm_iterator;
+
+		app_iterator app_it(deployed_apps_.find(app_id));
+		if (app_it == deployed_apps_.end())
+		{
+			::std::invalid_argument("[dcs::eesim::stop_application] Invalid application identifier.");
+		}
+
+		bool stoppable(true);
+
+		vm_iterator vm_end_it(app_it->second.end());
+		for (vm_iterator vm_it = app_it->second.begin(); stoppable && vm_it != vm_end_it; ++vm_it)
+		{
+			stoppable = placement_.placed(*vm_it);
+		}
+
+		if (stoppable)
+		{
+			typedef typename virtual_machines_placement_type::const_iterator vm_placement_iterator;
+			for (vm_iterator vm_it = app_it->second.begin(); vm_it != vm_end_it; ++vm_it)
+			{
+				vms_[*vm_it]->power_off();
+			}
+			this->application_ptr(app_id)->stop();
+		}
+		else
+		{
+			::std::clog << "[Warning] Application " << app_id << " '" << *(apps_[app_id]) << "' cannot be stopped: at least one VM has not been placed." << ::std::endl;
+		}
+
+		return stoppable;
 	}
 
 
@@ -426,6 +569,42 @@ class data_center
 			deployed_apps_[app_id].push_back(ptr_vm->id());
 			//ptr_tier->virtual_machine(ptr_vm);
 		}
+	}
+
+
+	private: void undeploy_application(application_identifier_type app_id)
+	{
+		typedef typename deployed_application_container::const_iterator app_iterator;
+
+		app_iterator app_it = deployed_apps_.find(app_id);
+
+		// pre: app_id must identify an already deployed application
+		DCS_ASSERT(
+			app_it != deployed_apps_.end(),
+			throw ::std::invalid_argument("[dcs::eesim::data_center::undeploy_application] Cannot undeploy a non-deployed application.")
+		);
+
+		// destroy all associated VMs
+		typedef typename deployed_application_vm_container::const_iterator vm_iterator;
+		vm_iterator vm_end_it(app_it->second.end());
+		for (vm_iterator vm_it = app_it->second.begin(); vm_it != vm_end_it; ++vm_it)
+		{
+			virtual_machine_identifier_type vm_id(*vm_it);
+
+			// check: make sure vm_id is a valid VM identifier.
+			DCS_DEBUG_ASSERT( vm_id < vms_.size() );
+			// check: double check on VM identifier.
+			DCS_DEBUG_ASSERT( vms_[vm_id]->id() == vm_id );
+
+			// Displace this VM
+			displace_virtual_machine(vms_[vm_id]);
+
+			// Remove from the VM list
+			vms_.erase(vms_.begin()+vm_id);
+		}
+
+		// Undeploy the application
+		deployed_apps_.erase(app_id);
 	}
 
 

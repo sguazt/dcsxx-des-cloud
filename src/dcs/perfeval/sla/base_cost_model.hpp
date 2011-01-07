@@ -212,6 +212,12 @@ class base_cost_model
 	}
 
 
+	public: value_type slo_value(metric_category_type category) const
+	{
+		return do_slo_value(category);
+	}
+
+
 	private: virtual void do_add_slo(slo_model_type const& slo) = 0;
 
 
@@ -219,6 +225,9 @@ class base_cost_model
 
 
 	private: virtual ::std::vector<metric_category_type> do_slo_categories() const = 0;
+
+
+	private: virtual value_type do_slo_value(metric_category_type category) const = 0;
 
 
 	private: virtual real_type do_score(metric_category_iterator category_first, metric_category_iterator category_last, metric_iterator metric_first) const = 0;

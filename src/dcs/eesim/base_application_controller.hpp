@@ -26,6 +26,9 @@
 #define DCS_EESIM_BASE_APPLICATION_CONTROLLER_HPP
 
 
+#include <cmath>
+#include <dcs/assert.hpp>
+#include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/eesim/multi_tier_application.hpp>
 #include <dcs/eesim/registry.hpp>
@@ -84,34 +87,27 @@ class base_application_controller
 
 
 	/// Copy constructor.
-	protected: base_application_controller(base_application_controller const& that)
+	public: base_application_controller(base_application_controller const& that)
+	: ptr_app_(that.ptr_app_),
+	  ts_(that.ts_),
+	  ptr_control_evt_src_(new des_event_source_type(*that.ptr_control_evt_src_))
 	{
-		ptr_app_ = that.ptr_app_;
-		ts_ = that.ts_;
-		ptr_control_evt_src_ = ::dcs::make_shared<des_event_source_type>(*that.ptr_control_evt_src_);
+		init();
 	}
 
 
 	/// Copy assignment.
-	protected: base_application_controller& operator=(base_application_controller const& rhs)
+	public: base_application_controller& operator=(base_application_controller const& rhs)
 	{
 		if (this != &rhs)
 		{
-			if (ptr_control_evt_src_)
-			{
-				ptr_control_evt_src_->disconnect(
-					::dcs::functional::bind(
-						&self_type::process_control,
-						this,
-						::dcs::functional::placeholders::_1,
-						::dcs::functional::placeholders::_2
-					)
-				);
-			}
+			this->disconnect_from_event_sources();
+
 			ptr_app_ = rhs.ptr_app_;
 			ts_ = rhs.ts_;
 			ptr_control_evt_src_ = ::dcs::make_shared<des_event_source_type>(*(rhs.ptr_control_evt_src_));
-			//ptr_control_evt_src_ = des_event_source_pointer(new des_event_source_type>(*rhs.ptr_control_evt_src_));
+
+			init();
 		}
 
 		return *this;
@@ -121,45 +117,43 @@ class base_application_controller
 	/// The destructor.
 	public: virtual ~base_application_controller()
 	{
-		if (ptr_control_evt_src_)
-		{
-			ptr_control_evt_src_->disconnect(
-				::dcs::functional::bind(
-					&self_type::process_control,
-					this,
-					::dcs::functional::placeholders::_1,
-					::dcs::functional::placeholders::_2
-				)
-			);
-		}
+		this->disconnect_from_event_sources();
 	}
 
 
-	public: void controlled_application(application_pointer const& ptr_app)
+	public: void application(application_pointer const& ptr_app)
 	{
+		do_application(ptr_app);
+
 		ptr_app_ = ptr_app;
 	}
 
 
-	public: application_pointer controlled_application() const
+	public: application_type const& application() const
 	{
-		return ptr_app_;
+		// pre: ptr_app must be a valid application pointer.
+		DCS_DEBUG_ASSERT( ptr_app_ );
+
+		return *ptr_app_;
 	}
 
 
-	public: application_pointer controlled_application()
+	public: application_type& application()
 	{
-		return ptr_app_;
+		// pre: ptr_app must be a valid application pointer.
+		DCS_DEBUG_ASSERT( ptr_app_ );
+
+		return *ptr_app_;
 	}
 
 
-	public: des_event_source_type& contrl_event_source()
+	public: des_event_source_type& control_event_source()
 	{
 		return *ptr_control_evt_src_;
 	}
 
 
-	public: des_event_source_type const& contrl_event_source() const
+	public: des_event_source_type const& control_event_source() const
 	{
 		return *ptr_control_evt_src_;
 	}
@@ -177,18 +171,6 @@ class base_application_controller
 	}
 
 
-	public: des_event_source_type& control_event_source()
-	{
-		return *ptr_control_evt_src_;
-	}
-
-
-	public: des_event_source_type const& control_event_source() const
-	{
-		return *ptr_control_evt_src_;
-	}
-
-
 	protected: application_pointer application_ptr() const
 	{
 		return ptr_app_;
@@ -203,41 +185,68 @@ class base_application_controller
 
 	private: void init()
 	{
-		ptr_control_evt_src_->connect(
-			::dcs::functional::bind(
-				&self_type::process_control,
-				this,
-				::dcs::functional::placeholders::_1,
-				::dcs::functional::placeholders::_2
-			)
-		);
-
-		registry_type& reg(registry_type::instance());
-
-		reg.des_engine_ptr()->system_initialization_event_source().connect(
-			::dcs::functional::bind(
-				&self_type::process_sys_init,
-				this,
-				::dcs::functional::placeholders::_1,
-				::dcs::functional::placeholders::_2
-			)
-		);
+		this->connect_to_event_sources();
 	}
 
 
-	private: void process_sys_init(des_event_type const& evt, des_engine_context_type& ctx)
+	private: void connect_to_event_sources()
 	{
-		schedule_control();
+		if (!::std::isinf(ts_))
+		{
+			ptr_control_evt_src_->connect(
+				::dcs::functional::bind(
+					&self_type::process_control,
+					this,
+					::dcs::functional::placeholders::_1,
+					::dcs::functional::placeholders::_2
+				)
+			);
 
-		do_process_sys_init(evt, ctx);
+			registry_type& reg(registry_type::instance());
+
+			reg.des_engine_ptr()->system_initialization_event_source().connect(
+				::dcs::functional::bind(
+					&self_type::process_sys_init,
+					this,
+					::dcs::functional::placeholders::_1,
+					::dcs::functional::placeholders::_2
+				)
+			);
+		}
 	}
 
 
-	private: void process_control(des_event_type const& evt, des_engine_context_type& ctx)
+	private: void disconnect_from_event_sources()
 	{
-		do_process_control(evt, ctx);
+		if (!::std::isinf(ts_))
+		{
+			if (ptr_control_evt_src_)
+			{
+				ptr_control_evt_src_->disconnect(
+					::dcs::functional::bind(
+						&self_type::process_control,
+						this,
+						::dcs::functional::placeholders::_1,
+						::dcs::functional::placeholders::_2
+					)
+				);
+			}
+
+			registry_type& reg(registry_type::instance());
+
+			reg.des_engine_ptr()->system_initialization_event_source().disconnect(
+				::dcs::functional::bind(
+					&self_type::process_sys_init,
+					this,
+					::dcs::functional::placeholders::_1,
+					::dcs::functional::placeholders::_2
+				)
+			);
+		}
 	}
 
+
+	//@{ Event Triggers
 
 	private: void schedule_control()
 	{
@@ -251,20 +260,57 @@ class base_application_controller
 		do_schedule_control();
 	}
 
+	//@} Event Triggers
 
-	private: virtual void do_process_sys_init(des_event_type const& evt, des_engine_context_type& ctx)
+
+	//@{ Event Handlers
+
+	private: void process_sys_init(des_event_type const& evt, des_engine_context_type& ctx)
+	{
+		schedule_control();
+
+		do_process_sys_init(evt, ctx);
+	}
+
+
+	private: void process_control(des_event_type const& evt, des_engine_context_type& ctx)
+	{
+		schedule_control();
+
+		do_process_control(evt, ctx);
+	}
+
+	//@} Event Handlers
+
+
+	//@{ Interface Member Functions
+
+	protected: virtual void do_application(application_pointer const& ptr_app)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
+
+		// empty
+	}
+
+
+	protected: virtual void do_process_sys_init(des_event_type const& evt, des_engine_context_type& ctx)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+		// empty
 	}
 
 
 	private: virtual void do_process_control(des_event_type const& evt, des_engine_context_type& ctx) = 0;
 
 
-	private: virtual void do_schedule_control()
+	protected: virtual void do_schedule_control()
 	{
+		// empty
 	}
+
+	//@} Interface Member Functions
 
 
 	private: application_pointer ptr_app_;

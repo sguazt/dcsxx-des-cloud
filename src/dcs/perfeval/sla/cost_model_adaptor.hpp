@@ -88,6 +88,12 @@ class cost_model_adaptor: public base_cost_model<typename SlaCostModelTraitsT::m
 	}
 
 
+	private: value_type do_slo_value(metric_category_type category) const
+	{
+		return model_.slo_value(category);
+	}
+
+
     private: real_type do_score(metric_category_iterator category_first, metric_category_iterator category_last, metric_iterator metric_first) const
 	{
 		return model_.score(category_first, category_last, metric_first);

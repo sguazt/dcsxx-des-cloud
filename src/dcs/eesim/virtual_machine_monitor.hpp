@@ -27,7 +27,7 @@
 
 
 #include <dcs/assert.hpp>
-//#include <dcs/eesim/physical_machine.hpp>
+#include <dcs/eesim/physical_machine.hpp>
 #include <dcs/eesim/virtual_machine.hpp>
 #include <dcs/memory.hpp>
 //#include <map>
@@ -37,6 +37,9 @@
 
 
 namespace dcs { namespace eesim {
+
+template <typename TraitsT>
+class physical_machine;
 
 template <typename TraitsT>
 class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
@@ -52,12 +55,15 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 //	public: typedef ::dcs::shared_ptr<physical_machine_type> physical_machine_pointer;
 	public: typedef virtual_machine<traits_type> virtual_machine_type;
 	public: typedef ::dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
+	public: typedef physical_machine<traits_type> physical_machine_type;
+	public: typedef physical_machine_type* physical_machine_pointer;
 	//private: typedef ::std::map<uint_type,virtual_machine_pointer> virtual_machine_container;
 	public: typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
 	private: typedef ::std::map<virtual_machine_identifier_type,virtual_machine_pointer> virtual_machine_impl_container;
 
 
 	public: virtual_machine_monitor()
+	: ptr_pm_(0)
 //		: vms_counter_(0)
 	{
 	}
@@ -74,12 +80,6 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 //
 //		//return vms_counter_;
 //		return (vms_.size()-1);
-//	}
-
-
-//	public: void hosting_machine(physical_machine_pointer const& ptr_mach)
-//	{
-//		ptr_host_mach_ = ptr_mach;
 //	}
 
 
@@ -102,6 +102,7 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 			throw ::std::invalid_argument("[dcs::eesim::virtual_machine_monitor::create_domain] Invalid virtual machine pointer.")
 		);
 
+		ptr_vm->vmm(this);
 		vms_[ptr_vm->id()] = ptr_vm;
 	}
 
@@ -117,6 +118,7 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 			throw ::std::runtime_error("[dcs::eesim::virtual_machine_monitor::destroy_domain] Unknown virtual machine.")
 		);
 
+		ptr_vm->vmm(0);
 		vms_.erase(ptr_vm->id());
 	}
 
@@ -220,10 +222,41 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 	}
 
 
+	public: void hosting_machine(physical_machine_pointer const& ptr_mach)
+	{
+		ptr_pm_ = ptr_mach;
+	}
+
+
+	public: physical_machine_type const& hosting_machine() const
+	{
+		// pre: hosting machine must already be set.
+		DCS_ASSERT(
+			ptr_pm_,
+			throw ::std::logic_error("[dcs::eesim::virtual_machine_monitor::hosting_machine] Physical Machine not set.")
+		);
+
+		return *ptr_pm_;
+	}
+
+
+	public: physical_machine_type& hosting_machine()
+	{
+		// pre: hosting machine must already be set.
+		DCS_ASSERT(
+			ptr_pm_,
+			throw ::std::logic_error("[dcs::eesim::virtual_machine_monitor::hosting_machine] Physical Machine not set.")
+		);
+
+		return *ptr_pm_;
+	}
+
+
 //	private: uint_type vms_counter_;
 	private: virtual_machine_impl_container vms_;
 	//private: uint_type_name_container vm_id_names_;
 	/// The performance overhead associated to virtualization
+	private: physical_machine_pointer ptr_pm_;
 	private: real_type overhead_;
 };
 

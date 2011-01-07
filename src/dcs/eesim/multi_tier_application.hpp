@@ -168,7 +168,7 @@ class multi_tier_application
 		}
 
 
-		public: real_type threshold() const
+		public: real_type utilization_threshold() const
 		{
 			return threshold_;
 		}
@@ -492,7 +492,8 @@ class multi_tier_application
 //	}
 
 
-	public: void start()
+	public: template <typename VMForwardIterT>
+		void start(VMForwardIterT first, VMForwardIterT last)
 	{
 		DCS_DEBUG_TRACE("BEGIN Starting Application: '" << name_ << "'");
 
@@ -509,9 +510,28 @@ class multi_tier_application
 //			)
 //		);
 
+		ptr_sim_model_->virtual_machines(first, last);
 		ptr_sim_model_->enable(true);
 
 		DCS_DEBUG_TRACE("END Starting Application: '" << name_ << "'");
+	}
+
+
+	public: void restart()
+	{
+		DCS_DEBUG_TRACE("BEGIN Restarting Application: '" << name_ << "'");
+
+		// check: pointer to simulation model is a valid pointer
+		DCS_DEBUG_ASSERT( ptr_sim_model_ );
+
+		DCS_ASSERT(
+			ptr_sim_model_->enabled(),
+			throw ::std::logic_error("[dcs::eesim::multi_tier_application::restart] Application not started.")
+		);
+
+		ptr_sim_model_->enabled(true);
+
+		DCS_DEBUG_TRACE("END Restarting Application: '" << name_ << "'");
 	}
 
 

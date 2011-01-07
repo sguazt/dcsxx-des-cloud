@@ -25,12 +25,14 @@
 #define DCS_EESIM_APPLICATION_TIER_HPP
 
 
+#include <dcs/assert.hpp>
 #include <dcs/eesim/fwd.hpp>
 #include <dcs/eesim/multi_tier_application.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/math/stats/distribution/any_distribution.hpp>
 #include <dcs/memory.hpp>
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -65,6 +67,7 @@ class application_tier
 	private: typedef ::std::map<physical_resource_category,real_type> resource_share_impl_container;
 	private: typedef ::std::pair<physical_resource_category,real_type> resource_share_type;
 	public: typedef ::std::vector<resource_share_type> resource_share_container;
+	public: typedef uint_type identifier_type;
 
 
 	public: application_tier()
@@ -86,13 +89,13 @@ class application_tier
 	}
 
 
-	public: void id(uint_type id)
+	public: void id(identifier_type id)
 	{
 		id_ = id;
 	}
 
 
-	public: uint_type id() const
+	public: identifier_type id() const
 	{
 		return id_;
 	}
@@ -137,7 +140,17 @@ class application_tier
 
 	public: real_type resource_share(physical_resource_category category) const
 	{
-		return res_shares_[category];
+		typedef typename resource_share_impl_container::const_iterator iterator;
+
+		iterator it(res_shares_.find(category));
+
+		// pre: category must already be inserted.
+		DCS_ASSERT(
+			it != res_shares_.end(),
+			throw ::std::invalid_argument("[dcs::eesim::application_tier::resource_share] Unhandled resource category.")
+		);
+
+		return it->second;
 	}
 
 
@@ -226,7 +239,7 @@ class application_tier
 //	}
 
 
-	private: uint_type id_;
+	private: identifier_type id_;
 	private: ::std::string name_;
 //	private: des_event_source_pointer ptr_arrival_evt_src_;
 //	private: des_event_source_pointer ptr_departure_evt_src_;

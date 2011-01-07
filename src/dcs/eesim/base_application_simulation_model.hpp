@@ -8,6 +8,8 @@
 #include <dcs/eesim/multi_tier_application.hpp>
 #include <dcs/eesim/user_request.hpp>
 #include <dcs/memory.hpp>
+#include <map>
+#include <stdexcept>
 #include <vector>
 
 
@@ -25,9 +27,15 @@ class base_application_simulation_model: public ::dcs::des::entity
 //	public: typedef typename engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
 	public: typedef ::dcs::des::base_statistic<real_type,uint_type> output_statistic_type;
 	public: typedef ::dcs::shared_ptr<output_statistic_type> output_statistic_pointer;
-	public: typedef user_request<real_type> user_request_type;
+	public: typedef user_request<traits_type> user_request_type;
 	public: typedef multi_tier_application<traits_type> application_type;
 	public: typedef application_type* application_pointer;
+	public: typedef virtual_machine<traits_type> virtual_machine_type;
+	public: typedef ::dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
+	//public: typedef ::std::vector<virtual_machine_pointer> vm_container;
+	public: typedef typename application_type::application_tier_type application_tier_type;
+	public: typedef typename application_tier_type::identifier_type tier_identifier_type;
+	private: typedef ::std::map<tier_identifier_type,virtual_machine_pointer> tier_vm_mapping_container;
 
 
 	public: void application(application_pointer const& ptr_app)
@@ -45,6 +53,38 @@ class base_application_simulation_model: public ::dcs::des::entity
 	public: application_type const& application() const
 	{
 		return *ptr_app_;
+	}
+
+
+	public: template <typename VMForwardIterT>
+		void virtual_machines(VMForwardIterT first, VMForwardIterT last)
+	{
+		while (first != last)
+		{
+			virtual_machine_pointer ptr_vm(*first);
+			tier_vm_map_[ptr_vm->guest_system().id()] = ptr_vm;
+
+			++first;
+		}
+	}
+
+
+	public: virtual_machine_pointer tier_virtual_machine(tier_identifier_type tier_id) const
+	{
+		typedef typename tier_vm_mapping_container::const_iterator iterator;
+
+		iterator it(tier_vm_map_.find(tier_id));
+
+		// pre: tier_id must have an associated VM
+		DCS_ASSERT(
+			it != tier_vm_map_.end(),
+			throw ::std::invalid_argument("[dcs::eesim::base_application_simulation_model::tier_virtual_machine] Tier with no associated VM.")
+		);
+
+		// check: double check on tier identifier
+		DCS_DEBUG_ASSERT( tier_id == it->second->guest_system().id() );
+
+		return it->second;
 	}
 
 
@@ -286,6 +326,7 @@ class base_application_simulation_model: public ::dcs::des::entity
 
 
 	private: application_pointer ptr_app_;
+	private: tier_vm_mapping_container tier_vm_map_;
 };
 
 }} // Namespace dcs::eesim

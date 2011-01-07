@@ -407,7 +407,6 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");
 
-::std::cerr << ">>>>" << ::std::endl;//XXX
 		num_sla_viols_ = uint_type/*zero*/();
 
 		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");
@@ -420,7 +419,6 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing SYSTEM-FINALIZATION (Clock: " << ctx.simulated_time() << ")");
-::std::cerr << "<<<<" << ::std::endl;//XXX
 
 		// Update stats
 
@@ -471,7 +469,6 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 					{
 						real_type rt = req.departure_time()-req.arrival_time();
 						measures.push_back(rt);
-::std::cerr << rt << ::std::endl;//XXX
 					}
 					break;
 				case throughput_performance_measure:

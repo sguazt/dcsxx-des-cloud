@@ -38,7 +38,7 @@
 #include <dcs/des/statistic_categories.hpp>
 #include <dcs/eesim/application_performance_model_adaptor.hpp>
 #include <dcs/eesim/application_performance_model_traits.hpp>
-#include <dcs/eesim/application_simulation_model_adaptor.hpp>
+//#include <dcs/eesim/application_simulation_model_adaptor.hpp>
 #include <dcs/eesim/application_simulation_model_traits.hpp>
 #include <dcs/eesim/application_tier.hpp>
 #include <dcs/eesim/base_application_controller.hpp>
@@ -1070,7 +1070,8 @@ template <
 				typedef typename model_impl_config_type::customer_class_container::const_iterator customer_class_iterator;
 				typedef ::dcs::des::model::qn::queueing_network<uint_type,real_type,urng_type,des_engine_type> model_impl_type;
 				typedef ::dcs::des::model::qn::queueing_network_traits<model_impl_type> model_impl_traits_type;
-				typedef ::dcs::eesim::application_simulation_model_adaptor<traits_type,model_impl_type> simulation_model_impl_type;
+				//typedef ::dcs::eesim::application_simulation_model_adaptor<traits_type,model_impl_type> simulation_model_impl_type;
+				typedef ::dcs::eesim::qn_application_simulation_model<traits_type,uint_type,real_type,urng_type,des_engine_type> simulation_model_impl_type;
 				typedef ::dcs::des::model::qn::network_node<model_impl_traits_type> node_type;
 				typedef ::std::map< ::std::string, typename node_type::identifier_type > name_to_id_container;
 				typedef ::std::map<uint_type, typename node_type::identifier_type> id_to_id_container;
@@ -1368,7 +1369,7 @@ template <
 					 it != tier_node_end_it;
 					 ++it)
 				{
-					ptr_model_impl->tier_mapping(it->first, it->second);
+					ptr_model_impl->tier_node_mapping(it->first, it->second);
 				}
 
 				ptr_model = ptr_model_impl;
@@ -1529,11 +1530,13 @@ template <typename TraitsT, typename RealT>
 
 
 template <typename TraitsT, typename RealT>
-::dcs::shared_ptr< ::dcs::eesim::base_application_controller<TraitsT> > make_application_controller(application_controller_config<RealT> const& controller_conf)
+::dcs::shared_ptr< ::dcs::eesim::base_application_controller<TraitsT> > make_application_controller(application_controller_config<RealT> const& controller_conf, ::dcs::shared_ptr< ::dcs::eesim::multi_tier_application<TraitsT> > const& ptr_app)
 {
 	typedef TraitsT traits_type;
 	typedef ::dcs::eesim::base_application_controller<traits_type> controller_type;
 	typedef application_controller_config<RealT> controller_config_type;
+	typedef ::dcs::eesim::multi_tier_application<traits_type> application_type;
+	typedef ::dcs::shared_ptr<application_type> application_pointer;
 
 	::dcs::shared_ptr<controller_type> ptr_controller;
 
@@ -1550,6 +1553,7 @@ template <typename TraitsT, typename RealT>
 						make_ublas_matrix(controller_conf_impl.Q),
 						make_ublas_matrix(controller_conf_impl.R),
 						make_ublas_matrix(controller_conf_impl.N),
+						ptr_app,
 						controller_conf.sampling_time
 					);
 			}
@@ -1563,12 +1567,13 @@ template <typename TraitsT, typename RealT>
 
 				// Note: there is nothing to configure
 
-				ptr_controller = ::dcs::make_shared<controller_impl_type>();
+				ptr_controller = ::dcs::make_shared<controller_impl_type>(ptr_app, controller_conf.sampling_time);
 			}
 			break;
 	}
 
-	ptr_controller->sampling_time(controller_conf.sampling_time);
+//	//FIXME: maybe useless (see constructors above)
+//	ptr_controller->sampling_time(controller_conf.sampling_time);
 
 	return ptr_controller;
 }
@@ -1701,7 +1706,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 			::dcs::shared_ptr< ::dcs::eesim::base_physical_machine_controller<traits_type> > ptr_mach_controller;
 
 			ptr_mach_controller = detail::make_physical_machine_controller<traits_type>(it->controller);
-			ptr_mach_controller->controlled_machine(ptr_mach);
+			ptr_mach_controller->machine(ptr_mach);
 
 			ptr_dc->add_physical_machine(ptr_mach, ptr_mach_controller);
 		}
@@ -1719,8 +1724,8 @@ template <typename TraitsT, typename RealT, typename UIntT>
 
 			::dcs::shared_ptr< ::dcs::eesim::base_application_controller<traits_type> > ptr_app_controller;
 
-			ptr_app_controller = detail::make_application_controller<traits_type>(it->controller);
-			ptr_app_controller->controlled_application(ptr_app);
+			ptr_app_controller = detail::make_application_controller<traits_type>(it->controller, ptr_app);
+			ptr_app_controller->application(ptr_app);
 
 			ptr_dc->add_application(ptr_app, ptr_app_controller);
 		}

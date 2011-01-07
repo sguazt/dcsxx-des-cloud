@@ -102,6 +102,12 @@ class any_cost_model
 	}
 
 
+	public: value_type slo_value(metric_category_type category) const
+	{
+		return ptr_model_->slo_value(category);
+	}
+
+
 	public: template <typename CategoryFwdIterT, typename MeasureFwdIterT>
 		real_type score(CategoryFwdIterT category_first, CategoryFwdIterT category_last, MeasureFwdIterT metric_first) const
 	{

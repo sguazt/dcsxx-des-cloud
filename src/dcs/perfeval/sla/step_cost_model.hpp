@@ -26,12 +26,15 @@
 #define DCS_PERFEVAL_SLA_STEP_COST_MODEL_HPP
 
 
+#include <dcs/assert.hpp>
+#include <dcs/debug.hpp>
 #include <dcs/perfeval/sla/base_cost_model.hpp>
 #include <dcs/iterator/any_forward_iterator.hpp>
 //#include <dcs/iterator/iterator_range.hpp>
 #include <functional>
 #include <iterator>
 #include <map>
+#include <stdexcept>
 #include <vector>
 
 
@@ -222,6 +225,18 @@ class step_cost_model: public base_cost_model<CategoryT,ValueT,RealT>
 		}
 
 		return categories;
+	}
+
+
+	private: value_type do_slo_value(metric_category_type category) const
+	{
+		// pre: category must already be inserted.
+		DCS_ASSERT(
+			this->has_slo(category),
+			throw ::std::invalid_argument("[dcs::perfeval::sla::step_cost_model::do_slo_value] SLO Category not found.")
+		);
+
+		return slos_.at(category).reference_value();
 	}
 
 

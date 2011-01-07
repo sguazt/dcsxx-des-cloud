@@ -74,12 +74,14 @@ class physical_machine
 		  name_(name),
 //		  power_status_(powered_off_power_status),
 		  cost_(0),
+//FIXME: virtual machine monitor is hard-coded
 		  ptr_vmm_(::dcs::make_shared<vmm_type>()),
 		  ptr_sim_model_()
 	{
-		//FIXME: simulation model is hard-coded
+//FIXME: simulation model is hard-coded
 		simulation_model_pointer ptr_sim_model(new default_physical_machine_simulation_model<traits_type>());
 		this->simulation_model(ptr_sim_model);
+		ptr_vmm_->hosting_machine(this);
 	}
 
 
@@ -218,8 +220,8 @@ class physical_machine
 
 	public: void vmm(vmm_pointer const& ptr_vmm)
 	{
+		ptr_vmm_->hosting_machine(this);
 		ptr_vmm_ = ptr_vmm;
-//		ptr_vmm_->hosting_machine(this);
 	}
 
 
