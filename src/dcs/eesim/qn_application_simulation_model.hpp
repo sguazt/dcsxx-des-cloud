@@ -540,6 +540,8 @@ class qn_application_simulation_model: public base_application_simulation_model<
 
 DCS_DEBUG_TRACE("New resource share for tier: " << tier_id);//XXX
 DCS_DEBUG_TRACE("Current share: " << share);//XXX
+DCS_DEBUG_TRACE("Actual machine capacity: " << this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->capacity());//XXX
+DCS_DEBUG_TRACE("Actual machine threshold: " << this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->utilization_threshold());//XXX
 		real_type multiplier;
 		multiplier = ::dcs::eesim::resource_scaling_factor(
 				this->application().reference_resource(category).capacity(),
@@ -548,7 +550,7 @@ DCS_DEBUG_TRACE("Current share: " << share);//XXX
 				this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->utilization_threshold()
 			);
 		multiplier *= share;
-DCS_DEBUG_TRACE("New share: " << multiplier);///XXX
+DCS_DEBUG_TRACE("New scaled share: " << multiplier);///XXX
 		ptr_svc_node->service_strategy().capacity_multiplier(multiplier);
 	}
 
@@ -581,6 +583,7 @@ DCS_DEBUG_TRACE("New share: " << multiplier);///XXX
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");
 
 		num_sla_viols_ = uint_type/*zero*/();
+::std::cerr << ">>>>>" << ::std::endl;//XXX
 
 		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");
 	}
@@ -607,6 +610,7 @@ DCS_DEBUG_TRACE("New share: " << multiplier);///XXX
 		{
 			uint_type tier_id(it->first);
 //			uint_type node_id(it->second);
+::std::cerr << "<<<<<" << ::std::endl;//XXX
 
 			(*tier_num_arrs_stats_[tier_id])(this->actual_tier_num_arrivals(tier_id));
 			(*tier_num_deps_stats_[tier_id])(this->actual_tier_num_departures(tier_id));
@@ -643,6 +647,7 @@ DCS_DEBUG_TRACE("New share: " << multiplier);///XXX
 				case response_time_performance_measure:
 					{
 						real_type rt = req.departure_time()-req.arrival_time();
+::std::cerr << rt << ::std::endl;//XXX
 						measures.push_back(rt);
 					}
 					break;

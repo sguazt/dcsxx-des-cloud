@@ -246,6 +246,13 @@ class open_multi_bcmp_network
 	}
 
 
+	/// Per-class service demands at each station.
+	public: real_matrix_type service_demands() const
+	{
+		return D_;
+	}
+
+
 	/// Per-class throughput at each station.
 	public: real_matrix_type throughputs() const
 	{

@@ -2,6 +2,7 @@
 #define DCS_EESIM_PROPORTIONAL_PHYSICAL_MACHINE_CONTROLLER_HPP
 
 
+#include <algorithm>
 #include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/eesim/base_physical_machine_controller.hpp>
@@ -120,17 +121,18 @@ class proportional_physical_machine_controller: public base_physical_machine_con
 						{
 							// Assign share proportionally
 							share *= threshold/share_sum;
+							// The operation below may appear useless. However it is needed to compensate spurious decimal digit derived from the above product.
+							share = ::std::min(share, threshold);
 						}
 						// ... else Assign share as it is originally requested.
 
 						// check: make sure resource share is bounded in [0,1]
 						//        and respects the utilization threshold.
-						DCS_DEBUG_TRACE("Assigned new share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << category << " ==> Share: " << share);//XXX
 						DCS_DEBUG_ASSERT( share >= real_type(0) && share <= threshold && share <= real_type(1) );
 
 						ptr_vm->resource_share(category, share);
 
-						DCS_DEBUG_TRACE("Assigned new share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << category << " ==> Share: " << share);//XXX
+						DCS_DEBUG_TRACE("Assigned new share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << category << " - Threshold: " << threshold << " - Share Sum: " << share_sum << " ==> Wanted: " << share_it->second << " - Got: " << share);//XXX
 					}
 				}
 			}

@@ -61,6 +61,7 @@ class base_application_simulation_model: public ::dcs::des::entity
 	{
 		typedef typename virtual_machine_type::resource_share_container share_container;
 
+DCS_DEBUG_TRACE("Setting VM: " << ptr_vm->id());//XXX
 		uint_type tier_id(ptr_vm->guest_system().id());
 
 		tier_vm_map_[ptr_vm->guest_system().id()] = ptr_vm;

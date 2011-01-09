@@ -253,7 +253,9 @@ DCS_DEBUG_TRACE("Resource demand: " << ref_demand);//XXX
 DCS_DEBUG_TRACE("Actual Response time: " << (ref_demand/(1-app_sim_model.actual_tier_num_arrivals(s)*ref_demand)));//XXX
 DCS_DEBUG_TRACE("Reference Response time: " << ref_rt);//XXX
 									real_type want_u;
-									want_u = 1 - ref_demand/ref_rt;
+//									want_u = 1 - ref_demand/ref_rt;
+									want_u = ref_demand*(real_type(1)/ref_rt + app_sim_model.actual_tier_num_arrivals(s));
+//									want_u = 1 + ref_rt*app_sim_model.actual_tier_num_arrivals(s);
 DCS_DEBUG_TRACE("Actual U: " << (app_sim_model.actual_num_arrivals()*ref_demand));//XXX
 DCS_DEBUG_TRACE("Wanted U: " << want_u);//XXX
 									if (want_u < 0)
@@ -271,6 +273,10 @@ DCS_DEBUG_TRACE("Wanted U: " << want_u);//XXX
 													pm.resource(res_category)->utilization_threshold(),
 													want_u
 											);
+								}
+								else
+								{
+									new_share = ptr_vm->resource_share(res_category);
 								}
 DCS_DEBUG_TRACE("New Share: " << new_share);//XXX
 							}
