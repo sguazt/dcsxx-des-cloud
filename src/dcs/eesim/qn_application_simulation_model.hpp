@@ -6,16 +6,18 @@
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/base_statistic.hpp>
 #include <dcs/des/mean_estimator.hpp>
-#include <dcs/des/model/qn/network_node_category.hpp>//FIXME: see do_notify_tier_virtual_machine_resource_share_change method
-#include <dcs/des/model/qn/service_station_node.hpp>//FIXME: see do_notify_tier_virtual_machine_resource_share_change method
+#include <dcs/des/model/qn/network_node_category.hpp>//FIXME: see resource_share method
+#include <dcs/des/model/qn/service_station_node.hpp>//FIXME: see do_resource_share method
 #include <dcs/des/model/qn/queueing_network.hpp>
 #include <dcs/des/model/qn/queueing_network_traits.hpp>
 #include <dcs/des/model/qn/output_statistic_category.hpp>
 #include <dcs/eesim/application_simulation_model_traits.hpp>
 #include <dcs/eesim/base_application_simulation_model.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
+#include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/registry.hpp>
 #include <dcs/eesim/user_request.hpp>
+#include <dcs/eesim/utility.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
@@ -512,22 +514,20 @@ class qn_application_simulation_model: public base_application_simulation_model<
 	}
 
 
-	private: void do_notify_tier_virtual_machine_resource_share_change(virtual_machine_type const& vm)
+	private: void do_resource_share(uint_type tier_id, physical_resource_category category, real_type share)
 	{
 //FIXME
-// * Assumed single resource and specifically only CPU resource.
 // * What should I do with delay nodes?
 // * What should I do if dynamic_cast returns a null pointer
 
 		typedef typename qn_model_type::node_type node_type;
 
-		uint_type tier_id(vm.guest_system().id());
 		node_type& node = model_.get_node(node_from_tier(tier_id));
 
-			DCS_ASSERT(
-					node.category() == ::dcs::des::model::qn::service_station_node_category,
-					throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_notify_tier_virtual_machine_resource_share_change] Expected a service station node.")
-				);
+		DCS_ASSERT(
+				node.category() == ::dcs::des::model::qn::service_station_node_category,
+				throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_resource_share] Expected a service station node. Got another kind of node.")
+			);
 
 		typedef ::dcs::des::model::qn::service_station_node<qn_model_traits_type> service_node_type;
 
@@ -535,10 +535,21 @@ class qn_application_simulation_model: public base_application_simulation_model<
 
 		DCS_ASSERT(
 				ptr_svc_node,
-				throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_notify_tier_virtual_machine_resource_share_change] Unable to get a service station node.")
+				throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_resource_share] Unable to get a service station node.")
 			);
 
-		ptr_svc_node->service_strategy().service_share(vm.resource_share(cpu_resource_category));
+DCS_DEBUG_TRACE("New resource share for tier: " << tier_id);//XXX
+DCS_DEBUG_TRACE("Current share: " << share);//XXX
+		real_type multiplier;
+		multiplier = ::dcs::eesim::resource_scaling_factor(
+				this->application().reference_resource(category).capacity(),
+				this->application().reference_resource(category).utilization_threshold(),
+				this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->capacity(),
+				this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->utilization_threshold()
+			);
+		multiplier *= share;
+DCS_DEBUG_TRACE("New share: " << multiplier);///XXX
+		ptr_svc_node->service_strategy().capacity_multiplier(multiplier);
 	}
 
 	//@} Interface Member Functions

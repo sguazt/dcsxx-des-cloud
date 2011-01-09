@@ -211,13 +211,13 @@ DCS_DEBUG_TRACE("Control applied");//XXX
 				physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
 
 				// Actual to Reference resource scaling factor
-				real_type scale_factor;
-				scale_factor = ::dcs::eesim::resource_scaling_factor(
-						pm.resource(res_category)->capacity(),
-						pm.resource(res_category)->utilization_threshold(),
-						app.reference_resource(res_category).capacity(),
-						app.reference_resource(res_category).utilization_threshold()
-					);
+//				real_type scale_factor;
+//				scale_factor = ::dcs::eesim::resource_scaling_factor(
+//						pm.resource(res_category)->capacity(),
+//						pm.resource(res_category)->utilization_threshold(),
+//						app.reference_resource(res_category).capacity(),
+//						app.reference_resource(res_category).utilization_threshold()
+//					);
 
 				real_type new_share(0);
 
@@ -234,7 +234,8 @@ DCS_DEBUG_TRACE("Control applied");//XXX
 								// w.r.t. to the reference machine).
 
 								real_type ref_demand;
-DCS_DEBUG_TRACE("Scale Factor: " << scale_factor);//XXX
+DCS_DEBUG_TRACE("Tier: " << s);//XXX
+//DCS_DEBUG_TRACE("Scale Factor: " << scale_factor);//XXX
 DCS_DEBUG_TRACE("#Arrivals: " << app_sim_model.actual_num_arrivals());//XXX
 DCS_DEBUG_TRACE("#Departures: " << app_sim_model.actual_num_departures());//XXX
 DCS_DEBUG_TRACE("Tier #Arrivals: " << app_sim_model.actual_tier_num_arrivals(s));//XXX
@@ -244,18 +245,21 @@ DCS_DEBUG_TRACE("Tier Busy Time: " << app_sim_model.actual_tier_busy_time(s));//
 								uint_type num_sys_deps(app_sim_model.actual_num_departures());
 								if (busy_time > 0 && num_sys_deps > 0)
 								{
-									ref_demand = scale_factor*busy_time/num_sys_deps;
+									//ref_demand = scale_factor*busy_time/num_sys_deps;
+									ref_demand = busy_time/num_sys_deps;
 DCS_DEBUG_TRACE("Resource demand: " << ref_demand);//XXX
 									real_type ref_rt;
 									ref_rt = app_perf_model.tier_measure(s, perf_category);
-DCS_DEBUG_TRACE("Response time: " << ref_rt);//XXX
-									real_type ref_u;
-									ref_u = 1 - ref_demand/ref_rt;
-DCS_DEBUG_TRACE("Reference U: " << ref_u);//XXX
-									if (ref_u < 0)
+DCS_DEBUG_TRACE("Actual Response time: " << (ref_demand/(1-app_sim_model.actual_tier_num_arrivals(s)*ref_demand)));//XXX
+DCS_DEBUG_TRACE("Reference Response time: " << ref_rt);//XXX
+									real_type want_u;
+									want_u = 1 - ref_demand/ref_rt;
+DCS_DEBUG_TRACE("Actual U: " << (app_sim_model.actual_num_arrivals()*ref_demand));//XXX
+DCS_DEBUG_TRACE("Wanted U: " << want_u);//XXX
+									if (want_u < 0)
 									{
 										// This means that there is a very high demand
-										ref_u = 1;
+										want_u = 1;
 									}
 
 									// Compute the service share as the utilization needed in the actual machine.
@@ -265,7 +269,7 @@ DCS_DEBUG_TRACE("Reference U: " << ref_u);//XXX
 													app.reference_resource(res_category).utilization_threshold(),
 													pm.resource(res_category)->capacity(),
 													pm.resource(res_category)->utilization_threshold(),
-													ref_u
+													want_u
 											);
 								}
 DCS_DEBUG_TRACE("New Share: " << new_share);//XXX
@@ -277,7 +281,7 @@ DCS_DEBUG_TRACE("New Share: " << new_share);//XXX
 
 					new_share = ::std::max(new_share, default_min_share_);
 
-DCS_DEBUG_TRACE("Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << res_category << " ==> Share: " << new_share);//XXX
+DCS_DEBUG_TRACE("Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share);//XXX
 					ptr_vm->wanted_resource_share(res_category, new_share);
 				}
 			}

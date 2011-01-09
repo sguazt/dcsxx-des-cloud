@@ -6,6 +6,7 @@
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/entity.hpp>
 #include <dcs/eesim/multi_tier_application.hpp>
+#include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/user_request.hpp>
 #include <dcs/memory.hpp>
 #include <map>
@@ -56,13 +57,25 @@ class base_application_simulation_model: public ::dcs::des::entity
 	}
 
 
+	public: void tier_virtual_machine(virtual_machine_pointer const& ptr_vm)
+	{
+		typedef typename virtual_machine_type::resource_share_container share_container;
+
+		uint_type tier_id(ptr_vm->guest_system().id());
+
+		tier_vm_map_[ptr_vm->guest_system().id()] = ptr_vm;
+
+		share_container shares(ptr_vm->resource_shares());
+		this->resource_shares(tier_id, shares.begin(), shares.end());
+	}
+
+
 	public: template <typename VMForwardIterT>
-		void virtual_machines(VMForwardIterT first, VMForwardIterT last)
+		void tier_virtual_machines(VMForwardIterT first, VMForwardIterT last)
 	{
 		while (first != last)
 		{
-			virtual_machine_pointer ptr_vm(*first);
-			tier_vm_map_[ptr_vm->guest_system().id()] = ptr_vm;
+			this->tier_virtual_machine(*first);
 
 			++first;
 		}
@@ -88,9 +101,20 @@ class base_application_simulation_model: public ::dcs::des::entity
 	}
 
 
-	public: void notify_tier_virtual_machine_resource_share_change(virtual_machine_type const& vm)
+	public: void resource_share(uint_type tier_id, physical_resource_category category, real_type share)
 	{
-		do_notify_tier_virtual_machine_resource_share_change(vm);
+		do_resource_share(tier_id, category, share);
+	}
+
+
+	public: template <typename ForwardIterT>
+		void resource_shares(uint_type tier_id, ForwardIterT first_share, ForwardIterT last_share)
+	{
+		while (first_share != last_share)
+		{
+			this->resource_share(tier_id, first_share->first, first_share->second);
+			++first_share;
+		}
 	}
 
 
@@ -331,7 +355,7 @@ class base_application_simulation_model: public ::dcs::des::entity
 	private: virtual user_request_type do_request_state(des_event_type const& evt) const = 0;
 
 
-	private: virtual void do_notify_tier_virtual_machine_resource_share_change(virtual_machine_type const& vm) = 0;
+	private: virtual void do_resource_share(uint_type tier_id, physical_resource_category category, real_type share) = 0;
 
 
 	private: application_pointer ptr_app_;

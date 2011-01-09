@@ -518,7 +518,7 @@ class multi_tier_application
 //			)
 //		);
 
-		ptr_sim_model_->virtual_machines(first, last);
+		ptr_sim_model_->tier_virtual_machines(first, last);
 		ptr_sim_model_->enable(true);
 
 		DCS_DEBUG_TRACE("END Starting Application: '" << name_ << "'");

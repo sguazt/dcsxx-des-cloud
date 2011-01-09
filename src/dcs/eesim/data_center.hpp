@@ -567,6 +567,7 @@ class data_center
 			ptr_vm->guest_system(ptr_tier);
 			vms_.push_back(ptr_vm);
 			deployed_apps_[app_id].push_back(ptr_vm->id());
+			apps_[app_id]->simulation_model().tier_virtual_machine(ptr_vm);
 			//ptr_tier->virtual_machine(ptr_vm);
 		}
 	}

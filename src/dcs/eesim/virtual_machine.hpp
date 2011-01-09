@@ -126,6 +126,12 @@ class virtual_machine
 //	}
 
 
+	public: bool deployed() const
+	{
+		return ptr_vmm_;
+	}
+
+
 	public: void guest_system(application_tier_pointer const& ptr_tier)
 	{
 		ptr_tier_ = ptr_tier;
@@ -140,12 +146,24 @@ class virtual_machine
 
 	public: application_tier_type const& guest_system() const
 	{
+		// pre: application tier must already be set
+		DCS_ASSERT(
+			ptr_tier_,
+			throw ::std::logic_error("[dcs::eesim::virtual_machine::guest_system] Guest system has not been set yet.")
+		);
+
 		return *ptr_tier_;
 	}
 
 
 	public: application_tier_type& guest_system()
 	{
+		// pre: application tier must already be set
+		DCS_ASSERT(
+			ptr_tier_,
+			throw ::std::logic_error("[dcs::eesim::virtual_machine::guest_system] Guest system has not been set yet.")
+		);
+
 		return *ptr_tier_;
 	}
 
@@ -298,12 +316,20 @@ class virtual_machine
 
 
 	/// Set the resource share for the given resource category.
-	public: void resource_share(physical_resource_category category, real_type fraction)
+	public: void resource_share(physical_resource_category category, real_type share)
 	{
-		res_shares_[category] = fraction;
-DCS_DEBUG_TRACE("NOTIFYING...");//XXX
-		this->guest_system().application().simulation_model().notify_tier_virtual_machine_resource_share_change(*this);
-DCS_DEBUG_TRACE("NOTIFIED...");//XXX
+		res_shares_[category] = share;
+
+		if (this->guest_system_ptr() && this->deployed())
+		{
+			application_tier_type& tier(this->guest_system());
+
+			tier.application().simulation_model().resource_share(
+					tier.id(),
+					category,
+					share
+				);
+		}
 	}
 
 

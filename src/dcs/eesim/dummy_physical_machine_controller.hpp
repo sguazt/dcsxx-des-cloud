@@ -4,6 +4,7 @@
 
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/eesim/base_physical_machine_controller.hpp>
+#include <dcs/macro.hpp>
 
 
 namespace dcs { namespace eesim {
@@ -38,6 +39,10 @@ class dummy_physical_machine_controller: public base_physical_machine_controller
 
     private: void do_process_control(des_event_type const& evt, des_engine_context_type& ctx)
 	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+		// empty
 	}
 };
 
