@@ -29,7 +29,7 @@
 #include <dcs/eesim/fwd.hpp>
 #include <dcs/eesim/multi_tier_application.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
-#include <dcs/math/stats/distribution/any_distribution.hpp>
+//#include <dcs/math/stats/distribution/any_distribution.hpp>
 #include <dcs/memory.hpp>
 #include <map>
 #include <stdexcept>
@@ -63,7 +63,7 @@ class application_tier
 //	/// firing events.
 //	public: typedef typename des_event_type::event_source_type des_event_source_type;
 //	public: typedef ::dcs::shared_ptr<des_event_source_type> des_event_source_pointer;
-	public: typedef ::dcs::math::stats::any_distribution<real_type> random_distribution_type;
+//	public: typedef ::dcs::math::stats::any_distribution<real_type> random_distribution_type;
 	private: typedef ::std::map<physical_resource_category,real_type> resource_share_impl_container;
 	private: typedef ::std::pair<physical_resource_category,real_type> resource_share_type;
 	public: typedef ::std::vector<resource_share_type> resource_share_container;
@@ -166,23 +166,23 @@ class application_tier
 //	}
 
 
-	public: template <typename RandomNumberDistributionT>
-		void service_distribution(RandomNumberDistributionT const& dist)
-	{
-		svc_dist_ = ::dcs::math::stats::make_any_distribution(dist);
-	}
+//	public: template <typename RandomNumberDistributionT>
+//		void service_distribution(RandomNumberDistributionT const& dist)
+//	{
+//		svc_dist_ = ::dcs::math::stats::make_any_distribution(dist);
+//	}
 
 
-	public: random_distribution_type& service_distribution()
-	{
-		return svc_dist_;
-	}
+//	public: random_distribution_type& service_distribution()
+//	{
+//		return svc_dist_;
+//	}
 
 
-	public: random_distribution_type const& service_distribution() const
-	{
-		return svc_dist_;
-	}
+//	public: random_distribution_type const& service_distribution() const
+//	{
+//		return svc_dist_;
+//	}
 
 
 //	public: void arrival_event_source(des_event_source_pointer const& ptr_event_source)
@@ -244,7 +244,7 @@ class application_tier
 //	private: des_event_source_pointer ptr_arrival_evt_src_;
 //	private: des_event_source_pointer ptr_departure_evt_src_;
 //	private: des_event_source_pointer ptr_discard_evt_src_;
-	private: random_distribution_type svc_dist_;
+//	private: random_distribution_type svc_dist_;
 	private: resource_share_impl_container res_shares_;
 	private: application_pointer ptr_app_;
 };

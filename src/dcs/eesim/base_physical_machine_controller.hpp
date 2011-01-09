@@ -2,7 +2,6 @@
 #define DCS_EESIM_BASE_PHYSICAL_MACHINE_CONTROLLER_HPP
 
 
-#include <cmath>
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
@@ -11,7 +10,6 @@
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
-#include <limits>
 
 
 namespace dcs { namespace eesim {
@@ -36,7 +34,7 @@ class base_physical_machine_controller
 	/// A constructor.
 	protected: base_physical_machine_controller()
 	: ptr_mach_(),
-	  ts_(::std::numeric_limits<real_type>::infinity()),
+	  ts_(0),
 	  ptr_control_evt_src_(/*new des_event_source_type()*/)
 	{
 		init();
@@ -103,7 +101,7 @@ class base_physical_machine_controller
 	}
 
 
-	public: physical_machine_type& _machine()
+	public: physical_machine_type& machine()
 	{
 		// pre: ptr_mach_ must be a valid physical machine pointer.
 		DCS_DEBUG_ASSERT( ptr_mach_ );
@@ -112,7 +110,7 @@ class base_physical_machine_controller
 	}
 
 
-	public: physical_machine_type const& controlledl_machine() const
+	public: physical_machine_type const& machine() const
 	{
 		// pre: ptr_mach_ must be a valid physical machine pointer.
 		DCS_DEBUG_ASSERT( ptr_mach_ );
@@ -129,7 +127,11 @@ class base_physical_machine_controller
 
 	public: void sampling_time(real_type ts)
 	{
+		this->disconnect_from_event_sources();
+
 		ts_ = ts;
+
+		this->connect_to_event_sources();
 	}
 
 
@@ -159,13 +161,15 @@ class base_physical_machine_controller
 
 	private: void connect_to_event_sources()
 	{
-		if (!::std::isinf(ts_))
+DCS_DEBUG_TRACE("BEGIN connect to event sources: sampling time: " << ts_);//XXX
+		if (ts_ > 0)
 		{
 			if (!ptr_control_evt_src_)
 			{
 				ptr_control_evt_src_ = ::dcs::make_shared<des_event_source_type>();
 			}
 
+DCS_DEBUG_TRACE("Connecting to contrl event sources");//XXX
 			ptr_control_evt_src_->connect(
 				::dcs::functional::bind(
 					&self_type::process_control,
@@ -177,6 +181,7 @@ class base_physical_machine_controller
 
 			registry_type& reg(registry_type::instance());
 
+DCS_DEBUG_TRACE("Connecting to sys inti event sources");//XXX
 			reg.des_engine_ptr()->system_initialization_event_source().connect(
 				::dcs::functional::bind(
 					&self_type::process_sys_init,
@@ -186,13 +191,15 @@ class base_physical_machine_controller
 				)
 			);
 		}
+DCS_DEBUG_TRACE("END connect to event sources");//XXX
 	}
 
 
 	private: void disconnect_from_event_sources()
 	{
-		if (!::std::isinf(ts_))
+		if (ts_ > 0)
 		{
+DCS_DEBUG_TRACE("END connect to event sources");//XXX
 			if (ptr_control_evt_src_)
 			{
 				ptr_control_evt_src_->disconnect(
@@ -203,6 +210,7 @@ class base_physical_machine_controller
 						::dcs::functional::placeholders::_2
 					)
 				);
+	DCS_DEBUG_TRACE("END disconnect to event sources");//XXX
 			}
 
 			registry_type& reg(registry_type::instance());
@@ -223,12 +231,15 @@ class base_physical_machine_controller
 
 	private: void schedule_control()
 	{
-		registry_type& reg(registry_type::instance());
+		if (ts_ > 0)
+		{
+			registry_type& reg(registry_type::instance());
 
-		reg.des_engine_ptr()->schedule_event(
-			ptr_control_evt_src_,
-			reg.des_engine_ptr()->simulated_time() + ts_
-		);
+			reg.des_engine_ptr()->schedule_event(
+				ptr_control_evt_src_,
+				reg.des_engine_ptr()->simulated_time() + ts_
+			);
+		}
 
 		do_schedule_control();
 	}

@@ -46,8 +46,10 @@
 #include <dcs/eesim/base_application_controller.hpp>
 #include <dcs/eesim/multi_tier_application.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
+#include <dcs/eesim/physical_machine.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/registry.hpp>
+#include <dcs/eesim/utility.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
@@ -57,6 +59,11 @@
 #include <map>
 #include <stdexcept>
 #include <vector>
+
+
+//TODO:
+// - Currently the code in this class assumes the single resource (CPU) case.
+//
 
 
 namespace dcs { namespace eesim {
@@ -123,6 +130,7 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 	private: typedef ::std::vector<category_statistic_container> category_statistic_container_container;
 	private: typedef ::std::map<performance_measure_category,real_type> category_value_container;
 	private: typedef ::std::vector<category_value_container> category_value_container_container;
+	private: typedef physical_machine<traits_type> physical_machine_type;
 
 
 	private: static const size_type default_input_order_;
@@ -542,15 +550,19 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 		for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 		{
 			virtual_machine_pointer ptr_vm(this->application_ptr()->simulation_model().tier_virtual_machine(tier_id));
+			physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
 			physical_resource_category res_category(cpu_resource_category);//FIXME
-			// Actual resource capacity and threshold
-			real_type c_a(ptr_vm->vmm().hosting_machine().resource(res_category)->capacity());
-			real_type t_a(ptr_vm->vmm().hosting_machine().resource(res_category)->utilization_threshold());
-			// Reference resource capacity and threshold
-			real_type c_r(this->application_ptr()->reference_resource(res_category).capacity());
-			real_type t_r(this->application_ptr()->reference_resource(res_category).utilization_threshold());
+
 			// Actual-to-reference scaling factor
-			real_type scale_factor((c_a*t_a)/(c_r*t_r));
+			real_type scale_factor;
+			scale_factor = ::dcs::eesim::resource_scaling_factor(
+					// Actual resource capacity and threshold
+					actual_pm.resource(res_category)->capacity(),
+					actual_pm.resource(res_category)->utilization_threshold(),
+					// Reference resource capacity and threshold
+					this->application().reference_resource(res_category).capacity(),
+					this->application().reference_resource(res_category).utilization_threshold()
+				);
 
 			measure_iterator end_it = tier_measures_[tier_id].end();
 			for (measure_iterator it = tier_measures_[tier_id].begin(); it != end_it; ++it)
@@ -562,6 +574,11 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 				{
 					case response_time_performance_measure:
 						{
+							//NOTE: the relation between response time and
+							//      resource capacity is inversely proportional:
+							//      the greater is the capacity, the less is the
+							//      response time.
+
 							// Compute the residence time for this tier
 							::std::vector<real_type> arr_times(req.tier_arrival_times(tier_id));
 							::std::vector<real_type> dep_times(req.tier_departure_times(tier_id));
@@ -588,9 +605,11 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 		//FIXME: measure should be scaled w.r.t. the reference machine but at
 		//       application-level we are unable to do this since each tier
 		//       might have been run on a machine with very different
-		//       characteristics. So instead of computing the response time from
-		//       the request arrival and departure times, compute it as the sum
-		//       of tier residence times. It should be equivalent!
+		//       characteristics. So instead of computing the performance
+		//       measure (e.g., the response time) from the request object
+		//       (e.g., from its arrival and departure times), compute it as the
+		//       sum of tier performance measures (e.g., residence times).
+		//       It should be equivalent!
         measure_iterator end_it = measures_.end();
         for (measure_iterator it = measures_.begin(); it != end_it; ++it)
         {
@@ -704,11 +723,25 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 			detail::rotate(u_, n_b_, n_s_);
 		}
 
-		// Collect reference measure
+
+		// Collect data for creating control input and state
+		//
+		// NOTE: the application controller always work w.r.t. the reference
+		//       machine.
+		//       Anyway, at this time, both reference and actual measures have
+		//       already been scaled according to the reference machine.
+		//
+		// NOTE: instead of using past control inputs computed by the controller
+		//       we use the actual value used by VM since it can be different
+		//       from the one computed by the controller, due to the
+		//       "interference" of other components (like the physical machine
+		//       controller).
+		//
 		// NOTE: one can think that this step can be done only once; however, in
-		// general, reference measures are not constant since they can change
-		// over time.
-		//NOTE: both reference and actual measures are already scaled according to the reference machine.
+		//       general, reference measures are not constant since they can
+		//       change over time.
+		//
+
 		category_measure_container ref_measures;
 		category_container categories(this->application().sla_cost_model().slo_categories());
 		category_iterator end_it = categories.end();
@@ -718,11 +751,11 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 			performance_measure_category category(*it);
 
 			real_type ref_measure;
-			real_type measure;
+			real_type actual_measure;
 
 			ref_measure = this->application().sla_cost_model().slo_value(category);
-			measure = measures_.at(category)->estimate();
-			y(0) = measure/ref_measure - real_type(1);
+			actual_measure = measures_.at(category)->estimate();
+			y(0) = actual_measure/ref_measure - real_type(1);
 
 			for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 			{
@@ -735,15 +768,15 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 							ref_measure = this->application_ptr()->performance_model().tier_measure(tier_id, category);
 							if (ptr_stat->num_observations() > 0)
 							{
-								measure = ptr_stat->estimate();
+								actual_measure = ptr_stat->estimate();
 							}
 							else
 							{
-								measure = ref_measure;
+								actual_measure = ref_measure;
 							}
-DCS_DEBUG_TRACE("TIER OBSERVATION: ref: " << ref_measure << " - actual: " << measure);//XXX
+DCS_DEBUG_TRACE("TIER OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure);//XXX
 							x_(x_offset_+tier_id) = p(tier_id)
-												  = measure/ref_measure - real_type(1);
+												  = actual_measure/ref_measure - real_type(1);
 						}
 						break;
 					default:
@@ -756,18 +789,25 @@ DCS_DEBUG_TRACE("TIER OBSERVATION: ref: " << ref_measure << " - actual: " << mea
 		for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 		{
 			virtual_machine_pointer ptr_vm = this->application_ptr()->simulation_model().tier_virtual_machine(tier_id);
-			physical_resource_category category(cpu_resource_category);//FIXME
+			physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
+			physical_resource_category res_category(cpu_resource_category);//FIXME
 
-//				u_(u_offset_+tier_id) = ptr_vm->resource_share(cpu_resource_category);
-			real_type ref_share(ptr_vm->wanted_resource_share(ptr_vm->vmm().hosting_machine(), category));
-			real_type share(ptr_vm->resource_share(category));
+			// Get the reference resource share for the tier from the application specs
+//			//real_type ref_share(ptr_vm->wanted_resource_share(ptr_vm->vmm().hosting_machine(), category));
+//			//real_type ref_share(ptr_vm->wanted_resource_share(res_category));
+			real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
 
-			// Scale w.r.t. the reference machine
-			share *= this->application_ptr()->tier(tier_id)->resource_share(category)/ref_share;
+			// Get the actual resource share from the VM and scale w.r.t. the reference machine
+			real_type actual_share;
+			actual_share = ::dcs::eesim::scale_resource_share(actual_pm.resource(res_category)->capacity(),
+															  actual_pm.resource(res_category)->utilization_threshold(),
+															  this->application().reference_resource(res_category).capacity(),
+															  this->application().reference_resource(res_category).utilization_threshold(),
+															  ptr_vm->resource_share(res_category));
 
 			//FIXME: should u contain relative errore w.r.t. resource share given from performance model?
 			u_(u_offset_+tier_id) = s(tier_id)
-								  = share/ref_share - real_type(1);
+								  = actual_share/ref_share - real_type(1);
 		}
 
 		// Estimate system parameters
@@ -862,11 +902,35 @@ DCS_DEBUG_TRACE("D=" << D);//XXX
 			{
 DCS_DEBUG_TRACE("Solved!");//XXX
 DCS_DEBUG_TRACE("Getting control for x= " << x_);//XXX
-vector_type u;//XXX
-				u = ublas::real(controller_.control(x_));
-DCS_DEBUG_TRACE("Optima Control => " << u);//XXX
+				vector_type opt_u;
+				opt_u = ublas::real(controller_.control(x_));
+DCS_DEBUG_TRACE("Optima Control => " << opt_u);//XXX
+
+DCS_DEBUG_TRACE("Applying optimal control");//XXX
+				for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+				{
+					physical_resource_category res_category(cpu_resource_category);//FIXME
+
+					virtual_machine_pointer ptr_vm(this->application_ptr()->simulation_model().tier_virtual_machine(tier_id));
+					physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
+
+					real_type share;
+					share = ::dcs::eesim::scale_resource_share(
+							// Reference resource capacity and threshold
+							this->application_ptr()->reference_resource(res_category).capacity(),
+							this->application_ptr()->reference_resource(res_category).utilization_threshold(),
+							// Actual resource capacity and threshold
+							pm.resource(res_category)->capacity(),
+							pm.resource(res_category)->utilization_threshold(),
+							// Old resource + computed deviation
+							ptr_vm->wanted_resource_share(res_category)+opt_u(tier_id)
+						);
+															
+DCS_DEBUG_TRACE("Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << res_category << " ==> Share: " << share);//XXX
+					ptr_vm->wanted_resource_share(res_category, share);
+				}
+DCS_DEBUG_TRACE("Optimal control applied");//XXX
 			}
-//TODO: apply optimal control
 		}
 
 		// Reset previously collected system measure in order to collect a new ones.

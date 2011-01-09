@@ -325,6 +325,10 @@ application_controller_category text_to_application_controller_category(::std::s
 	{
 		return dummy_application_controller;
 	}
+	if (!istr.compare("qn"))
+	{
+		return qn_application_controller;
+	}
 
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_application_controller_category Unknown application controller category.");
 }
@@ -1502,6 +1506,15 @@ void operator>>(::YAML::Node const& node, application_controller_config<RealT>& 
 	controller_conf.category = detail::text_to_application_controller_category(label);
 	switch (controller_conf.category)
 	{
+		case dummy_application_controller:
+			{
+				typedef typename controller_config_type::dummy_controller_config_type controller_config_impl_type;
+
+				controller_config_impl_type controller_conf_impl;
+
+				controller_conf.category_conf = controller_conf_impl;
+			}
+			break;
 		case lqr_application_controller:
 			{
 				typedef typename controller_config_type::lqr_controller_config_type controller_config_impl_type;
@@ -1527,9 +1540,9 @@ void operator>>(::YAML::Node const& node, application_controller_config<RealT>& 
 				controller_conf.category_conf = controller_conf_impl;
 			}
 			break;
-		case dummy_application_controller:
+		case qn_application_controller:
 			{
-				typedef typename controller_config_type::dummy_controller_config_type controller_config_impl_type;
+				typedef typename controller_config_type::qn_controller_config_type controller_config_impl_type;
 
 				controller_config_impl_type controller_conf_impl;
 
@@ -1695,7 +1708,7 @@ void operator>>(::YAML::Node const& node, physical_machine_controller_config<Rea
 			break;
 		case dummy_physical_machine_controller:
 			{
-				typedef typename controller_config_type::proportional_controller_config_type controller_config_impl_type;
+				typedef typename controller_config_type::dummy_controller_config_type controller_config_impl_type;
 
 				controller_config_impl_type controller_conf_impl;
 

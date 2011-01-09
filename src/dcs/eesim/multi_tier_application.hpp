@@ -37,6 +37,7 @@
 #include <dcs/eesim/performance_measure_category.hpp>
 //#include <dcs/eesim/physical_resource.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
+#include <dcs/eesim/physical_resource_view.hpp>
 #include <dcs/eesim/registry.hpp>
 #include <dcs/eesim/user_request.hpp>
 #include <dcs/functional/bind.hpp>
@@ -90,7 +91,7 @@ template <typename TraitsT>
 class multi_tier_application
 {
 //	private: struct request_state;
-	public: class reference_physical_resource;
+//	public: class reference_physical_resource;
 
 
 	private: typedef multi_tier_application<TraitsT> self_type;
@@ -114,9 +115,10 @@ class multi_tier_application
 //						physical_resource_category,
 //						physical_resource_pointer
 //				> resource_container;
+	private: typedef physical_resource_view<traits_type> reference_physical_resource_type;
 	private: typedef ::std::map<
 						physical_resource_category,
-						reference_physical_resource
+						reference_physical_resource_type
 				> resource_container;
 	private: typedef ::std::vector<application_tier_pointer> tier_container;
 //	private: typedef ::std::map<
@@ -138,46 +140,46 @@ class multi_tier_application
 
 
 
-	public: struct reference_physical_resource
-	{
-		public: reference_physical_resource()
-			: category_(),
-			  capacity_(0),
-			  threshold_(0)
-		{
-		}
-
-
-		public: reference_physical_resource(physical_resource_category category, real_type capacity, real_type threshold)
-			: category_(category),
-			  capacity_(capacity),
-			  threshold_(threshold)
-		{
-		}
-
-
-		public: physical_resource_category category() const
-		{
-			return category_;
-		}
-
-
-		public: real_type capacity() const
-		{
-			return capacity_;
-		}
-
-
-		public: real_type utilization_threshold() const
-		{
-			return threshold_;
-		}
-
-
-		private: physical_resource_category category_;
-		private: real_type capacity_;
-		private: real_type threshold_;
-	};
+//	public: struct reference_physical_resource
+//	{
+//		public: reference_physical_resource()
+//			: category_(),
+//			  capacity_(0),
+//			  threshold_(0)
+//		{
+//		}
+//
+//
+//		public: reference_physical_resource(physical_resource_category category, real_type capacity, real_type threshold)
+//			: category_(category),
+//			  capacity_(capacity),
+//			  threshold_(threshold)
+//		{
+//		}
+//
+//
+//		public: physical_resource_category category() const
+//		{
+//			return category_;
+//		}
+//
+//
+//		public: real_type capacity() const
+//		{
+//			return capacity_;
+//		}
+//
+//
+//		public: real_type utilization_threshold() const
+//		{
+//			return threshold_;
+//		}
+//
+//
+//		private: physical_resource_category category_;
+//		private: real_type capacity_;
+//		private: real_type threshold_;
+//	};
 
 
 	public: multi_tier_application(/*uint_type priority = 0*/)
@@ -416,19 +418,25 @@ class multi_tier_application
 			throw ::std::invalid_argument("[dcs::eesim::multi_tier_application::reference_resource] Chreshold must a non-negative value.")
 		);
 
-		ref_resources_[category] = reference_physical_resource(category, capacity, threshold);
+		reference_resource(reference_physical_resource_type(category, capacity, threshold));
 	}
 
 
-	public: reference_physical_resource const& reference_resource(physical_resource_category category) const
+	public: void reference_resource(reference_physical_resource_type const& res)
+	{
+		ref_resources_[res.category()] = res;
+	}
+
+
+	public: reference_physical_resource_type const& reference_resource(physical_resource_category category) const
 	{
 		return ref_resources_.at(category);
 	}
 
 
-	public: ::std::vector<reference_physical_resource> reference_resources() const
+	public: ::std::vector<reference_physical_resource_type> reference_resources() const
 	{
-		::std::vector<reference_physical_resource> resources;
+		::std::vector<reference_physical_resource_type> resources;
 
 		typename resource_container::const_iterator end_it = ref_resources_.end();
 

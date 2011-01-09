@@ -6,8 +6,11 @@
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/base_statistic.hpp>
 #include <dcs/des/mean_estimator.hpp>
-#include <dcs/des/model/qn/output_statistic_category.hpp>
+#include <dcs/des/model/qn/network_node_category.hpp>//FIXME: see do_notify_tier_virtual_machine_resource_share_change method
+#include <dcs/des/model/qn/service_station_node.hpp>//FIXME: see do_notify_tier_virtual_machine_resource_share_change method
 #include <dcs/des/model/qn/queueing_network.hpp>
+#include <dcs/des/model/qn/queueing_network_traits.hpp>
+#include <dcs/des/model/qn/output_statistic_category.hpp>
 #include <dcs/eesim/application_simulation_model_traits.hpp>
 #include <dcs/eesim/base_application_simulation_model.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
@@ -135,6 +138,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 	private: typedef qn_application_simulation_model<TraitsT,UIntT,RealT,UniformRandomGeneratorT,DesEngineT> self_type;
 	public: typedef TraitsT traits_type;
 	public: typedef ::dcs::des::model::qn::queueing_network<UIntT,RealT,UniformRandomGeneratorT,DesEngineT> qn_model_type;
+	private: typedef ::dcs::des::model::qn::queueing_network_traits<qn_model_type> qn_model_traits_type;
 	private: typedef typename base_type::des_event_source_type des_event_source_type;
 	private: typedef typename base_type::des_event_type des_event_type;
 	private: typedef typename base_type::real_type real_type;
@@ -150,6 +154,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
 	private: typedef ::dcs::des::mean_estimator<real_type,uint_type> mean_estimator_statistic_type;
 	private: typedef ::std::vector<output_statistic_pointer> output_statistic_container;
+	private: typedef typename base_type::virtual_machine_type virtual_machine_type;
 
 
 	/// A constructor.
@@ -504,6 +509,36 @@ class qn_application_simulation_model: public base_application_simulation_model<
 	private: user_request_type do_request_state(des_event_type const& evt) const
 	{
 		return make_request(evt);
+	}
+
+
+	private: void do_notify_tier_virtual_machine_resource_share_change(virtual_machine_type const& vm)
+	{
+//FIXME
+// * Assumed single resource and specifically only CPU resource.
+// * What should I do with delay nodes?
+// * What should I do if dynamic_cast returns a null pointer
+
+		typedef typename qn_model_type::node_type node_type;
+
+		uint_type tier_id(vm.guest_system().id());
+		node_type& node = model_.get_node(node_from_tier(tier_id));
+
+			DCS_ASSERT(
+					node.category() == ::dcs::des::model::qn::service_station_node_category,
+					throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_notify_tier_virtual_machine_resource_share_change] Expected a service station node.")
+				);
+
+		typedef ::dcs::des::model::qn::service_station_node<qn_model_traits_type> service_node_type;
+
+		service_node_type* ptr_svc_node(dynamic_cast<service_node_type*>(&node));
+
+		DCS_ASSERT(
+				ptr_svc_node,
+				throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_notify_tier_virtual_machine_resource_share_change] Unable to get a service station node.")
+			);
+
+		ptr_svc_node->service_strategy().service_share(vm.resource_share(cpu_resource_category));
 	}
 
 	//@} Interface Member Functions

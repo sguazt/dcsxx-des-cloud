@@ -39,6 +39,12 @@
 #include <utility>
 
 
+//FIXME:
+// - 'resource' methods should return a reference instead of a pointer
+// - make 'resource_ptr' to return pointer to resource
+//
+
+
 namespace dcs { namespace eesim {
 
 template <typename TraitsT>

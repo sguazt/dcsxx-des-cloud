@@ -32,9 +32,11 @@
 #include <dcs/math/stats/function/rand.hpp>
 #include <dcs/eesim/application_tier.hpp>
 #include <dcs/eesim/fwd.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/physical_machine.hpp>
+#include <dcs/eesim/physical_resource_category.hpp>
+#include <dcs/eesim/physical_resource_view.hpp>
 #include <dcs/eesim/power_status.hpp>
+#include <dcs/eesim/utility.hpp>
 #include <dcs/eesim/virtual_machine_monitor.hpp>
 #include <dcs/memory.hpp>
 #include <map>
@@ -73,7 +75,8 @@ class virtual_machine
 //	public: typedef ::dcs::shared_ptr<physical_machine_type> physical_machine_pointer;
 //	public: typedef ::std::vector< physical_resource<traits_type> > resource_container;
 	private: typedef typename application_tier_type::application_type application_type;
-	public: typedef ::std::vector<typename application_type::reference_physical_resource> resource_container;
+	public: typedef physical_resource_view<traits_type> physical_resource_view_type;
+	public: typedef ::std::vector<physical_resource_view_type> resource_container;
 	public: typedef virtual_machine_monitor<traits_type> virtual_machine_monitor_type;
 	public: typedef virtual_machine_monitor_type* virtual_machine_monitor_pointer;
 
@@ -223,7 +226,8 @@ class virtual_machine
 //		DCS_DEBUG_ASSERT( ptr_tier_ );
 //
 //		return ptr_tier_->resource_shares();
-		return wanted_res_shares_;
+		return resource_share_container(wanted_res_shares_.begin(),
+										wanted_res_shares_.end());
 	}
 
 
@@ -238,53 +242,68 @@ class virtual_machine
 	}
 
 
-	public: resource_share_container wanted_resource_shares(physical_machine_type const& mach) const
-	{
-//		// precondition: tier pointer must be a valid pointer
-//		DCS_DEBUG_ASSERT( ptr_tier_ );
+//XXX: moved to dcs::eesim::utility
+//	public: resource_share_container wanted_resource_shares(physical_machine_type const& mach) const
+//	{
+////		// precondition: tier pointer must be a valid pointer
+////		DCS_DEBUG_ASSERT( ptr_tier_ );
+//
+////		resource_share_container wanted_shares = ptr_tier_->resource_shares();
+//		resource_share_container wanted_shares(wanted_res_shares_.begin(), wanted_res_shares_.end());
+//		typename resource_share_container::iterator end_it = wanted_shares.end();
+//		for (typename resource_share_container::iterator it = wanted_shares.begin();
+//			 it != end_it;
+//			 ++it)
+//		{
+//			physical_resource_category category(it->first);
+//			real_type ref_capacity(ptr_tier_->application().reference_resource(category).capacity());
+//			real_type ref_threshold(ptr_tier_->application().reference_resource(category).utilization_threshold());
+//			real_type actual_capacity = mach.resource(category)->capacity();
+//			real_type actual_threshold = mach.resource(category)->utilization_threshold();
+////			real_type wanted_share = it->second*ref_capacity/actual_capacity;
+////			real_type max_share = mach.resource(category)->utilization_threshold();
+////			it->second = ::std::min(wanted_share, max_share);
+//			real_type wanted_share(it->second);
+//			wanted_share = dcs::eesim::scale_resource_share(ref_capacity,
+//															ref_threshold,
+//															actual_capacity,
+//															actual_threshold,
+//															wanted_share);
+//			it->second = wanted_share;
+//		}
+//
+//		return wanted_shares;
+//	}
 
-//		resource_share_container wanted_shares = ptr_tier_->resource_shares();
-		resource_share_container wanted_shares(wanted_res_shares_.begin(), wanted_res_shares_.end());
-		typename resource_share_container::iterator end_it = wanted_shares.end();
-		for (typename resource_share_container::iterator it = wanted_shares.begin();
-			 it != end_it;
-			 ++it)
-		{
-			physical_resource_category category = it->first;
-			real_type ref_capacity = ptr_tier_->application().reference_resource(category).capacity();
-			real_type actual_capacity = mach.resource(category)->capacity();
-			real_type wanted_share = it->second*ref_capacity/actual_capacity;
 
-//			wanted_shares[category] = wanted_share;
-			real_type max_share = mach.resource(category)->utilization_threshold();
-			it->second = ::std::min(wanted_share, max_share);
-		}
-
-		return wanted_shares;
-	}
-
-
-	public: real_type wanted_resource_share(physical_machine_type const& mach, physical_resource_category category) const
-	{
-//		// precondition: tier pointer must be a valid pointer
-//		DCS_DEBUG_ASSERT( ptr_tier_ );
-
-//		real_type wanted_share(ptr_tier_->resource_share(category));
-		real_type wanted_share(wanted_res_shares_.at(category));
-		real_type ref_capacity(ptr_tier_->application().reference_resource(category).capacity());
-		real_type actual_capacity(mach.resource(category)->capacity());
-		wanted_share *= ref_capacity/actual_capacity;
-
-		real_type max_share = mach.resource(category)->utilization_threshold();
-
-		return ::std::min(wanted_share, max_share);
-	}
+//XXX: moved to dcs::eesim::utility
+//	public: real_type wanted_resource_share(physical_machine_type const& mach, physical_resource_category category) const
+//	{
+////		real_type wanted_share(ptr_tier_->resource_share(category));
+//		real_type wanted_share(wanted_res_shares_.at(category));
+//		real_type ref_capacity(ptr_tier_->application().reference_resource(category).capacity());
+//		real_type ref_threshold(ptr_tier_->application().reference_resource(category).utilization_threshold());
+//		real_type actual_capacity(mach.resource(category)->capacity());
+//		real_type actual_threshold(mach.resource(category)->utilization_threshold());
+//
+////		wanted_share *= (ref_capacity*ref_threshold)/(actual_capacity*actual_threshold);
+//		wanted_share = dcs::eesim::scale_resource_share(ref_capacity,
+//														ref_threshold,
+//														actual_capacity,
+//														actual_threshold,
+//														wanted_share);
+//
+//		return wanted_share;
+//	}
 
 
 	/// Set the resource share for the given resource category.
 	public: void resource_share(physical_resource_category category, real_type fraction)
 	{
 		res_shares_[category] = fraction;
+DCS_DEBUG_TRACE("NOTIFYING...");//XXX
+		this->guest_system().application().simulation_model().notify_tier_virtual_machine_resource_share_change(*this);
+DCS_DEBUG_TRACE("NOTIFIED...");//XXX
 	}
 
 

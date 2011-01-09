@@ -4,7 +4,6 @@
 
 #include <dcs/eesim/data_center.hpp>
 #include <dcs/memory.hpp>
-#include <limits>
 
 
 namespace dcs { namespace eesim {
@@ -22,7 +21,7 @@ class base_migration_controller
 
 	protected: base_migration_controller()
 	: ptr_dc_(),
-	  ts_(::std::numeric_limits<real_type>::infinity())
+	  ts_(0)
 	{
 	}
 

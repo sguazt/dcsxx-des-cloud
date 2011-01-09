@@ -9,9 +9,11 @@
 //#include <dcs/eesim/registry.hpp>
 #include <dcs/eesim/physical_machine.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
+#include <dcs/eesim/utility.hpp>
 #include <dcs/eesim/virtual_machine.hpp>
 #include <dcs/eesim/virtual_machines_placement.hpp>
 #include <dcs/memory.hpp>
+#include <utility>
 #include <vector>
 
 
@@ -58,7 +60,11 @@ class best_fit_initial_placement_strategy: public base_initial_placement_strateg
 		typedef ::std::vector<virtual_machine_pointer> vm_container;
 		typedef typename pm_container::const_iterator pm_iterator;
 		typedef typename vm_container::const_iterator vm_iterator;
-		typedef typename virtual_machine_type::resource_share_container share_container;
+		//typedef typename virtual_machine_type::resource_share_container share_container;
+		typedef ::std::pair<physical_resource_category,real_type> share_type;
+		typedef ::std::vector<share_type> share_container;
+		typedef typename share_container::const_iterator share_iterator;
+		typedef multi_tier_application<traits_type> application_type;
 
 		pm_container machs =  dc.physical_machines();
 		vm_container vms =  dc.virtual_machines();
@@ -79,16 +85,41 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 			virtual_machine_pointer ptr_vm = *vm_it;
 			//pm_identifier_type mach_id;
 			physical_machine_pointer ptr_mach;
+			application_type const& app(ptr_vm->guest_system().application());
 			bool placed = false;
 
 //			share_container shares;
 			pm_iterator pm_end_it = machs.end();
+			share_container ref_shares(ptr_vm->guest_system().resource_shares());
 			for (pm_iterator pm_it = machs.begin(); pm_it != pm_end_it && !placed; ++pm_it)
 			{
 //				mach_id = (*pm_it)->id();
 				ptr_mach = *pm_it;
 
-				share_container shares = ptr_vm->wanted_resource_shares(*ptr_mach);
+				//share_container shares = ptr_vm->wanted_resource_shares(*ptr_mach);
+				share_container shares;
+				share_iterator ref_share_end_it = ref_shares.end();
+				for (share_iterator ref_share_it = ref_shares.begin(); ref_share_it != ref_share_end_it; ++ref_share_it)
+				{
+					physical_resource_category ref_category(ref_share_it->first);
+					real_type ref_share(ref_share_it->second);
+
+					real_type ref_capacity(app.reference_resource(ref_category).capacity());
+					real_type ref_threshold(app.reference_resource(ref_category).utilization_threshold());
+
+					real_type actual_capacity(ptr_mach->resource(ref_category)->capacity());
+					real_type actual_threshold(ptr_mach->resource(ref_category)->utilization_threshold());
+
+					real_type share;
+					share = ::dcs::eesim::scale_resource_share(ref_capacity,
+															   ref_threshold,
+															   actual_capacity,
+															   actual_threshold,
+															   ref_share);
+
+					shares.push_back(share_type(ref_category, share));
+				}
+
 
 				placed = deployment.try_place(*ptr_vm,
 											  *ptr_mach,

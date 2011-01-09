@@ -88,6 +88,12 @@ class base_application_simulation_model: public ::dcs::des::entity
 	}
 
 
+	public: void notify_tier_virtual_machine_resource_share_change(virtual_machine_type const& vm)
+	{
+		do_notify_tier_virtual_machine_resource_share_change(vm);
+	}
+
+
 	public: uint_type actual_num_arrivals() const
 	{
 		return do_actual_num_arrivals();
@@ -323,6 +329,9 @@ class base_application_simulation_model: public ::dcs::des::entity
 
 
 	private: virtual user_request_type do_request_state(des_event_type const& evt) const = 0;
+
+
+	private: virtual void do_notify_tier_virtual_machine_resource_share_change(virtual_machine_type const& vm) = 0;
 
 
 	private: application_pointer ptr_app_;

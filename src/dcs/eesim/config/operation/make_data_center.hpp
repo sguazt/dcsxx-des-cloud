@@ -70,6 +70,7 @@
 #include <dcs/eesim/physical_resource.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/proportional_physical_machine_controller.hpp>
+#include <dcs/eesim/qn_application_controller.hpp>
 #include <dcs/eesim/qn_application_simulation_model.hpp>
 #include <dcs/eesim/registry.hpp>
 #include <dcs/math/constants.hpp>
@@ -299,8 +300,8 @@ template <typename TraitsT, typename RealT>
 			break;
 		case dummy_physical_machine_controller:
 			{
-				//typedef typename controller_config_type::proportional_controller_config_type controller_config_impl_type;
-				typedef ::dcs::eesim::proportional_physical_machine_controller<traits_type> controller_impl_type;
+				//typedef typename controller_config_type::dummy_controller_config_type controller_config_impl_type;
+				typedef ::dcs::eesim::dummy_physical_machine_controller<traits_type> controller_impl_type;
 
 				//controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
 
@@ -1542,6 +1543,18 @@ template <typename TraitsT, typename RealT>
 
 	switch (controller_conf.category)
 	{
+		case dummy_application_controller:
+			{
+				//typedef typename controller_config_type::dummy_controller_config_type controller_config_impl_type;
+				typedef ::dcs::eesim::dummy_application_controller<traits_type> controller_impl_type;
+
+				//controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
+
+				// Note: there is nothing to configure
+
+				ptr_controller = ::dcs::make_shared<controller_impl_type>(ptr_app, controller_conf.sampling_time);
+			}
+			break;
 		case lqr_application_controller:
 			{
 				typedef typename controller_config_type::lqr_controller_config_type controller_config_impl_type;
@@ -1558,10 +1571,10 @@ template <typename TraitsT, typename RealT>
 					);
 			}
 			break;
-		case dummy_application_controller:
+		case qn_application_controller:
 			{
-				//typedef typename controller_config_type::dummy_controller_config_type controller_config_impl_type;
-				typedef ::dcs::eesim::dummy_application_controller<traits_type> controller_impl_type;
+				//typedef typename controller_config_type::qn_controller_config_type controller_config_impl_type;
+				typedef ::dcs::eesim::qn_application_controller<traits_type> controller_impl_type;
 
 				//controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
 

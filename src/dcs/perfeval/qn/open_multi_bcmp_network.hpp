@@ -501,7 +501,7 @@ class open_multi_bcmp_network
 	}
 
 
-	private: void solve()
+	private: bool solve()
 	{
 		//typedef ::boost::numeric::ublas::vector<size_type> ix_vector_type;
 
@@ -525,7 +525,7 @@ class open_multi_bcmp_network
 		if (saturated())
 		{
 			DCS_DEBUG_TRACE("Saturated system: processing capacity >= 1.")
-			return;
+			return false;
 		}
 
 		// Compute the per station throughtput X_{c,i} and utilization U_{c,i}.
@@ -583,6 +583,8 @@ class open_multi_bcmp_network
 		}
 
 		solved_ = true;
+
+		return true;
 	}
 
 

@@ -26,7 +26,6 @@
 #define DCS_EESIM_BASE_APPLICATION_CONTROLLER_HPP
 
 
-#include <cmath>
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
@@ -35,7 +34,6 @@
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
-#include <limits>
 
 
 namespace dcs { namespace eesim {
@@ -59,7 +57,7 @@ class base_application_controller
 	/// Default constructor.
 	protected: base_application_controller()
 	: ptr_app_(),
-	  ts_(::std::numeric_limits<real_type>::infinity()),
+	  ts_(0),
 	  ptr_control_evt_src_(new des_event_source_type())
 	{
 		init();
@@ -191,7 +189,7 @@ class base_application_controller
 
 	private: void connect_to_event_sources()
 	{
-		if (!::std::isinf(ts_))
+		if (ts_ > 0)
 		{
 			ptr_control_evt_src_->connect(
 				::dcs::functional::bind(
@@ -218,7 +216,7 @@ class base_application_controller
 
 	private: void disconnect_from_event_sources()
 	{
-		if (!::std::isinf(ts_))
+		if (ts_ > 0)
 		{
 			if (ptr_control_evt_src_)
 			{
@@ -250,12 +248,15 @@ class base_application_controller
 
 	private: void schedule_control()
 	{
-		registry_type& reg(registry_type::instance());
+		if (ts_ > 0)
+		{
+			registry_type& reg(registry_type::instance());
 
-		reg.des_engine_ptr()->schedule_event(
-			ptr_control_evt_src_,
-			reg.des_engine_ptr()->simulated_time() + ts_
-		);
+			reg.des_engine_ptr()->schedule_event(
+				ptr_control_evt_src_,
+				reg.des_engine_ptr()->simulated_time() + ts_
+			);
+		}
 
 		do_schedule_control();
 	}
