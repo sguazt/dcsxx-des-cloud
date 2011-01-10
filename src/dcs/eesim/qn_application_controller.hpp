@@ -243,11 +243,12 @@ DCS_DEBUG_TRACE("Tier #Departures: " << app_sim_model.actual_tier_num_departures
 DCS_DEBUG_TRACE("Tier Busy Time: " << app_sim_model.actual_tier_busy_time(s));//XXX
 								real_type busy_time(app_sim_model.actual_tier_busy_time(s));
 								uint_type num_sys_deps(app_sim_model.actual_num_departures());
-								if (busy_time > 0 && num_sys_deps > 0)
-								{
-									//ref_demand = scale_factor*busy_time/num_sys_deps;
-									ref_demand = busy_time/num_sys_deps;
-DCS_DEBUG_TRACE("Resource demand: " << ref_demand);//XXX
+//								if (busy_time > 0 && num_sys_deps > 0)
+//								{
+//									ref_demand = busy_time/num_sys_deps;
+									ref_demand = app_perf_model.tier_measure(s, utilization_performance_measure)/app_perf_model.tier_measure(s, throughput_performance_measure);
+DCS_DEBUG_TRACE("Actual Resource demand: " << busy_time/num_sys_deps);//XXX
+DCS_DEBUG_TRACE("Reference Resource demand: " << ref_demand);//XXX
 									real_type ref_rt;
 									ref_rt = app_perf_model.tier_measure(s, perf_category);
 DCS_DEBUG_TRACE("Actual Response time: " << (ref_demand/(1-app_sim_model.actual_tier_num_arrivals(s)*ref_demand)));//XXX
@@ -273,11 +274,11 @@ DCS_DEBUG_TRACE("Wanted U: " << want_u);//XXX
 													pm.resource(res_category)->utilization_threshold(),
 													want_u
 											);
-								}
-								else
-								{
-									new_share = ptr_vm->resource_share(res_category);
-								}
+//								}
+//								else
+//								{
+//									new_share = ptr_vm->resource_share(res_category);
+//								}
 DCS_DEBUG_TRACE("New Share: " << new_share);//XXX
 							}
 							break;
