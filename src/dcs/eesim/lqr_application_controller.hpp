@@ -75,6 +75,7 @@ void rotate(::boost::numeric::ublas::vector_expression<VectorExprT>& v, ::std::s
 {
 	namespace ublas = ::boost::numeric::ublas;
 
+DCS_DEBUG_TRACE("BEGIN Rotate v=" << v << " - num_rot_grp=" << num_rot_grp << " - rot_grp_size=" << rot_grp_size);//XXX
 	// Alternative #1
 	//
 	//::std::rotate(v().begin(), v().begin()+rot_grp_size, v().end());
@@ -90,6 +91,342 @@ void rotate(::boost::numeric::ublas::vector_expression<VectorExprT>& v, ::std::s
 		::std::size_t j3((i+1)*rot_grp_size);
 		ublas::subrange(v(), j1, j2) = ublas::subrange(v(), j2, j3);
 	}
+}
+
+
+template <typename TraitsT>
+class rls_ff_mimo_proxy
+{
+	public: typedef TraitsT traits_type;
+	public: typedef typename traits_type::real_type real_type;
+	private: typedef ::boost::numeric::ublas::matrix<real_type> matrix_type;
+	private: typedef ::boost::numeric::ublas::vector<real_type> vector_type;
+	private: typedef ::std::size_t size_type;
+
+	public: rls_ff_mimo_proxy()
+	: n_a_(0),
+	  n_b_(0),
+	  d_(0),
+	  n_y_(0),
+	  n_u_(0),
+	  ff_(0)
+	{
+	}
+
+
+	public: rls_ff_mimo_proxy(size_type n_a, size_type n_b, size_type d, size_type n_y, size_type n_u, real_type ff)
+	: n_a_(n_a),
+	  n_b_(n_b),
+	  d_(d),
+	  n_y_(n_y),
+	  n_u_(n_u),
+	  ff_(ff)
+	{
+	}
+
+
+	public: size_type input_order() const
+	{
+		return n_b_;
+	}
+
+
+	public: size_type output_order() const
+	{
+		return n_a_;
+	}
+
+
+	public: size_type input_delay() const
+	{
+		return d_;
+	}
+
+
+	public: size_type num_inputs() const
+	{
+		return n_u_;
+	}
+
+
+	public: size_type num_outputs() const
+	{
+		return n_y_;
+	}
+
+
+	public: real_type forgetting_factor() const
+	{
+		return ff_;
+	}
+
+
+	public: void init()
+	{
+		// Prepare the data structures for the RLS algorithm 
+		::dcs::sysid::rls_arx_mimo_init(n_a_,
+										n_b_,
+										d_,
+										n_y_,
+										n_u_,
+										Theta_hat_,
+										P_,
+										phi_);
+
+	}
+
+
+	public: template <typename YVectorExprT, typename UVectorExprT>
+		void estimate(::boost::numeric::ublas::vector_expression<YVectorExprT> const& y,
+					  ::boost::numeric::ublas::vector_expression<UVectorExprT> const& u)
+	{
+		// Estimate system parameters
+DCS_DEBUG_TRACE("BEGIN estimation");//XXX
+DCS_DEBUG_TRACE("y(k): " << y);//XXX
+DCS_DEBUG_TRACE("u(k): " << u);//XXX
+DCS_DEBUG_TRACE("Theta_hat(k): " << Theta_hat_);//XXX
+DCS_DEBUG_TRACE("P(k): " << P_);//XXX
+DCS_DEBUG_TRACE("phi(k): " << phi_);//XXX
+		::dcs::sysid::rls_ff_arx_mimo(y,
+									  u,
+									  ff_,
+									  n_a_,
+									  n_b_,
+									  d_,
+									  Theta_hat_,
+									  P_,
+									  phi_);
+DCS_DEBUG_TRACE("New Theta_hat(k): " << Theta_hat_);//XXX
+DCS_DEBUG_TRACE("New P(k): " << P_);//XXX
+DCS_DEBUG_TRACE("New phi(k): " << phi_);//XXX
+DCS_DEBUG_TRACE("END estimation");//XXX
+	}
+
+
+	/// Return matrix A_k from \hat{\Theta}.
+	public: matrix_type A(size_type k) const
+	{
+		namespace ublas = ::boost::numeric::ublas;
+
+		DCS_DEBUG_ASSERT( k >= 1 && k <= n_a_ );
+
+		// Remember:
+		//   \hat{\Theta} = [a_{11}^{1},     a_{21}^{1},     ...,  a_{n_y1}^{1};
+		//                   ...,            ...,            ...,  ...;
+		//                   a_{11}^{n_a},   a_{21}^{n_a},   ...,  a_{n_y1}^{n_a};
+		//                   ...,            ...,            ...,  ...;
+		//                   a_{1n_y}^{1},   a_{2n_y}^{1},   ...,  a_{n_yn_y}^{1};
+		//                   ...,            ...,            ...,  ...;
+		//                   a_{1n_y}^{n_a}, a_{2n_y}^{n_a}, ...,  a_{n_yn_y}^{n_a};
+		//                   b_{11}^{1},     b_{21}^{1},     ...,  b_{n_y1}^{1};
+		//                   ...,            ...,            ...,  ...;
+		//                   b_{11}^{n_b},   b_{21}^{n_b},   ...,  b_{n_y1}^{n_b};
+		//                   ...,            ...,            ...,  ...;
+		//                   b_{1n_u}^{1},   b_{2n_u}^{1},   ...,  b_{n_yn_u}^{1};
+		//                   ...,            ...,            ...,  ...;
+		//                   b_{1n_u}^{n_b}, b_{2n_u}^{n_b}, ...,  b_{n_yn_u}^{n_b}]
+		// So in \hat{\Theta} the matrix A_k stays at:
+		//   A_k <- (\hat{\Theta}(k:n_a:n_y,:))^T
+		matrix_type A_k; // (n_y_, n_y_);
+		A_k = ublas::trans(ublas::subslice(Theta_hat_, k-1, n_a_, n_y_, 0, 1, n_y_));
+
+		return A_k;
+	}
+
+
+	/// Return matrix B_k from \hat{\Theta}.
+	public: matrix_type B(size_type k) const
+	{
+		namespace ublas = ::boost::numeric::ublas;
+
+		DCS_DEBUG_ASSERT( k >= 1 && k <= n_b_ );
+
+		// Remember:
+		//   \hat{\Theta} = [a_{11}^{1},     a_{21}^{1},     ...,  a_{n_y1}^{1};
+		//                   ...,            ...,            ...,  ...;
+		//                   a_{11}^{n_a},   a_{21}^{n_a},   ...,  a_{n_y1}^{n_a};
+		//                   ...,            ...,            ...,  ...;
+		//                   a_{1n_y}^{1},   a_{2n_y}^{1},   ...,  a_{n_yn_y}^{1};
+		//                   ...,            ...,            ...,  ...;
+		//                   a_{1n_y}^{n_a}, a_{2n_y}^{n_a}, ...,  a_{n_yn_y}^{n_a};
+		//                   b_{11}^{1},     b_{21}^{1},     ...,  b_{n_y1}^{1};
+		//                   ...,            ...,            ...,  ...;
+		//                   b_{11}^{n_b},   b_{21}^{n_b},   ...,  b_{n_y1}^{n_b};
+		//                   ...,            ...,            ...,  ...;
+		//                   b_{1n_u}^{1},   b_{2n_u}^{1},   ...,  b_{n_yn_u}^{1};
+		//                   ...,            ...,            ...,  ...;
+		//                   b_{1n_u}^{n_b}, b_{2n_u}^{n_b}, ...,  b_{n_yn_u}^{n_b}]
+		// So in \hat{\Theta} the matrix B_k stays at:
+		//   B_k <- (\hat{\Theta}(((n_a*n_y)+k):n_b:n_u,:))^T
+		matrix_type B_k; // (n_y_, n_u_);
+		B_k = ublas::trans(ublas::subslice(Theta_hat_, n_a_*n_y_+k-1, n_b_, n_u_, 0, 1, n_y_));
+
+		return B_k;
+	}
+
+
+	/// The memory for the control output.
+	private: size_type n_a_;
+	/// The memory for the control input.
+	private: size_type n_b_;
+	/// Input delay (dead time).
+	private: size_type d_;
+	/// The size of the control output vector.
+	private: size_type n_y_;
+	/// The size of the augmented control input vector.
+	private: size_type n_u_;
+	/// Forgetting factor.
+	private: real_type ff_;
+	/// Matrix of system parameters estimated by RLS: [A_1 ... A_{n_a} B_1 ... B_{n_b}].
+	private: matrix_type Theta_hat_;
+	/// The covariance matrix.
+	private: matrix_type P_;
+	/// The regression vector.
+	private: vector_type phi_;
+};
+
+
+template <
+	typename TraitsT,
+	typename AMatrixExprT,
+	typename BMatrixExprT,
+	typename CMatrixExprT,
+	typename DMatrixExprT
+>
+void make_ss(rls_ff_mimo_proxy<TraitsT> const& rls_proxy,
+			 ::boost::numeric::ublas::matrix_container<AMatrixExprT>& A,
+			 ::boost::numeric::ublas::matrix_container<BMatrixExprT>& B,
+			 ::boost::numeric::ublas::matrix_container<CMatrixExprT>& C,
+			 ::boost::numeric::ublas::matrix_container<DMatrixExprT>& D)
+{
+DCS_DEBUG_TRACE("BEGIN make_ss");//XXX
+	namespace ublas = ::boost::numeric::ublas;
+
+	typedef typename ublas::promote_traits<
+				typename ublas::promote_traits<
+					typename ublas::promote_traits<
+						typename ublas::matrix_traits<AMatrixExprT>::value_type,
+						typename ublas::matrix_traits<BMatrixExprT>::value_type
+					>::promote_type,
+					typename ublas::matrix_traits<CMatrixExprT>::value_type
+				>::promote_type,
+				typename ublas::matrix_traits<DMatrixExprT>::value_type
+			>::promote_type value_type;
+	typedef ::std::size_t size_type; //FIXME: use type-promotion?
+
+	const size_type rls_n_a(rls_proxy.output_order());
+	const size_type rls_n_b(rls_proxy.input_order());
+	const size_type rls_d(rls_proxy.input_delay());
+	const size_type rls_n_y(rls_proxy.num_outputs());
+	const size_type rls_n_u(rls_proxy.num_inputs());
+	const size_type n_x(rls_n_a*rls_n_y);
+	const size_type n_u(rls_n_b*rls_n_u);
+//	const size_type n(::std::max(n_x,n_u));
+	const size_type n_y(1);
+
+	// Create the state matrix A
+	// A=[0	0 0 ... 0;
+	//    .	. . ... .
+	//    .	. . ... .
+	//    .	. . ... .
+	//    0	0 0 ... 0;
+	//    0	I 0 ... 0;
+	// 	  0	0 I ... 0;
+	//    .	. . ... .
+	//    .	. . ... .
+	//    .	. . ... .
+	// 	  0	0 0 ... I;
+	// 	  -A_{n_a} -A_{n_a-1} -A_{n_a-2}... -A_1]
+	{
+		size_type broffs(n_x-rls_n_y); // The bottom row offset
+//		size_type troffs((n_x < n_u) ? (n_u-n_x) : 0); // The topmost row offset
+
+		A().resize(n_x, n_x, false);
+
+//		// The upper part of A is set to [0_{k1,n}; 0_{k2,rls_n_y} I_{k2,k2}],
+//		// where: k1=n-((n_u > n_x)?(n_u-n_x):0), and k2=n-rls_n_y.
+//		if (troffs > 0)
+//		{
+//			ublas::subrange(A(), 0, troffs, 0, n) = ublas::zero_matrix<value_type>(troffs,n);
+//		}
+//		ublas::subrange(A(), troffs, broffs, 0, rls_n_y) = ublas::zero_matrix<value_type>(broffs,rls_n_y);
+//		ublas::subrange(A(), troffs, broffs, rls_n_y, n) = ublas::identity_matrix<value_type>(broffs,broffs);
+		// The upper part of A is set to [0_{k,rls_n_y} I_{k,k}],
+		// where: k=n_x-rls_n_y.
+		ublas::subrange(A(), 0, broffs, 0, rls_n_y) = ublas::zero_matrix<value_type>(broffs,rls_n_y);
+		ublas::subrange(A(), 0, broffs, rls_n_y, n_x) = ublas::identity_matrix<value_type>(broffs,broffs);
+
+		// Fill A with A_1, ..., A_{n_a}
+		for (size_type i = 0; i < rls_n_a; ++i)
+		{
+			// Copy matrix -A_i from \hat{\Theta} into A.
+			// In A the matrix A_i has to go in (rls_n_a-i)-th position:
+			//   A(k:(k+n),((rls_n_a-i-1)*rls_n_y):((rls_n_a-i)*rls_n_y)) <- -A_i
+
+			size_type c2((rls_n_a-i)*rls_n_y);
+			size_type c1(c2-rls_n_y);
+
+			//ublas::subrange(A(), broffs, n, c1, c2) = rls_proxy.A(i+1);
+			ublas::subrange(A(), broffs, n_x, c1, c2) = -rls_proxy.A(i+1);
+		}
+	}
+DCS_DEBUG_TRACE("A="<<A);//XXX
+
+	// Create the input matrix B
+	// B=[0 ... 0;
+	//    .	... .
+	//    .	... .
+	//    .	... .
+	//    0 ... 0;
+	//    B_{n_b} ... B_1]
+	{
+		size_type broffs(n_x-rls_n_u); // The bottom row offset
+
+		B().resize(n_x, n_u, false);
+
+		// The upper part of B is set to 0_{k,n_u}
+		// where: k=n_x-rls_n_u.
+		ublas::subrange(B(), 0, broffs, 0, n_u) = ublas::zero_matrix<value_type>(broffs,n_u);
+
+		// Fill B with B_1, ..., B_{n_b}
+		for (size_type i = 0; i < rls_n_b; ++i)
+		{
+			// Copy matrix B_i from \hat{\Theta} into B.
+			// In \hat{\Theta} the matrix B_i stays at:
+			//   B_i <- (\hat{\Theta}(((n_a*n_y)+i):n_b:n_u,:))^T
+			// but in B the matrix B_i has to go in (n_b-i)-th position:
+			//   B(k:(k+n_x),((n_b-i-1)*n_u):((n_a-i)*n_u)) <- B_i
+
+			size_type c2((rls_n_b-i)*rls_n_u);
+			size_type c1(c2-rls_n_u);
+
+			ublas::subrange(B(), broffs, n_x, c1, c2) = rls_proxy.B(i+1);
+		}
+	}
+DCS_DEBUG_TRACE("B="<<B);//XXX
+
+	// Create the output matrix C
+	{
+		size_type rcoffs(n_x-rls_n_y); // The right most column offset
+
+		C().resize(n_y, n_x, false);
+
+		ublas::subrange(C(), 0, n_y, 0, rcoffs) = ublas::zero_matrix<value_type>(n_y,rcoffs);
+		ublas::subrange(C(), 0, n_y, rcoffs, n_x) = ublas::scalar_matrix<value_type>(n_y, rls_n_y, 1);
+	}
+DCS_DEBUG_TRACE("C="<<C);//XXX
+
+	// Create the transmission matrix D
+	{
+		size_type rcoffs(n_x-rls_n_y); // The right most column offset
+
+		D().resize(n_y, n_u, false);
+
+		D() = ublas::zero_matrix<value_type>(n_y, n_u);
+	}
+DCS_DEBUG_TRACE("D="<<D);//XXX
+
+DCS_DEBUG_TRACE("END make_ss");//XXX
 }
 
 }} // Namespace detail::<unnamed>
@@ -121,7 +458,7 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 	private: typedef ::dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
 	private: typedef typename application_type::application_tier_type application_tier_type;
 	private: typedef ::dcs::shared_ptr<application_tier_type> application_tier_pointer;
-	private: typedef ::std::vector<performance_measure_category> category_container;
+	private: typedef ::std::vector<performance_measure_category> perf_category_container;
 //	private: typedef ::std::vector<real_type> measure_container;
 	private: typedef ::std::map<performance_measure_category,real_type> category_measure_container;
 	private: typedef ::dcs::des::base_statistic<real_type,uint_type> statistic_type;
@@ -131,6 +468,7 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 	private: typedef ::std::map<performance_measure_category,real_type> category_value_container;
 	private: typedef ::std::vector<category_value_container> category_value_container_container;
 	private: typedef physical_machine<traits_type> physical_machine_type;
+	private: typedef detail::rls_ff_mimo_proxy<traits_type> rls_ff_proxy_type;
 
 
 	private: static const size_type default_input_order_;
@@ -141,6 +479,7 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 //	private: static const uint_type default_ss_state_size_;
 //	private: static const uint_type default_ss_input_size_;
 //	private: static const uint_type default_ss_output_size_;
+	private: static const real_type default_min_share_;
 
 
 	public: lqr_application_controller()
@@ -341,9 +680,9 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 
 			tier_measures_.resize(num_tiers);
 
-			typedef typename category_container::const_iterator category_iterator;
+			typedef typename perf_category_container::const_iterator category_iterator;
 
-			category_container categories(this->application().sla_cost_model().slo_categories());
+			perf_category_container categories(this->application().sla_cost_model().slo_categories());
 			category_iterator end_it = categories.end();
 			for (category_iterator it = categories.begin(); it != end_it; ++it)
 			{
@@ -362,8 +701,8 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 
 			n_p_ = n_s_
 				 = num_tiers;
-			n_x_ = n_p_*(n_a_+1);
-			n_u_ = n_s_*(n_b_+1);
+			n_x_ = n_p_*n_a_;
+			n_u_ = n_s_*n_b_;
 			n_y_ = uint_type(1);
 			x_offset_ = n_x_-n_p_;
 			u_offset_ = n_u_-n_p_;
@@ -677,14 +1016,16 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process SYSTEM-INITIALIZATION event (Clock: " << ctx.simulated_time() << ")");
 
 		// Prepare the data structures for the RLS algorithm 
-		::dcs::sysid::rls_arx_mimo_init(n_a_,
-										n_b_,
-										d_,
-										n_p_,
-										n_s_,
-										rls_Theta_hat_,
-										rls_P_,
-										rls_phi_);
+//		::dcs::sysid::rls_arx_mimo_init(n_a_,
+//										n_b_,
+//										d_,
+//										n_p_,
+//										n_s_,
+//										rls_Theta_hat_,
+//										rls_P_,
+//										rls_phi_);
+		rls_ff_proxy_ = rls_ff_proxy_type(n_a_, n_b_, d_, n_p_, n_s_, rls_ff_);
+		rls_ff_proxy_.init();
 
 		// Completely reset all measures
 		full_reset_measures();
@@ -700,27 +1041,39 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 
 		namespace ublas = ::boost::numeric::ublas;
 
-		typedef typename category_container::const_iterator category_iterator;
+		typedef typename base_type::application_type application_type;
+		typedef typename application_type::simulation_model_type application_simulation_model_type;
+		typedef typename application_type::performance_model_type application_performance_model_type;
+		typedef typename perf_category_container::const_iterator category_iterator;
 //		typedef typename category_statistic_container_container::const_iterator tier_iterator;
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")");
 
-		++count_;
+		application_type const& app(this->application());
+		application_simulation_model_type const& app_sim_model(app.simulation_model());
+		application_performance_model_type const& app_perf_model(app.performance_model());
 
 		size_type num_tiers(tier_measures_.size());
-
 		vector_type s(n_s_,0); // control input (relative error of tier resource shares)
 		vector_type p(n_p_,0); // control state (relative error of tier peformance measures)
 		vector_type y(n_y_,0); // control output (relative error of app peformance measures)
 
 
+		++count_;
+
 		// Check if a measure rotation is needed (always but the first time)
 		if (count_ > 1)
 		{
+DCS_DEBUG_TRACE("Rotating x=" << x_);//XXX
 			// throw away old observations from x and make space for new ones.
-			detail::rotate(x_, n_a_, n_p_);
+			//detail::rotate(x_, n_a_, n_p_);
+			ublas::subrange(x_, 0, (n_a_-1)*n_p_) = ublas::subrange(x_, n_p_, n_x_);
+DCS_DEBUG_TRACE("Rotated x=" << x_);//XXX
+DCS_DEBUG_TRACE("Rotating u=" << u_);//XXX
 			// throw away old observations from u and make space for new ones.
-			detail::rotate(u_, n_b_, n_s_);
+			//detail::rotate(u_, n_b_, n_s_);
+			ublas::subrange(u_, 0, (n_b_-1)*n_s_) = ublas::subrange(u_, n_s_, n_u_);
+DCS_DEBUG_TRACE("Rotated u=" << u_);//XXX
 		}
 
 
@@ -743,7 +1096,7 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 		//
 
 		category_measure_container ref_measures;
-		category_container categories(this->application().sla_cost_model().slo_categories());
+		perf_category_container categories(app.sla_cost_model().slo_categories());
 		category_iterator end_it = categories.end();
 //		tier_iterator tier_end_it = tier_measures_.end();
 		for (category_iterator it = categories.begin(); it != end_it; ++it)
@@ -753,7 +1106,7 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 			real_type ref_measure;
 			real_type actual_measure;
 
-			ref_measure = this->application().sla_cost_model().slo_value(category);
+			ref_measure = app.sla_cost_model().slo_value(category);
 			actual_measure = measures_.at(category)->estimate();
 			y(0) = actual_measure/ref_measure - real_type(1);
 
@@ -765,7 +1118,7 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 						{
 							statistic_pointer ptr_stat(tier_measures_[tier_id].at(category));
 
-							ref_measure = this->application_ptr()->performance_model().tier_measure(tier_id, category);
+							ref_measure = app_perf_model.tier_measure(tier_id, category);
 							if (ptr_stat->num_observations() > 0)
 							{
 								actual_measure = ptr_stat->estimate();
@@ -788,7 +1141,7 @@ DCS_DEBUG_TRACE("TIER OBSERVATION: ref: " << ref_measure << " - actual: " << act
 //FIXME: resource category is actually hard-coded to CPU
 		for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 		{
-			virtual_machine_pointer ptr_vm = this->application_ptr()->simulation_model().tier_virtual_machine(tier_id);
+			virtual_machine_pointer ptr_vm = app_sim_model.tier_virtual_machine(tier_id);
 			physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
 			physical_resource_category res_category(cpu_resource_category);//FIXME
 
@@ -801,8 +1154,8 @@ DCS_DEBUG_TRACE("TIER OBSERVATION: ref: " << ref_measure << " - actual: " << act
 			real_type actual_share;
 			actual_share = ::dcs::eesim::scale_resource_share(actual_pm.resource(res_category)->capacity(),
 															  actual_pm.resource(res_category)->utilization_threshold(),
-															  this->application().reference_resource(res_category).capacity(),
-															  this->application().reference_resource(res_category).utilization_threshold(),
+															  app.reference_resource(res_category).capacity(),
+															  app.reference_resource(res_category).utilization_threshold(),
 															  ptr_vm->resource_share(res_category));
 
 			//FIXME: should u contain relative errore w.r.t. resource share given from performance model?
@@ -811,74 +1164,28 @@ DCS_DEBUG_TRACE("TIER OBSERVATION: ref: " << ref_measure << " - actual: " << act
 		}
 
 		// Estimate system parameters
-DCS_DEBUG_TRACE("p(k): " << p);//XXX
-DCS_DEBUG_TRACE("s(k): " << s);//XXX
-DCS_DEBUG_TRACE("Theta_hat(k): " << rls_Theta_hat_);//XXX
-DCS_DEBUG_TRACE("P(k): " << rls_P_);//XXX
-DCS_DEBUG_TRACE("phi(k): " << rls_phi_);//XXX
-		::dcs::sysid::rls_ff_arx_mimo(p,
-									  s,
-									  rls_ff_,
-									  n_a_,
-									  n_b_,
-									  d_,
-									  rls_Theta_hat_,
-									  rls_P_,
-									  rls_phi_);
+		rls_ff_proxy_.estimate(p, s);
 
-DCS_DEBUG_TRACE("Theta_hat(k+1): " << rls_Theta_hat_);//XXX
-DCS_DEBUG_TRACE("P(k+1): " << rls_P_);//XXX
-DCS_DEBUG_TRACE("phi(k+1): " << rls_phi_);//XXX
 		// Check if RLS (and LQR) can be applied.
 		// If not, then no control is performed.
-DCS_DEBUG_TRACE("Count: " << count_ << " - Na: " << n_a_ << " - Nb: " << n_b_ << " - Max: " << ::std::max(n_a_,n_b_));//XXX
 //		if (count_ >= ::std::max(n_a_,n_b_))
 		if (count_ > ::std::min(n_a_,n_b_))
 		{
-			matrix_type A(n_x_,n_x_,0);
-			matrix_type B(n_x_,n_u_,0);
-			matrix_type C(n_y_,n_x_,0);
-			matrix_type D(n_y_,n_u_,0);
+			// Create the state-space representation of the system model:
+			//  x(k+1) = Ax(k)+Bu(k)
+			//  y(k) = Cx(k)+Du(k)
+			// where
+			// x(k) = [p(k-n_a+1); ... p(k)]
+			// u(k) = [s(k-n_b+1); ... s(k)]
+			// y(k) = \sum_i x_i(k)
+			//
 
-			// A=[0 I 0 ... 0;
-			// 	  0 0 I ... 0;
-			// 	  ...
-			// 	  0 0 0 ... I;
-			// 	  A_{n_a} ... A_1]]
-			// NOTE: rls_Theta_hat_ contains parameters in reverse order: [A_1 ... A_{n_a} B_1 ... B_{n_b}]
-			size_type k;
-			//k = (n_p_-1)*n_a_;
-			k = n_x_-n_p_;
-			ublas::subrange(A, 0, k, n_p_, n_x_) = ublas::identity_matrix<real_type>(k,k);
-			//ublas::subrange(A, k, n_x_, 0, n_x_) = ublas::subrange(rls_Theta_hat_, 0, n_p_, 0, n_x_);
-			for (size_type i = 0; i < n_a_; ++i)
-			{
-				size_type itnp(i*n_p_);
-				size_type ip1tnp((i+1)*n_p_);
+			matrix_type A;
+			matrix_type B;
+			matrix_type C;
+			matrix_type D;
 
-				ublas::subrange(A, k, n_x_, itnp, ip1tnp) = ublas::subrange(rls_Theta_hat_, 0, n_p_, n_x_-ip1tnp, n_x_-itnp);
-			}
-
-			// B=[0 ... 0;
-			//    0 ... 0;
-			//    B_{n_b} ... B_1]
-			// NOTE: rls_Theta_hat_ contains parameters in reverse order: [A_1 ... A_{n_a} B_1 ... B_{n_b}]
-			size_type theta_nc(rls_Theta_hat_.size2());
-			k = n_u_-n_s_;
-			//ublas::subrange(B, k, n_u_, 0, n_u_) = ublas::subrange(rls_Theta_hat_, 0, n_s_, 0, n_u_);
-			for (size_type i = 0; i < n_b_; ++i)
-			{
-				size_type itns(i*n_s_);
-				size_type ip1tns((i+1)*n_s_);
-
-				ublas::subrange(B, k, n_u_, itns, ip1tns) = ublas::subrange(rls_Theta_hat_, 0, n_p_, theta_nc-ip1tns, theta_nc-itns);
-			}
-
-			// C[0:n_y_,(n_x_-n_p):n_x_] = 1
-			//ublas::subrange(C, 0, n_y_, 0, n_p_) = ublas::scalar_matrix<real_type>(n_y_, n_p_, real_type(1));
-			ublas::subrange(C, 0, n_y_, (n_x_-n_p_), n_x_) = ublas::scalar_matrix<real_type>(n_y_, n_p_, real_type(1));
-
-			// D=[0 ... 0]
+			detail::make_ss(rls_ff_proxy_, A, B, C, D);
 
 			// Compute the optimal control
 DCS_DEBUG_TRACE("Solving LQR with");//XXX
@@ -911,23 +1218,25 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 				{
 					physical_resource_category res_category(cpu_resource_category);//FIXME
 
-					virtual_machine_pointer ptr_vm(this->application_ptr()->simulation_model().tier_virtual_machine(tier_id));
+					virtual_machine_pointer ptr_vm(app_sim_model.tier_virtual_machine(tier_id));
 					physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
 
-					real_type share;
-					share = ::dcs::eesim::scale_resource_share(
-							// Reference resource capacity and threshold
-							this->application_ptr()->reference_resource(res_category).capacity(),
-							this->application_ptr()->reference_resource(res_category).utilization_threshold(),
-							// Actual resource capacity and threshold
-							pm.resource(res_category)->capacity(),
-							pm.resource(res_category)->utilization_threshold(),
-							// Old resource + computed deviation
-							ptr_vm->wanted_resource_share(res_category)+opt_u(tier_id)
+					real_type new_share;
+					new_share = ::dcs::eesim::scale_resource_share(
+									// Reference resource capacity and threshold
+									app.reference_resource(res_category).capacity(),
+									app.reference_resource(res_category).utilization_threshold(),
+									// Actual resource capacity and threshold
+									pm.resource(res_category)->capacity(),
+									pm.resource(res_category)->utilization_threshold(),
+									// Old resource + computed deviation
+									ptr_vm->wanted_resource_share(res_category)+opt_u(tier_id)
 						);
-															
-DCS_DEBUG_TRACE("Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << res_category << " ==> Share: " << share);//XXX
-					ptr_vm->wanted_resource_share(res_category, share);
+
+					 new_share = ::std::max(new_share, default_min_share_);
+
+DCS_DEBUG_TRACE("Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << res_category << " ==> Share: " << new_share);//XXX
+					ptr_vm->wanted_resource_share(res_category, new_share);
 				}
 DCS_DEBUG_TRACE("Optimal control applied");//XXX
 			}
@@ -944,12 +1253,12 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 
 	/// The LQR controller.
 	private: controller_type controller_;
-	/// Matrix of system parameters estimated by RLS: [A_1 ... A_{n_a} B_1 ... B_{n_b}].
-	private: matrix_type rls_Theta_hat_;
-	/// The covariance matrix computed by RLS.
-	private: matrix_type rls_P_;
-	/// The regression vector used by RLS.
-	private: vector_type rls_phi_;
+//	/// Matrix of system parameters estimated by RLS: [A_1 ... A_{n_a} B_1 ... B_{n_b}].
+//	private: matrix_type rls_Theta_hat_;
+//	/// The covariance matrix computed by RLS.
+//	private: matrix_type rls_P_;
+//	/// The regression vector used by RLS.
+//	private: vector_type rls_phi_;
 	/// The memory for the control output.
 	private: size_type n_a_;
 	/// The memory for the control input.
@@ -981,6 +1290,7 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 	private: category_statistic_container_container tier_measures_;
 	private: category_value_container ewma_s_;
 	private: category_value_container_container ewma_tier_s_;
+	private: rls_ff_proxy_type rls_ff_proxy_;
 };
 
 
@@ -1014,6 +1324,8 @@ const typename lqr_application_controller<TraitsT>::real_type lqr_application_co
 //template <typename TraitsT>
 //const typename lqr_application_controller<TraitsT>::uint_type lqr_application_controller<TraitsT>::default_ss_output_size_ = 1;
 
+template <typename TraitsT>
+const typename lqr_application_controller<TraitsT>::real_type lqr_application_controller<TraitsT>::default_min_share_ = 0.01;
 
 }} // Namespace dcs::eesim
 
