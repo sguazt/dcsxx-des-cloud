@@ -70,28 +70,27 @@ namespace dcs { namespace eesim {
 
 namespace detail { namespace /*<unnamed>*/ {
 
-template <typename VectorExprT>
-void rotate(::boost::numeric::ublas::vector_expression<VectorExprT>& v, ::std::size_t num_rot_grp, ::std::size_t rot_grp_size)
-{
-	namespace ublas = ::boost::numeric::ublas;
-
-DCS_DEBUG_TRACE("BEGIN Rotate v=" << v << " - num_rot_grp=" << num_rot_grp << " - rot_grp_size=" << rot_grp_size);//XXX
-	// Alternative #1
-	//
-	//::std::rotate(v().begin(), v().begin()+rot_grp_size, v().end());
-
-	// Alternative #2 (perhaps faster than solution #1 since performs less swaps))
-
-	DCS_DEBUG_ASSERT( v().size() == (num_rot_grp+1)*rot_grp_size );
-
-	for (::std::size_t i = 1; i <= num_rot_grp; ++i)
-	{
-		::std::size_t j1((i-1)*rot_grp_size);
-		::std::size_t j2(i*rot_grp_size);
-		::std::size_t j3((i+1)*rot_grp_size);
-		ublas::subrange(v(), j1, j2) = ublas::subrange(v(), j2, j3);
-	}
-}
+//template <typename VectorExprT>
+//void rotate(::boost::numeric::ublas::vector_expression<VectorExprT>& v, ::std::size_t num_rot_grp, ::std::size_t rot_grp_size)
+//{
+//	namespace ublas = ::boost::numeric::ublas;
+//
+//	// Alternative #1
+//	//
+//	//::std::rotate(v().begin(), v().begin()+rot_grp_size, v().end());
+//
+//	// Alternative #2 (perhaps faster than solution #1 since performs less swaps))
+//
+//	DCS_DEBUG_ASSERT( v().size() == (num_rot_grp+1)*rot_grp_size );
+//
+//	for (::std::size_t i = 1; i <= num_rot_grp; ++i)
+//	{
+//		::std::size_t j1((i-1)*rot_grp_size);
+//		::std::size_t j2(i*rot_grp_size);
+//		::std::size_t j3((i+1)*rot_grp_size);
+//		ublas::subrange(v(), j1, j2) = ublas::subrange(v(), j2, j3);
+//	}
+//}
 
 
 template <typename TraitsT>
@@ -161,6 +160,24 @@ class rls_ff_mimo_proxy
 	}
 
 
+	public: matrix_type Theta_hat() const
+	{
+		return Theta_hat_;
+	}
+
+
+	public: matrix_type P() const
+	{
+		return P_;
+	}
+
+
+	public: vector_type phi() const
+	{
+		return phi_;
+	}
+
+
 	public: void init()
 	{
 		// Prepare the data structures for the RLS algorithm 
@@ -177,17 +194,18 @@ class rls_ff_mimo_proxy
 
 
 	public: template <typename YVectorExprT, typename UVectorExprT>
-		void estimate(::boost::numeric::ublas::vector_expression<YVectorExprT> const& y,
-					  ::boost::numeric::ublas::vector_expression<UVectorExprT> const& u)
+		vector_type estimate(::boost::numeric::ublas::vector_expression<YVectorExprT> const& y,
+							 ::boost::numeric::ublas::vector_expression<UVectorExprT> const& u)
 	{
 		// Estimate system parameters
-DCS_DEBUG_TRACE("BEGIN estimation");//XXX
-DCS_DEBUG_TRACE("y(k): " << y);//XXX
-DCS_DEBUG_TRACE("u(k): " << u);//XXX
-DCS_DEBUG_TRACE("Theta_hat(k): " << Theta_hat_);//XXX
-DCS_DEBUG_TRACE("P(k): " << P_);//XXX
-DCS_DEBUG_TRACE("phi(k): " << phi_);//XXX
-		::dcs::sysid::rls_ff_arx_mimo(y,
+//DCS_DEBUG_TRACE("BEGIN estimation");//XXX
+//DCS_DEBUG_TRACE("y(k): " << y);//XXX
+//DCS_DEBUG_TRACE("u(k): " << u);//XXX
+//DCS_DEBUG_TRACE("Theta_hat(k): " << Theta_hat_);//XXX
+//DCS_DEBUG_TRACE("P(k): " << P_);//XXX
+//DCS_DEBUG_TRACE("phi(k): " << phi_);//XXX
+		vector_type y_hat;
+		y_hat = ::dcs::sysid::rls_ff_arx_mimo(y,
 									  u,
 									  ff_,
 									  n_a_,
@@ -196,10 +214,11 @@ DCS_DEBUG_TRACE("phi(k): " << phi_);//XXX
 									  Theta_hat_,
 									  P_,
 									  phi_);
-DCS_DEBUG_TRACE("New Theta_hat(k): " << Theta_hat_);//XXX
-DCS_DEBUG_TRACE("New P(k): " << P_);//XXX
-DCS_DEBUG_TRACE("New phi(k): " << phi_);//XXX
-DCS_DEBUG_TRACE("END estimation");//XXX
+//DCS_DEBUG_TRACE("New Theta_hat(k): " << Theta_hat_);//XXX
+//DCS_DEBUG_TRACE("New P(k): " << P_);//XXX
+//DCS_DEBUG_TRACE("New phi(k): " << phi_);//XXX
+//DCS_DEBUG_TRACE("END estimation");//XXX
+		return y_hat;
 	}
 
 
@@ -299,7 +318,7 @@ void make_ss(rls_ff_mimo_proxy<TraitsT> const& rls_proxy,
 			 ::boost::numeric::ublas::matrix_container<CMatrixExprT>& C,
 			 ::boost::numeric::ublas::matrix_container<DMatrixExprT>& D)
 {
-DCS_DEBUG_TRACE("BEGIN make_ss");//XXX
+//DCS_DEBUG_TRACE("BEGIN make_ss");//XXX
 	namespace ublas = ::boost::numeric::ublas;
 
 	typedef typename ublas::promote_traits<
@@ -370,7 +389,7 @@ DCS_DEBUG_TRACE("BEGIN make_ss");//XXX
 			ublas::subrange(A(), broffs, n_x, c1, c2) = -rls_proxy.A(i+1);
 		}
 	}
-DCS_DEBUG_TRACE("A="<<A);//XXX
+//DCS_DEBUG_TRACE("A="<<A);//XXX
 
 	// Create the input matrix B
 	// B=[0 ... 0;
@@ -403,7 +422,7 @@ DCS_DEBUG_TRACE("A="<<A);//XXX
 			ublas::subrange(B(), broffs, n_x, c1, c2) = rls_proxy.B(i+1);
 		}
 	}
-DCS_DEBUG_TRACE("B="<<B);//XXX
+//DCS_DEBUG_TRACE("B="<<B);//XXX
 
 	// Create the output matrix C
 	{
@@ -414,7 +433,7 @@ DCS_DEBUG_TRACE("B="<<B);//XXX
 		ublas::subrange(C(), 0, n_y, 0, rcoffs) = ublas::zero_matrix<value_type>(n_y,rcoffs);
 		ublas::subrange(C(), 0, n_y, rcoffs, n_x) = ublas::scalar_matrix<value_type>(n_y, rls_n_y, 1);
 	}
-DCS_DEBUG_TRACE("C="<<C);//XXX
+//DCS_DEBUG_TRACE("C="<<C);//XXX
 
 	// Create the transmission matrix D
 	{
@@ -424,9 +443,9 @@ DCS_DEBUG_TRACE("C="<<C);//XXX
 
 		D() = ublas::zero_matrix<value_type>(n_y, n_u);
 	}
-DCS_DEBUG_TRACE("D="<<D);//XXX
+//DCS_DEBUG_TRACE("D="<<D);//XXX
 
-DCS_DEBUG_TRACE("END make_ss");//XXX
+//DCS_DEBUG_TRACE("END make_ss");//XXX
 }
 
 }} // Namespace detail::<unnamed>
@@ -716,6 +735,8 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 		// past in order to solve these issues:
 		// - too few observation in the last control period
 		// - not so much representative observations in the last control period.
+		// Actually, the history is stored according to a EWMA filter.
+
 
 //FIXME: try to use this below to reset stats
 //		::std::for_each(
@@ -877,18 +898,21 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing REQUEST-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
 
+		typedef typename base_type::application_type application_type;
 		typedef typename category_statistic_container::iterator measure_iterator;
+
+		application_type const& app = this->application();
 
 		// Collect tiers and system output measures
 
-		user_request_type req = this->application().simulation_model().request_state(evt);
+		user_request_type req = app.simulation_model().request_state(evt);
 
 		real_type app_rt(0);
 
 		size_type num_tiers(tier_measures_.size());
 		for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 		{
-			virtual_machine_pointer ptr_vm(this->application_ptr()->simulation_model().tier_virtual_machine(tier_id));
+			virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
 			physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
 			physical_resource_category res_category(cpu_resource_category);//FIXME
 
@@ -899,8 +923,8 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 					actual_pm.resource(res_category)->capacity(),
 					actual_pm.resource(res_category)->utilization_threshold(),
 					// Reference resource capacity and threshold
-					this->application().reference_resource(res_category).capacity(),
-					this->application().reference_resource(res_category).utilization_threshold()
+					app.reference_resource(res_category).capacity(),
+					app.reference_resource(res_category).utilization_threshold()
 				);
 
 			measure_iterator end_it = tier_measures_[tier_id].end();
@@ -930,6 +954,7 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 									rt += dep_times[t]-arr_times[t];
 								}
 								rt *= scale_factor;
+DCS_DEBUG_TRACE("HERE!!!!! ==> " << rt);//XXX
 								(*ptr_stat)(rt);
 								app_rt += rt;
 							}
@@ -1061,19 +1086,20 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 
 		++count_;
 
+		// Rotate old with new inputs/outputs:
+		//  x = [p(k-n_a+1) ... p(k)]^T
+		//    = [x_{n_p:n_x} p(k)]^T
+		//  u = [s(k-n_b+1) ... s(k)]^T
+		//    = [u_{n_s:n_u} s(k)]^T
 		// Check if a measure rotation is needed (always but the first time)
 		if (count_ > 1)
 		{
-DCS_DEBUG_TRACE("Rotating x=" << x_);//XXX
 			// throw away old observations from x and make space for new ones.
 			//detail::rotate(x_, n_a_, n_p_);
 			ublas::subrange(x_, 0, (n_a_-1)*n_p_) = ublas::subrange(x_, n_p_, n_x_);
-DCS_DEBUG_TRACE("Rotated x=" << x_);//XXX
-DCS_DEBUG_TRACE("Rotating u=" << u_);//XXX
 			// throw away old observations from u and make space for new ones.
 			//detail::rotate(u_, n_b_, n_s_);
 			ublas::subrange(u_, 0, (n_b_-1)*n_s_) = ublas::subrange(u_, n_s_, n_u_);
-DCS_DEBUG_TRACE("Rotated u=" << u_);//XXX
 		}
 
 
@@ -1095,6 +1121,8 @@ DCS_DEBUG_TRACE("Rotated u=" << u_);//XXX
 		//       change over time.
 		//
 
+		// Collect new state observations:
+		// x_j(k) = (<actual-perf-measure-of-tier-j>-<ref-perf-measure-of-tier-j>)/<ref-perf-measure-of-tier-j>
 		category_measure_container ref_measures;
 		perf_category_container categories(app.sla_cost_model().slo_categories());
 		category_iterator end_it = categories.end();
@@ -1114,7 +1142,7 @@ DCS_DEBUG_TRACE("Rotated u=" << u_);//XXX
 			{
 				switch (category)
 				{
-					case response_time_performance_measure:
+				case response_time_performance_measure:
 						{
 							statistic_pointer ptr_stat(tier_measures_[tier_id].at(category));
 
@@ -1125,9 +1153,10 @@ DCS_DEBUG_TRACE("Rotated u=" << u_);//XXX
 							}
 							else
 							{
+								// No observation -> Assume perfect behavior
 								actual_measure = ref_measure;
 							}
-DCS_DEBUG_TRACE("TIER OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure);//XXX
+DCS_DEBUG_TRACE("TIER " << tier_id << " OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure);//XXX
 							x_(x_offset_+tier_id) = p(tier_id)
 												  = actual_measure/ref_measure - real_type(1);
 						}
@@ -1139,6 +1168,8 @@ DCS_DEBUG_TRACE("TIER OBSERVATION: ref: " << ref_measure << " - actual: " << act
 		}
 
 //FIXME: resource category is actually hard-coded to CPU
+		// Collect new input observations:
+		// u_j(k) = (<actual-resource-share-at-tier-j>-<ref-resource-share-at-tier-j>)/<ref-resource-share-at-tier-j>
 		for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 		{
 			virtual_machine_pointer ptr_vm = app_sim_model.tier_virtual_machine(tier_id);
@@ -1159,12 +1190,21 @@ DCS_DEBUG_TRACE("TIER OBSERVATION: ref: " << ref_measure << " - actual: " << act
 															  ptr_vm->resource_share(res_category));
 
 			//FIXME: should u contain relative errore w.r.t. resource share given from performance model?
+DCS_DEBUG_TRACE("TIER " << tier_id << " SHARE: ref: " << ref_share << " - actual: " << ptr_vm->resource_share(res_category) << " - actual-scaled: " << actual_share);//XXX
 			u_(u_offset_+tier_id) = s(tier_id)
 								  = actual_share/ref_share - real_type(1);
 		}
 
 		// Estimate system parameters
-		rls_ff_proxy_.estimate(p, s);
+		vector_type p_hat;
+		p_hat = rls_ff_proxy_.estimate(p, s);
+DCS_DEBUG_TRACE("RLS estimation:");//XXX
+DCS_DEBUG_TRACE("p=" << p);//XXX
+DCS_DEBUG_TRACE("s=" << s);//XXX
+DCS_DEBUG_TRACE("p_hat=" << p_hat);//XXX
+DCS_DEBUG_TRACE("Theta_hat=" << rls_ff_proxy_.Theta_hat());//XXX
+DCS_DEBUG_TRACE("P=" << rls_ff_proxy_.P());//XXX
+DCS_DEBUG_TRACE("phi=" << rls_ff_proxy_.phi());//XXX
 
 		// Check if RLS (and LQR) can be applied.
 		// If not, then no control is performed.
@@ -1193,6 +1233,8 @@ DCS_DEBUG_TRACE("A=" << A);//XXX
 DCS_DEBUG_TRACE("B=" << B);//XXX
 DCS_DEBUG_TRACE("C=" << C);//XXX
 DCS_DEBUG_TRACE("D=" << D);//XXX
+DCS_DEBUG_TRACE("x= " << x_);//XXX
+DCS_DEBUG_TRACE("u= " << u_);//XXX
 			bool ok(true);
 			try
 			{
@@ -1208,10 +1250,9 @@ DCS_DEBUG_TRACE("D=" << D);//XXX
 			if (ok)
 			{
 DCS_DEBUG_TRACE("Solved!");//XXX
-DCS_DEBUG_TRACE("Getting control for x= " << x_);//XXX
 				vector_type opt_u;
 				opt_u = ublas::real(controller_.control(x_));
-DCS_DEBUG_TRACE("Optima Control => " << opt_u);//XXX
+DCS_DEBUG_TRACE("Optimal Control u*=> " << opt_u);//XXX
 
 DCS_DEBUG_TRACE("Applying optimal control");//XXX
 				for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
@@ -1220,8 +1261,17 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 
 					virtual_machine_pointer ptr_vm(app_sim_model.tier_virtual_machine(tier_id));
 					physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
+//					real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
+					real_type actual_share;
+					actual_share = ::dcs::eesim::scale_resource_share(pm.resource(res_category)->capacity(),
+																	  pm.resource(res_category)->utilization_threshold(),
+																	  app.reference_resource(res_category).capacity(),
+																	  app.reference_resource(res_category).utilization_threshold(),
+																	  ptr_vm->resource_share(res_category));
+
 
 					real_type new_share;
+DCS_DEBUG_TRACE("Unscaled share: " << (actual_share/(opt_u(tier_id)+1)));//XXX
 					new_share = ::dcs::eesim::scale_resource_share(
 									// Reference resource capacity and threshold
 									app.reference_resource(res_category).capacity(),
@@ -1229,9 +1279,12 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 									// Actual resource capacity and threshold
 									pm.resource(res_category)->capacity(),
 									pm.resource(res_category)->utilization_threshold(),
-									// Old resource + computed deviation
-									ptr_vm->wanted_resource_share(res_category)+opt_u(tier_id)
+									//// Old resource share + computed deviation
+									//ptr_vm->wanted_resource_share(res_category)+opt_u(tier_id)
+//									ref_share*(opt_u(tier_id)+1)
+									actual_share/(opt_u(tier_id)+1)
 						);
+DCS_DEBUG_TRACE("Scaled share: " << new_share);//XXX
 
 					 new_share = ::std::max(new_share, default_min_share_);
 
@@ -1295,7 +1348,7 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 
 
 template <typename TraitsT>
-const typename lqr_application_controller<TraitsT>::size_type lqr_application_controller<TraitsT>::default_input_order_ = 1;
+const typename lqr_application_controller<TraitsT>::size_type lqr_application_controller<TraitsT>::default_input_order_ = 2;
 
 
 template <typename TraitsT>

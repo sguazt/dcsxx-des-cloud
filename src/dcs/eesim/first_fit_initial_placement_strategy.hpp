@@ -64,9 +64,13 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 			application_type const& app(ptr_vm->guest_system().application());
 			bool placed = false;
 
+			// Retrieve the share for every resource of the VM guest system
 			share_container ref_shares(ptr_vm->guest_system().resource_shares());
 //			resource_view_container ref_resources(ptr_vm->guest_system().application().reference_resources());
 
+			// For each physical machine PM, try to deploy current VM on PM
+			// until a suitable machine (i.e., a machine with sufficient free
+			// capacity) is found.
 			pm_iterator pm_end_it = machs.end();
 			share_iterator ref_share_end_it = ref_shares.end();
 			for (pm_iterator pm_it = machs.begin(); pm_it != pm_end_it && !placed; ++pm_it)
@@ -74,6 +78,7 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 //				mach_id = (*pm_it)->id();
 				ptr_mach = *pm_it;
 
+				// Reference to actual resource shares
 				share_container shares;
 				for (share_iterator ref_share_it = ref_shares.begin(); ref_share_it != ref_share_end_it; ++ref_share_it)
 				{
@@ -96,6 +101,7 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 					shares.push_back(share_type(ref_category, share));
 				}
 
+				// Try to place current VM on current PM
 				placed = deployment.try_place(*ptr_vm,
 											  *ptr_mach,
 											  shares.begin(),
