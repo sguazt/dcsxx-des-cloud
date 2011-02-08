@@ -961,7 +961,7 @@ class lq_application_controller: public base_application_controller<TraitsT>
 									rt += dep_times[t]-arr_times[t];
 								}
 								rt *= scale_factor;
-DCS_DEBUG_TRACE("HERE!!!!! ==> " << rt);//XXX
+DCS_DEBUG_TRACE("HERE!!!!! tier: " << tier_id << " ==> rt: " << rt);//XXX
 								(*ptr_stat)(rt);
 								app_rt += rt;
 							}
@@ -1149,25 +1149,25 @@ DCS_DEBUG_TRACE("HERE!!!!! ==> " << rt);//XXX
 			{
 				switch (category)
 				{
-				case response_time_performance_measure:
-						{
-							statistic_pointer ptr_stat(tier_measures_[tier_id].at(category));
+					case response_time_performance_measure:
+							{
+								statistic_pointer ptr_stat(tier_measures_[tier_id].at(category));
 
-							ref_measure = app_perf_model.tier_measure(tier_id, category);
-							if (ptr_stat->num_observations() > 0)
-							{
-								actual_measure = ptr_stat->estimate();
-							}
-							else
-							{
-								// No observation -> Assume perfect behavior
-								actual_measure = ref_measure;
-							}
+								ref_measure = app_perf_model.tier_measure(tier_id, category);
+								if (ptr_stat->num_observations() > 0)
+								{
+									actual_measure = ptr_stat->estimate();
+								}
+								else
+								{
+									// No observation -> Assume perfect behavior
+									actual_measure = ref_measure;
+								}
 DCS_DEBUG_TRACE("TIER " << tier_id << " OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure);//XXX
-							x_(x_offset_+tier_id) = p(tier_id)
-												  = actual_measure/ref_measure - real_type(1);
-						}
-						break;
+								x_(x_offset_+tier_id) = p(tier_id)
+													  = actual_measure/ref_measure - real_type(1);
+							}
+							break;
 					default:
 						throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::do_process_control] LQR application controller currently handles only the response-time category.");
 				}
@@ -1272,6 +1272,7 @@ DCS_DEBUG_TRACE("Solved!");//XXX
 //				vector_type opt_u;
 //				opt_u = ublas::real(controller_.control(x_));
 DCS_DEBUG_TRACE("Optimal Control u*=> " << opt_u);//XXX
+DCS_DEBUG_TRACE("Expected application response time: " << (app.sla_cost_model().slo_value(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)));//XXX
 
 DCS_DEBUG_TRACE("Applying optimal control");//XXX
 				for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
@@ -1280,7 +1281,7 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 
 					virtual_machine_pointer ptr_vm(app_sim_model.tier_virtual_machine(tier_id));
 					physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
-//					real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
+					real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
 					real_type actual_share;
 					actual_share = ::dcs::eesim::scale_resource_share(pm.resource(res_category)->capacity(),
 																	  pm.resource(res_category)->utilization_threshold(),
@@ -1290,7 +1291,9 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 
 
 					real_type new_share;
-DCS_DEBUG_TRACE("Unscaled share: " << (actual_share/(opt_u(tier_id)+1)));//XXX
+DCS_DEBUG_TRACE("Tier " << tier_id << " --> Actual share: " << actual_share);//XXX
+DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Unscaled share: " << (ref_share/(opt_u(tier_id)+1)));//XXX
+//DCS_DEBUG_TRACE("Tier " << tier_id << " --> Unscaled share: " << (actual_share/(opt_u(tier_id)+1)));//XXX
 					new_share = ::dcs::eesim::scale_resource_share(
 									// Reference resource capacity and threshold
 									app.reference_resource(res_category).capacity(),
@@ -1300,10 +1303,10 @@ DCS_DEBUG_TRACE("Unscaled share: " << (actual_share/(opt_u(tier_id)+1)));//XXX
 									pm.resource(res_category)->utilization_threshold(),
 									//// Old resource share + computed deviation
 									//ptr_vm->wanted_resource_share(res_category)+opt_u(tier_id)
-//									ref_share*(opt_u(tier_id)+1)
-									actual_share/(opt_u(tier_id)+1)
+									ref_share*(opt_u(tier_id)+1)
+//									actual_share/(opt_u(tier_id)+1)
 						);
-DCS_DEBUG_TRACE("Scaled share: " << new_share);//XXX
+DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Scaled share: " << new_share);//XXX
 
 					 new_share = ::std::max(new_share, default_min_share_);
 
