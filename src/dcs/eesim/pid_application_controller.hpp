@@ -42,7 +42,7 @@
 namespace dcs { namespace eesim {
 
 template <typename TraitsT>
-class lqr_application_controller
+class pid_application_controller
 {
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::real_type real_type;

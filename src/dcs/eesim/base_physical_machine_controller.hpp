@@ -10,6 +10,7 @@
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
+#include <string>
 
 
 namespace dcs { namespace eesim {
@@ -31,11 +32,14 @@ class base_physical_machine_controller
 	private: typedef registry<traits_type> registry_type;
 
 
+	private: static const ::std::string control_event_source_name;
+
+
 	/// A constructor.
 	protected: base_physical_machine_controller()
 	: ptr_mach_(),
 	  ts_(0),
-	  ptr_control_evt_src_(/*new des_event_source_type()*/)
+	  ptr_control_evt_src_(/*new des_event_source_type(control_event_source_name)*/)
 	{
 		init();
 	}
@@ -45,7 +49,7 @@ class base_physical_machine_controller
 	protected: explicit base_physical_machine_controller(physical_machine_pointer const& ptr_mach, real_type ts)
 	: ptr_mach_(ptr_mach),
 	  ts_(ts),
-	  ptr_control_evt_src_(/*new des_event_source_type()*/)
+	  ptr_control_evt_src_(/*new des_event_source_type(control_event_source_name)*/)
 	{
 		init();
 	}
@@ -55,7 +59,7 @@ class base_physical_machine_controller
 	public: base_physical_machine_controller(base_physical_machine_controller const& that)
 	: ptr_mach_(that.ptr_mach_),
 	  ts_(that.ts_),
-	  ptr_control_evt_src_(that.ptr_control_evt_src_ ? new des_event_source_type(*that.ptr_control_evt_src_) : des_event_source_type())
+	  ptr_control_evt_src_(that.ptr_control_evt_src_ ? new des_event_source_type(*that.ptr_control_evt_src_) : new des_event_source_type(control_event_source_name))
 	{
 		init();
 	}
@@ -76,7 +80,7 @@ class base_physical_machine_controller
 			}
 			else
 			{
-				ptr_control_evt_src_ = des_event_source_type();
+				ptr_control_evt_src_ = ::dcs::make_shared<des_event_source_type>(control_event_source_name);
 			}
 
 			init();
@@ -161,7 +165,6 @@ class base_physical_machine_controller
 
 	private: void connect_to_event_sources()
 	{
-DCS_DEBUG_TRACE("BEGIN connect to event sources: sampling time: " << ts_);//XXX
 		if (ts_ > 0)
 		{
 			if (!ptr_control_evt_src_)
@@ -169,7 +172,6 @@ DCS_DEBUG_TRACE("BEGIN connect to event sources: sampling time: " << ts_);//XXX
 				ptr_control_evt_src_ = ::dcs::make_shared<des_event_source_type>();
 			}
 
-DCS_DEBUG_TRACE("Connecting to contrl event sources");//XXX
 			ptr_control_evt_src_->connect(
 				::dcs::functional::bind(
 					&self_type::process_control,
@@ -181,7 +183,6 @@ DCS_DEBUG_TRACE("Connecting to contrl event sources");//XXX
 
 			registry_type& reg(registry_type::instance());
 
-DCS_DEBUG_TRACE("Connecting to sys inti event sources");//XXX
 			reg.des_engine_ptr()->system_initialization_event_source().connect(
 				::dcs::functional::bind(
 					&self_type::process_sys_init,
@@ -191,7 +192,6 @@ DCS_DEBUG_TRACE("Connecting to sys inti event sources");//XXX
 				)
 			);
 		}
-DCS_DEBUG_TRACE("END connect to event sources");//XXX
 	}
 
 
@@ -199,7 +199,6 @@ DCS_DEBUG_TRACE("END connect to event sources");//XXX
 	{
 		if (ts_ > 0)
 		{
-DCS_DEBUG_TRACE("END connect to event sources");//XXX
 			if (ptr_control_evt_src_)
 			{
 				ptr_control_evt_src_->disconnect(
@@ -210,7 +209,6 @@ DCS_DEBUG_TRACE("END connect to event sources");//XXX
 						::dcs::functional::placeholders::_2
 					)
 				);
-	DCS_DEBUG_TRACE("END disconnect to event sources");//XXX
 			}
 
 			registry_type& reg(registry_type::instance());
@@ -302,6 +300,9 @@ DCS_DEBUG_TRACE("END connect to event sources");//XXX
 	private: real_type ts_;
 	private: des_event_source_pointer ptr_control_evt_src_;
 };
+
+template <typename TraitsT>
+const ::std::string base_physical_machine_controller<TraitsT>::control_event_source_name("Control Machine");
 
 }} // Namespace dcs::eesim
 

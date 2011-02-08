@@ -10,6 +10,7 @@
 #include <dcs/eesim/registry.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
+#include <string>
 
 
 //FIXME:
@@ -39,14 +40,18 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	private: typedef typename base_type::physical_machine_type physical_machine_type;
 
 
+	private: static const ::std::string poweron_event_source_name;
+	private: static const ::std::string poweroff_event_source_name;
+
+
 	public: default_physical_machine_simulation_model()
 	: base_type(),
 	  pwr_state_(powered_off_power_status),
 	  energy_(0),
 	  uptime_(0),
 	  last_pwron_time_(0),
-	  ptr_pwron_evt_src_(new des_event_source_type()),
-	  ptr_pwroff_evt_src_(new des_event_source_type()),
+	  ptr_pwron_evt_src_(new des_event_source_type(poweron_event_source_name)),
+	  ptr_pwroff_evt_src_(new des_event_source_type(poweroff_event_source_name)),
 	  ptr_energy_stat_(new mean_estimator_statistic_type()), //FIXME: statistic type (mean) is hard-coded
 	  ptr_uptime_stat_(new mean_estimator_statistic_type()) //FIXME: statistic type (mean) is hard-coded
 	{
@@ -368,6 +373,12 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	private: output_statistic_pointer ptr_energy_stat_;
 	private: output_statistic_pointer ptr_uptime_stat_;
 };
+
+template <typename TraitsT>
+const ::std::string default_physical_machine_simulation_model<TraitsT>::poweron_event_source_name("Machine Power-on");
+
+template <typename TraitsT>
+const ::std::string default_physical_machine_simulation_model<TraitsT>::poweroff_event_source_name("Machine Power-off");
 
 }} // Namespace dcs::eesim
 

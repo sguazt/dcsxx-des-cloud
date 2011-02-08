@@ -34,6 +34,7 @@
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
+#include <string>
 
 
 namespace dcs { namespace eesim {
@@ -54,11 +55,14 @@ class base_application_controller
 	private: typedef registry<traits_type> registry_type;
 
 
+	private: static const ::std::string control_event_source_name;
+
+
 	/// Default constructor.
 	protected: base_application_controller()
 	: ptr_app_(),
 	  ts_(0),
-	  ptr_control_evt_src_(new des_event_source_type())
+	  ptr_control_evt_src_(new des_event_source_type(control_event_source_name))
 	{
 		init();
 	}
@@ -68,7 +72,7 @@ class base_application_controller
 	protected: explicit base_application_controller(real_type ts)
 	: ptr_app_(),
 	  ts_(ts),
-	  ptr_control_evt_src_(new des_event_source_type())
+	  ptr_control_evt_src_(new des_event_source_type(control_event_source_name))
 	{
 		init();
 	}
@@ -78,7 +82,7 @@ class base_application_controller
 	protected: base_application_controller(application_pointer const& ptr_app, real_type ts)
 	: ptr_app_(ptr_app),
 	  ts_(ts),
-	  ptr_control_evt_src_(new des_event_source_type())
+	  ptr_control_evt_src_(new des_event_source_type(control_event_source_name))
 	{
 		init();
 	}
@@ -318,6 +322,9 @@ class base_application_controller
 	private: real_type ts_;
 	private: des_event_source_pointer ptr_control_evt_src_;
 };
+
+template <typename TraitsT>
+const ::std::string base_application_controller<TraitsT>::control_event_source_name("Control Application");
 
 }} // Namespace dcs::eesim
 
