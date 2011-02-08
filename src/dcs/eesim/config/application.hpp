@@ -29,7 +29,7 @@ struct application_config
 	typedef application_performance_model_config<real_type,uint_type> performance_model_config_type;
 	typedef application_simulation_model_config<real_type,uint_type> simulation_model_config_type;
 	typedef application_sla_config<real_type> sla_config_type;
-	typedef application_controller_config<RealT> controller_config_type;
+	typedef application_controller_config<RealT,UIntT> controller_config_type;
 
 	::std::string name;
 	performance_model_config_type perf_model;

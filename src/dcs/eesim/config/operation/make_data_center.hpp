@@ -1530,12 +1530,12 @@ template <typename TraitsT, typename RealT>
 }
 
 
-template <typename TraitsT, typename RealT>
-::dcs::shared_ptr< ::dcs::eesim::base_application_controller<TraitsT> > make_application_controller(application_controller_config<RealT> const& controller_conf, ::dcs::shared_ptr< ::dcs::eesim::multi_tier_application<TraitsT> > const& ptr_app)
+template <typename TraitsT, typename RealT, typename UIntT>
+::dcs::shared_ptr< ::dcs::eesim::base_application_controller<TraitsT> > make_application_controller(application_controller_config<RealT,UIntT> const& controller_conf, ::dcs::shared_ptr< ::dcs::eesim::multi_tier_application<TraitsT> > const& ptr_app)
 {
 	typedef TraitsT traits_type;
 	typedef ::dcs::eesim::base_application_controller<traits_type> controller_type;
-	typedef application_controller_config<RealT> controller_config_type;
+	typedef application_controller_config<RealT,UIntT> controller_config_type;
 	typedef ::dcs::eesim::multi_tier_application<traits_type> application_type;
 	typedef ::dcs::shared_ptr<application_type> application_pointer;
 
@@ -1555,6 +1555,43 @@ template <typename TraitsT, typename RealT>
 				ptr_controller = ::dcs::make_shared<controller_impl_type>(ptr_app, controller_conf.sampling_time);
 			}
 			break;
+		case lqi_application_controller:
+			{
+				typedef typename controller_config_type::lqi_controller_config_type controller_config_impl_type;
+				typedef ::dcs::eesim::lqi_application_controller<traits_type> controller_impl_type;
+
+				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
+
+//FIXME: Don't work... Why?!!?
+//				ptr_controller = ::dcs::make_shared<controller_impl_type>(
+//						controller_conf_impl.n_a,
+//						controller_conf_impl.n_b,
+//						controller_conf_impl.d,
+//						make_ublas_matrix(controller_conf_impl.Q),
+//						make_ublas_matrix(controller_conf_impl.R),
+//						make_ublas_matrix(controller_conf_impl.N),
+//						ptr_app,
+//						controller_conf.sampling_time,
+//						controller_conf_impl.rls_forgetting_factor,
+//						controller_conf_impl.ewma_smoothing_factor
+//					);
+				ptr_controller = ::dcs::shared_ptr<controller_impl_type>(
+						new controller_impl_type(
+							controller_conf_impl.n_a,
+							controller_conf_impl.n_b,
+							controller_conf_impl.d,
+							make_ublas_matrix(controller_conf_impl.Q),
+							make_ublas_matrix(controller_conf_impl.R),
+							make_ublas_matrix(controller_conf_impl.N),
+							ptr_app,
+							controller_conf.sampling_time,
+//							controller_conf_impl.integral_weight,
+							controller_conf_impl.rls_forgetting_factor,
+							controller_conf_impl.ewma_smoothing_factor
+						)
+					);
+			}
+			break;
 		case lqr_application_controller:
 			{
 				typedef typename controller_config_type::lqr_controller_config_type controller_config_impl_type;
@@ -1562,12 +1599,54 @@ template <typename TraitsT, typename RealT>
 
 				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
 
-				ptr_controller = ::dcs::make_shared<controller_impl_type>(
-						make_ublas_matrix(controller_conf_impl.Q),
-						make_ublas_matrix(controller_conf_impl.R),
-						make_ublas_matrix(controller_conf_impl.N),
-						ptr_app,
-						controller_conf.sampling_time
+//FIXME: Don't work... Why?!!?
+//				ptr_controller = ::dcs::make_shared<controller_impl_type>(
+//						controller_conf_impl.n_a,
+//						controller_conf_impl.n_b,
+//						controller_conf_impl.d,
+//						make_ublas_matrix(controller_conf_impl.Q),
+//						make_ublas_matrix(controller_conf_impl.R),
+//						make_ublas_matrix(controller_conf_impl.N),
+//						ptr_app,
+//						controller_conf.sampling_time,
+//						controller_conf_impl.rls_forgetting_factor,
+//						controller_conf_impl.ewma_smoothing_factor
+//					);
+				ptr_controller = ::dcs::shared_ptr<controller_impl_type>(
+						new controller_impl_type(
+							controller_conf_impl.n_a,
+							controller_conf_impl.n_b,
+							controller_conf_impl.d,
+							make_ublas_matrix(controller_conf_impl.Q),
+							make_ublas_matrix(controller_conf_impl.R),
+							make_ublas_matrix(controller_conf_impl.N),
+							ptr_app,
+							controller_conf.sampling_time,
+							controller_conf_impl.rls_forgetting_factor,
+							controller_conf_impl.ewma_smoothing_factor
+						)
+					);
+			}
+			break;
+		case lqry_application_controller:
+			{
+				typedef typename controller_config_type::lqry_controller_config_type controller_config_impl_type;
+				typedef ::dcs::eesim::lqry_application_controller<traits_type> controller_impl_type;
+
+				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
+				ptr_controller = ::dcs::shared_ptr<controller_impl_type>(
+						new controller_impl_type(
+							controller_conf_impl.n_a,
+							controller_conf_impl.n_b,
+							controller_conf_impl.d,
+							make_ublas_matrix(controller_conf_impl.Q),
+							make_ublas_matrix(controller_conf_impl.R),
+							make_ublas_matrix(controller_conf_impl.N),
+							ptr_app,
+							controller_conf.sampling_time,
+							controller_conf_impl.rls_forgetting_factor,
+							controller_conf_impl.ewma_smoothing_factor
+						)
 					);
 			}
 			break;

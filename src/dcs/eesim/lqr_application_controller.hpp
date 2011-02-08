@@ -37,7 +37,8 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
 //#include <boost/numeric/ublas/vector_expression.hpp>
-//#include <dcs/control/design/dlqr.hpp>
+#include <dcs/control/design/dlqi.hpp>
+#include <dcs/control/design/dlqr.hpp>
 #include <dcs/control/design/dlqry.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/des/base_statistic.hpp>
@@ -335,7 +336,7 @@ void make_ss(rls_ff_mimo_proxy<TraitsT> const& rls_proxy,
 
 	const size_type rls_n_a(rls_proxy.output_order());
 	const size_type rls_n_b(rls_proxy.input_order());
-	const size_type rls_d(rls_proxy.input_delay());
+//	const size_type rls_d(rls_proxy.input_delay());
 	const size_type rls_n_y(rls_proxy.num_outputs());
 	const size_type rls_n_u(rls_proxy.num_inputs());
 	const size_type n_x(rls_n_a*rls_n_y);
@@ -437,8 +438,6 @@ void make_ss(rls_ff_mimo_proxy<TraitsT> const& rls_proxy,
 
 	// Create the transmission matrix D
 	{
-		size_type rcoffs(n_x-rls_n_y); // The right most column offset
-
 		D().resize(n_y, n_u, false);
 
 		D() = ublas::zero_matrix<value_type>(n_y, n_u);
@@ -448,28 +447,26 @@ void make_ss(rls_ff_mimo_proxy<TraitsT> const& rls_proxy,
 //DCS_DEBUG_TRACE("END make_ss");//XXX
 }
 
-}} // Namespace detail::<unnamed>
-
-
 template <typename TraitsT>
-class lqr_application_controller: public base_application_controller<TraitsT>
+class lq_application_controller: public base_application_controller<TraitsT>
 {
 	private: typedef base_application_controller<TraitsT> base_type;
-	private: typedef lqr_application_controller<TraitsT> self_type;
+	private: typedef lq_application_controller<TraitsT> self_type;
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::real_type real_type;
 	public: typedef typename traits_type::uint_type uint_type;
-	public: typedef ::dcs::control::dlqry_controller<real_type> controller_type;
-	public: typedef ::dcs::shared_ptr<controller_type> controller_pointer;
+//	public: typedef ::dcs::control::dlqry_controller<real_type> controller_type;
+//	public: typedef LQControllerT lq_controller_type;
+//	public: typedef ::dcs::shared_ptr<lq_controller_type> lq_controller_pointer;
 	public: typedef typename base_type::application_pointer application_pointer;
+	protected: typedef ::boost::numeric::ublas::matrix<real_type> matrix_type;
+	protected: typedef ::boost::numeric::ublas::vector<real_type> vector_type;
 	private: typedef ::std::size_t size_type;
 	private: typedef registry<traits_type> registry_type;
 	private: typedef typename traits_type::des_engine_type des_engine_type;
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
 //	private: typedef performance_measure<traits_type> performance_measure_type;
-	private: typedef ::boost::numeric::ublas::matrix<real_type> matrix_type;
-	private: typedef ::boost::numeric::ublas::vector<real_type> vector_type;
 	private: typedef typename base_type::application_type application_type;
 	private: typedef typename application_type::simulation_model_type application_simulation_model_type;
 	private: typedef typename application_simulation_model_type::user_request_type user_request_type;
@@ -493,17 +490,17 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 	private: static const size_type default_input_order_;
 	private: static const size_type default_output_order_;
 	private: static const size_type default_input_delay_;
-	private: static const real_type default_rls_forgetting_factor_;
-	private: static const real_type default_ewma_smoothing_factor_;
 //	private: static const uint_type default_ss_state_size_;
 //	private: static const uint_type default_ss_input_size_;
 //	private: static const uint_type default_ss_output_size_;
 	private: static const real_type default_min_share_;
+	public: static const real_type default_rls_forgetting_factor;
+	public: static const real_type default_ewma_smoothing_factor;
 
 
-	public: lqr_application_controller()
+	public: lq_application_controller()
 	: base_type(),
-	  controller_(),
+//	  controller_(),
 //	  Theta_hat_(),
 //	  P_(),
 //	  phi_()
@@ -515,8 +512,8 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 	  n_x_(0),
 	  n_y_(0),
 	  n_u_(0),
-	  rls_ff_(default_rls_forgetting_factor_),
-	  ewma_smooth_(default_ewma_smoothing_factor_),
+	  rls_ff_(default_rls_forgetting_factor),
+	  ewma_smooth_(default_ewma_smoothing_factor),
 	  x_offset_(0),
 	  u_offset_(0),
 	  count_(0)
@@ -525,9 +522,9 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 	}
 
 
-	public: lqr_application_controller(application_pointer const& ptr_app, real_type ts)
+	public: lq_application_controller(application_pointer const& ptr_app, real_type ts)
 	: base_type(ptr_app, ts),
-	  controller_(),
+//	  controller_(),
 	  n_a_(default_output_order_),
 	  n_b_(default_input_order_),
 	  d_(default_input_delay_),
@@ -536,8 +533,8 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 	  n_x_(0),
 	  n_y_(0),
 	  n_u_(0),
-	  rls_ff_(default_rls_forgetting_factor_),
-	  ewma_smooth_(default_ewma_smoothing_factor_),
+	  rls_ff_(default_rls_forgetting_factor),
+	  ewma_smooth_(default_ewma_smoothing_factor),
 	  x_offset_(0),
 	  u_offset_(0),
 	  count_(0)
@@ -546,23 +543,28 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 	}
 
 
-	public: template <typename QMatrixExprT, typename RMatrixExprT>
-		lqr_application_controller(::boost::numeric::ublas::matrix_expression<QMatrixExprT> const& Q,
-								   ::boost::numeric::ublas::matrix_expression<RMatrixExprT> const& R,
+	public: //template <typename QMatrixExprT, typename RMatrixExprT>
+		lq_application_controller(uint_type n_a,
+								   uint_type n_b,
+								   uint_type d,
+//								   ::boost::numeric::ublas::matrix_expression<QMatrixExprT> const& Q,
+//								   ::boost::numeric::ublas::matrix_expression<RMatrixExprT> const& R,
 								   application_pointer const& ptr_app,
-								   real_type ts)
+								   real_type ts,
+								   real_type rls_forgetting_factor/* = default_rls_forgetting_factor*/,
+								   real_type ewma_smoothing_factor/* = default_ewma_smoothing_factor*/)
 	: base_type(ptr_app, ts),
-	  controller_(Q, R),
-	  n_a_(default_output_order_),
-	  n_b_(default_input_order_),
-	  d_(default_input_delay_),
+//	  controller_(Q, R),
+	  n_a_(n_a),
+	  n_b_(n_b),
+	  d_(d),
 	  n_p_(0),
 	  n_s_(0),
 	  n_x_(0),
 	  n_y_(0),
 	  n_u_(0),
-	  rls_ff_(default_rls_forgetting_factor_),
-	  ewma_smooth_(default_ewma_smoothing_factor_),
+	  rls_ff_(rls_forgetting_factor),
+	  ewma_smooth_(ewma_smoothing_factor),
 	  x_offset_(0),
 	  u_offset_(0),
 	  count_(0)
@@ -571,33 +573,38 @@ class lqr_application_controller: public base_application_controller<TraitsT>
 	}
 
 
-	public: template <typename QMatrixExprT, typename RMatrixExprT, typename NMatrixExprT>
-		lqr_application_controller(::boost::numeric::ublas::matrix_expression<QMatrixExprT> const& Q,
-								   ::boost::numeric::ublas::matrix_expression<RMatrixExprT> const& R,
-								   ::boost::numeric::ublas::matrix_expression<NMatrixExprT> const& N,
-								   application_pointer const& ptr_app,
-								   real_type ts)
-	: base_type(ptr_app, ts),
-	  controller_(Q, R, N),
-	  n_a_(default_output_order_),
-	  n_b_(default_input_order_),
-	  d_(default_input_delay_),
-	  n_p_(0),
-	  n_s_(0),
-	  n_x_(0),
-	  n_y_(0),
-	  n_u_(0),
-	  rls_ff_(default_rls_forgetting_factor_),
-	  ewma_smooth_(default_ewma_smoothing_factor_),
-	  x_offset_(0),
-	  u_offset_(0),
-	  count_(0)
-	{
-		init();
-	}
+//	public: //template <typename QMatrixExprT, typename RMatrixExprT, typename NMatrixExprT>
+//		lq_application_controller(uint_type n_a,
+//								   uint_type n_b,
+//								   uint_type d,
+////								   ::boost::numeric::ublas::matrix_expression<QMatrixExprT> const& Q,
+////								   ::boost::numeric::ublas::matrix_expression<RMatrixExprT> const& R,
+////								   ::boost::numeric::ublas::matrix_expression<NMatrixExprT> const& N,
+//								   application_pointer const& ptr_app,
+//								   real_type ts,
+//								   real_type rls_forgetting_factor/* = default_rls_forgetting_factor*/,
+//								   real_type ewma_smoothing_factor/* = default_ewma_smoothing_factor*/)
+//	: base_type(ptr_app, ts),
+//	  controller_(Q, R, N),
+//	  n_a_(n_a),
+//	  n_b_(n_b),
+//	  d_(d),
+//	  n_p_(0),
+//	  n_s_(0),
+//	  n_x_(0),
+//	  n_y_(0),
+//	  n_u_(0),
+//	  rls_ff_(rls_forgetting_factor),
+//	  ewma_smooth_(ewma_smoothing_factor),
+//	  x_offset_(0),
+//	  u_offset_(0),
+//	  count_(0)
+//	{
+//		init();
+//	}
 
 
-	public: ~lqr_application_controller()
+	public: virtual ~lq_application_controller()
 	{
 		this->disconnect_from_event_sources();
 	}
@@ -1236,9 +1243,10 @@ DCS_DEBUG_TRACE("D=" << D);//XXX
 DCS_DEBUG_TRACE("x= " << x_);//XXX
 DCS_DEBUG_TRACE("u= " << u_);//XXX
 			bool ok(true);
+			vector_type opt_u;
 			try
 			{
-				controller_.solve(A, B, C, D);
+				opt_u = this->do_optimal_control(x_, A, B, C, D);
 			}
 			catch (::std::exception const& e)
 			{
@@ -1247,11 +1255,22 @@ DCS_DEBUG_TRACE("u= " << u_);//XXX
 
 				ok = false;
 			}
+//			try
+//			{
+//				controller_.solve(A, B, C, D);
+//			}
+//			catch (::std::exception const& e)
+//			{
+//				::std::clog << "[Warning] Unable to compute control input." << ::std::endl;
+//				DCS_DEBUG_TRACE( "Caught exception: " << e.what() );
+//
+//				ok = false;
+//			}
 			if (ok)
 			{
 DCS_DEBUG_TRACE("Solved!");//XXX
-				vector_type opt_u;
-				opt_u = ublas::real(controller_.control(x_));
+//				vector_type opt_u;
+//				opt_u = ublas::real(controller_.control(x_));
 DCS_DEBUG_TRACE("Optimal Control u*=> " << opt_u);//XXX
 
 DCS_DEBUG_TRACE("Applying optimal control");//XXX
@@ -1304,8 +1323,11 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 	//@} Inteface Member Functions
 
 
-	/// The LQR controller.
-	private: controller_type controller_;
+	private: virtual vector_type do_optimal_control(vector_type const& x, matrix_type const& A, matrix_type const& B, matrix_type const& C, matrix_type const& D) = 0;
+
+
+//	/// The LQ controller.
+//	private: lq_controller_type controller_;
 //	/// Matrix of system parameters estimated by RLS: [A_1 ... A_{n_a} B_1 ... B_{n_b}].
 //	private: matrix_type rls_Theta_hat_;
 //	/// The covariance matrix computed by RLS.
@@ -1348,37 +1370,279 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 
 
 template <typename TraitsT>
-const typename lqr_application_controller<TraitsT>::size_type lqr_application_controller<TraitsT>::default_input_order_ = 2;
+const typename lq_application_controller<TraitsT>::size_type lq_application_controller<TraitsT>::default_input_order_ = 2;
 
 
 template <typename TraitsT>
-const typename lqr_application_controller<TraitsT>::size_type lqr_application_controller<TraitsT>::default_output_order_ = 2;
+const typename lq_application_controller<TraitsT>::size_type lq_application_controller<TraitsT>::default_output_order_ = 2;
 
 
 template <typename TraitsT>
-const typename lqr_application_controller<TraitsT>::size_type lqr_application_controller<TraitsT>::default_input_delay_ = 0;
-
-
-template <typename TraitsT>
-const typename lqr_application_controller<TraitsT>::real_type lqr_application_controller<TraitsT>::default_rls_forgetting_factor_ = 0.98;
-
-
-template <typename TraitsT>
-const typename lqr_application_controller<TraitsT>::real_type lqr_application_controller<TraitsT>::default_ewma_smoothing_factor_ = 0.7;
+const typename lq_application_controller<TraitsT>::size_type lq_application_controller<TraitsT>::default_input_delay_ = 0;
 
 //template <typename TraitsT>
-//const typename lqr_application_controller<TraitsT>::uint_type lqr_application_controller<TraitsT>::default_ss_state_size_ = 3;
+//const typename lq_application_controller<TraitsT>::uint_type lq_application_controller<TraitsT>::default_ss_state_size_ = 3;
 
 
 //template <typename TraitsT>
-//const typename lqr_application_controller<TraitsT>::uint_type lqr_application_controller<TraitsT>::default_ss_input_size_ = 3;
+//const typename lq_application_controller<TraitsT>::uint_type lq_application_controller<TraitsT>::default_ss_input_size_ = 3;
 
 
 //template <typename TraitsT>
-//const typename lqr_application_controller<TraitsT>::uint_type lqr_application_controller<TraitsT>::default_ss_output_size_ = 1;
+//const typename lq_application_controller<TraitsT>::uint_type lq_application_controller<TraitsT>::default_ss_output_size_ = 1;
 
 template <typename TraitsT>
-const typename lqr_application_controller<TraitsT>::real_type lqr_application_controller<TraitsT>::default_min_share_ = 0.01;
+const typename lq_application_controller<TraitsT>::real_type lq_application_controller<TraitsT>::default_min_share_ = 0.01;
+
+
+template <typename TraitsT>
+const typename lq_application_controller<TraitsT>::real_type lq_application_controller<TraitsT>::default_rls_forgetting_factor = 0.98;
+
+
+template <typename TraitsT>
+const typename lq_application_controller<TraitsT>::real_type lq_application_controller<TraitsT>::default_ewma_smoothing_factor = 0.7;
+
+}} // Namespace detail::<unnamed>
+
+
+/**
+ * \brief Application controller based on the Linear-Quadratic-Integrator
+ *  control.
+ * 
+ * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ */
+template <typename TraitsT>
+class lqi_application_controller: public detail::lq_application_controller<TraitsT>
+{
+	private: typedef detail::lq_application_controller<TraitsT> base_type;
+	public: typedef TraitsT traits_type;
+	public: typedef typename traits_type::real_type real_type;
+	public: typedef typename traits_type::uint_type uint_type;
+	public: typedef typename base_type::application_pointer application_pointer;
+	private: typedef ::dcs::control::dlqi_controller<real_type> lq_controller_type;
+	private: typedef typename base_type::vector_type vector_type;
+	private: typedef typename base_type::matrix_type matrix_type;
+
+
+	public: lqi_application_controller()
+	: base_type()
+	{
+	}
+
+
+	public: lqi_application_controller(application_pointer const& ptr_app, real_type ts)
+	: base_type(ptr_app, ts)
+	{
+	}
+
+
+	public: template <typename QMatrixExprT, typename RMatrixExprT>
+		lqi_application_controller(uint_type n_a,
+								   uint_type n_b,
+								   uint_type d,
+								   ::boost::numeric::ublas::matrix_expression<QMatrixExprT> const& Q,
+								   ::boost::numeric::ublas::matrix_expression<RMatrixExprT> const& R,
+								   application_pointer const& ptr_app,
+								   real_type ts,
+								   real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
+								   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
+	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
+	  controller_(Q, R)
+	{
+	}
+
+
+	public: template <typename QMatrixExprT, typename RMatrixExprT, typename NMatrixExprT>
+		lqi_application_controller(uint_type n_a,
+								   uint_type n_b,
+								   uint_type d,
+								   ::boost::numeric::ublas::matrix_expression<QMatrixExprT> const& Q,
+								   ::boost::numeric::ublas::matrix_expression<RMatrixExprT> const& R,
+								   ::boost::numeric::ublas::matrix_expression<NMatrixExprT> const& N,
+								   application_pointer const& ptr_app,
+								   real_type ts,
+								   real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
+								   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
+	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
+	  controller_(Q, R, N)
+	{
+	}
+
+
+	private: vector_type do_optimal_control(vector_type const& x, matrix_type const& A, matrix_type const& B, matrix_type const& C, matrix_type const& D)
+	{
+		namespace ublas = ::boost::numeric::ublas;
+		namespace ublasx = ::boost::numeric::ublasx;
+
+		vector_type opt_u;
+
+		controller_.solve(A, B, C, D, this->sampling_time());
+
+		// Form the augmented state-vector; however, since we are only
+		// interested in control the original system we set the integrator state
+		// to zero.
+		vector_type xx(ublasx::num_rows(A)+ublasx::num_rows(C));
+		ublas::subrange(xx, 0, ublasx::num_rows(A)) = x;
+
+		opt_u = ublas::real(controller_.control(xx));
+
+		return opt_u;
+	}
+
+
+	private: lq_controller_type controller_;
+};
+
+
+template <typename TraitsT>
+class lqr_application_controller: public detail::lq_application_controller<TraitsT>
+{
+	private: typedef detail::lq_application_controller<TraitsT> base_type;
+	public: typedef TraitsT traits_type;
+	public: typedef typename traits_type::real_type real_type;
+	public: typedef typename traits_type::uint_type uint_type;
+	public: typedef typename base_type::application_pointer application_pointer;
+	private: typedef ::dcs::control::dlqr_controller<real_type> lq_controller_type;
+	private: typedef typename base_type::vector_type vector_type;
+	private: typedef typename base_type::matrix_type matrix_type;
+
+
+	public: lqr_application_controller()
+	: base_type()
+	{
+	}
+
+
+	public: lqr_application_controller(application_pointer const& ptr_app, real_type ts)
+	: base_type(ptr_app, ts)
+	{
+	}
+
+
+	public: template <typename QMatrixExprT, typename RMatrixExprT>
+		lqr_application_controller(uint_type n_a,
+								   uint_type n_b,
+								   uint_type d,
+								   ::boost::numeric::ublas::matrix_expression<QMatrixExprT> const& Q,
+								   ::boost::numeric::ublas::matrix_expression<RMatrixExprT> const& R,
+								   application_pointer const& ptr_app,
+								   real_type ts,
+								   real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
+								   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
+	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
+	  controller_(Q, R)
+	{
+	}
+
+
+	public: template <typename QMatrixExprT, typename RMatrixExprT, typename NMatrixExprT>
+		lqr_application_controller(uint_type n_a,
+								   uint_type n_b,
+								   uint_type d,
+								   ::boost::numeric::ublas::matrix_expression<QMatrixExprT> const& Q,
+								   ::boost::numeric::ublas::matrix_expression<RMatrixExprT> const& R,
+								   ::boost::numeric::ublas::matrix_expression<NMatrixExprT> const& N,
+								   application_pointer const& ptr_app,
+								   real_type ts,
+								   real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
+								   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
+	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
+	  controller_(Q, R, N)
+	{
+	}
+
+
+	private: vector_type do_optimal_control(vector_type const& x, matrix_type const& A, matrix_type const& B, matrix_type const& C, matrix_type const& D)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(C);
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(D);
+
+		vector_type opt_u;
+
+		controller_.solve(A, B);
+		opt_u = ::boost::numeric::ublas::real(controller_.control(x));
+
+		return opt_u;
+	}
+
+
+	/// The LQ (regulator) controller
+	private: lq_controller_type controller_;
+};
+
+
+template <typename TraitsT>
+class lqry_application_controller: public detail::lq_application_controller<TraitsT>
+{
+	private: typedef detail::lq_application_controller<TraitsT> base_type;
+	public: typedef TraitsT traits_type;
+	public: typedef typename traits_type::real_type real_type;
+	public: typedef typename traits_type::uint_type uint_type;
+	public: typedef typename base_type::application_pointer application_pointer;
+	private: typedef ::dcs::control::dlqry_controller<real_type> lq_controller_type;
+	private: typedef typename base_type::vector_type vector_type;
+	private: typedef typename base_type::matrix_type matrix_type;
+
+
+	public: lqry_application_controller()
+	: base_type()
+	{
+	}
+
+
+	public: lqry_application_controller(application_pointer const& ptr_app, real_type ts)
+	: base_type(ptr_app, ts)
+	{
+	}
+
+
+	public: template <typename QMatrixExprT, typename RMatrixExprT>
+		lqry_application_controller(uint_type n_a,
+								    uint_type n_b,
+								    uint_type d,
+								    ::boost::numeric::ublas::matrix_expression<QMatrixExprT> const& Q,
+								    ::boost::numeric::ublas::matrix_expression<RMatrixExprT> const& R,
+								    application_pointer const& ptr_app,
+								    real_type ts,
+								    real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
+								    real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
+	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
+	  controller_(Q, R)
+	{
+	}
+
+
+	public: template <typename QMatrixExprT, typename RMatrixExprT, typename NMatrixExprT>
+		lqry_application_controller(uint_type n_a,
+								    uint_type n_b,
+								    uint_type d,
+								    ::boost::numeric::ublas::matrix_expression<QMatrixExprT> const& Q,
+								    ::boost::numeric::ublas::matrix_expression<RMatrixExprT> const& R,
+								    ::boost::numeric::ublas::matrix_expression<NMatrixExprT> const& N,
+								    application_pointer const& ptr_app,
+								    real_type ts,
+								    real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
+								    real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
+	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
+	  controller_(Q, R, N)
+	{
+	}
+
+
+	private: vector_type do_optimal_control(vector_type const& x, matrix_type const& A, matrix_type const& B, matrix_type const& C, matrix_type const& D)
+	{
+		vector_type opt_u;
+
+		controller_.solve(A, B, C, D);
+		opt_u = ::boost::numeric::ublas::real(controller_.control(x));
+
+		return opt_u;
+	}
+
+
+	/// The LQ (regulator) controller
+	private: lq_controller_type controller_;
+};
 
 }} // Namespace dcs::eesim
 

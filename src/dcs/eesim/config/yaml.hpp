@@ -317,9 +317,17 @@ application_controller_category text_to_application_controller_category(::std::s
 {
 	::std::string istr = ::dcs::string::to_lower_copy(str);
 
+	if (!istr.compare("lqi"))
+	{
+		return lqi_application_controller;
+	}
 	if (!istr.compare("lqr"))
 	{
 		return lqr_application_controller;
+	}
+	if (!istr.compare("lqry"))
+	{
+		return lqry_application_controller;
 	}
 	if (!istr.compare("none") || !istr.compare("dummy"))
 	{
@@ -1493,11 +1501,76 @@ void operator>>(::YAML::Node const& node, application_tier_config<RealT>& tier)
 }
 
 
-template <typename RealT>
-void operator>>(::YAML::Node const& node, application_controller_config<RealT>& controller_conf)
+template <typename RealT, typename UIntT>
+void operator>>(::YAML::Node const& node, lq_application_controller_config<RealT,UIntT>& controller_conf_impl)
 {
 	typedef RealT real_type;
-	typedef application_controller_config<real_type> controller_config_type;
+	typedef UIntT uint_type;
+
+	if (node.FindValue("ewma-smoothing-factor"))
+	{
+		node["ewma-smoothing-factor"] >> controller_conf_impl.ewma_smoothing_factor;
+	}
+	else
+	{
+		controller_conf_impl.ewma_smoothing_factor = 0.7;
+	}
+	if (node.FindValue("rls-forgetting-factor"))
+	{
+		node["rls-forgetting-factor"] >> controller_conf_impl.rls_forgetting_factor;
+	}
+	else
+	{
+		controller_conf_impl.rls_forgetting_factor = 0.98;
+	}
+	if (node.FindValue("output-order"))
+	{
+		node["output-order"] >> controller_conf_impl.n_a;
+	}
+	else
+	{
+		controller_conf_impl.n_a = 2;
+	}
+	if (node.FindValue("input-order"))
+	{
+		node["input-order"] >> controller_conf_impl.n_b;
+	}
+	else
+	{
+		controller_conf_impl.n_b = 1;
+	}
+	if (node.FindValue("input-delay"))
+	{
+		node["input-delay"] >> controller_conf_impl.d;
+	}
+	else
+	{
+		controller_conf_impl.d = 0;
+	}
+	node["Q"] >> controller_conf_impl.Q;
+	node["R"] >> controller_conf_impl.R;
+	if (node.FindValue("N"))
+	{
+		node["N"] >> controller_conf_impl.N;
+	}
+	else
+	{
+		// default to N=[0...0;...;0...0]
+		controller_conf_impl.N = numeric_matrix<real_type>(
+				controller_conf_impl.Q.num_rows(),
+				controller_conf_impl.R.num_rows(),
+				real_type/*zero*/()
+			);
+	}
+}
+
+
+template <typename RealT, typename UIntT>
+void operator>>(::YAML::Node const& node, application_controller_config<RealT,UIntT>& controller_conf)
+{
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+	typedef application_controller_config<real_type,uint_type> controller_config_type;
 
 	::std::string label;
 
@@ -1515,27 +1588,47 @@ void operator>>(::YAML::Node const& node, application_controller_config<RealT>& 
 				controller_conf.category_conf = controller_conf_impl;
 			}
 			break;
-		case lqr_application_controller:
+		case lqi_application_controller:
 			{
-				typedef typename controller_config_type::lqr_controller_config_type controller_config_impl_type;
+				typedef typename controller_config_type::lqi_controller_config_type controller_config_impl_type;
+				typedef typename controller_config_impl_type::base_type base_controller_config_impl_type;;
 
 				controller_config_impl_type controller_conf_impl;
 
-				node["Q"] >> controller_conf_impl.Q;
-				node["R"] >> controller_conf_impl.R;
-				if (node.FindValue("N"))
-				{
-					node["N"] >> controller_conf_impl.N;
-				}
-				else
-				{
-					// default to N=[0...0;...;0...0]
-					controller_conf_impl.N = numeric_matrix<real_type>(
-							controller_conf_impl.Q.num_rows(),
-							controller_conf_impl.R.num_rows(),
-							real_type/*zero*/()
-						);
-				}
+				node >> static_cast<base_controller_config_impl_type&>(controller_conf_impl);
+
+//				if (node.FindValue("integral-weight"))
+//				{
+//					node["integral-weight"] >> controller_conf_impl.integral_weight;
+//				}
+//				else
+//				{
+//					controller_conf_impl.integral_weight = 0.98;
+//				}
+
+				controller_conf.category_conf = controller_conf_impl;
+			}
+			break;
+		case lqr_application_controller:
+			{
+				typedef typename controller_config_type::lqr_controller_config_type controller_config_impl_type;
+				typedef typename controller_config_impl_type::base_type base_controller_config_impl_type;;
+
+				controller_config_impl_type controller_conf_impl;
+
+				node >> static_cast<base_controller_config_impl_type&>(controller_conf_impl);
+
+				controller_conf.category_conf = controller_conf_impl;
+			}
+			break;
+		case lqry_application_controller:
+			{
+				typedef typename controller_config_type::lqr_controller_config_type controller_config_impl_type;
+				typedef typename controller_config_impl_type::base_type base_controller_config_impl_type;;
+
+				controller_config_impl_type controller_conf_impl;
+
+				node >> static_cast<base_controller_config_impl_type&>(controller_conf_impl);
 
 				controller_conf.category_conf = controller_conf_impl;
 			}
