@@ -94,6 +94,12 @@ namespace detail { namespace /*<unnamed>*/ {
 //}
 
 
+/**
+ * \brief Proxy for directly applying the Recursive Least Square with
+ *  forgetting-factor algorithm to a MIMO system model.
+ *
+ * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ */
 template <typename TraitsT>
 class rls_ff_mimo_proxy
 {
@@ -306,14 +312,276 @@ class rls_ff_mimo_proxy
 };
 
 
+/**
+ * \brief Proxy to identify a MIMO system model by applying the Recursive Least
+ *  Square with forgetting-factor algorithm to several MISO system models.
+ *
+ * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ */
+template <typename TraitsT>
+class rls_ff_miso_proxy
+{
+	public: typedef TraitsT traits_type;
+	public: typedef typename traits_type::real_type real_type;
+	private: typedef ::boost::numeric::ublas::matrix<real_type> matrix_type;
+	private: typedef ::boost::numeric::ublas::vector<real_type> vector_type;
+	private: typedef ::std::size_t size_type;
+
+	public: rls_ff_miso_proxy()
+	: n_a_(0),
+	  n_b_(0),
+	  d_(0),
+	  n_y_(0),
+	  n_u_(0),
+	  ff_(0)
+	{
+	}
+
+
+	public: rls_ff_miso_proxy(size_type n_a, size_type n_b, size_type d, size_type n_y, size_type n_u, real_type ff)
+	: n_a_(n_a),
+	  n_b_(n_b),
+	  d_(d),
+	  n_y_(n_y),
+	  n_u_(n_u),
+	  ff_(ff),
+	  theta_hats_(n_y_),
+	  Ps_(n_y_),
+	  phis_(n_y_)
+	{
+	}
+
+
+	public: size_type input_order() const
+	{
+		return n_b_;
+	}
+
+
+	public: size_type output_order() const
+	{
+		return n_a_;
+	}
+
+
+	public: size_type input_delay() const
+	{
+		return d_;
+	}
+
+
+	public: size_type num_inputs() const
+	{
+		return n_u_;
+	}
+
+
+	public: size_type num_outputs() const
+	{
+		return n_y_;
+	}
+
+
+	public: real_type forgetting_factor() const
+	{
+		return ff_;
+	}
+
+
+	public: matrix_type Theta_hat() const
+	{
+		namespace ublas = ::boost::numeric::ublas;
+
+		const size_type nay(n_a_*n_y_);
+		const size_type nbu(n_b_*n_u_);
+		const size_type n(nay+nbu);
+		matrix_type X(n, n_y_, real_type/*zero()*/());
+
+		for (size_type i = 0; i < n_y_; ++i)
+		{
+			// ith output => ith column of Theta_hat
+			// ith column of Theta_hat = [0; ...; 0; a_{ii}^{1}
+			const size_type k(i*n_a_);
+			ublas::matrix_column<matrix_type> mc(X,i);
+			ublas::subrange(mc, k, k+n_a_) = ublas::subrange(theta_hats_[i], 0, n_a_);
+			ublas::subrange(mc, nay, n) = ublas::subrange(theta_hats_[i], n_a_, n_a_+nbu);
+		}
+
+		return X;
+	}
+
+
+	public: matrix_type P() const
+	{
+		matrix_type aux_P;
+//FIXME
+		return aux_P;
+	}
+
+
+	public: vector_type phi() const
+	{
+		namespace ublas = ::boost::numeric::ublas;
+
+		const size_type nay(n_a_*n_y_);
+		const size_type nbu(n_b_*n_u_);
+		const size_type n(nay+nbu);
+		vector_type x(n);
+
+		for (size_type i = 0; i < n_y_; ++i)
+		{
+			const size_type k(i*n_a_);
+			ublas::subrange(x, k, k+n_a_) = ublas::subrange(phis_[i], 0, n_a_);
+		}
+
+		ublas::subrange(x, nay, n) = ublas::subrange(phis_[0], n_a_, n_a_+nbu);
+
+		return x;
+	}
+
+
+	public: void init()
+	{
+		// Prepare the data structures for the RLS algorithm 
+		for (size_type i = 0; i < n_y_; ++i)
+		{
+			::dcs::sysid::rls_arx_miso_init(n_a_,
+											n_b_,
+											d_,
+											n_u_,
+											theta_hats_[i],
+											Ps_[i],
+											phis_[i]);
+		}
+	}
+
+
+	public: template <typename YVectorExprT, typename UVectorExprT>
+		vector_type estimate(::boost::numeric::ublas::vector_expression<YVectorExprT> const& y,
+							 ::boost::numeric::ublas::vector_expression<UVectorExprT> const& u)
+	{
+		// Estimate system parameters
+//DCS_DEBUG_TRACE("BEGIN estimation");//XXX
+//DCS_DEBUG_TRACE("y(k): " << y);//XXX
+//DCS_DEBUG_TRACE("u(k): " << u);//XXX
+		vector_type y_hat(n_y_);
+		for (size_type i = 0; i < n_y_; ++i)
+		{
+//DCS_DEBUG_TRACE("theta_hat["<< i << "](k): " << theta_hats_[i]);//XXX
+//DCS_DEBUG_TRACE("P["<< i << "](k): " << Ps_[i]);//XXX
+//DCS_DEBUG_TRACE("phi["<< i << "](k): " << phis_[i]);//XXX
+//DCS_DEBUG_TRACE("SON QUA");//XXX
+			y_hat(i) = ::dcs::sysid::rls_ff_arx_miso(y()(i),
+													 u,
+													 ff_,
+													 n_a_,
+													 n_b_,
+													 d_,
+													 theta_hats_[i],
+													 Ps_[i],
+													 phis_[i]);
+//DCS_DEBUG_TRACE("New theta_hat["<< i << "](k): " << theta_hats_[i]);//XXX
+//DCS_DEBUG_TRACE("New P["<< i << "](k): " << Ps_[i]);//XXX
+//DCS_DEBUG_TRACE("New phi["<< i << "](k): " << phis_[i]);//XXX
+		}
+//DCS_DEBUG_TRACE("New y_hat(k): " << y_hat);//XXX
+//DCS_DEBUG_TRACE("END estimation");//XXX
+
+		return y_hat;
+	}
+
+
+	/// Return matrix A_k from \hat{\Theta}.
+	public: matrix_type A(size_type k) const
+	{
+		namespace ublas = ::boost::numeric::ublas;
+
+		DCS_DEBUG_ASSERT( k >= 1 && k <= n_a_ );
+
+		// Remember, for each output i=1,...,n_y:
+		//   \hat{\theta}_i = [a_{ii}^{1};
+		//                     ...;
+		//                     a_{ii}^{n_a};
+		//                     b_{i1}^{1};
+		//                     ...;
+		//                     b_{i1}^{n_b};
+		//                     ...;
+		//                     b_{in_u}^{1};
+		//                     ...;
+		//                     b_{in_u}^{n_b}]
+		// So in \hat{\theta}_i the ith diagonal element of matrix A_k stays at:
+		//   A_k(i,i) <- \hat{\theta}_i(k)
+		matrix_type A_k(n_y_, n_y_, real_type/*zero*/());
+		for (size_type i = 0; i < n_y_; ++i)
+		{
+			A_k(i,i) = theta_hats_[i](k);
+		}
+
+		return A_k;
+	}
+
+
+	/// Return matrix B_k from \hat{\Theta}.
+	public: matrix_type B(size_type k) const
+	{
+		namespace ublas = ::boost::numeric::ublas;
+
+		DCS_DEBUG_ASSERT( k >= 1 && k <= n_b_ );
+
+		// Remember, for each output i=1,...,n_y:
+		//   \hat{\theta}_i = [a_{ii}^{1};
+		//                     ...;
+		//                     a_{ii}^{n_a};
+		//                     b_{i1}^{1};
+		//                     ...;
+		//                     b_{i1}^{n_b};
+		//                     ...;
+		//                     b_{in_u}^{1};
+		//                     ...;
+		//                     b_{in_u}^{n_b}]
+		// So in \hat{\theta}_i the ith row of matrix B_k stays at:
+		//   B_k(i,:) <- (\hat{\theta}_i(((n_a+k):n_b:n_u))^T
+		matrix_type B_k(n_y_, n_u_);
+		for (size_type i = 0; i < n_y_; ++i)
+		{
+			ublas::row(B_k, i) = ublas::subslice(theta_hats_[i], n_a_+k-1, n_b_, n_u_);
+		}
+
+		return B_k;
+	}
+
+
+	/// The memory for the control output.
+	private: size_type n_a_;
+	/// The memory for the control input.
+	private: size_type n_b_;
+	/// Input delay (dead time).
+	private: size_type d_;
+	/// The size of the control output vector.
+	private: size_type n_y_;
+	/// The size of the augmented control input vector.
+	private: size_type n_u_;
+	/// Forgetting factor.
+	private: real_type ff_;
+	/// Matrix of system parameters estimated by RLS: [A_1 ... A_{n_a} B_1 ... B_{n_b}].
+	private: ::std::vector<vector_type> theta_hats_;
+	/// The covariance matrix.
+	private: ::std::vector<matrix_type> Ps_;
+	/// The regression vector.
+	private: ::std::vector<vector_type> phis_;
+};
+
+
 template <
-	typename TraitsT,
+//	typename TraitsT,
+	typename RLSProxyT,
 	typename AMatrixExprT,
 	typename BMatrixExprT,
 	typename CMatrixExprT,
 	typename DMatrixExprT
 >
-void make_ss(rls_ff_mimo_proxy<TraitsT> const& rls_proxy,
+//void make_ss(rls_ff_mimo_proxy<TraitsT> const& rls_proxy,
+void make_ss(RLSProxyT const& rls_proxy,
 			 ::boost::numeric::ublas::matrix_container<AMatrixExprT>& A,
 			 ::boost::numeric::ublas::matrix_container<BMatrixExprT>& B,
 			 ::boost::numeric::ublas::matrix_container<CMatrixExprT>& C,
@@ -484,7 +752,8 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	private: typedef ::std::map<performance_measure_category,real_type> category_value_container;
 	private: typedef ::std::vector<category_value_container> category_value_container_container;
 	private: typedef physical_machine<traits_type> physical_machine_type;
-	private: typedef detail::rls_ff_mimo_proxy<traits_type> rls_ff_proxy_type;
+//	private: typedef detail::rls_ff_mimo_proxy<traits_type> rls_ff_proxy_type;
+	private: typedef detail::rls_ff_miso_proxy<traits_type> rls_ff_proxy_type;
 
 
 	private: static const size_type default_input_order_;
