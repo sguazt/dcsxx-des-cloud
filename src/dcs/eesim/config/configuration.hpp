@@ -3,6 +3,7 @@
 
 
 #include <dcs/eesim/config/data_center.hpp>
+#include <dcs/eesim/config/logging.hpp>
 #include <dcs/eesim/config/rng.hpp>
 #include <dcs/eesim/config/simulation.hpp>
 #include <iostream>
@@ -16,6 +17,7 @@ class configuration
 {
 	public: typedef RealT real_type;
 	public: typedef UIntT uint_type;
+	public: typedef logging_config logging_config_type;
 	public: typedef rng_config<uint_type> rng_config_type;
 	public: typedef simulation_config<real_type,uint_type> simulation_config_type;
 	public: typedef data_center_config<real_type,uint_type> data_center_config_type;
@@ -30,6 +32,18 @@ class configuration
 	public: data_center_config_type const& data_center() const
 	{
 		return dc_;
+	}
+
+
+	public: void logging(logging_config_type const& lg)
+	{
+		log_ = lg;
+	}
+
+
+	public: logging_config_type const& logging() const
+	{
+		return log_;
 	}
 
 
@@ -57,6 +71,7 @@ class configuration
 	}
 
 
+	private: logging_config_type log_;
 	private: rng_config_type rng_;
 	private: simulation_config_type sim_;
 	private: data_center_config_type dc_;
@@ -67,7 +82,8 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, configuration<RealT,UIntT> const& conf)
 {
 	os << "<(configuration)"
-	   << " " << conf.rng()
+	   << " " << conf.logging()
+	   << ", " << conf.rng()
 	   << ", " << conf.simulation()
 	   << ", " << conf.data_center()
 	   << ">";

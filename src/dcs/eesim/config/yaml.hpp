@@ -14,6 +14,7 @@
 #include <dcs/eesim/config/configuration.hpp>
 #include <dcs/eesim/config/data_center.hpp>
 #include <dcs/eesim/config/initial_placement_strategy.hpp>
+#include <dcs/eesim/config/logging.hpp>
 #include <dcs/eesim/config/metric_category.hpp>
 #include <dcs/eesim/config/migration_controller.hpp>
 #include <dcs/eesim/config/numeric_matrix.hpp>
@@ -38,6 +39,57 @@
 namespace dcs { namespace eesim { namespace config {
 
 namespace detail { namespace /*<unnamed>*/ {
+
+logging_category text_to_logging_category(::std::string const& str)
+{
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("minimal"))
+	{
+		return minimal_logging;
+	}
+
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_logging_category] Unknown logging category.");
+}
+
+
+logging_sink_category text_to_logging_sink_category(::std::string const& str)
+{
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("console"))
+	{
+		return console_logging_sink;
+	}
+	if (!istr.compare("file"))
+	{
+		return file_logging_sink;
+	}
+
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_logging_sink_category] Unknown logging sink category.");
+}
+
+
+stream_logging_sink_category text_to_stream_logging_sink_category(::std::string const& str)
+{
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("stderr"))
+	{
+		return stderr_stream_logging_sink;
+	}
+	if (!istr.compare("stdlog"))
+	{
+		return stdlog_stream_logging_sink;
+	}
+	if (!istr.compare("stdout"))
+	{
+		return stdout_stream_logging_sink;
+	}
+
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_stream_logging_sink_category] Unknown stream logging sink category.");
+}
+
 
 physical_resource_category text_to_physical_resource_category(::std::string const& str)
 {
@@ -304,7 +356,7 @@ migration_controller_category text_to_migration_controller_category(::std::strin
 	{
 		return lp_migration_controller;
 	}
-	if (!istr.compare("dummy"))
+	if (!istr.compare("none") || !istr.compare("dummy"))
 	{
 		return dummy_migration_controller;
 	}
@@ -354,7 +406,7 @@ physical_machine_controller_category text_to_physical_machine_controller_categor
 	{
 		return proportional_physical_machine_controller;
 	}
-	if (!istr.compare("dummy"))
+	if (!istr.compare("none") || !istr.compare("dummy"))
 	{
 		return dummy_physical_machine_controller;
 	}
@@ -468,6 +520,76 @@ void operator>>(::YAML::Node const& node, numeric_multiarray<T>& a)
 	}
 	node["data"] >> data;
 	a = numeric_multiarray<T>(dims.begin(), dims.end(), data.begin(), data.end(), bydims.begin(), bydims.end());
+}
+
+
+void operator>>(::YAML::Node const& node, logging_sink_config& sink_conf)
+{
+	typedef logging_sink_config sink_config_type;
+
+	::std::string label;
+
+	node["type"] >> label;
+	sink_conf.category = detail::text_to_logging_sink_category(label);
+	switch (sink_conf.category)
+	{
+		case console_logging_sink:
+			{
+				typedef typename sink_config_type::console_logging_sink_type sink_config_impl_type;
+
+				sink_config_impl_type sink_conf_impl;
+
+				if (node.FindValue("stream"))
+				{
+					node["stream"] >> label;
+					sink_conf_impl.stream = detail::text_to_stream_logging_sink_category(label);
+				}
+				else
+				{
+					sink_conf_impl.stream = stderr_stream_logging_sink;
+				}
+
+				sink_conf.category_conf = sink_conf_impl;
+			}
+			break;
+		case file_logging_sink:
+			{
+				typedef typename sink_config_type::file_logging_sink_type sink_config_impl_type;
+
+				sink_config_impl_type sink_conf_impl;
+
+				node["name"] >> sink_conf_impl.name;
+
+				sink_conf.category_conf = sink_conf_impl;
+			}
+			break;
+	}
+}
+
+
+void operator>>(::YAML::Node const& node, logging_config& logging_conf)
+{
+	typedef logging_config logging_config_type;
+
+	::std::string label;
+
+	node["enabled"] >> logging_conf.enabled;
+	node["type"] >> label;
+	logging_conf.category = detail::text_to_logging_category(label);
+	switch (logging_conf.category)
+	{
+		case minimal_logging:
+			{
+				typedef typename logging_config_type::minimal_logging_type logging_config_impl_type;
+
+				logging_config_impl_type logging_conf_impl;
+
+				node["sink"] >> logging_conf_impl.sink;
+
+				logging_conf.category_conf = logging_conf_impl;
+			}
+			break;
+	}
 }
 
 
@@ -2011,6 +2133,14 @@ class yaml_reader
 		configuration_type conf;
 		::std::string label;
 
+		// Read logging settings
+		{
+			logging_config logging;
+
+			doc["logging"] >> logging;
+
+			conf.logging(logging);
+		}
 		// Read random number generation settings
 		{
 			rng_config<uint_type> rng;

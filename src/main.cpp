@@ -4,6 +4,7 @@
 #include <dcs/eesim/config/operation/make_data_center.hpp>
 #include <dcs/eesim/config/operation/make_data_center_manager.hpp>
 #include <dcs/eesim/config/operation/make_des_engine.hpp>
+#include <dcs/eesim/config/operation/make_logger.hpp>
 #include <dcs/eesim/config/operation/make_random_number_generator.hpp>
 #include <dcs/eesim/config/operation/read_file.hpp>
 #include <dcs/eesim/config/yaml.hpp>
@@ -13,6 +14,7 @@
 #include <dcs/eesim/performance_measure_category.hpp>
 #include <dcs/eesim/registry.hpp>
 #include <dcs/eesim/traits.hpp>
+#include <dcs/eesim/logging/base_logger.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 //#include <dcs/math/random/any_generator.hpp>
@@ -377,15 +379,29 @@ int main(int argc, char* argv[])
 		)
 	);
 
+	// Attach a simulation observer
+	dcs::shared_ptr< dcs::eesim::logging::base_logger<traits_type> > ptr_sim_log;
+	ptr_sim_log = dcs::eesim::config::make_logger<traits_type>(conf);
+	//FIXME: makes it user configurable
+	//FIXME: makes sinks more flexible like:
+	//       ...->sink(text_file_sink("sim-obs.log"))
+	//       ...->sink(console_sink(::std::cout))
+	//       ...->sink(ostream_sink())
+	//ptr_sim_log->sink("sim-obs.log");
+	ptr_sim_log->attach(*ptr_des_eng);
+
 	// Build the Data Center
-
 	data_center_pointer ptr_dc;
-	ptr_dc = dcs::eesim::config::make_data_center<traits_type>(conf, ptr_rng, ptr_des_eng);
-
 	data_center_manager_pointer ptr_dc_mngr;
+	ptr_dc = dcs::eesim::config::make_data_center<traits_type>(conf, ptr_rng, ptr_des_eng);
 	ptr_dc_mngr = dcs::eesim::config::make_data_center_manager<traits_type>(conf, ptr_dc);
 
+	// Run the simulation
 	ptr_des_eng->run();
 
+	// Detach the simulation observer
+	ptr_sim_log->detach(*ptr_des_eng);
+
+	// Report statistics
 	detail::report_stats(::std::cout, ptr_dc);
 }
