@@ -580,7 +580,7 @@ void operator>>(::YAML::Node const& node, logging_config& logging_conf)
 	{
 		case minimal_logging:
 			{
-				typedef typename logging_config_type::minimal_logging_type logging_config_impl_type;
+				typedef logging_config_type::minimal_logging_type logging_config_impl_type;
 
 				logging_config_impl_type logging_conf_impl;
 
