@@ -36,8 +36,8 @@ class minimal_logger: public base_logger<TraitsT>
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
-//		::std::clog << "}" << ::std::flush;
-		this->sink() << "}" << ::std::flush;
+//		::std::clog << "}" << ::std::endl;
+		this->sink() << "}" << ::std::endl;
 	}
 
 
@@ -56,8 +56,8 @@ class minimal_logger: public base_logger<TraitsT>
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
-//		::std::clog << "]" << ::std::endl;
-		this->sink() << "]" << ::std::endl;
+//		::std::clog << "]" << ::std::flush;
+		this->sink() << "]" << ::std::flush;
 	}
 };
 
