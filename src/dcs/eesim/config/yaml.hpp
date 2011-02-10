@@ -535,7 +535,7 @@ void operator>>(::YAML::Node const& node, logging_sink_config& sink_conf)
 	{
 		case console_logging_sink:
 			{
-				typedef typename sink_config_type::console_logging_sink_type sink_config_impl_type;
+				typedef sink_config_type::console_logging_sink_type sink_config_impl_type;
 
 				sink_config_impl_type sink_conf_impl;
 
@@ -554,7 +554,7 @@ void operator>>(::YAML::Node const& node, logging_sink_config& sink_conf)
 			break;
 		case file_logging_sink:
 			{
-				typedef typename sink_config_type::file_logging_sink_type sink_config_impl_type;
+				typedef sink_config_type::file_logging_sink_type sink_config_impl_type;
 
 				sink_config_impl_type sink_conf_impl;
 
