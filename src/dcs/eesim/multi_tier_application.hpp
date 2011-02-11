@@ -115,7 +115,7 @@ class multi_tier_application
 //						physical_resource_category,
 //						physical_resource_pointer
 //				> resource_container;
-	private: typedef physical_resource_view<traits_type> reference_physical_resource_type;
+	public: typedef physical_resource_view<traits_type> reference_physical_resource_type;
 	private: typedef ::std::map<
 						physical_resource_category,
 						reference_physical_resource_type
