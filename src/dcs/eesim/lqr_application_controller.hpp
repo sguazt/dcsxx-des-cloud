@@ -1189,19 +1189,19 @@ class lq_application_controller: public base_application_controller<TraitsT>
 		for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 		{
 			virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
-			physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
-			physical_resource_category res_category(cpu_resource_category);//FIXME
+//			physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
+//			physical_resource_category res_category(cpu_resource_category);//FIXME
 
 			// Actual-to-reference scaling factor
-			real_type scale_factor;
-			scale_factor = ::dcs::eesim::resource_scaling_factor(
-					// Actual resource capacity and threshold
-					actual_pm.resource(res_category)->capacity(),
-					actual_pm.resource(res_category)->utilization_threshold(),
-					// Reference resource capacity and threshold
-					app.reference_resource(res_category).capacity(),
-					app.reference_resource(res_category).utilization_threshold()
-				);
+//			real_type scale_factor(1);
+//			scale_factor = ::dcs::eesim::resource_scaling_factor(
+//					// Actual resource capacity and threshold
+//					actual_pm.resource(res_category)->capacity(),
+//					actual_pm.resource(res_category)->utilization_threshold(),
+//					// Reference resource capacity and threshold
+//					app.reference_resource(res_category).capacity(),
+//					app.reference_resource(res_category).utilization_threshold()
+//				);
 
 			measure_iterator end_it = tier_measures_[tier_id].end();
 			for (measure_iterator it = tier_measures_[tier_id].begin(); it != end_it; ++it)
@@ -1229,7 +1229,7 @@ class lq_application_controller: public base_application_controller<TraitsT>
 								{
 									rt += dep_times[t]-arr_times[t];
 								}
-								rt *= scale_factor;
+//								rt *= scale_factor;
 DCS_DEBUG_TRACE("HERE!!!!! tier: " << tier_id << " ==> rt: " << rt);//XXX
 								(*ptr_stat)(rt);
 								app_rt += rt;
@@ -1264,6 +1264,7 @@ DCS_DEBUG_TRACE("HERE!!!!! tier: " << tier_id << " ==> rt: " << rt);//XXX
 						//rt *= scale_factor;
 						//(*ptr_stat)(rt);
 						(*ptr_stat)(app_rt);
+DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << app_rt);//XXX
 					}
 					break;
 				default:

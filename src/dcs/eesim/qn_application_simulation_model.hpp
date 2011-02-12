@@ -549,6 +549,7 @@ DCS_DEBUG_TRACE("Actual machine threshold: " << this->tier_virtual_machine(tier_
 				this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->capacity(),
 				this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->utilization_threshold()
 			);
+DCS_DEBUG_TRACE("Multiplier: " << multiplier);///XXX
 		multiplier *= share;
 DCS_DEBUG_TRACE("New scaled share: " << multiplier);///XXX
 		ptr_svc_node->service_strategy().capacity_multiplier(multiplier);
