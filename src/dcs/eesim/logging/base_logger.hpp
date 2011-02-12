@@ -85,11 +85,15 @@ class base_logger
 					::dcs::functional::placeholders::_2
 				)
 			);
+
+		do_attach(eng);
 	}
 
 
 	public: void detach(des_engine_type& eng)
 	{
+		do_detach(eng);
+
 		eng.begin_of_sim_event_source().disconnect(
 				::dcs::functional::bind(
 					&self_type::process_begin_of_sim_event,
@@ -158,6 +162,18 @@ class base_logger
 	private: void process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx)
 	{
 		do_process_sys_finit_event(evt, ctx);
+	}
+
+
+	private: virtual void do_attach(des_engine_type& /*eng*/)
+	{
+		// empty
+	}
+
+
+	private: virtual void do_detach(des_engine_type& /*eng*/)
+	{
+		// empty
 	}
 
 

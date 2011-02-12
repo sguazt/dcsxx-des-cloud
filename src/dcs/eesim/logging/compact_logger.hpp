@@ -63,10 +63,17 @@ class compact_logger: public minimal_logger<TraitsT>
 	}
 
 
-	public: void attach(des_engine_type& eng)
+	private: void process_after_firing_event(des_event_type const& evt, des_engine_context_type& ctx)
 	{
-		base_type::attach(eng);
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
+		this->sink() << "." << ::std::flush;
+	}
+
+
+	private: void do_attach(des_engine_type& eng)
+	{
 		eng.after_of_event_firing_source().connect(
 				::dcs::functional::bind(
 					&self_type::process_after_firing_event,
@@ -78,7 +85,7 @@ class compact_logger: public minimal_logger<TraitsT>
 	}
 
 
-	public: void detach(des_engine_type& eng)
+	private: void do_detach(des_engine_type& eng)
 	{
 		eng.after_of_event_firing_source().disconnect(
 				::dcs::functional::bind(
@@ -88,17 +95,6 @@ class compact_logger: public minimal_logger<TraitsT>
 					::dcs::functional::placeholders::_2
 				)
 			);
-
-		base_type::detach(eng);
-	}
-
-
-	private: void process_after_firing_event(des_event_type const& evt, des_engine_context_type& ctx)
-	{
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-
-		this->sink() << "." << ::std::flush;
 	}
 
 
