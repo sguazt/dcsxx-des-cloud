@@ -1756,6 +1756,27 @@ template <typename TraitsT, typename RealT, typename UIntT>
 
 
 template <typename TraitsT, typename RealT, typename UIntT>
+::dcs::shared_ptr< ::dcs::eesim::multi_tier_application<TraitsT> > make_multi_tier_application(application_config<RealT,UIntT> const& app_conf,
+																							   configuration<RealT,UIntT> const& conf,
+																		                       ::dcs::shared_ptr<typename TraitsT::uniform_random_generator_type> const& ptr_rng,
+																		                       ::dcs::shared_ptr<typename TraitsT::des_engine_type> const& ptr_des_eng)
+{
+	typedef TraitsT traits_type;
+
+	detail::simulation_info<traits_type> sim_info;
+
+	sim_info.ptr_rng = ptr_rng;
+	sim_info.ptr_engine = ptr_des_eng;
+
+	::dcs::shared_ptr< ::dcs::eesim::multi_tier_application<traits_type> > ptr_app;
+
+	ptr_app = detail::make_application<traits_type>(app_conf, conf, sim_info);
+
+	return ptr_app;
+}
+
+
+template <typename TraitsT, typename RealT, typename UIntT>
 ::dcs::shared_ptr< ::dcs::eesim::data_center<TraitsT> > make_data_center(configuration<RealT,UIntT> const& conf,
 																		 ::dcs::shared_ptr<typename TraitsT::uniform_random_generator_type> const& ptr_rng,
 																		 ::dcs::shared_ptr<typename TraitsT::des_engine_type> const& ptr_des_eng)

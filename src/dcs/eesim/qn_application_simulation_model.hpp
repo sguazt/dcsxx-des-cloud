@@ -705,14 +705,18 @@ DCS_DEBUG_TRACE("New scaled share: " << multiplier);///XXX
 
 			::std::vector<real_type> arr_times;
 			::std::vector<real_type> dep_times;
-			::std::size_t nt;
 			arr_times = ptr_customer->node_arrival_times(node_id);
 			dep_times = ptr_customer->node_departure_times(node_id);
-			nt = arr_times.size();
-			for (::std::size_t t = 0; t < nt; ++t)
+			::std::size_t na(arr_times.size());
+			::std::size_t nd(dep_times.size());
+			for (::std::size_t t = 0; t < na; ++t)
 			{
 				req.tier_arrival_time(tier_id, arr_times[t]);
-				req.tier_departure_time(tier_id, dep_times[t]);
+				// check that for this arrival there is already a departure
+				if (t < nd)
+				{
+					req.tier_departure_time(tier_id, dep_times[t]);
+				}
 			}
 		}
 

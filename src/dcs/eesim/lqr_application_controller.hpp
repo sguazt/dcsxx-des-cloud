@@ -1397,7 +1397,7 @@ DCS_DEBUG_TRACE("HERE!!!!! tier: " << tier_id << " ==> rt: " << rt);//XXX
 		//       change over time.
 		//
 
-		// Collect new state observations:
+		// Collect new state/output observations:
 		// x_j(k) = (<actual-perf-measure-of-tier-j>-<ref-perf-measure-of-tier-j>)/<ref-perf-measure-of-tier-j>
 		category_measure_container ref_measures;
 		perf_category_container categories(app.sla_cost_model().slo_categories());
@@ -1406,12 +1406,22 @@ DCS_DEBUG_TRACE("HERE!!!!! tier: " << tier_id << " ==> rt: " << rt);//XXX
 		for (category_iterator it = categories.begin(); it != end_it; ++it)
 		{
 			performance_measure_category category(*it);
+			statistic_pointer ptr_stat(measures_.at(category));
 
 			real_type ref_measure;
 			real_type actual_measure;
 
 			ref_measure = app.sla_cost_model().slo_value(category);
-			actual_measure = measures_.at(category)->estimate();
+			if (ptr_stat->num_observations() > 0)
+			{
+				actual_measure = ptr_stat->estimate();
+			}
+			else
+			{
+				// No observation -> Assume perfect behavior
+				actual_measure = ref_measure;
+			}
+DCS_DEBUG_TRACE("APP OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure);//XXX
 			y(0) = actual_measure/ref_measure - real_type(1);
 
 			for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
@@ -1420,7 +1430,7 @@ DCS_DEBUG_TRACE("HERE!!!!! tier: " << tier_id << " ==> rt: " << rt);//XXX
 				{
 					case response_time_performance_measure:
 							{
-								statistic_pointer ptr_stat(tier_measures_[tier_id].at(category));
+								ptr_stat = tier_measures_[tier_id].at(category);
 
 								ref_measure = app_perf_model.tier_measure(tier_id, category);
 								if (ptr_stat->num_observations() > 0)

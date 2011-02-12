@@ -48,6 +48,10 @@ logging_category text_to_logging_category(::std::string const& str)
 	{
 		return minimal_logging;
 	}
+	if (!istr.compare("compact"))
+	{
+		return compact_logging;
+	}
 
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_logging_category] Unknown logging category.");
 }
@@ -581,6 +585,17 @@ void operator>>(::YAML::Node const& node, logging_config& logging_conf)
 		case minimal_logging:
 			{
 				typedef logging_config_type::minimal_logging_type logging_config_impl_type;
+
+				logging_config_impl_type logging_conf_impl;
+
+				node["sink"] >> logging_conf_impl.sink;
+
+				logging_conf.category_conf = logging_conf_impl;
+			}
+			break;
+		case compact_logging:
+			{
+				typedef logging_config_type::compact_logging_type logging_config_impl_type;
 
 				logging_config_impl_type logging_conf_impl;
 
@@ -2134,6 +2149,7 @@ class yaml_reader
 		::std::string label;
 
 		// Read logging settings
+		if (doc.FindValue("logging"))
 		{
 			logging_config logging;
 

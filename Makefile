@@ -57,9 +57,9 @@
 ## - libdirs: list of library paths.
 ## - libs: list of libraries to link in.
 ## - srcdirs: list of source paths (relative to $(srcdir)).
-## - target: target executable's filename.
+## - targets: targets executable's filename.
 
-export target := eesim
+export targets := eesim offline_sys_ident
 export docdir := ./docs
 export srcdir := ./src
 export builddir := ./build
@@ -132,6 +132,7 @@ DOXYGEN := doxygen
 ##
 
 SOURCES := $(wildcard $(addsuffix /*.cpp,$(srcdirs)))
+#SOURCES := $(wildcard $(addsuffix /main.cpp,$(srcdirs)))
 HEADERS := $(wildcard $(addsuffix /*.hpp,$(srcdirs)))
 OBJS := $(patsubst $(srcdir)/%,$(buildtmpdir)/%,$(patsubst %.cpp,%.$(obj_ext),$(SOURCES)))
 #DEPS := $(addprefix $(buildtmpdir)/,$(patsubst %.$(obj_ext),%.d,$(OBJS)))
@@ -166,17 +167,19 @@ all-release: override build := release
 all-release: CXXFLAGS := $(CXXFLAGS_release)
 all-release: LDFLAGS := $(LDFLAGS_release)
 #all-release: all-build
-all-release: $(bindir_release) $(bindir_release)/$(target)
+#all-release: $(bindir_release) $(bindir_release)/$(target)
+all-release: $(bindir_release) $(addprefix $(bindir_release)/, $(targets))
 
 
 all-debug: override build := debug
 all-debug: CXXFLAGS := $(CXXFLAGS_debug)
 all-debug: LDFLAGS := $(LDFLAGS_debug)
 #all-debug: all-build
-all-debug: $(bindir_debug) $(bindir_debug)/$(target)
+#all-debug: $(bindir_debug) $(bindir_debug)/$(target)
+all-debug: $(bindir_debug) $(addprefix $(bindir_debug)/, $(targets))
 
 
-#all-build: prova $(bindir_$(build)) $(bindir_$(build))/$(target)
+#all-build: prova $(bindir_$(build)) $(bindir_$(build))/$(targets)
 
 
 #build-conf: config.sh
@@ -220,14 +223,24 @@ rebuild: realclean all
 
 ## Targets rules
 
-$(bindir_release)/$(target) : $(buildtmpdir) $(OBJS) $(HEADERS)
-	@echo "=== Building Target: $@ ==="
-	$(CXX) $(LDFLAGS) -o $(bindir_release)/$(target) $(OBJS)
+#$(bindir_release)/$(target) : $(buildtmpdir) $(OBJS) $(HEADERS)
+#	@echo "=== Building Target: $@ ==="
+#	$(CXX) $(LDFLAGS) -o $(bindir_release)/$(target) $(OBJS)
 
 
-$(bindir_debug)/$(target) : $(buildtmpdir) $(OBJS) $(HEADERS)
+#$(bindir_debug)/$(target) : $(buildtmpdir) $(OBJS) $(HEADERS)
+#	@echo "=== Building Target: $@ ==="
+#	$(CXX) $(LDFLAGS) -o $(bindir_debug)/$(target) $(OBJS)
+
+
+$(bindir_release)/% : $(buildtmpdir)/%.$(obj_ext) $(HEADERS)
 	@echo "=== Building Target: $@ ==="
-	$(CXX) $(LDFLAGS) -o $(bindir_debug)/$(target) $(OBJS)
+	$(CXX) $(LDFLAGS) -o $@ $<
+
+
+$(bindir_debug)/% : $(buildtmpdir)/%.$(obj_ext) $(HEADERS)
+	@echo "=== Building Target: $@ ==="
+	$(CXX) $(LDFLAGS) -o $@ $<
 
 
 $(buildtmpdir) $(bindir_release) $(bindir_debug):

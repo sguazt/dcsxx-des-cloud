@@ -326,6 +326,8 @@ int main(int argc, char* argv[])
 	typedef dcs::shared_ptr< dcs::eesim::data_center_manager<traits_type> > data_center_manager_pointer;
 
 
+	prog_name = argv[0];
+
 	if (argc < 2)
 	{
 		usage();

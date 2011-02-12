@@ -11,8 +11,8 @@ namespace dcs { namespace eesim { namespace config {
 
 enum logging_category
 {
-	minimal_logging//,
-//	compact_logging,
+	minimal_logging,
+	compact_logging//,
 //	standard_logging
 };
 
@@ -55,6 +55,12 @@ struct logging_sink_config
 };
 
 
+struct compact_logging_config
+{
+	logging_sink_config sink;
+};
+
+
 struct minimal_logging_config
 {
 	logging_sink_config sink;
@@ -64,10 +70,12 @@ struct minimal_logging_config
 struct logging_config
 {
 	typedef minimal_logging_config minimal_logging_type;
+	typedef compact_logging_config compact_logging_type;
 
 	bool enabled;
     logging_category category;
-    ::boost::variant<minimal_logging_type> category_conf;
+    ::boost::variant<compact_logging_type,
+					 minimal_logging_type> category_conf;
 };
 
 
