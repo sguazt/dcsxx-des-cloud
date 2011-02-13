@@ -1766,6 +1766,7 @@ class lqi_application_controller: public detail::lq_application_controller<Trait
 		// to zero.
 		vector_type xx(ublasx::num_rows(A)+ublasx::num_rows(C));
 		ublas::subrange(xx, 0, ublasx::num_rows(A)) = x;
+		ublas::subrange(xx, ublasx::num_rows(A), ublasx::num_rows(A)+ublasx::num_rows(C)) = ublas::subrange(x, ublasx::num_rows(A)-ublasx::num_rows(C), ublasx::num_rows(A));//FIXME: verify
 
 		opt_u = ublas::real(controller_.control(xx));
 
