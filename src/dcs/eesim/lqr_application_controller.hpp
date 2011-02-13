@@ -654,7 +654,7 @@ void make_ss(RLSProxyT const& rls_proxy,
 			size_type c2((rls_n_a-i)*rls_n_y);
 			size_type c1(c2-rls_n_y);
 
-			//ublas::subrange(A(), broffs, n, c1, c2) = rls_proxy.A(i+1);
+			//ublas::subrange(A(), broffs, n_x, c1, c2) = rls_proxy.A(i+1);
 			ublas::subrange(A(), broffs, n_x, c1, c2) = -rls_proxy.A(i+1);
 		}
 	}
@@ -1000,7 +1000,7 @@ class lq_application_controller: public base_application_controller<TraitsT>
 			n_u_ = n_s_*n_b_;
 			n_y_ = uint_type(1);
 			x_offset_ = n_x_-n_p_;
-			u_offset_ = n_u_-n_p_;
+			u_offset_ = n_u_-n_s_;
 		}
 	}
 
@@ -1583,7 +1583,7 @@ DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Unscaled share: " << (ref_share/
 									pm.resource(res_category)->utilization_threshold(),
 									//// Old resource share + computed deviation
 									//ptr_vm->wanted_resource_share(res_category)+opt_u(tier_id)
-									ref_share*(opt_u(tier_id)+1)
+									ref_share*(opt_u(u_offset_+tier_id)+1)
 //									actual_share/(opt_u(tier_id)+1)
 						);
 DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Scaled share: " << new_share);//XXX

@@ -89,30 +89,30 @@ real_type relative_deviation(real_type actual, real_type reference)
 }
 
 
-void process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type& narrs)
+void process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, ::dcs::shared_ptr<uint_type> const& ptr_narrs)
 {
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 	DCS_DEBUG_TRACE("BEGIN Process REQUEST-ARRIVAL (Clock: " << ctx.simulated_time() << ")");
 
-	++narrs;
+	++(*ptr_narrs);
 
 	DCS_DEBUG_TRACE("END Process REQUEST-ARRIVAL (Clock: " << ctx.simulated_time() << ")");
 }
 
 
-void process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type& ndeps)
+void process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, ::dcs::shared_ptr<uint_type> const& ptr_ndeps)
 {
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 	DCS_DEBUG_TRACE("BEGIN Process REQUEST-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
 
-	++ndeps;
+	++(*ptr_ndeps);
 
-::std::cerr << "# deps -> " << ndeps << ::std::endl;//XXX
-	if (ndeps == 1e+6)
+//::std::cerr << "# deps -> " << *ptr_ndeps << ::std::endl;//XXX
+	if ((*ptr_ndeps) == 1e+6)
 	{
 ::std::cerr << "STOP!" << ::std::endl;//XXX
 		::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
@@ -158,13 +158,13 @@ void process_tier_request_departure_event(des_event_type const& evt, des_engine_
 	{
 		::std::cout << "," << it->first
 					<< "," << it->second
-					<< "," << relative_deviation(it->first, app.tier(tier_id)->resource_share(it->first))
-					<< "," << relative_deviation(it->second, app.performance_model().tier_measure(tier_id, ::dcs::eesim::response_time_performance_measure));
+					<< "," << relative_deviation(it->second, app.tier(tier_id)->resource_share(it->first));
 	}
 
 	real_type rt(ctx.simulated_time()-req_info_map->at(req.id()));
 
 	::std::cout << "," << rt
+				<< "," << relative_deviation(rt, app.performance_model().tier_measure(tier_id, ::dcs::eesim::response_time_performance_measure))
 				<< ::std::endl;
 
 	req_info_map->erase(req.id());
@@ -468,8 +468,11 @@ int main(int argc, char* argv[])
 	{
 		dcs::shared_ptr<application_type> ptr_app;
 
-		uint_type num_arrs(0);
-		uint_type num_deps(0);
+		dcs::shared_ptr<uint_type> ptr_num_arrs;
+		dcs::shared_ptr<uint_type> ptr_num_deps;
+
+		ptr_num_arrs = dcs::make_shared<uint_type>(0);
+		ptr_num_deps = dcs::make_shared<uint_type>(0);
 
 		// Build the application
 		ptr_app = dcs::eesim::config::make_multi_tier_application<traits_type>(*app_it, conf, ptr_rng, ptr_des_eng);
@@ -579,7 +582,7 @@ int main(int argc, char* argv[])
 					&detail::process_request_arrival_event,
 					dcs::functional::placeholders::_1,
 					dcs::functional::placeholders::_2,
-					num_arrs
+					ptr_num_arrs
 				)
 			);
 		ptr_app->simulation_model().request_departure_event_source().connect(
@@ -587,7 +590,7 @@ int main(int argc, char* argv[])
 					&detail::process_request_departure_event,
 					dcs::functional::placeholders::_1,
 					dcs::functional::placeholders::_2,
-					num_deps
+					ptr_num_deps
 				)
 			);
 
@@ -597,9 +600,11 @@ int main(int argc, char* argv[])
 		ptr_des_eng->run();
 
 		// Deregister some DES event hooks for tiers
-/*FIXME: does not compile
+/*FIXME: Does not compile. Why??
 		for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 		{
+			dcs::shared_ptr<request_info_map> ptr_req_info_map(req_info_maps[tier_id]);
+
 			ptr_app->simulation_model().request_tier_arrival_event_source(tier_id).disconnect(
 					dcs::functional::bind(
 						&detail::process_tier_request_arrival_event,
@@ -607,7 +612,7 @@ int main(int argc, char* argv[])
 						dcs::functional::placeholders::_2,
 						tier_id,
 						*ptr_app,
-						req_info_maps[tier_id]
+						ptr_req_info_map
 					)
 				);
 			ptr_app->simulation_model().request_tier_departure_event_source(tier_id).disconnect(
@@ -617,7 +622,7 @@ int main(int argc, char* argv[])
 						dcs::functional::placeholders::_2,
 						tier_id,
 						*ptr_app,
-						req_info_maps[tier_id]
+						ptr_req_info_map
 					)
 				);
 		}
@@ -629,7 +634,7 @@ int main(int argc, char* argv[])
 					&detail::process_request_departure_event,
 					dcs::functional::placeholders::_1,
 					dcs::functional::placeholders::_2,
-					num_arrs
+					ptr_num_arrs
 				)
 			);
 		ptr_app->simulation_model().request_departure_event_source().disconnect(
@@ -637,7 +642,7 @@ int main(int argc, char* argv[])
 					&detail::process_request_departure_event,
 					dcs::functional::placeholders::_1,
 					dcs::functional::placeholders::_2,
-					num_deps
+					ptr_num_deps
 				)
 			);
 
