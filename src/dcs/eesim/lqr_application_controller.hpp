@@ -1520,13 +1520,14 @@ DCS_DEBUG_TRACE("A=" << A);//XXX
 DCS_DEBUG_TRACE("B=" << B);//XXX
 DCS_DEBUG_TRACE("C=" << C);//XXX
 DCS_DEBUG_TRACE("D=" << D);//XXX
+DCS_DEBUG_TRACE("y= " << y);//XXX
 DCS_DEBUG_TRACE("x= " << x_);//XXX
 DCS_DEBUG_TRACE("u= " << u_);//XXX
 			bool ok(true);
 			vector_type opt_u;
 			try
 			{
-				opt_u = this->do_optimal_control(x_, A, B, C, D);
+				opt_u = this->do_optimal_control(x_, u_, y, A, B, C, D);
 			}
 			catch (::std::exception const& e)
 			{
@@ -1549,8 +1550,6 @@ DCS_DEBUG_TRACE("u= " << u_);//XXX
 			if (ok)
 			{
 DCS_DEBUG_TRACE("Solved!");//XXX
-//				vector_type opt_u;
-//				opt_u = ublas::real(controller_.control(x_));
 DCS_DEBUG_TRACE("Optimal Control u*=> " << opt_u);//XXX
 DCS_DEBUG_TRACE("Expected application response time: " << (app.sla_cost_model().slo_value(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)));//XXX
 
@@ -1572,7 +1571,7 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 
 					real_type new_share;
 DCS_DEBUG_TRACE("Tier " << tier_id << " --> Actual share: " << actual_share);//XXX
-DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Unscaled share: " << (ref_share/(opt_u(tier_id)+1)));//XXX
+DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Unscaled share: " << (ref_share/(opt_u(u_offset_+tier_id)+real_type(1))));//XXX
 //DCS_DEBUG_TRACE("Tier " << tier_id << " --> Unscaled share: " << (actual_share/(opt_u(tier_id)+1)));//XXX
 					new_share = ::dcs::eesim::scale_resource_share(
 									// Reference resource capacity and threshold
@@ -1583,12 +1582,19 @@ DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Unscaled share: " << (ref_share/
 									pm.resource(res_category)->utilization_threshold(),
 									//// Old resource share + computed deviation
 									//ptr_vm->wanted_resource_share(res_category)+opt_u(tier_id)
-									ref_share*(opt_u(u_offset_+tier_id)+1)
+									ref_share*(opt_u(u_offset_+tier_id)+real_type(1))
 //									actual_share/(opt_u(tier_id)+1)
 						);
 DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Scaled share: " << new_share);//XXX
 
-					 new_share = ::std::max(new_share, default_min_share_);
+					if (new_share > 0)
+					{
+						new_share = ::std::max(new_share, default_min_share_);
+					}
+					else
+					{
+						new_share = actual_share;
+					}
 
 DCS_DEBUG_TRACE("Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << res_category << " ==> Share: " << new_share);//XXX
 					ptr_vm->wanted_resource_share(res_category, new_share);
@@ -1606,7 +1612,7 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 	//@} Inteface Member Functions
 
 
-	private: virtual vector_type do_optimal_control(vector_type const& x, matrix_type const& A, matrix_type const& B, matrix_type const& C, matrix_type const& D) = 0;
+	private: virtual vector_type do_optimal_control(vector_type const& x, vector_type const& u, vector_type const& y, matrix_type const& A, matrix_type const& B, matrix_type const& C, matrix_type const& D) = 0;
 
 
 //	/// The LQ controller.
@@ -1714,7 +1720,8 @@ class lqi_application_controller: public detail::lq_application_controller<Trait
 
 
 	public: lqi_application_controller(application_pointer const& ptr_app, real_type ts)
-	: base_type(ptr_app, ts)
+	: base_type(ptr_app, ts),
+	  xi_(1,0)
 	{
 	}
 
@@ -1730,7 +1737,8 @@ class lqi_application_controller: public detail::lq_application_controller<Trait
 								   real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
 								   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
 	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
-	  controller_(Q, R)
+	  controller_(Q, R),
+	  xi_(1,0)
 	{
 	}
 
@@ -1747,34 +1755,58 @@ class lqi_application_controller: public detail::lq_application_controller<Trait
 								   real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
 								   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
 	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
-	  controller_(Q, R, N)
+	  controller_(Q, R, N),
+	  xi_(1,0)
 	{
 	}
 
 
-	private: vector_type do_optimal_control(vector_type const& x, matrix_type const& A, matrix_type const& B, matrix_type const& C, matrix_type const& D)
+	private: vector_type do_optimal_control(vector_type const& x, vector_type const& u, vector_type const& y, matrix_type const& A, matrix_type const& B, matrix_type const& C, matrix_type const& D)
 	{
 		namespace ublas = ::boost::numeric::ublas;
 		namespace ublasx = ::boost::numeric::ublasx;
+
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( u );
 
 		vector_type opt_u;
 
 		controller_.solve(A, B, C, D, this->sampling_time());
 
-		// Form the augmented state-vector; however, since we are only
-		// interested in control the original system we set the integrator state
-		// to zero.
-		vector_type xx(ublasx::num_rows(A)+ublasx::num_rows(C));
-		ublas::subrange(xx, 0, ublasx::num_rows(A)) = x;
-		ublas::subrange(xx, ublasx::num_rows(A), ublasx::num_rows(A)+ublasx::num_rows(C)) = ublas::subrange(x, ublasx::num_rows(A)-ublasx::num_rows(C), ublasx::num_rows(A));//FIXME: verify
+		// Form the augmented state-vector
+		//
+		//  z(k+1) = [x(k+1); xi(k+1)]
+		//         = [ A      0][x(k) ]+[ B     ]u(k)+[0]
+		//           [-C|t_s| I][xi(k)]+[-D|t_s|]    +[r]
+		//  y(k+1) = [C 0]z(k)+Du(k)
+		//
+		// where r is the reference value to be tracked and xi is the current
+		// integrated control error:
+		//  xi(k) = xi(k-1) + e(k-1)
+		//        = xi(k-1) + (r-y(k-1))
+		//        = xi(k-1) + (r-Cx(k-1)-Du(k-1))
+		//
 
-		opt_u = ublas::real(controller_.control(xx));
+		// Update the integrated control error.
+		// NOTE: In our case the reference value r is zero
+		//xi_ = xi_- ublas::subrange(x, ublasx::num_rows(A)-ublasx::num_rows(C), ublasx::num_rows(A));
+		xi_ = xi_- y;
+		//xi_ = xi_+ublas::scalar_vector<real_type>(1,1)- ublas::subrange(x, ublasx::num_rows(A)-ublasx::num_rows(C), ublasx::num_rows(A));
+
+		vector_type z(ublasx::num_rows(A)+ublasx::num_rows(C));
+		ublas::subrange(z, 0, ublasx::num_rows(A)) = x;
+		ublas::subrange(z, ublasx::num_rows(A), ublasx::num_rows(A)+ublasx::num_rows(C)) = xi_;
+DCS_DEBUG_TRACE("Augmented x=" << z);//XXX
+
+		opt_u = ublas::real(controller_.control(z));
 
 		return opt_u;
 	}
 
 
+	/// The LQI controller implementation.
 	private: lq_controller_type controller_;
+	/// The integrated control error.
+	private: vector_type xi_;
 };
 
 
@@ -1836,10 +1868,12 @@ class lqr_application_controller: public detail::lq_application_controller<Trait
 	}
 
 
-	private: vector_type do_optimal_control(vector_type const& x, matrix_type const& A, matrix_type const& B, matrix_type const& C, matrix_type const& D)
+	private: vector_type do_optimal_control(vector_type const& x, vector_type const& u, vector_type const& y, matrix_type const& A, matrix_type const& B, matrix_type const& C, matrix_type const& D)
 	{
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(C);
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(D);
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( u );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( y );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( C );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( D );
 
 		vector_type opt_u;
 
@@ -1913,8 +1947,11 @@ class lqry_application_controller: public detail::lq_application_controller<Trai
 	}
 
 
-	private: vector_type do_optimal_control(vector_type const& x, matrix_type const& A, matrix_type const& B, matrix_type const& C, matrix_type const& D)
+	private: vector_type do_optimal_control(vector_type const& x, vector_type const& u, vector_type const& y, matrix_type const& A, matrix_type const& B, matrix_type const& C, matrix_type const& D)
 	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( u );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( y );
+
 		vector_type opt_u;
 
 		controller_.solve(A, B, C, D);
