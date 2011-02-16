@@ -470,7 +470,6 @@ class rls_ff_miso_proxy
 //DCS_DEBUG_TRACE("theta_hat["<< i << "](k): " << theta_hats_[i]);//XXX
 //DCS_DEBUG_TRACE("P["<< i << "](k): " << Ps_[i]);//XXX
 //DCS_DEBUG_TRACE("phi["<< i << "](k): " << phis_[i]);//XXX
-//DCS_DEBUG_TRACE("SON QUA");//XXX
 			y_hat(i) = ::dcs::sysid::rls_ff_arx_miso(y()(i),
 													 u,
 													 ff_,
@@ -483,6 +482,7 @@ class rls_ff_miso_proxy
 //DCS_DEBUG_TRACE("New theta_hat["<< i << "](k): " << theta_hats_[i]);//XXX
 //DCS_DEBUG_TRACE("New P["<< i << "](k): " << Ps_[i]);//XXX
 //DCS_DEBUG_TRACE("New phi["<< i << "](k): " << phis_[i]);//XXX
+//DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
 		}
 //DCS_DEBUG_TRACE("New y_hat(k): " << y_hat);//XXX
 //DCS_DEBUG_TRACE("END estimation");//XXX
@@ -883,7 +883,7 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	{
 		init_measures();
 
-		this->connect_to_event_sources();
+		connect_to_event_sources();
 	}
 
 
@@ -1186,6 +1186,7 @@ class lq_application_controller: public base_application_controller<TraitsT>
 		real_type app_rt(0);
 
 		size_type num_tiers(tier_measures_.size());
+
 		for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 		{
 			virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
@@ -1230,7 +1231,7 @@ class lq_application_controller: public base_application_controller<TraitsT>
 									rt += dep_times[t]-arr_times[t];
 								}
 //								rt *= scale_factor;
-DCS_DEBUG_TRACE("HERE!!!!! tier: " << tier_id << " ==> rt: " << rt);//XXX
+DCS_DEBUG_TRACE("HERE!!!!! tier: " << tier_id << " ==> rt: " << rt << " (aggregated: " << ptr_stat->estimate() << ")");//XXX
 								(*ptr_stat)(rt);
 								app_rt += rt;
 							}
@@ -1264,7 +1265,7 @@ DCS_DEBUG_TRACE("HERE!!!!! tier: " << tier_id << " ==> rt: " << rt);//XXX
 						//rt *= scale_factor;
 						//(*ptr_stat)(rt);
 						(*ptr_stat)(app_rt);
-DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << app_rt);//XXX
+DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << app_rt << " (aggregated: " << ptr_stat->estimate() << ")");//XXX
 					}
 					break;
 				default:
@@ -1403,7 +1404,6 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << app_rt);//XXX
 		category_measure_container ref_measures;
 		perf_category_container categories(app.sla_cost_model().slo_categories());
 		category_iterator end_it = categories.end();
-//		tier_iterator tier_end_it = tier_measures_.end();
 		for (category_iterator it = categories.begin(); it != end_it; ++it)
 		{
 			performance_measure_category category(*it);
@@ -1531,7 +1531,7 @@ DCS_DEBUG_TRACE("u= " << u_);//XXX
 			}
 			catch (::std::exception const& e)
 			{
-				::std::clog << "[Warning] Unable to compute control input." << ::std::endl;
+				::std::clog << "[Warning] Unable to compute control input: " << e.what() << "." << ::std::endl;
 				DCS_DEBUG_TRACE( "Caught exception: " << e.what() );
 
 				ok = false;
@@ -1587,7 +1587,7 @@ DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Unscaled share: " << (ref_share/
 						);
 DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Scaled share: " << new_share);//XXX
 
-					if (new_share > 0)
+					if (new_share >= 0)
 					{
 						new_share = ::std::max(new_share, default_min_share_);
 					}

@@ -1,3 +1,7 @@
+#include <algorithm>
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublasx/operation/size.hpp>
+#include <dcs/assert.hpp>
 #include <dcs/des/engine.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/replications/engine.hpp>
@@ -19,13 +23,19 @@
 #include <dcs/eesim/user_request.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
+#include <dcs/math/stats/distribution/normal.hpp>
 //#include <dcs/math/random/any_generator.hpp>
 #include <dcs/math/random.hpp>
 #include <dcs/memory.hpp>
 #include <iostream>
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <vector>
+
+
+namespace ublas = ::boost::numeric::ublas;
+namespace ublasx = ::boost::numeric::ublasx;
 
 
 static std::string prog_name;
@@ -59,6 +69,7 @@ void usage()
 typedef double real_type;
 typedef unsigned long uint_type;
 typedef long int_type;
+typedef std::size_t size_type;
 typedef dcs::des::engine<real_type> des_engine_type;
 typedef dcs::math::random::base_generator<uint_type> random_generator_type;
 typedef dcs::eesim::traits<
@@ -68,6 +79,8 @@ typedef dcs::eesim::traits<
 			uint_type,
 			int_type
 		> traits_type;
+typedef dcs::shared_ptr<des_engine_type> des_engine_pointer;
+typedef dcs::shared_ptr<random_generator_type> random_generator_pointer;
 typedef dcs::eesim::registry<traits_type> registry_type;
 typedef dcs::eesim::multi_tier_application<traits_type> application_type;
 typedef dcs::eesim::user_request<traits_type> user_request_type;
@@ -77,100 +90,6 @@ typedef dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
 
 
 namespace detail { namespace /*<unnamed>*/ {
-
-typedef ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
-typedef ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
-
-
-inline
-real_type relative_deviation(real_type actual, real_type reference)
-{
-	return actual/reference - 1;
-}
-
-
-void process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, ::dcs::shared_ptr<uint_type> const& ptr_narrs)
-{
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-
-	DCS_DEBUG_TRACE("BEGIN Process REQUEST-ARRIVAL (Clock: " << ctx.simulated_time() << ")");
-
-	++(*ptr_narrs);
-
-	DCS_DEBUG_TRACE("END Process REQUEST-ARRIVAL (Clock: " << ctx.simulated_time() << ")");
-}
-
-
-void process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, ::dcs::shared_ptr<uint_type> const& ptr_ndeps)
-{
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-
-	DCS_DEBUG_TRACE("BEGIN Process REQUEST-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
-
-	++(*ptr_ndeps);
-
-//::std::cerr << "# deps -> " << *ptr_ndeps << ::std::endl;//XXX
-	if ((*ptr_ndeps) == 1e+6)
-	{
-::std::cerr << "STOP!" << ::std::endl;//XXX
-		::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
-	}
-
-	DCS_DEBUG_TRACE("END Process REQUEST-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
-}
-
-
-void process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, ::dcs::shared_ptr<request_info_map> const& req_info_map)
-{
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-
-	DCS_DEBUG_TRACE("BEGIN Process TIER-REQUEST-ARRIVAL (Clock: " << ctx.simulated_time() << ")");
-
-	user_request_type req = app.simulation_model().request_state(evt);
-
-	(*req_info_map)[req.id()] = ctx.simulated_time();
-
-	DCS_DEBUG_TRACE("END Process TIER-REQUEST-ARRIVAL (Clock: " << ctx.simulated_time() << ")");
-}
-
-
-void process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, ::dcs::shared_ptr<request_info_map> const& req_info_map)
-{
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-
-	DCS_DEBUG_TRACE("BEGIN Process TIER-REQUEST-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
-
-	user_request_type req = app.simulation_model().request_state(evt);
-
-	::std::cout << tier_id
-				<< "," << req.id();
-
-	virtual_machine_pointer ptr_vm = app.simulation_model().tier_virtual_machine(tier_id);
-	typedef virtual_machine_type::resource_share_container resource_share_container;
-	typedef resource_share_container::const_iterator resource_share_iterator;
-	resource_share_container resource_shares(ptr_vm->resource_shares());
-	resource_share_iterator end_it(resource_shares.end());
-	for (resource_share_iterator it = resource_shares.begin(); it != end_it; ++it)
-	{
-		::std::cout << "," << it->first
-					<< "," << it->second
-					<< "," << relative_deviation(it->second, app.tier(tier_id)->resource_share(it->first));
-	}
-
-	real_type rt(ctx.simulated_time()-req_info_map->at(req.id()));
-
-	::std::cout << "," << rt
-				<< "," << relative_deviation(rt, app.performance_model().tier_measure(tier_id, ::dcs::eesim::response_time_performance_measure))
-				<< ::std::endl;
-
-	req_info_map->erase(req.id());
-
-	DCS_DEBUG_TRACE("END Process TIER-REQUEST-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
-}
 
 
 /*
@@ -393,7 +312,516 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 	return ptr_des_eng;
 }
 
+
+inline
+real_type relative_deviation(real_type actual, real_type reference)
+{
+	return actual/reference - 1;
+}
+
+
+template <typename ValueT>
+class signal_generator
+{
+	public: typedef ValueT value_type;
+	public: typedef ::boost::numeric::ublas::vector<value_type> vector_type;
+
+
+	public: vector_type operator()()
+	{
+		return do_generate();
+	}
+
+
+	private: virtual vector_type do_generate() = 0;
+};
+
+template <typename ValueT>
+class step_signal_generator: public signal_generator<ValueT>
+{
+	private: typedef signal_generator<ValueT> base_type;
+	public: typedef ValueT value_type;
+	public: typedef typename base_type::vector_type vector_type;
+
+
+	public: step_signal_generator(vector_type const& u0)
+	: u_(u0)
+	{
+	}
+
+ 
+	private: vector_type do_generate()
+	{
+		return u_;
+	}
+
+
+	private: vector_type u_;
+};
+
+template <typename ValueT>
+class gaussian_signal_generator: public signal_generator<ValueT>
+{
+	private: typedef signal_generator<ValueT> base_type;
+	public: typedef ValueT value_type;
+	public: typedef typename base_type::vector_type vector_type;
+	private: typedef ::dcs::math::stats::normal_distribution<value_type> normal_distribution_type;
+	private: typedef ::std::vector<normal_distribution_type> normal_distribution_container;
+
+
+	public: gaussian_signal_generator(vector_type const& mu0, vector_type const& sigma0)
+	{
+		// pre: size(mu0) == size(sigma0)
+		DCS_ASSERT(
+				ublasx::size(mu0) == ublasx::size(sigma0),
+				throw ::std::invalid_argument("[guassian_signal_generator::ctor] Invalid size.")
+			);
+
+		::std::size_t n(ublasx::size(mu0));
+		for (::std::size_t i = 0; i < n; ++i)
+		{
+			distrs_.push_back(normal_distribution_type(mu0(i), sigma0(i)));
+		}
+	}
+
+ 
+	private: vector_type do_generate()
+	{
+		random_generator_pointer ptr_rng(::dcs::eesim::registry<traits_type>::instance().uniform_random_generator_ptr());
+
+		::std::size_t n(distrs_.size());
+		vector_type u(n);
+		for (::std::size_t i = 0; i < n; ++i)
+		{
+			u(i) = ::dcs::math::stats::rand(distrs_[i], *ptr_rng);
+		}
+
+		return u;
+	}
+
+
+	private: normal_distribution_container distrs_;
+};
+
+
+template <typename TraitsT>
+struct sysid_state
+{
+	typedef TraitsT traits_type;
+	typedef typename traits_type::uint_type uint_type;
+
+	uint_type num_arrs;
+	uint_type num_deps;
+	::std::vector<request_info_map> req_info_maps;
+};
+
+
 }} // Namespace detail::<unnamed>
+
+
+template <typename TraitsT>
+class system_identificator
+{
+	private: typedef system_identificator<TraitsT> self_type;
+	public: typedef TraitsT traits_type;
+//	public: typedef dcs::eesim::multi_tier_application<traits_type> application_type;
+	public: typedef ::dcs::eesim::physical_machine<traits_type> physical_machine_type;
+	public: typedef ::dcs::shared_ptr<physical_machine_type> physical_machine_pointer;
+	public: typedef ::dcs::eesim::physical_resource<traits_type> physical_resource_type;
+	public: typedef ::dcs::shared_ptr<physical_resource_type> physical_resource_pointer;
+	public: typedef ::application_type::reference_physical_resource_type reference_resource_type;
+	private: typedef ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
+	private: typedef ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
+	private: typedef ::dcs::des::engine_traits<des_engine_type>::event_source_type des_event_source_type;
+	private: typedef ::dcs::shared_ptr<des_event_source_type> des_event_source_pointer;
+	private: typedef detail::signal_generator<real_type> signal_generator_type;
+	private: typedef ::dcs::shared_ptr<signal_generator_type> signal_generator_pointer;
+	private: typedef detail::sysid_state<traits_type> sysid_state_type;
+	private: typedef ::dcs::shared_ptr<sysid_state_type> sysid_state_pointer;
+
+
+	public: system_identificator()
+	: ptr_excite_sys_evt_src_(new des_event_source_type())
+	{
+	}
+
+
+	public: void identify(application_type& app, signal_generator_pointer const& ptr_sig_gen)
+	{
+		sysid_state_pointer ptr_sysid_state;
+
+		::std::vector<physical_machine_pointer> pms;
+		::std::vector<virtual_machine_pointer> vms;
+
+		size_type num_tiers(app.num_tiers());
+
+		ptr_sysid_state = ::dcs::make_shared<sysid_state_type>();
+		ptr_sysid_state->num_arrs = uint_type/*zero*/();
+		ptr_sysid_state->num_deps = uint_type/*zero*/();
+		ptr_sysid_state->req_info_maps.resize(num_tiers);
+
+		des_engine_pointer ptr_des_eng(::dcs::eesim::registry<traits_type>::instance().des_engine_ptr());
+
+		ptr_des_eng->system_initialization_event_source().connect(
+				::dcs::functional::bind(
+					&self_type::process_sys_init_event,
+					this,
+					::dcs::functional::placeholders::_1,
+					::dcs::functional::placeholders::_2
+				)
+			);
+		ptr_des_eng->system_finalization_event_source().connect(
+				::dcs::functional::bind(
+					&self_type::process_sys_finit_event,
+					this,
+					::dcs::functional::placeholders::_1,
+					::dcs::functional::placeholders::_2
+				)
+			);
+
+		// Build one reference physical machine and one virtual machine for each tier
+		for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+		{
+			//request_info_map req_info_map;
+			//ptr_sysid_state->req_info_maps.push_back(ptr_req_info_map);
+
+			// Build the reference machine for this tier
+
+			physical_machine_pointer ptr_pm;
+
+			::std::ostringstream oss;
+			oss << "Machine for " << app.tier(tier_id)->name();
+
+			ptr_pm = dcs::make_shared<physical_machine_type>(oss.str());
+			ptr_pm->id(pms.size());
+			pms.push_back(ptr_pm);
+
+			typedef std::vector<reference_resource_type> reference_resource_container;
+			typedef typename reference_resource_container::const_iterator reference_resource_iterator;
+			reference_resource_container reference_resources(app.reference_resources());
+			reference_resource_iterator ref_res_end_it(reference_resources.end());
+			for (reference_resource_iterator ref_res_it = reference_resources.begin(); ref_res_it != ref_res_end_it; ++ref_res_it)
+			{
+				::dcs::shared_ptr<physical_resource_type> ptr_resource;
+
+				oss.str("");
+				oss.clear();
+				oss << "Reference resource for " << app.tier(tier_id)->name();
+
+				ptr_resource = dcs::make_shared<physical_resource_type>(
+								oss.str(),
+								ref_res_it->category(),
+								ref_res_it->capacity(),
+								ref_res_it->utilization_threshold()
+					);
+				ptr_pm->add_resource(ptr_resource);
+			}
+
+			// Build the virtual machine for this tier
+
+			virtual_machine_pointer ptr_vm;
+
+			oss.str("");
+			oss.clear();
+			oss << "VM for " << app.tier(tier_id)->name();
+
+			ptr_vm = dcs::make_shared<virtual_machine_type>(oss.str());
+			ptr_vm->id(vms.size());
+			ptr_vm->guest_system(app.tier(tier_id));
+			//app.simulation_model().tier_virtual_machine(ptr_vm);
+			vms.push_back(ptr_vm);
+
+			// Place the virtual machine on the reference physical machine
+			// - Power-on the machine
+			ptr_pm->power_on();
+			// - Assign the maximum allowable resource share
+			typedef std::vector<physical_resource_pointer> resource_container;
+			typedef typename resource_container::const_iterator resource_iterator;
+			resource_container resources(ptr_pm->resources());
+			resource_iterator res_end_it(resources.end());
+			for (resource_iterator res_it = resources.begin(); res_it != res_end_it; ++res_it)
+			{
+				real_type share(app.tier(tier_id)->resource_share((*res_it)->category()));
+
+				share = ::std::min(share, (*res_it)->utilization_threshold());
+
+				ptr_vm->wanted_resource_share((*res_it)->category(), share);
+				ptr_vm->resource_share((*res_it)->category(), share);
+			}
+			ptr_pm->vmm().create_domain(ptr_vm);
+			ptr_vm->power_on();
+
+			// Register some DES event hooks for this tier
+			app.simulation_model().request_tier_arrival_event_source(tier_id).connect(
+					::dcs::functional::bind(
+						&self_type::process_tier_request_arrival_event,
+						this,
+						::dcs::functional::placeholders::_1,
+						::dcs::functional::placeholders::_2,
+						tier_id,
+						app,
+						ptr_sysid_state
+					)
+				);
+			app.simulation_model().request_tier_departure_event_source(tier_id).connect(
+					::dcs::functional::bind(
+						&self_type::process_tier_request_departure_event,
+						this,
+						::dcs::functional::placeholders::_1,
+						::dcs::functional::placeholders::_2,
+						tier_id,
+						app,
+						ptr_sysid_state
+					)
+				);
+		}
+
+		// Register some DES event hooks
+		app.simulation_model().request_arrival_event_source().connect(
+				::dcs::functional::bind(
+					&self_type::process_request_arrival_event,
+					this,
+					::dcs::functional::placeholders::_1,
+					::dcs::functional::placeholders::_2,
+					ptr_sysid_state
+				)
+			);
+		app.simulation_model().request_departure_event_source().connect(
+				::dcs::functional::bind(
+					&self_type::process_request_departure_event,
+					this,
+					::dcs::functional::placeholders::_1,
+					::dcs::functional::placeholders::_2,
+					ptr_sysid_state
+				)
+			);
+
+		app.start(vms.begin(), vms.end());
+
+		// Register the event for changing resource shares
+		ptr_excite_sys_evt_src_->connect(
+				::dcs::functional::bind(
+					&self_type::process_excite_system_event,
+					this,
+					::dcs::functional::placeholders::_1,
+					::dcs::functional::placeholders::_2,
+					app,
+					ptr_sig_gen,
+					ptr_sysid_state
+				)
+			);
+
+		// Run the simulation
+		ptr_des_eng->run();
+
+		// Deregister some DES event hooks for tiers
+/*FIXME: Does not compile. Why??
+		for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+		{
+			//::dcs::shared_ptr<request_info_map> ptr_req_info_map(req_info_maps[tier_id]);
+
+			app.simulation_model().request_tier_arrival_event_source(tier_id).disconnect(
+					::dcs::functional::bind(
+						&self_type::process_tier_request_arrival_event,
+						this,
+						::dcs::functional::placeholders::_1,
+						::dcs::functional::placeholders::_2,
+						tier_id,
+						app,
+						ptr_sysid_state
+					)
+				);
+			app.simulation_model().request_tier_departure_event_source(tier_id).disconnect(
+					::dcs::functional::bind(
+						&self_type::process_tier_request_departure_event,
+						this,
+						::dcs::functional::placeholders::_1,
+						::dcs::functional::placeholders::_2,
+						tier_id,
+						app,
+						ptr_sysid_state
+					)
+				);
+		}
+*/
+
+		// Deregister some global DES event hooks
+		app.simulation_model().request_arrival_event_source().disconnect(
+				::dcs::functional::bind(
+					&self_type::process_request_departure_event,
+					this,
+					::dcs::functional::placeholders::_1,
+					::dcs::functional::placeholders::_2,
+					ptr_sysid_state
+				)
+			);
+		app.simulation_model().request_departure_event_source().disconnect(
+				::dcs::functional::bind(
+					&self_type::process_request_departure_event,
+					this,
+					::dcs::functional::placeholders::_1,
+					::dcs::functional::placeholders::_2,
+					ptr_sysid_state
+				)
+			);
+
+	}
+
+
+	private: void schedule_excite_system_event()
+	{
+		des_engine_pointer ptr_des_eng(::dcs::eesim::registry<traits_type>::instance().des_engine_ptr());
+		ptr_des_eng->schedule_event(ptr_excite_sys_evt_src_, ptr_des_eng->simulated_time()+5);
+	}
+
+
+	//@{ Event Handlers
+
+
+	private: void process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+		DCS_DEBUG_TRACE("BEGIN Process SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");
+
+		schedule_excite_system_event();
+
+		DCS_DEBUG_TRACE("END Process SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");
+	}
+
+
+	private: void process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+		DCS_DEBUG_TRACE("BEGIN Process SYSTEM-FINALIZATION (Clock: " << ctx.simulated_time() << ")");
+
+		DCS_DEBUG_TRACE("END Process SYSTEM-FINALIZATION (Clock: " << ctx.simulated_time() << ")");
+	}
+
+
+	private: void process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, sysid_state_pointer const& ptr_sysid_state)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+		DCS_DEBUG_TRACE("BEGIN Process REQUEST-ARRIVAL (Clock: " << ctx.simulated_time() << ")");
+
+		ptr_sysid_state->num_arrs += 1;
+
+		DCS_DEBUG_TRACE("END Process REQUEST-ARRIVAL (Clock: " << ctx.simulated_time() << ")");
+	}
+
+
+	private: void process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, sysid_state_pointer const& ptr_sysid_state)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+		DCS_DEBUG_TRACE("BEGIN Process REQUEST-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
+
+		ptr_sysid_state->num_deps += 1;
+
+//::std::cerr << "# deps -> " << ptr_sysid_state->num_deps << ::std::endl;//XXX
+		if (ptr_sysid_state->num_deps == 1e+6)
+		{
+::std::cerr << "STOP!" << ::std::endl;//XXX
+			::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
+		}
+
+		DCS_DEBUG_TRACE("END Process REQUEST-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
+	}
+
+
+	private: void process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+		DCS_DEBUG_TRACE("BEGIN Process TIER-REQUEST-ARRIVAL (Clock: " << ctx.simulated_time() << ")");
+
+		user_request_type req = app.simulation_model().request_state(evt);
+
+		ptr_sysid_state->req_info_maps[tier_id][req.id()] = ctx.simulated_time();
+
+		DCS_DEBUG_TRACE("END Process TIER-REQUEST-ARRIVAL (Clock: " << ctx.simulated_time() << ")");
+	}
+
+
+	private: void process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+		DCS_DEBUG_TRACE("BEGIN Process TIER-REQUEST-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
+
+		user_request_type req = app.simulation_model().request_state(evt);
+
+		::std::cout << tier_id
+					<< "," << req.id();
+
+		virtual_machine_pointer ptr_vm = app.simulation_model().tier_virtual_machine(tier_id);
+		typedef virtual_machine_type::resource_share_container resource_share_container;
+		typedef resource_share_container::const_iterator resource_share_iterator;
+		resource_share_container resource_shares(ptr_vm->resource_shares());
+		resource_share_iterator end_it(resource_shares.end());
+		for (resource_share_iterator it = resource_shares.begin(); it != end_it; ++it)
+		{
+			::std::cout << "," << it->first
+						<< "," << it->second
+						<< "," << detail::relative_deviation(it->second, app.tier(tier_id)->resource_share(it->first));
+		}
+
+		real_type rt(ctx.simulated_time()-ptr_sysid_state->req_info_maps[tier_id].at(req.id()));
+
+		::std::cout << "," << rt
+					<< "," << detail::relative_deviation(rt, app.performance_model().tier_measure(tier_id, ::dcs::eesim::response_time_performance_measure))
+					<< ::std::endl;
+
+		ptr_sysid_state->req_info_maps[tier_id].erase(req.id());
+
+		DCS_DEBUG_TRACE("END Process TIER-REQUEST-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
+	}
+
+
+	private: void process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_type& app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
+	{
+		size_type num_tiers(app.num_tiers());
+
+		for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+		{
+			virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+
+			typedef std::vector<physical_resource_pointer> resource_container;
+			typedef typename resource_container::const_iterator resource_iterator;
+			resource_container resources(ptr_vm->vmm().hosting_machine().resources());
+			resource_iterator res_end_it(resources.end());
+
+			ublas::vector<real_type> u((*ptr_sig_gen)());
+			for (resource_iterator res_it = resources.begin(); res_it != res_end_it; ++res_it)
+			{
+				real_type ref_share(app.tier(tier_id)->resource_share((*res_it)->category()));
+				real_type new_share;
+
+				new_share = ::std::max(real_type(0), ::std::min(ref_share+u(tier_id), (*res_it)->utilization_threshold()));
+
+				ptr_vm->wanted_resource_share((*res_it)->category(), new_share);
+				ptr_vm->resource_share((*res_it)->category(), new_share);
+			}
+		}
+
+		// Reschedule this event
+		schedule_excite_system_event();
+	}
+
+
+	//@} Event Handlers
+
+
+	private: des_event_source_pointer ptr_excite_sys_evt_src_;
+};
 
 
 int main(int argc, char* argv[])
@@ -403,7 +831,6 @@ int main(int argc, char* argv[])
 	typedef dcs::shared_ptr< dcs::eesim::data_center<traits_type> > data_center_pointer;
 	typedef dcs::shared_ptr< dcs::eesim::data_center_manager<traits_type> > data_center_manager_pointer;
 	typedef dcs::eesim::config::configuration<real_type,uint_type> configuration_type;
-	typedef std::size_t size_type;
 
 
 	prog_name = argv[0];
@@ -467,15 +894,30 @@ int main(int argc, char* argv[])
 	for (app_iterator app_it = conf.data_center().applications().begin(); app_it != app_end_it; ++app_it)
 	{
 		dcs::shared_ptr<application_type> ptr_app;
+		dcs::shared_ptr< detail::signal_generator<real_type> > ptr_sig_gen;
 
+		// Build the application
+		ptr_app = dcs::eesim::config::make_multi_tier_application<traits_type>(*app_it, conf, ptr_rng, ptr_des_eng);
+
+		// Build the signal generator
+		//ptr_sig_gen = dcs::make_shared< detail::step_signal_generator<real_type> >(ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 1));
+		ptr_sig_gen = dcs::make_shared< detail::gaussian_signal_generator<real_type> >(
+						ublas::zero_vector<real_type>(ptr_app->num_tiers()),
+						ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 1)
+			);
+
+		system_identificator<traits_type> sysid;
+
+//		sysid.des_engine(ptr_des_eng);
+//		sysid.uniform_random_generator(ptr_rng);
+		sysid.identify(*ptr_app, ptr_sig_gen);
+
+/*
 		dcs::shared_ptr<uint_type> ptr_num_arrs;
 		dcs::shared_ptr<uint_type> ptr_num_deps;
 
 		ptr_num_arrs = dcs::make_shared<uint_type>(0);
 		ptr_num_deps = dcs::make_shared<uint_type>(0);
-
-		// Build the application
-		ptr_app = dcs::eesim::config::make_multi_tier_application<traits_type>(*app_it, conf, ptr_rng, ptr_des_eng);
 
 		::std::vector<physical_machine_pointer> pms;
 		::std::vector<virtual_machine_pointer> vms;
@@ -600,33 +1042,33 @@ int main(int argc, char* argv[])
 		ptr_des_eng->run();
 
 		// Deregister some DES event hooks for tiers
-/*FIXME: Does not compile. Why??
-		for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
-		{
-			dcs::shared_ptr<request_info_map> ptr_req_info_map(req_info_maps[tier_id]);
-
-			ptr_app->simulation_model().request_tier_arrival_event_source(tier_id).disconnect(
-					dcs::functional::bind(
-						&detail::process_tier_request_arrival_event,
-						dcs::functional::placeholders::_1,
-						dcs::functional::placeholders::_2,
-						tier_id,
-						*ptr_app,
-						ptr_req_info_map
-					)
-				);
-			ptr_app->simulation_model().request_tier_departure_event_source(tier_id).disconnect(
-					dcs::functional::bind(
-						&detail::process_tier_request_departure_event,
-						dcs::functional::placeholders::_1,
-						dcs::functional::placeholders::_2,
-						tier_id,
-						*ptr_app,
-						ptr_req_info_map
-					)
-				);
-		}
-*/
+//FIXME: Does not compile. Why??
+//		for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+//		{
+//			dcs::shared_ptr<request_info_map> ptr_req_info_map(req_info_maps[tier_id]);
+//
+//			ptr_app->simulation_model().request_tier_arrival_event_source(tier_id).disconnect(
+//					dcs::functional::bind(
+//						&detail::process_tier_request_arrival_event,
+//						dcs::functional::placeholders::_1,
+//						dcs::functional::placeholders::_2,
+//						tier_id,
+//						*ptr_app,
+//						ptr_req_info_map
+//					)
+//				);
+//			ptr_app->simulation_model().request_tier_departure_event_source(tier_id).disconnect(
+//					dcs::functional::bind(
+//						&detail::process_tier_request_departure_event,
+//						dcs::functional::placeholders::_1,
+//						dcs::functional::placeholders::_2,
+//						tier_id,
+//						*ptr_app,
+//						ptr_req_info_map
+//					)
+//				);
+//		}
+//
 
 		// Deregister some global DES event hooks
 		ptr_app->simulation_model().request_arrival_event_source().disconnect(
@@ -648,5 +1090,6 @@ int main(int argc, char* argv[])
 
 		//// Report statistics
 		//detail::report_stats(::std::cout, ptr_dc);
+*/
 	}
 }
