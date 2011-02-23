@@ -226,6 +226,18 @@ class base_application_simulation_model: public ::dcs::des::entity
 	}
 
 
+	public: des_event_source_type& request_tier_service_event_source(uint_type tier_id)
+	{
+		return do_request_tier_service_event_source(tier_id);
+	}
+
+
+	public: des_event_source_type const& request_tier_service_event_source(uint_type tier_id) const
+	{
+		return do_request_tier_service_event_source(tier_id);
+	}
+
+
 	public: des_event_source_type& request_tier_departure_event_source(uint_type tier_id)
 	{
 		return do_request_tier_departure_event_source(tier_id);
@@ -332,6 +344,12 @@ class base_application_simulation_model: public ::dcs::des::entity
 
 
 	private: virtual des_event_source_type const& do_request_tier_arrival_event_source(uint_type tier_id) const = 0;
+
+
+	private: virtual des_event_source_type& do_request_tier_service_event_source(uint_type tier_id) = 0;
+
+
+	private: virtual des_event_source_type const& do_request_tier_service_event_source(uint_type tier_id) const = 0;
 
 
 	private: virtual des_event_source_type& do_request_tier_departure_event_source(uint_type tier_id) = 0;

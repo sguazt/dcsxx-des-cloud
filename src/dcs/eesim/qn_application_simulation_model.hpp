@@ -472,6 +472,64 @@ class qn_application_simulation_model: public base_application_simulation_model<
 	}
 
 
+	private: des_event_source_type& do_request_tier_service_event_source(uint_type tier_id)
+	{
+//FIXME
+// * What should I do with delay nodes?
+// * What should I do if dynamic_cast returns a null pointer
+
+		typedef typename qn_model_type::node_type node_type;
+		typedef ::dcs::des::model::qn::service_station_node<qn_model_traits_type> service_node_type;
+
+		node_type& node = model_.get_node(node_from_tier(tier_id));
+
+		// pre: tier must be a service-station node.
+		DCS_ASSERT(
+				node.category() == ::dcs::des::model::qn::service_station_node_category,
+				throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_request_tier_service_event_source] Expected a service station node. Got another kind of node.")
+			);
+
+		service_node_type* ptr_svc_node(dynamic_cast<service_node_type*>(&node));
+
+		// double-check: tier must be a service-station node.
+		DCS_ASSERT(
+				ptr_svc_node,
+				throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_request_tier_service_event_source] Unable to get a service station node.")
+			);
+
+		return ptr_svc_node->service_event_source();
+	}
+
+
+	private: des_event_source_type const& do_request_tier_service_event_source(uint_type tier_id) const
+	{
+//FIXME
+// * What should I do with delay nodes?
+// * What should I do if dynamic_cast returns a null pointer
+
+		typedef typename qn_model_type::node_type node_type;
+		typedef ::dcs::des::model::qn::service_station_node<qn_model_traits_type> service_node_type;
+
+		node_type const& node = model_.get_node(node_from_tier(tier_id));
+
+		// pre: tier must be a service-station node.
+		DCS_ASSERT(
+				node.category() == ::dcs::des::model::qn::service_station_node_category,
+				throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_request_tier_service_event_source] Expected a service station node. Got another kind of node.")
+			);
+
+		service_node_type const* ptr_svc_node(dynamic_cast<service_node_type const*>(&node));
+
+		// double-check: tier must be a service-station node.
+		DCS_ASSERT(
+				ptr_svc_node,
+				throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_request_tier_service_event_source] Unable to get a service station node.")
+			);
+
+		return ptr_svc_node->service_event_source();
+	}
+
+
 	private: des_event_source_type& do_request_tier_departure_event_source(uint_type tier_id)
 	{
 		return model_.get_node(node_from_tier(tier_id)).departure_event_source();
