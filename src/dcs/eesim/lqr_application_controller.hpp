@@ -36,6 +36,10 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
+#include <boost/numeric/ublasx/operation/cond.hpp>
+#include <boost/numeric/ublasx/operation/num_columns.hpp>
+#include <boost/numeric/ublasx/operation/num_rows.hpp>
+#include <boost/numeric/ublasx/operation/size.hpp>
 //#include <boost/numeric/ublas/vector_expression.hpp>
 #include <dcs/control/design/dlqi.hpp>
 #include <dcs/control/design/dlqr.hpp>
@@ -58,6 +62,10 @@
 #include <exception>
 #include <iostream>
 #include <map>
+#ifdef DCS_USE_MATLAB_MCR
+#	include <matlab/librls.h>
+#	include <mclcppclass.h>
+#endif // DCS_USE_MATLAB_*
 #include <stdexcept>
 #include <vector>
 
@@ -70,6 +78,482 @@
 namespace dcs { namespace eesim {
 
 namespace detail { namespace /*<unnamed>*/ {
+
+#ifdef DCS_USE_MATLAB_MCR
+
+/**
+ * \brief Proxy to identify a MIMO system model by applying the Recursive Least
+ *  Square with forgetting-factor algorithm to several MISO system models.
+ *
+ * MATLAB implementation version.
+ *
+ * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ */
+template <typename TraitsT>
+class rls_ff_miso_matlab_mcr_proxy
+{
+	public: typedef TraitsT traits_type;
+	public: typedef typename traits_type::real_type real_type;
+	private: typedef ::boost::numeric::ublas::matrix<real_type> matrix_type;
+	private: typedef ::boost::numeric::ublas::vector<real_type> vector_type;
+	private: typedef ::std::size_t size_type;
+
+	public: rls_ff_miso_matlab_mcr_proxy()
+	: n_a_(0),
+	  n_b_(0),
+	  d_(0),
+	  n_y_(0),
+	  n_u_(0),
+	  ff_(0)
+	{
+//		init_matlab();
+	}
+
+
+	public: rls_ff_miso_matlab_mcr_proxy(size_type n_a, size_type n_b, size_type d, size_type n_y, size_type n_u, real_type ff)
+	: n_a_(n_a),
+	  n_b_(n_b),
+	  d_(d),
+	  n_y_(n_y),
+	  n_u_(n_u),
+	  ff_(ff),
+	  theta_hats_(n_y_),
+	  Ps_(n_y_),
+	  phis_(n_y_)
+	{
+//		init_matlab();
+	}
+
+
+	public: ~rls_ff_miso_matlab_mcr_proxy()
+	{
+//		finit_matlab();
+	}
+
+
+	public: size_type input_order() const
+	{
+		return n_b_;
+	}
+
+
+	public: size_type output_order() const
+	{
+		return n_a_;
+	}
+
+
+	public: size_type input_delay() const
+	{
+		return d_;
+	}
+
+
+	public: size_type num_inputs() const
+	{
+		return n_u_;
+	}
+
+
+	public: size_type num_outputs() const
+	{
+		return n_y_;
+	}
+
+
+	public: real_type forgetting_factor() const
+	{
+		return ff_;
+	}
+
+
+	public: matrix_type Theta_hat() const
+	{
+		namespace ublas = ::boost::numeric::ublas;
+
+		const size_type nay(n_a_*n_y_);
+		const size_type nbu(n_b_*n_u_);
+		const size_type n(nay+nbu);
+		matrix_type X(n, n_y_, real_type/*zero()*/());
+
+		for (size_type i = 0; i < n_y_; ++i)
+		{
+			// ith output => ith column of Theta_hat
+			// ith column of Theta_hat = [0; ...; 0; a_{ii}^{1}
+			const size_type k(i*n_a_);
+			ublas::matrix_column<matrix_type> mc(X,i);
+			ublas::subrange(mc, k, k+n_a_) = ublas::subrange(theta_hats_[i], 0, n_a_);
+			ublas::subrange(mc, nay, n) = ublas::subrange(theta_hats_[i], n_a_, n_a_+nbu);
+		}
+
+		return X;
+	}
+
+
+	public: matrix_type P() const
+	{
+		matrix_type aux_P;
+//FIXME
+		return aux_P;
+	}
+
+
+	public: vector_type phi() const
+	{
+		namespace ublas = ::boost::numeric::ublas;
+
+		const size_type nay(n_a_*n_y_);
+		const size_type nbu(n_b_*n_u_);
+		const size_type n(nay+nbu);
+		vector_type x(n);
+
+		for (size_type i = 0; i < n_y_; ++i)
+		{
+			const size_type k(i*n_a_);
+			ublas::subrange(x, k, k+n_a_) = ublas::subrange(phis_[i], 0, n_a_);
+		}
+
+		ublas::subrange(x, nay, n) = ublas::subrange(phis_[0], n_a_, n_a_+nbu);
+
+		return x;
+	}
+
+
+	public: void init()
+	{
+		size_type nu_data[1];
+		nu_data[0] = n_u_;
+
+		size_type nn_sz(1+2*n_u_);
+		size_type* nn_data = new size_type[nn_sz]; // [n_a_,n_b_,...,n_b_,d_,...,d_]
+		nn_data[0] = n_a_;
+		for (size_type i = 1; i <= n_u_; ++i)
+		{
+			nn_data[i] = n_b_;
+			nn_data[n_u_+i] = d_;
+		}
+
+		mwArray nu(1, 1, mxINT32_CLASS, mxREAL);
+		nu.SetData(nu_data, 1);
+		mwArray nn(1, nn_sz, mxINT32_CLASS, mxREAL);
+		nn.SetData(nn_data, nn_sz);
+
+//		init_matlab();
+
+            mwArray th0;
+            mwArray P0;
+            mwArray phi0;
+
+		// Prepare the data structures for the RLS algorithm 
+		for (size_type i = 0; i < n_y_; ++i)
+		{
+			//NOTE: can throw an mwException (in that case we let the caller to manage it)
+::std::cerr << "HERE.1" << ::std::endl;
+			rls_miso_init(3, th0, P0, phi0, nu, nn);
+::std::cerr << "HERE.2" << ::std::endl;
+
+			mw_to_vector(th0, theta_hats_[i]);
+			mw_to_matrix(P0, Ps_[i]);
+			mw_to_vector(phi0, phis_[i]);
+		}
+
+//		finit_matlab();
+	}
+
+
+	public: template <typename YVectorExprT, typename UVectorExprT>
+		vector_type estimate(::boost::numeric::ublas::vector_expression<YVectorExprT> const& y,
+							 ::boost::numeric::ublas::vector_expression<UVectorExprT> const& u)
+	{
+		namespace ublas = ::boost::numeric::ublas;
+
+		// Estimate system parameters
+//DCS_DEBUG_TRACE("BEGIN estimation");//XXX
+//DCS_DEBUG_TRACE("y(k): " << y);//XXX
+//DCS_DEBUG_TRACE("u(k): " << u);//XXX
+		vector_type y_hat(n_y_);
+
+		// Common input params
+		size_type nu_data[1];
+		nu_data[0] = n_u_;
+
+		size_type nn_sz(1+2*n_u_);
+		size_type* nn_data = new size_type[nn_sz]; // [n_a_,n_b_,...,n_b_,d_,...,d_]
+		nn_data[0] = n_a_;
+		for (size_type i = 1; i <= n_u_; i += 2)
+		{
+			nn_data[i] = n_b_;
+			nn_data[2*i] = d_;
+		}
+
+		real_type ff_data[1];
+		ff_data[0] = ff_;
+
+		mwArray nu(1, 1, mxINT32_CLASS, mxREAL);
+		nu.SetData(nu_data, 1);
+		mwArray nn(1, 1+2*n_u_, mxINT32_CLASS, mxREAL);
+		nn.SetData(nn_data, nn_sz);
+		mwArray ff(1, 1, mxDOUBLE_CLASS, mxREAL);
+		ff.SetData(ff_data, 1);
+
+		// Partially common input params
+		mwArray z;
+		size_type nz(1+n_u_);
+		vector_type zz(nz, real_type/*zero*/());
+		ublas::subrange(zz, 1, nz) = u;
+		vector_to_mw(zz, z, mxDOUBLE_CLASS, mxREAL, false);
+
+		// The main loop
+//init_matlab();
+		for (size_type i = 0; i < n_y_; ++i)
+		{
+//DCS_DEBUG_TRACE("theta_hat["<< i << "](k): " << theta_hats_[i]);//XXX
+//DCS_DEBUG_TRACE("P["<< i << "](k): " << Ps_[i]);//XXX
+//DCS_DEBUG_TRACE("phi["<< i << "](k): " << phis_[i]);//XXX
+			// Partially per-iteration input params
+			z(1,1) = y()(i);
+
+			// Per-iteration input params
+            mwArray th0;
+			vector_to_mw(theta_hats_[i], th0, mxDOUBLE_CLASS, mxREAL);
+            mwArray P0;
+			matrix_to_mw(Ps_[i], P0, mxDOUBLE_CLASS, mxREAL);
+            mwArray phi0;
+			vector_to_mw(phis_[i], phi0, mxDOUBLE_CLASS, mxREAL);
+
+			// Output params
+            mwArray thm;
+            mwArray yhat;
+            mwArray P;
+            mwArray phi;
+
+			//NOTE: can throw an mwException (in that case we let the caller to manage it)
+			rls_miso(4, thm, yhat, P, phi, z, nn, ff, th0, P0, phi0);
+
+			mw_to_vector(thm, theta_hats_[i]);
+			mw_to_matrix(P, Ps_[i]);
+			mw_to_vector(phi, phis_[i]);
+
+			y_hat(i) = yhat(1,1);
+//DCS_DEBUG_TRACE("New theta_hat["<< i << "](k): " << theta_hats_[i]);//XXX
+//DCS_DEBUG_TRACE("New P["<< i << "](k): " << Ps_[i]);//XXX
+//DCS_DEBUG_TRACE("New phi["<< i << "](k): " << phis_[i]);//XXX
+//DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
+		}
+//finit_matlab();
+//DCS_DEBUG_TRACE("New y_hat(k): " << y_hat);//XXX
+//DCS_DEBUG_TRACE("END estimation");//XXX
+
+		return y_hat;
+	}
+
+
+	/// Return matrix A_k from \hat{\Theta}.
+	public: matrix_type A(size_type k) const
+	{
+		namespace ublas = ::boost::numeric::ublas;
+
+		DCS_DEBUG_ASSERT( k >= 1 && k <= n_a_ );
+
+		// Remember, for each output i=1,...,n_y:
+		//   \hat{\theta}_i = [a_{ii}^{1};
+		//                     ...;
+		//                     a_{ii}^{n_a};
+		//                     b_{i1}^{1};
+		//                     ...;
+		//                     b_{i1}^{n_b};
+		//                     ...;
+		//                     b_{in_u}^{1};
+		//                     ...;
+		//                     b_{in_u}^{n_b}]
+		// So in \hat{\theta}_i the ith diagonal element of matrix A_k stays at:
+		//   A_k(i,i) <- \hat{\theta}_i(k)
+		matrix_type A_k(n_y_, n_y_, real_type/*zero*/());
+		for (size_type i = 0; i < n_y_; ++i)
+		{
+			A_k(i,i) = theta_hats_[i](k);
+		}
+
+		return A_k;
+	}
+
+
+	/// Return matrix B_k from \hat{\Theta}.
+	public: matrix_type B(size_type k) const
+	{
+		namespace ublas = ::boost::numeric::ublas;
+
+		DCS_DEBUG_ASSERT( k >= 1 && k <= n_b_ );
+
+		// Remember, for each output i=1,...,n_y:
+		//   \hat{\theta}_i = [a_{ii}^{1};
+		//                     ...;
+		//                     a_{ii}^{n_a};
+		//                     b_{i1}^{1};
+		//                     ...;
+		//                     b_{i1}^{n_b};
+		//                     ...;
+		//                     b_{in_u}^{1};
+		//                     ...;
+		//                     b_{in_u}^{n_b}]
+		// So in \hat{\theta}_i the ith row of matrix B_k stays at:
+		//   B_k(i,:) <- (\hat{\theta}_i(((n_a+k):n_b:n_u))^T
+		matrix_type B_k(n_y_, n_u_);
+		for (size_type i = 0; i < n_y_; ++i)
+		{
+			ublas::row(B_k, i) = ublas::subslice(theta_hats_[i], n_a_+k-1, n_b_, n_u_);
+		}
+
+		return B_k;
+	}
+
+
+//	private: void init_matlab()
+//	{
+//::std::cerr << "[init_matlab] .1" << ::std::endl;//XXX
+//		if (!librlsInitialize())
+//		{
+//::std::cerr << "[init_matlab] .2" << ::std::endl;//XXX
+//			std::clog << "Could not initialize the MATLAB library properly." << std::endl;
+//			throw ::std::runtime_error("[dcs::eesim::rls_ff_miso_matlab_proxy] Could not initialize the MATLAB library properly.");
+//		}
+//::std::cerr << "[init_matlab] .3" << ::std::endl;//XXX
+//	}
+
+
+//	private: void finit_matlab()
+//	{
+//::std::cerr << "[finit_matlab] .1" << ::std::endl;//XXX
+//		// Call the application and library termination routine
+//		librlsTerminate();
+//::std::cerr << "[finit_matlab] .2" << ::std::endl;//XXX
+//	}
+
+
+	private: template <typename MatrixT>
+		static void mw_to_matrix(mwArray const& A, MatrixT& X)
+	{
+		mwArray d(A.GetDimensions());
+
+		size_type nr(d(1,1));
+		size_type nc(d(1,2));
+
+		for (size_type r = 0; r < nr; ++r)
+		{
+			for (size_type c = 0; c < nc; ++c)
+			{
+				X(r,c) = A(r+1,c+1);
+			}
+		}
+	}
+
+
+	private: template <typename MatrixT, typename ClsT, typename CplxT>
+		static void matrix_to_mw(MatrixT const& A, mwArray& X, ClsT cls, CplxT cplx)
+	{
+		namespace ublasx = ::boost::numeric::ublasx;
+
+		size_type nr(ublasx::num_rows(A));
+		size_type nc(ublasx::num_columns(A));
+
+		X = mwArray(nr, nc, cls, cplx);
+
+		for (size_type r = 0; r < nr; ++r)
+		{
+			for (size_type c = 0; c < nc; ++c)
+			{
+				X(r+1,c+1) = A(r,c);
+			}
+		}
+	}
+
+
+	private: template <typename VectorT>
+		static void mw_to_vector(mwArray const& A, VectorT& x)
+	{
+		mwArray d(A.GetDimensions());
+
+		size_type nr(d(1,1));
+		size_type nc(d(1,2));
+
+		if (nr != 1 && nc != 1)
+		{
+			throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::detail::rls_ff_miso_matlab_proxy::mw_to_vector] Cannot copy a matrix into a vector.");
+		}
+
+		if (nr == 1)
+		{
+			// a row-vector or a vector with length 1
+
+			for (size_type i = 0; i < nc; ++i)
+			{
+				x(i) = A(1,i+1);
+			}
+		}
+		else
+		{
+			// a column-vector
+			for (size_type i = 0; i < nr; ++i)
+			{
+				x(i) = A(i+1,1);
+			}
+		}
+	}
+
+
+	private: template <typename VectorT, typename ClsT, typename CplxT>
+		static void vector_to_mw(VectorT const& v, mwArray& X, ClsT cls, CplxT cplx, bool col = true)
+	{
+		namespace ublasx = ::boost::numeric::ublasx;
+
+		size_type n(ublasx::size(v));
+
+		if (col)
+		{
+			// column vector
+			X = mwArray(n, 1, cls, cplx);
+
+			for (size_type i = 0; i < n; ++i)
+			{
+				X(i+1,1) = v(i);
+			}
+		}
+		else
+		{
+			// row vector
+			X = mwArray(1, n, cls, cplx);
+
+			for (size_type i = 0; i < n; ++i)
+			{
+				X(1,i+1) = v(i);
+			}
+		}
+	}
+
+
+	/// The memory for the control output.
+	private: size_type n_a_;
+	/// The memory for the control input.
+	private: size_type n_b_;
+	/// Input delay (dead time).
+	private: size_type d_;
+	/// The size of the control output vector.
+	private: size_type n_y_;
+	/// The size of the augmented control input vector.
+	private: size_type n_u_;
+	/// Forgetting factor.
+	private: real_type ff_;
+	/// Matrix of system parameters estimated by RLS: [A_1 ... A_{n_a} B_1 ... B_{n_b}].
+	private: ::std::vector<vector_type> theta_hats_;
+	/// The covariance matrix.
+	private: ::std::vector<matrix_type> Ps_;
+	/// The regression vector.
+	private: ::std::vector<vector_type> phis_;
+};
+
+
+#else // DCS_USE_MATLAB_*
+
 
 //template <typename VectorExprT>
 //void rotate(::boost::numeric::ublas::vector_expression<VectorExprT>& v, ::std::size_t num_rot_grp, ::std::size_t rot_grp_size)
@@ -461,15 +945,15 @@ class rls_ff_miso_proxy
 							 ::boost::numeric::ublas::vector_expression<UVectorExprT> const& u)
 	{
 		// Estimate system parameters
-//DCS_DEBUG_TRACE("BEGIN estimation");//XXX
-//DCS_DEBUG_TRACE("y(k): " << y);//XXX
-//DCS_DEBUG_TRACE("u(k): " << u);//XXX
+DCS_DEBUG_TRACE("BEGIN estimation");//XXX
+DCS_DEBUG_TRACE("y(k): " << y);//XXX
+DCS_DEBUG_TRACE("u(k): " << u);//XXX
 		vector_type y_hat(n_y_);
 		for (size_type i = 0; i < n_y_; ++i)
 		{
-//DCS_DEBUG_TRACE("theta_hat["<< i << "](k): " << theta_hats_[i]);//XXX
-//DCS_DEBUG_TRACE("P["<< i << "](k): " << Ps_[i]);//XXX
-//DCS_DEBUG_TRACE("phi["<< i << "](k): " << phis_[i]);//XXX
+DCS_DEBUG_TRACE("theta_hat["<< i << "](k): " << theta_hats_[i]);//XXX
+DCS_DEBUG_TRACE("P["<< i << "](k): " << Ps_[i]);//XXX
+DCS_DEBUG_TRACE("phi["<< i << "](k): " << phis_[i]);//XXX
 			y_hat(i) = ::dcs::sysid::rls_ff_arx_miso(y()(i),
 													 u,
 													 ff_,
@@ -479,13 +963,14 @@ class rls_ff_miso_proxy
 													 theta_hats_[i],
 													 Ps_[i],
 													 phis_[i]);
-//DCS_DEBUG_TRACE("New theta_hat["<< i << "](k): " << theta_hats_[i]);//XXX
-//DCS_DEBUG_TRACE("New P["<< i << "](k): " << Ps_[i]);//XXX
-//DCS_DEBUG_TRACE("New phi["<< i << "](k): " << phis_[i]);//XXX
-//DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
+DCS_DEBUG_TRACE("New theta_hat["<< i << "](k): " << theta_hats_[i]);//XXX
+DCS_DEBUG_TRACE("New P["<< i << "](k): " << Ps_[i]);//XXX
+DCS_DEBUG_TRACE("New cond(P["<< i << "](k)): " << ::boost::numeric::ublasx::cond(Ps_[i]));//XXX
+DCS_DEBUG_TRACE("New phi["<< i << "](k): " << phis_[i]);//XXX
+DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
 		}
-//DCS_DEBUG_TRACE("New y_hat(k): " << y_hat);//XXX
-//DCS_DEBUG_TRACE("END estimation");//XXX
+DCS_DEBUG_TRACE("New y_hat(k): " << y_hat);//XXX
+DCS_DEBUG_TRACE("END estimation");//XXX
 
 		return y_hat;
 	}
@@ -570,6 +1055,8 @@ class rls_ff_miso_proxy
 	/// The regression vector.
 	private: ::std::vector<vector_type> phis_;
 };
+
+#endif // DCS_USE_MATLAB_*
 
 
 template <
@@ -752,8 +1239,14 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	private: typedef ::std::map<performance_measure_category,real_type> category_value_container;
 	private: typedef ::std::vector<category_value_container> category_value_container_container;
 	private: typedef physical_machine<traits_type> physical_machine_type;
+#if defined(DCS_USE_MATLAB_MCR)
+	private: typedef detail::rls_ff_miso_matlab_mcr_proxy<traits_type> rls_ff_proxy_type;
+#elif defined(DCS_USE_MATLAB_APP)
+	private: typedef detail::rls_ff_miso_matlab_app_proxy<traits_type> rls_ff_proxy_type;
+#else
 //	private: typedef detail::rls_ff_mimo_proxy<traits_type> rls_ff_proxy_type;
 	private: typedef detail::rls_ff_miso_proxy<traits_type> rls_ff_proxy_type;
+#endif // DCS_USE_MATLAB_*
 
 
 	private: static const size_type default_input_order_;
