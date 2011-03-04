@@ -168,7 +168,7 @@ all-release: CXXFLAGS := $(CXXFLAGS_release)
 all-release: LDFLAGS := $(LDFLAGS_release)
 #all-release: all-build
 #all-release: $(bindir_release) $(bindir_release)/$(target)
-all-release: $(bindir_release) libs/src/boost/iostreams/file_descriptor.o $(addprefix $(bindir_release)/, $(targets))
+all-release: $(bindir_release) $(addprefix $(bindir_release)/, $(targets))
 
 
 all-debug: override build := debug
@@ -233,14 +233,14 @@ rebuild: realclean all
 #	$(CXX) $(LDFLAGS) -o $(bindir_debug)/$(target) $(OBJS)
 
 
-$(bindir_release)/% : $(buildtmpdir)/%.$(obj_ext) $(HEADERS)
+$(bindir_release)/% : $(buildtmpdir)/%.$(obj_ext) $(buildtmpdir)/boost/iostreams/src/file_descriptor.$(obj_ext) $(HEADERS)
 	@echo "=== Building Target: $@ ==="
-	$(CXX) $(LDFLAGS) -o $@ $<
+	$(CXX) $(LDFLAGS) -o $@ $<  $(buildtmpdir)/boost/iostreams/src/file_descriptor.$(obj_ext)
 
 
-$(bindir_debug)/% : $(buildtmpdir)/%.$(obj_ext) $(buildtmpdir)/boost/iostreams/file_descriptor.$(obj_ext) $(HEADERS)
+$(bindir_debug)/% : $(buildtmpdir)/%.$(obj_ext) $(buildtmpdir)/boost/iostreams/src/file_descriptor.$(obj_ext) $(HEADERS)
 	@echo "=== Building Target: $@ ==="
-	$(CXX) $(LDFLAGS) -o $@ $<  $(buildtmpdir)/boost/iostreams/file_descriptor.$(obj_ext)
+	$(CXX) $(LDFLAGS) -o $@ $<  $(buildtmpdir)/boost/iostreams/src/file_descriptor.$(obj_ext)
 
 
 $(buildtmpdir) $(bindir_release) $(bindir_debug):
