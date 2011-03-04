@@ -1,3 +1,5 @@
+#ifdef DCS_EESIM_USE_MATLAB_MCR
+
 #include <dcs/des/engine.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/eesim/config/configuration.hpp>
@@ -467,3 +469,5 @@ int main(int argc, const char** argv)
     mclmcrInitialize();
     return mclRunMain((mclMainFcnType)run_main,argc,argv);
 }
+
+#endif // DCS_EESIM_USE_MATLAB_MCR

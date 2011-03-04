@@ -75,11 +75,11 @@ export xmp_srcdirs := . dcs/eesim
 export libdirs :=
 export test_libdirs :=
 export xmp_libdirs :=
-export incdirs := $(srcdir)
+export incdirs := $(srcdir) ./libs/include
 export test_incdirs := $(test_srcdir)
 export xmp_incdirs := $(xmp_srcdir)
 #export libs := m boost_thread-mt yaml-cpp
-export libs := m yaml-cpp
+export libs := m yaml-cpp lapack lpsolve55
 #export test_libs := boost_unit_test_framework
 export test_libs :=
 export xmp_libs :=
@@ -168,7 +168,7 @@ all-release: CXXFLAGS := $(CXXFLAGS_release)
 all-release: LDFLAGS := $(LDFLAGS_release)
 #all-release: all-build
 #all-release: $(bindir_release) $(bindir_release)/$(target)
-all-release: $(bindir_release) $(addprefix $(bindir_release)/, $(targets))
+all-release: $(bindir_release) libs/src/boost/iostreams/file_descriptor.o $(addprefix $(bindir_release)/, $(targets))
 
 
 all-debug: override build := debug
@@ -238,9 +238,9 @@ $(bindir_release)/% : $(buildtmpdir)/%.$(obj_ext) $(HEADERS)
 	$(CXX) $(LDFLAGS) -o $@ $<
 
 
-$(bindir_debug)/% : $(buildtmpdir)/%.$(obj_ext) $(HEADERS)
+$(bindir_debug)/% : $(buildtmpdir)/%.$(obj_ext) $(buildtmpdir)/boost/iostreams/file_descriptor.$(obj_ext) $(HEADERS)
 	@echo "=== Building Target: $@ ==="
-	$(CXX) $(LDFLAGS) -o $@ $<
+	$(CXX) $(LDFLAGS) -o $@ $<  $(buildtmpdir)/boost/iostreams/file_descriptor.$(obj_ext)
 
 
 $(buildtmpdir) $(bindir_release) $(bindir_debug):
@@ -309,6 +309,12 @@ xmp-clean:
 ## Source to Object rules
 
 $(buildtmpdir)/%.$(obj_ext): $(srcdir)/%.cpp
+	@echo "=== Compiling: $@ ==="
+	mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
+
+
+$(buildtmpdir)/boost/iostreams/%.$(obj_ext): libs/src/boost/iostreams/%.cpp
 	@echo "=== Compiling: $@ ==="
 	mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
