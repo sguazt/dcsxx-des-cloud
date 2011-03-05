@@ -1249,6 +1249,17 @@ DCS_DEBUG_TRACE("Parsed as P=" << P);//XXX
 						{
 							parse_matlab_data(line.substr(pos+4), phi);
 DCS_DEBUG_TRACE("Parsed as phi=" << phi);//XXX
+
+							// Actually the RARX function of the current System
+							// Identification Toolbox (MATLAB 2010b) returns a
+							// \phi vector with one additional and useless entry
+							// placed at the end of the vector.
+							// Remove it.
+
+							//TODO: check for current MATLAB version and issue a
+							//      warning if the versio is newer than 2010b.
+
+							phi = ::boost::numeric::ublas::subrange(phi, 0, ::boost::numeric::ublasx::size(phi));
 						}
 					}
 				}
