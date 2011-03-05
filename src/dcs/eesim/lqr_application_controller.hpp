@@ -66,21 +66,25 @@
 #	include <matlab/librls.h>
 #	include <mclcppclass.h>
 #elif defined(DCS_EESIM_USE_MATLAB_APP)
-#	include <boost/iostreams/device/file_descriptor.hpp>
-#	include <boost/iostreams/stream_buffer.hpp>
-#	include <cctype>
-#	include <cerrno>
-#	include <csignal>
-#	include <cstddef>
-#	include <cstdlib>
-#	include <cstring>
-#	include <fcntl.h>
-#	include <sstream>
-#	include <sys/resource.h>
-#	include <sys/time.h>
-#	include <sys/types.h>
-#	include <sys/wait.h>
-#	include <unistd.h>
+#	if _POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE
+#		include <boost/iostreams/device/file_descriptor.hpp>
+#		include <boost/iostreams/stream_buffer.hpp>
+#		include <cctype>
+#		include <cerrno>
+#		include <csignal>
+#		include <cstddef>
+#		include <cstdlib>
+#		include <cstring>
+#		include <fcntl.h>
+#		include <sstream>
+#		include <sys/resource.h>
+#		include <sys/time.h>
+#		include <sys/types.h>
+#		include <sys/wait.h>
+#		include <unistd.h>
+#	else // _POSIX_C_SOURCE
+#		error "Unable to find a POSIX compliant system."
+#	endif // _POSIX_C_SOURCE
 #endif // DCS_EESIM_USE_MATLAB_*
 #include <stdexcept>
 #include <vector>
@@ -582,11 +586,16 @@ class rls_ff_miso_matlab_mcr_proxy
 template <typename TraitsT>
 class rls_ff_miso_matlab_app_proxy
 {
+	private: typedef rls_ff_miso_matlab_app_proxy self_type;
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::real_type real_type;
 	private: typedef ::boost::numeric::ublas::matrix<real_type> matrix_type;
 	private: typedef ::boost::numeric::ublas::vector<real_type> vector_type;
 	private: typedef ::std::size_t size_type;
+
+
+	private: static ::pid_t child_pid_;//FIXME
+
 
 	public: rls_ff_miso_matlab_app_proxy()
 	: n_a_(0),
@@ -1040,6 +1049,17 @@ DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
 			throw ::std::runtime_error(oss.str());
 		}
 
+		// Install signal handlers
+		struct ::sigaction sig_act;
+		struct ::sigaction old_sigterm_act;
+		struct ::sigaction old_sigint_act;
+		//::memset(&sig_act, 0, sizeof(sig_act));
+		::sigemptyset(&sig_act.sa_mask);
+		sig_act.sa_flags = 0;
+		sig_act.sa_handler = self_type::process_signals;
+		::sigaction(SIGTERM, &sig_act, &old_sigterm_act);
+		::sigaction(SIGINT, &sig_act, &old_sigint_act);
+
 		// Spawn a new process
 
 		// Between fork() and execve() only async-signal-safe functions
@@ -1060,7 +1080,12 @@ DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
 
 		if (pid == 0)
 		{
-			// the child
+			// The child
+
+			// Cancel signal handler set for parent
+			sig_act.sa_handler = SIG_DFL;
+			::sigaction(SIGTERM, &sig_act, 0);
+			::sigaction(SIGINT, &sig_act, 0);
 
 			// Get the maximum number of files this process is allowed to open
 #if defined(F_MAXFD)
@@ -1155,7 +1180,10 @@ DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
 			//char** envp(0);
 
 			// Close unused file descriptors
-close_fd[STDERR_FILENO] = false;//XXX: keep for debug
+#ifdef DCS_DEBUG
+			// Keep standard error open for debug
+			close_fd[STDERR_FILENO] = false;
+#endif // DCS_DEBUG
 			for (int fd = 0; fd < maxdescs; ++fd)
 			{
 				if (close_fd[fd])
@@ -1165,12 +1193,14 @@ close_fd[STDERR_FILENO] = false;//XXX: keep for debug
 			}
 
 //[XXX]
+#ifdef DCS_DEBUG
 ::std::cerr << "Executing MATLAB: " << cmd;//XXX
 for (::std::size_t i=0; i < args.size(); ++i)//XXX
 {//XXX
 ::std::cerr << " " << args[i] << ::std::flush;//XXX
 }//XXX
 ::std::cerr << ::std::endl;//XXX
+#endif // DCS_DEBUG
 //[/XXX]
 //DCS_DEBUG_TRACE("Executing: " << cmd << " " << args[0] << " " << args[1] << " " << args[2] << " - " << args[3]);
 
@@ -1183,126 +1213,140 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
 			//_exit(EXIT_FAILURE);
 			_exit(127);
 		}
-		else
+
+		// The parent
+
+		child_pid_ = pid; //FIXME
+
+//		// Associate the parent's stdin to the pipe read fd.
+		::close(pipefd[1]);
+//		::close(STDIN_FILENO);
+//		::dup(pipefd[0]);
+		if (pipefd[0] != STDIN_FILENO)
 		{
-			// parent
-
-//			// Associate the parent's stdin to the pipe read fd.
-			::close(pipefd[1]);
-//			::close(STDIN_FILENO);
-//			::dup(pipefd[0]);
-			if (pipefd[0] != STDIN_FILENO)
+			if (::dup2(pipefd[0], STDIN_FILENO) != STDIN_FILENO)
 			{
-				if (::dup2(pipefd[0], STDIN_FILENO) != STDIN_FILENO)
-				{
-					char const* err_str = ::strerror(errno);
-					::std::ostringstream oss;
-					oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] dup2(2) failed: "
-						<< ::std::string(err_str);
-					throw ::std::runtime_error(oss.str());
-				}
-				::close(pipefd[0]);
+				char const* err_str = ::strerror(errno);
+				::std::ostringstream oss;
+				oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] dup2(2) failed: "
+					<< ::std::string(err_str);
+				throw ::std::runtime_error(oss.str());
 			}
+			::close(pipefd[0]);
+		}
 
-			typedef ::boost::iostreams::file_descriptor_source fd_device_type;
-			typedef ::boost::iostreams::stream_buffer<fd_device_type> fd_streambuf_type;
-			//fd_device_type fd_src(pipefd[0], ::boost::iostreams::close_handle);
-			fd_device_type fd_src(STDIN_FILENO, ::boost::iostreams::close_handle);
-			fd_streambuf_type fd_buf(fd_src);
-			::std::istream is(&fd_buf);
+		typedef ::boost::iostreams::file_descriptor_source fd_device_type;
+		typedef ::boost::iostreams::stream_buffer<fd_device_type> fd_streambuf_type;
+		//fd_device_type fd_src(pipefd[0], ::boost::iostreams::close_handle);
+		fd_device_type fd_src(STDIN_FILENO, ::boost::iostreams::close_handle);
+		fd_streambuf_type fd_buf(fd_src);
+		::std::istream is(&fd_buf);
 
-			// Read from the stdin
+		// Read from the stdin
 DCS_DEBUG_TRACE("BEGIN parsing MATLAB output");//XXX
-			bool parse_line(false);
-			while (is.good())
-			{
-				::std::string line;
-				::std::getline(is, line);
+		bool parse_line(false);
+		while (is.good())
+		{
+			::std::string line;
+			::std::getline(is, line);
 DCS_DEBUG_TRACE("Read from MATLAB --> " << line);//XXX
 
-				if (parse_line)
+			if (parse_line)
+			{
+				if (line.find("[/eesim]") != ::std::string::npos)
 				{
-					if (line.find("[/eesim]") != ::std::string::npos)
-					{
-						// The end of parsable lines
-						parse_line = false;
-					}
-					else
-					{
-						typename ::std::string::size_type pos;
-						if ((pos = line.find("th=")) != ::std::string::npos)
-						{
-							parse_matlab_data(line.substr(pos+3), th);
-DCS_DEBUG_TRACE("Parsed as th=" << th);//XXX
-						}
-						else if ((pos = line.find("yh=")) != ::std::string::npos)
-						{
-							parse_matlab_data(line.substr(pos+3), yh);
-DCS_DEBUG_TRACE("Parsed as yh=" << yh);//XXX
-						}
-						else if ((pos = line.find("P=")) != ::std::string::npos)
-						{
-							parse_matlab_data(line.substr(pos+2), P);
-DCS_DEBUG_TRACE("Parsed as P=" << P);//XXX
-						}
-						else if ((pos = line.find("phi=")) != ::std::string::npos)
-						{
-							parse_matlab_data(line.substr(pos+4), phi);
-DCS_DEBUG_TRACE("Parsed as phi=" << phi);//XXX
-
-							// Actually the RARX function of the current System
-							// Identification Toolbox (MATLAB 2010b) returns a
-							// \phi vector with one additional and useless entry
-							// placed at the end of the vector.
-							// Remove it.
-
-							//TODO: check for current MATLAB version and issue a
-							//      warning if the versio is newer than 2010b.
-
-							phi = ::boost::numeric::ublas::subrange(phi, 0, ::boost::numeric::ublasx::size(phi));
-						}
-					}
+					// The end of parsable lines
+					parse_line = false;
 				}
 				else
 				{
-					if (line.find("[eesim]") != ::std::string::npos)
+					typename ::std::string::size_type pos;
+					if ((pos = line.find("th=")) != ::std::string::npos)
 					{
-						// The beginning of parsable lines
-						parse_line = true;
+						parse_matlab_data(line.substr(pos+3), th);
+DCS_DEBUG_TRACE("Parsed as th=" << th);//XXX
+					}
+					else if ((pos = line.find("yh=")) != ::std::string::npos)
+					{
+						parse_matlab_data(line.substr(pos+3), yh);
+DCS_DEBUG_TRACE("Parsed as yh=" << yh);//XXX
+					}
+					else if ((pos = line.find("P=")) != ::std::string::npos)
+					{
+						parse_matlab_data(line.substr(pos+2), P);
+DCS_DEBUG_TRACE("Parsed as P=" << P);//XXX
+					}
+					else if ((pos = line.find("phi=")) != ::std::string::npos)
+					{
+						parse_matlab_data(line.substr(pos+4), phi);
+DCS_DEBUG_TRACE("Parsed as phi=" << phi);//XXX
+
+						// Actually the RARX function of the current System
+						// Identification Toolbox (MATLAB 2010b) returns a
+						// \phi vector with one additional and useless entry
+						// placed at the end of the vector.
+						// Remove it.
+
+						//TODO: check for current MATLAB version and issue a
+						//      warning if the versio is newer than 2010b.
+
+						phi = ::boost::numeric::ublas::subrange(phi, 0, ::boost::numeric::ublasx::size(phi)-1);
 					}
 				}
 			}
+			else
+			{
+				if (line.find("[eesim]") != ::std::string::npos)
+				{
+					// The beginning of parsable lines
+					parse_line = true;
+				}
+			}
+		}
 DCS_DEBUG_TRACE("END parsing MATLAB output");//XXX
 DCS_DEBUG_TRACE("IS state: " << is.good() << " - " << is.eof() << " - " << is.fail() << " - " << is.bad());//XXX
 
-			// Wait the child termination (in order to prevent zombies)
-			int status;
-			::pid_t wait_pid;
-			wait_pid = ::wait(&status);
+		// Wait the child termination (in order to prevent zombies)
+		int status;
+//		::pid_t wait_pid;
+//		wait_pid = ::wait(&status);
+//		if (wait_pid != pid)
+//		{
+//			throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy::run_matlab] Unexpected child process.");
+//		}
+		if (::waitpid(pid, &status, 0) == -1)
+		{
+			char const* err_str = ::strerror(errno);
+			::std::ostringstream oss;
+			oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] waitpid(2) failed: "
+				<< ::std::string(err_str);
+			throw ::std::runtime_error(oss.str());
+		}
 DCS_DEBUG_TRACE("MATLAB exited");//XXX
-			if (wait_pid != pid)
-			{
-				throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy::run_matlab] Unexpected child process.");
-			}
-            if (WIFEXITED(status))
-			{
+		if (WIFEXITED(status))
+		{
 DCS_DEBUG_TRACE("MATLAB exited with a call to 'exit(" << WEXITSTATUS(status) << ")'");//XXX
-				if (WEXITSTATUS(status))
-				{
-					// status != 0 --> error in the execution
-					::std::clog << "[Warning] MATLAB command exited with status " << WEXITSTATUS(status) << ::std::endl;
-				}
-			}
-            else if (WIFSIGNALED(status))
+			if (WEXITSTATUS(status))
 			{
-DCS_DEBUG_TRACE("MATLAB exited with a call to 'kill(" << WTERMSIG(status) << ")'");//XXX
-               ::std::clog << "[Warning] MATLAB command received signal " << WTERMSIG(status) << ::std::endl;
-			}
-			else
-			{
-DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
+				// status != 0 --> error in the execution
+				::std::clog << "[Warning] MATLAB command exited with status " << WEXITSTATUS(status) << ::std::endl;
 			}
 		}
+		else if (WIFSIGNALED(status))
+		{
+DCS_DEBUG_TRACE("MATLAB exited with a call to 'kill(" << WTERMSIG(status) << ")'");//XXX
+		   ::std::clog << "[Warning] MATLAB command received signal " << WTERMSIG(status) << ::std::endl;
+		}
+		else
+		{
+DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
+		}
+
+		// Restore signal handler
+		::sigaction(SIGTERM, &old_sigterm_act, 0);
+		::sigaction(SIGINT, &old_sigint_act, 0);
+
+		child_pid_ = -1;//FIXME
 	}
 
 
@@ -1491,6 +1535,28 @@ DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
 	}
 
 
+	private: static void process_signals(int signum)
+	{
+		::std::cerr << "Caught signal " << signum << ::std::endl;
+
+		if (signum != SIGTERM && signum != SIGINT)
+		{
+			::std::clog << "[Warning] Caught the unhandled signal " << signum << ::std::endl;
+		}
+
+		// Terminate all child processes
+		if (::kill(child_pid_, SIGKILL) == -1)
+		{
+			char const* err_str = ::strerror(errno);
+			::std::ostringstream oss;
+			oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::process_signals] kill(2) failed: "
+				<< ::std::string(err_str);
+			throw ::std::runtime_error(oss.str());
+		}
+		::std::abort();
+	}
+
+
 	/// The memory for the control output.
 	private: size_type n_a_;
 	/// The memory for the control input.
@@ -1514,6 +1580,8 @@ DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
 	private: ::std::string matlab_cmd_;
 };
 
+template <typename TraitsT>
+::pid_t rls_ff_miso_matlab_app_proxy<TraitsT>::child_pid_ = -1;//FIXME
 
 #else // DCS_EESIM_USE_MATLAB_*
 
