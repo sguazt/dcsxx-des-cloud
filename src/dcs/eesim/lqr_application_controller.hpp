@@ -569,10 +569,13 @@ class rls_ff_miso_matlab_mcr_proxy
 	private: ::std::vector<matrix_type> Ps_;
 	/// The regression vector.
 	private: ::std::vector<vector_type> phis_;
-};
+}; // rls_ff_miso_matlab_mcr_proxy
 
 
 #elif defined(DCS_EESIM_USE_MATLAB_APP)
+
+
+#if defined(DCS_EESIM_USE_MATLAB_APP_RLS)
 
 
 /**
@@ -592,9 +595,6 @@ class rls_ff_miso_matlab_app_proxy
 	private: typedef ::boost::numeric::ublas::matrix<real_type> matrix_type;
 	private: typedef ::boost::numeric::ublas::vector<real_type> vector_type;
 	private: typedef ::std::size_t size_type;
-
-
-	private: static ::pid_t child_pid_;//FIXME
 
 
 	public: rls_ff_miso_matlab_app_proxy()
@@ -1216,8 +1216,6 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
 
 		// The parent
 
-		child_pid_ = pid; //FIXME
-
 //		// Associate the parent's stdin to the pipe read fd.
 		::close(pipefd[1]);
 //		::close(STDIN_FILENO);
@@ -1345,8 +1343,6 @@ DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
 		// Restore signal handler
 		::sigaction(SIGTERM, &old_sigterm_act, 0);
 		::sigaction(SIGINT, &old_sigint_act, 0);
-
-		child_pid_ = -1;//FIXME
 	}
 
 
@@ -1544,8 +1540,10 @@ DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
 			::std::clog << "[Warning] Caught the unhandled signal " << signum << ::std::endl;
 		}
 
-		// Terminate all child processes
-		if (::kill(child_pid_, SIGKILL) == -1)
+		// Terminate all child processes.
+		// Specifically, kill every process in the process group of the calling
+		// process
+		if (::kill(0, SIGKILL) == -1)
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
@@ -1578,10 +1576,1090 @@ DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
 	/// Initialization flags.
 	private: ::std::vector<bool> initialized_;
 	private: ::std::string matlab_cmd_;
-};
+}; // rls_ff_miso_matlab_app_proxy
 
+
+#elif defined(DCS_EESIM_USE_MATLAB_APP_RPEM)
+
+
+/**
+ * \brief Proxy to identify a MIMO system model by applying the recursive
+ *  Prediction-Error Minimization (PEM) with forgetting factor algorithm to
+ *  several MISO system models.
+ *
+ * MATLAB implementation version.
+ *
+ * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ */
 template <typename TraitsT>
-::pid_t rls_ff_miso_matlab_app_proxy<TraitsT>::child_pid_ = -1;//FIXME
+class rpem_ff_miso_matlab_app_proxy
+{
+	private: typedef rpem_ff_miso_matlab_app_proxy self_type;
+	public: typedef TraitsT traits_type;
+	public: typedef typename traits_type::real_type real_type;
+	private: typedef ::boost::numeric::ublas::matrix<real_type> matrix_type;
+	private: typedef ::boost::numeric::ublas::vector<real_type> vector_type;
+	private: typedef ::std::size_t size_type;
+
+
+	public: rpem_ff_miso_matlab_app_proxy()
+	: n_a_(0),
+	  n_b_(0),
+	  n_c_(0),
+	  d_(0),
+	  n_y_(0),
+	  n_u_(0),
+	  ff_(0)
+	{
+//		init_matlab();
+	}
+
+
+	public: rpem_ff_miso_matlab_app_proxy(size_type n_a, size_type n_b, size_type n_c, size_type d, size_type n_y, size_type n_u, real_type ff)
+	: n_a_(n_a),
+	  n_b_(n_b),
+	  n_c_(n_c),
+	  d_(d),
+	  n_y_(n_y),
+	  n_u_(n_u),
+	  ff_(ff),
+	  theta_hats_(n_y_),
+	  Ps_(n_y_),
+	  phis_(n_y_),
+	  psis_(n_y_)
+	{
+	}
+
+
+	public: size_type noise_order() const
+	{
+		return n_c_;
+	}
+
+
+	public: size_type input_order() const
+	{
+		return n_b_;
+	}
+
+
+	public: size_type output_order() const
+	{
+		return n_a_;
+	}
+
+
+	public: size_type input_delay() const
+	{
+		return d_;
+	}
+
+
+	public: size_type num_inputs() const
+	{
+		return n_u_;
+	}
+
+
+	public: size_type num_outputs() const
+	{
+		return n_y_;
+	}
+
+
+	public: real_type forgetting_factor() const
+	{
+		return ff_;
+	}
+
+
+	public: matrix_type Theta_hat() const
+	{
+		namespace ublas = ::boost::numeric::ublas;
+
+		const size_type nay(n_a_*n_y_);
+		const size_type nbu(n_b_*n_u_);
+		const size_type nce(n_c_);
+		const size_type n(nay+nbu+nce);
+		matrix_type X(n, n_y_, real_type/*zero()*/());
+
+		for (size_type i = 0; i < n_y_; ++i)
+		{
+			// ith output => ith column of Theta_hat
+			// ith column of Theta_hat = [0; ...; 0; a_{ii}^{1}
+			const size_type k(i*n_a_);
+			ublas::matrix_column<matrix_type> mc(X,i);
+			ublas::subrange(mc, k, k+n_a_) = ublas::subrange(theta_hats_[i], 0, n_a_);
+			ublas::subrange(mc, nay, nay+nbu) = ublas::subrange(theta_hats_[i], n_a_, n_a_+nbu);
+			ublas::subrange(mc, nay+nbu, n) = ublas::subrange(theta_hats_[i], n_a_+nbu, n_a_+nbu+nce);
+		}
+
+		return X;
+	}
+
+
+	public: matrix_type P() const
+	{
+		matrix_type aux_P;
+//FIXME
+		return aux_P;
+	}
+
+
+	public: vector_type phi() const
+	{
+		namespace ublas = ::boost::numeric::ublas;
+
+		const size_type nay(n_a_*n_y_);
+		const size_type nbu(n_b_*n_u_);
+		const size_type n(nay+nbu);
+		vector_type x(n);
+
+		for (size_type i = 0; i < n_y_; ++i)
+		{
+			const size_type k(i*n_a_);
+			ublas::subrange(x, k, k+n_a_) = ublas::subrange(phis_[i], 0, n_a_);
+		}
+
+		ublas::subrange(x, nay, n) = ublas::subrange(phis_[0], n_a_, n_a_+nbu);
+
+		return x;
+	}
+
+
+	public: vector_type psi() const
+	{
+		namespace ublas = ::boost::numeric::ublas;
+
+		const size_type nay(n_a_*n_y_);
+		const size_type nbu(n_b_*n_u_);
+		const size_type n(nay+nbu);
+		vector_type x(n);
+
+		for (size_type i = 0; i < n_y_; ++i)
+		{
+			const size_type k(i*n_a_);
+			ublas::subrange(x, k, k+n_a_) = ublas::subrange(psis_[i], 0, n_a_);
+		}
+
+		ublas::subrange(x, nay, n) = ublas::subrange(psis_[0], n_a_, n_a_+nbu);
+
+		return x;
+	}
+
+
+	public: void init()
+	{
+		if (initialized_.size() != n_y_)
+		{
+			initialized_.resize(n_y_);
+		}
+		for (size_type i = 0; i < n_y_; ++i)
+		{
+			initialized_[i] = false;
+		}
+
+		matlab_cmd_ = find_matlab_command();
+	}
+
+
+	public: template <typename YVectorExprT, typename UVectorExprT>
+		vector_type estimate(::boost::numeric::ublas::vector_expression<YVectorExprT> const& y,
+							 ::boost::numeric::ublas::vector_expression<UVectorExprT> const& u)
+	{
+		namespace ublas = ::boost::numeric::ublas;
+
+		// Estimate system parameters
+//DCS_DEBUG_TRACE("BEGIN estimation");//XXX
+//DCS_DEBUG_TRACE("y(k): " << y);//XXX
+//DCS_DEBUG_TRACE("u(k): " << u);//XXX
+		vector_type y_hat(n_y_);
+
+		// Common input params
+		// Orders vector:
+		//   nn = [na nb nc nd nf nk]
+		size_type nn_sz(3+3*n_u_);
+		::std::vector<size_type> nn(nn_sz); // [n_a_,n_b_,...,n_b_,n_c_,0,0,...0,d_,...,d_]
+		nn[0] = n_a_; // na
+		nn[1+n_u_] = n_c_; // nc
+		nn[2+n_u_] = 0; // nd
+		for (size_type i = 1; i <= n_u_; ++i)
+		{
+			nn[i] = n_b_; // nb
+			nn[i+2+n_u_] = 0; // nf
+			nn[i+2+2*n_u_] = d_; // nk
+		}
+
+		// Partially common input params
+		size_type nz(1+n_u_);
+		vector_type z(nz, real_type/*zero*/()); // [y, u_1, ..., u_{n_u_}]
+		ublas::subrange(z, 1, nz) = u;
+
+		// The main loop
+		for (size_type i = 0; i < n_y_; ++i)
+		{
+//DCS_DEBUG_TRACE("theta_hat["<< i << "](k): " << theta_hats_[i]);//XXX
+//DCS_DEBUG_TRACE("P["<< i << "](k): " << Ps_[i]);//XXX
+//DCS_DEBUG_TRACE("phi["<< i << "](k): " << phis_[i]);//XXX
+			// Partially per-iteration input params
+			z(0) = y()(i);
+
+			// Prepare MATLAB command
+			::std::vector< ::std::string > args;
+			args.push_back("-nodisplay");
+			args.push_back("-nojvm");
+//			args.push_back("-r");
+			::std::ostringstream oss;
+			oss << "-r \"[th,yh,P,phi,psi]=rpem("
+				<< matlab_form(z, false)
+				<< "," << matlab_form(nn, false)
+				<< ",'ff'," << ff_;
+			if (initialized_[i])
+			{
+				oss << "," << matlab_form(theta_hats_[i], true) //<< "'" // We must pass the transpose of theta_hat
+					<< "," << matlab_form(Ps_[i])
+					<< "," << matlab_form(phis_[i], true)
+					<< "," << matlab_form(psis_[i], true);
+			}
+			else
+			{
+				initialized_[i] = true;
+			}
+			oss << "); format long;"
+				<< " disp('--- [eesim] ---');"
+				<< " disp(['th=', mat2str(th), ]);"
+				<< " disp(['yh=', num2str(yh), ]);"
+				<< " disp(['P=', mat2str(P), ]);"
+				<< " disp(['phi=', mat2str(phi), ]);"
+				<< " disp(['psi=', mat2str(psi), ]);"
+				<< " disp('--- [/eesim] ---');"
+				<< " quit force\"";
+			args.push_back(oss.str());
+
+			// Run MATLAB and retrieve its results
+			run_matlab(matlab_cmd_, args, theta_hats_[i], y_hat(i), Ps_[i], phis_[i], psis_[i]);
+
+DCS_DEBUG_TRACE("New theta_hat["<< i << "](k): " << theta_hats_[i]);//XXX
+DCS_DEBUG_TRACE("New P["<< i << "](k): " << Ps_[i]);//XXX
+DCS_DEBUG_TRACE("New phi["<< i << "](k): " << phis_[i]);//XXX
+DCS_DEBUG_TRACE("New psi["<< i << "](k): " << psis_[i]);//XXX
+DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
+		}
+
+		return y_hat;
+	}
+
+
+	/// Return matrix A_k from \hat{\Theta}.
+	public: matrix_type A(size_type k) const
+	{
+		namespace ublas = ::boost::numeric::ublas;
+
+		DCS_DEBUG_ASSERT( k >= 1 && k <= n_a_ );
+
+		// Remember, for each output i=1,...,n_y:
+		//   \hat{\theta}_i = [a_{ii}^{1};
+		//                     ...;
+		//                     a_{ii}^{n_a};
+		//                     b_{i1}^{1};
+		//                     ...;
+		//                     b_{i1}^{n_b};
+		//                     ...;
+		//                     b_{in_u}^{1};
+		//                     ...;
+		//                     b_{in_u}^{n_b}]
+		// So in \hat{\theta}_i the ith diagonal element of matrix A_k stays at:
+		//   A_k(i,i) <- \hat{\theta}_i(k)
+		matrix_type A_k(n_y_, n_y_, real_type/*zero*/());
+		for (size_type i = 0; i < n_y_; ++i)
+		{
+			A_k(i,i) = theta_hats_[i](k);
+		}
+
+		return A_k;
+	}
+
+
+	/// Return matrix B_k from \hat{\Theta}.
+	public: matrix_type B(size_type k) const
+	{
+		namespace ublas = ::boost::numeric::ublas;
+
+		DCS_DEBUG_ASSERT( k >= 1 && k <= n_b_ );
+
+		// Remember, for each output i=1,...,n_y:
+		//   \hat{\theta}_i = [a_{ii}^{1};
+		//                     ...;
+		//                     a_{ii}^{n_a};
+		//                     b_{i1}^{1};
+		//                     ...;
+		//                     b_{i1}^{n_b};
+		//                     ...;
+		//                     b_{in_u}^{1};
+		//                     ...;
+		//                     b_{in_u}^{n_b}]
+		// So in \hat{\theta}_i the ith row of matrix B_k stays at:
+		//   B_k(i,:) <- (\hat{\theta}_i(((n_a+k):n_b:n_u))^T
+		matrix_type B_k(n_y_, n_u_);
+		for (size_type i = 0; i < n_y_; ++i)
+		{
+			ublas::row(B_k, i) = ublas::subslice(theta_hats_[i], n_a_+k-1, n_b_, n_u_);
+		}
+
+		return B_k;
+	}
+
+
+	/// Return matrix C_k from \hat{\Theta}.
+	public: matrix_type C(size_type k) const
+	{
+		namespace ublas = ::boost::numeric::ublas;
+
+		DCS_DEBUG_ASSERT( k >= 1 && k <= n_c_ );
+
+		// Remember, for each output i=1,...,n_y:
+		//   \hat{\theta}_i = [a_{ii}^{1};
+		//                     ...;
+		//                     a_{ii}^{n_a};
+		//                     b_{i1}^{1};
+		//                     ...;
+		//                     b_{i1}^{n_b};
+		//                     ...;
+		//                     b_{in_u}^{1};
+		//                     ...;
+		//                     b_{in_u}^{n_b};
+		//                     c_{i1}^{1};
+		//                     ...;
+		//                     c_{i1}^{n_c};
+		//                     ...;
+		//                     c_{in_y}^{1};
+		//                     ...;
+		//                     c_{in_y}^{n_c}]
+		// So in \hat{\theta}_i the ith row of matrix C_k stays at:
+		//   C_k(i,:) <- (\hat{\theta}_i(((n_a+k):n_b:n_u))^T
+		matrix_type C_k(n_y_, n_y_);
+		for (size_type i = 0; i < n_y_; ++i)
+		{
+			ublas::row(C_k, i) = ublas::subslice(theta_hats_[i], n_a_+n_b_*n_u_+k-1, n_c_, n_y_);
+		}
+
+		return C_k;
+	}
+
+
+	private: template <typename ValueT>
+		static ::std::string matlab_form(::std::vector<ValueT> const& v, bool column = true)
+	{
+		size_type n(v.size());
+		::std::ostringstream oss;
+		oss << "[";
+		for (size_type i = 0; i < n; ++i)
+		{
+			if (i > 0)
+			{
+				if (column)
+				{
+					oss << ";";
+				}
+				else
+				{
+					oss << " ";
+				}
+			}
+			oss << v[i];
+		}
+		oss << "]";
+
+		return oss.str();
+	}
+
+
+	private: template <typename VectorExprT>
+		static ::std::string matlab_form(::boost::numeric::ublas::vector_expression<VectorExprT> const& v, bool column = true)
+	{
+		namespace ublasx = ::boost::numeric::ublasx;
+
+		size_type n(ublasx::size(v));
+		::std::ostringstream oss;
+		oss << "[";
+		for (size_type i = 0; i < n; ++i)
+		{
+			if (i > 0)
+			{
+				if (column)
+				{
+					oss << ";";
+				}
+				else
+				{
+					oss << " ";
+				}
+			}
+			oss << v()(i);
+		}
+		oss << "]";
+
+		return oss.str();
+	}
+
+
+	private: template <typename MatrixExprT>
+		static ::std::string matlab_form(::boost::numeric::ublas::matrix_expression<MatrixExprT> const& A)
+	{
+		namespace ublasx = ::boost::numeric::ublasx;
+
+		size_type nr(ublasx::num_rows(A));
+		size_type nc(ublasx::num_columns(A));
+		::std::ostringstream oss;
+		oss << "[";
+		for (size_type r = 0; r < nr; ++r)
+		{
+			if (r > 0)
+			{
+				oss << ";";
+			}
+			for (size_type c = 0; c < nc; ++c)
+			{
+				if (c > 0)
+				{
+					oss << " ";
+				}
+				oss << A()(r,c);
+			}
+		}
+		oss << "]";
+
+		return oss.str();
+	}
+
+
+	private: static ::std::string find_matlab_command()
+	{
+		const ::std::string cmd_name("matlab");
+
+/*XXX: this search is now useless since we use "execvp" in place of "execv".
+		// Get paths from environment
+		char* env_paths(::getenv("PATH"));
+		char* cwd(0);
+		if (!env_paths)
+		{
+			::std::size_t cwd_sz(20);
+			char* buf(0);
+			do
+			{
+				if (buf)
+				{
+					delete[] buf;
+				}
+				buf = new char[cwd_sz];
+				cwd = ::getcwd(buf, cwd_sz);
+			}
+			while (!cwd && errno == ERANGE);
+
+			if (cwd)
+			{
+				env_paths = cwd;
+			}
+			else
+			{
+				// Ooops! Unable to get path info.
+				throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy] Unable to get path information.");
+			}
+		}
+
+		::std::string cmd_path;
+		::std::string paths(env_paths);
+		typename ::std::string::size_type pos1(0);
+		typename ::std::string::size_type pos2(0);
+		bool found(false);
+		do
+		{
+			pos2 = paths.find(':', pos1);
+			::std::string dir = (pos2 != ::std::string::npos)
+								? paths.substr(pos1, pos2-pos1)
+								: paths.substr(pos1);
+			cmd_path = ::std::string(dir + "/" + cmd_name);
+			if (::access(cmd_path.c_str(), X_OK))
+			{
+				pos1 = pos2 + 1;
+			}
+			else
+			{
+				found = true;
+			}
+		}
+		while (pos2 != ::std::string::npos && !found);
+
+		if (!found)
+		{
+			throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app::find_matlab_command] MATLAB not found.");
+		}
+
+		if (cwd)
+		{
+			delete[] cwd;
+		}
+
+		return cmd_path;
+*/
+		return cmd_name;
+	}
+
+
+	private: template <typename ArgsT>
+		static void run_matlab(::std::string const& cmd, ArgsT const& args, vector_type& th, real_type& yh, matrix_type& P, vector_type& phi, vector_type& psi)
+	{
+		int pipefd[2];
+
+		// Create a pipe to let to communicate with MATLAB.
+		// Specifically, we want to read the output from MATLAB.
+		// So, the parent process read from the pipe, while the child process
+		// write on it.
+		if (::pipe(pipefd) == -1)
+		{
+			char const* err_str = ::strerror(errno);
+			::std::ostringstream oss;
+			oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] pipe(2) failed: "
+				<< ::std::string(err_str);
+			throw ::std::runtime_error(oss.str());
+		}
+
+		// Install signal handlers
+		struct ::sigaction sig_act;
+		struct ::sigaction old_sigterm_act;
+		struct ::sigaction old_sigint_act;
+		//::memset(&sig_act, 0, sizeof(sig_act));
+		::sigemptyset(&sig_act.sa_mask);
+		sig_act.sa_flags = 0;
+		sig_act.sa_handler = self_type::process_signals;
+		::sigaction(SIGTERM, &sig_act, &old_sigterm_act);
+		::sigaction(SIGINT, &sig_act, &old_sigint_act);
+
+		// Spawn a new process
+
+		// Between fork() and execve() only async-signal-safe functions
+		// must be called if multithreaded applications should be supported.
+		// That's why the following code is executed before fork() is called.
+
+		::pid_t pid = ::fork();
+
+		// check: pid == -1 --> error
+		if (pid == -1)
+		{
+			char const* err_str = ::strerror(errno);
+			::std::ostringstream oss;
+			oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] fork(2) failed: "
+				<< ::std::string(err_str);
+			throw ::std::runtime_error(oss.str());
+		}
+
+		if (pid == 0)
+		{
+			// The child
+
+			// Cancel signal handler set for parent
+			sig_act.sa_handler = SIG_DFL;
+			::sigaction(SIGTERM, &sig_act, 0);
+			::sigaction(SIGINT, &sig_act, 0);
+
+			// Get the maximum number of files this process is allowed to open
+#if defined(F_MAXFD)
+    		int maxdescs = ::fcntl(-1, F_MAXFD, 0);
+    		if (maxdescs == -1)
+			{
+#if defined(_SC_OPEN_MAX)
+        		maxdescs = ::sysconf(_SC_OPEN_MAX);
+#else
+				::rlimit limit;
+				if (::getrlimit(RLIMIT_NOFILE, &limit) < 0)
+				{
+					char const* err_str = ::strerror(errno);
+					::std::ostringstream oss;
+					oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] getrlimit(2) failed: "
+						<< ::std::string(err_str);
+					throw ::std::runtime_error(oss.str());
+				}
+				maxdescs = limit.rlim_cur;
+#endif // _SC_OPEN_MAX
+			}
+#else // F_MAXFD
+#if defined(_SC_OPEN_MAX)
+    		int maxdescs = ::sysconf(_SC_OPEN_MAX);
+#else // _SC_OPEN_MAX
+			::rlimit limit;
+			if (::getrlimit(RLIMIT_NOFILE, &limit) < 0)
+			{
+				char const* err_str = ::strerror(errno);
+				::std::ostringstream oss;
+				oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] getrlimit(2) failed: "
+					<< ::std::string(err_str);
+				throw ::std::runtime_error(oss.str());
+			}
+			maxdescs = limit.rlim_cur;
+#endif // _SC_OPEN_MAX
+#endif // F_MAXFD
+			if (maxdescs == -1)
+			{
+				maxdescs = 1024;
+			}
+
+			::std::vector<bool> close_fd(maxdescs, true);
+
+			// Associate the child's stdout to the pipe write fd.
+			close_fd[STDOUT_FILENO] = false;
+			if (pipefd[1] != STDOUT_FILENO)
+			{
+				if (::dup2(pipefd[1], STDOUT_FILENO) != STDOUT_FILENO)
+				{
+					char const* err_str = ::strerror(errno);
+					::std::ostringstream oss;
+					oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] dup2(2) failed: "
+						<< ::std::string(err_str);
+					throw ::std::runtime_error(oss.str());
+				}
+			}
+			else
+			{
+				close_fd[pipefd[1]] = false;
+			}
+//			::close(STDOUT_FILENO);
+//			::dup(pipefd[1]);
+
+			// Check if the command already has path information
+			::std::string cmd_path;
+			::std::string cmd_name;
+			typename ::std::string::size_type pos;
+			pos = cmd.find_last_of('/');
+			if (pos != ::std::string::npos)
+			{
+				cmd_path = cmd.substr(0, pos);
+				cmd_name = cmd.substr(pos+1);
+			}
+
+			//FIXME: use scoped_ptr in place of "new"
+
+			::std::size_t nargs = args.size()+1;
+			char** argv = new char*[nargs + 2];
+			argv[0] = new char[cmd_name.size()+1];
+			::std::strncpy(argv[0], cmd_name.c_str(), cmd_name.size()+1); // by convention, the first argument is always the command name
+			typename ArgsT::size_type i(1);
+			typename ArgsT::const_iterator end_it(args.end());
+			for (typename ArgsT::const_iterator it = args.begin(); it != end_it; ++it)
+			{
+				argv[i] = new char[it->size()+1];
+				::std::strncpy(argv[i], it->c_str(), it->size()+1);
+				++i;
+			}
+			argv[nargs] = 0;
+
+			//char** envp(0);
+
+			// Close unused file descriptors
+#ifdef DCS_DEBUG
+			// Keep standard error open for debug
+			close_fd[STDERR_FILENO] = false;
+#endif // DCS_DEBUG
+			for (int fd = 0; fd < maxdescs; ++fd)
+			{
+				if (close_fd[fd])
+				{
+					::close(fd);
+				}
+			}
+
+//[XXX]
+#ifdef DCS_DEBUG
+::std::cerr << "Executing MATLAB: " << cmd;//XXX
+for (::std::size_t i=0; i < args.size(); ++i)//XXX
+{//XXX
+::std::cerr << " " << args[i] << ::std::flush;//XXX
+}//XXX
+::std::cerr << ::std::endl;//XXX
+#endif // DCS_DEBUG
+//[/XXX]
+//DCS_DEBUG_TRACE("Executing: " << cmd << " " << args[0] << " " << args[1] << " " << args[2] << " - " << args[3]);
+
+			//::execve(cmd.c_str(), argv, envp);
+			::execvp(cmd.c_str(), argv);
+
+			// Actually we should delete argv and envp data. As we must not
+			// call any non-async-signal-safe functions though we simply exit.
+			::write(STDERR_FILENO, "execvp() failed\n", 17);
+			//_exit(EXIT_FAILURE);
+			_exit(127);
+		}
+
+		// The parent
+
+//		// Associate the parent's stdin to the pipe read fd.
+		::close(pipefd[1]);
+//		::close(STDIN_FILENO);
+//		::dup(pipefd[0]);
+		if (pipefd[0] != STDIN_FILENO)
+		{
+			if (::dup2(pipefd[0], STDIN_FILENO) != STDIN_FILENO)
+			{
+				char const* err_str = ::strerror(errno);
+				::std::ostringstream oss;
+				oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] dup2(2) failed: "
+					<< ::std::string(err_str);
+				throw ::std::runtime_error(oss.str());
+			}
+			::close(pipefd[0]);
+		}
+
+		typedef ::boost::iostreams::file_descriptor_source fd_device_type;
+		typedef ::boost::iostreams::stream_buffer<fd_device_type> fd_streambuf_type;
+		//fd_device_type fd_src(pipefd[0], ::boost::iostreams::close_handle);
+		fd_device_type fd_src(STDIN_FILENO, ::boost::iostreams::close_handle);
+		fd_streambuf_type fd_buf(fd_src);
+		::std::istream is(&fd_buf);
+
+		// Read from the stdin
+DCS_DEBUG_TRACE("BEGIN parsing MATLAB output");//XXX
+		bool parse_line(false);
+		while (is.good())
+		{
+			::std::string line;
+			::std::getline(is, line);
+DCS_DEBUG_TRACE("Read from MATLAB --> " << line);//XXX
+
+			if (parse_line)
+			{
+				if (line.find("[/eesim]") != ::std::string::npos)
+				{
+					// The end of parsable lines
+					parse_line = false;
+				}
+				else
+				{
+					typename ::std::string::size_type pos;
+					if ((pos = line.find("th=")) != ::std::string::npos)
+					{
+						parse_matlab_data(line.substr(pos+3), th);
+DCS_DEBUG_TRACE("Parsed as th=" << th);//XXX
+					}
+					else if ((pos = line.find("yh=")) != ::std::string::npos)
+					{
+						parse_matlab_data(line.substr(pos+3), yh);
+DCS_DEBUG_TRACE("Parsed as yh=" << yh);//XXX
+					}
+					else if ((pos = line.find("P=")) != ::std::string::npos)
+					{
+						parse_matlab_data(line.substr(pos+2), P);
+DCS_DEBUG_TRACE("Parsed as P=" << P);//XXX
+					}
+					else if ((pos = line.find("phi=")) != ::std::string::npos)
+					{
+						parse_matlab_data(line.substr(pos+4), phi);
+DCS_DEBUG_TRACE("Parsed as phi=" << phi);//XXX
+					}
+					else if ((pos = line.find("psi=")) != ::std::string::npos)
+					{
+						parse_matlab_data(line.substr(pos+4), psi);
+DCS_DEBUG_TRACE("Parsed as psi=" << psi);//XXX
+					}
+				}
+			}
+			else
+			{
+				if (line.find("[eesim]") != ::std::string::npos)
+				{
+					// The beginning of parsable lines
+					parse_line = true;
+				}
+			}
+		}
+DCS_DEBUG_TRACE("END parsing MATLAB output");//XXX
+DCS_DEBUG_TRACE("IS state: " << is.good() << " - " << is.eof() << " - " << is.fail() << " - " << is.bad());//XXX
+
+		// Wait the child termination (in order to prevent zombies)
+		int status;
+//		::pid_t wait_pid;
+//		wait_pid = ::wait(&status);
+//		if (wait_pid != pid)
+//		{
+//			throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy::run_matlab] Unexpected child process.");
+//		}
+		if (::waitpid(pid, &status, 0) == -1)
+		{
+			char const* err_str = ::strerror(errno);
+			::std::ostringstream oss;
+			oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] waitpid(2) failed: "
+				<< ::std::string(err_str);
+			throw ::std::runtime_error(oss.str());
+		}
+DCS_DEBUG_TRACE("MATLAB exited");//XXX
+		if (WIFEXITED(status))
+		{
+DCS_DEBUG_TRACE("MATLAB exited with a call to 'exit(" << WEXITSTATUS(status) << ")'");//XXX
+			if (WEXITSTATUS(status))
+			{
+				// status != 0 --> error in the execution
+				::std::clog << "[Warning] MATLAB command exited with status " << WEXITSTATUS(status) << ::std::endl;
+			}
+		}
+		else if (WIFSIGNALED(status))
+		{
+DCS_DEBUG_TRACE("MATLAB exited with a call to 'kill(" << WTERMSIG(status) << ")'");//XXX
+		   ::std::clog << "[Warning] MATLAB command received signal " << WTERMSIG(status) << ::std::endl;
+		}
+		else
+		{
+DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
+		}
+
+		// Restore signal handler
+		::sigaction(SIGTERM, &old_sigterm_act, 0);
+		::sigaction(SIGINT, &old_sigint_act, 0);
+	}
+
+
+	private: template <typename T>
+		static void parse_matlab_data(::std::string const& text, T& x)
+	{
+		::std::istringstream iss(text);
+		while (iss.good())
+		{
+			char ch(iss.peek());
+
+			if (::std::isspace(ch))
+			{
+				// Skip space
+				iss.get();
+			}
+			else if (::std::isdigit(ch) || ch == '+' || ch == '-' || ch == '.')
+			{
+				// Found the beginning of a number
+
+				iss >> x;
+			}
+			else
+			{
+				throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy] Unable to parse a MATLAB number");
+			}
+		}
+	}
+
+
+	private: template <typename T>
+		static void parse_matlab_data(::std::string const& text, ::boost::numeric::ublas::vector<T>& v)
+	{
+		typename ::boost::numeric::ublas::vector<T>::size_type n(0);
+
+		::std::istringstream iss(text);
+		bool inside(false);
+		bool done(false);
+		while (iss.good() && !done)
+		{
+			char ch(iss.peek());
+			bool ko(false);
+
+			if (inside)
+			{
+				if (::std::isspace(ch) || ch == ';')
+				{
+					// Found an element separator
+					iss.get();
+//					while (iss.good() && (ch = iss.peek()) && ::std::isspace(ch))
+//					{
+//						iss.get();
+//					}
+				}
+				else if (ch == ']')
+				{
+					// Found the end of the vector
+//					iss.get();
+//					inside = false;
+					done = true;
+				}
+				else if (::std::isdigit(ch) || ch == '+' || ch == '-' || ch == '.')
+				{
+					// Found the beginning of a number
+					T x;
+					iss >> x;
+					v.resize(n+1, true);
+					v(n) = x;
+					++n;
+				}
+				else
+				{
+					ko = true;
+				}
+			}
+			else
+			{
+				if (ch == '[')
+				{
+					iss.get();
+					v.resize(0, false);
+					inside = true;
+				}
+				else if (::std::isspace(ch))
+				{
+					iss.get();
+				}
+				else
+				{
+					ko = true;
+				}
+			}
+
+			if (ko)
+			{
+				throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy] Unable to parse a MATLAB vector.");
+			}
+		}
+	}
+
+
+	private: template <typename T>
+		static void parse_matlab_data(::std::string const& text, ::boost::numeric::ublas::matrix<T>& A)
+	{
+		typename ::boost::numeric::ublas::matrix<T>::size_type r(0);
+		typename ::boost::numeric::ublas::matrix<T>::size_type c(0);
+		typename ::boost::numeric::ublas::matrix<T>::size_type nc(0);
+
+		::std::istringstream iss(text);
+		bool inside(false);
+		bool done(false);
+		while (iss.good() && !done)
+		{
+			char ch(iss.peek());
+			bool ko(false);
+
+			if (inside)
+			{
+				if (::std::isspace(ch))
+				{
+					// Found a column separator
+					iss.get();
+//					while (iss.good() && (ch = iss.peek()) && ::std::isspace(ch))
+//					{
+//						iss.get();
+//					}
+				}
+ 				else if (ch == ';')
+				{
+					// Found a row separator
+					iss.get();
+					++r;
+					c = 0;
+				}
+				else if (ch == ']')
+				{
+					// Found the end of the matrix
+//					iss.get();
+//					inside = false;
+					done = true;
+				}
+				else if (::std::isdigit(ch) || ch == '+' || ch == '-' || ch == '.')
+				{
+					// Found the beginning of a number
+					T x;
+					iss >> x;
+					if (nc <= c)
+					{
+						nc = c+1;
+					}
+					A.resize(r+1, nc, true);
+					A(r,c) = x;
+					++c;
+				}
+				else
+				{
+					ko = true;
+				}
+			}
+			else
+			{
+				// Note: outside of a matrix, only two types of character are
+				// allowed: spaces and '['
+
+				if (ch == '[')
+				{
+					iss.get();
+					A.resize(0, 0, false);
+					inside = true;
+				}
+				else if (::std::isspace(ch))
+				{
+					iss.get();
+				}
+				else
+				{
+					ko = true;
+				}
+			}
+
+			if (ko)
+			{
+				throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy] Unable to parse a MATLAB matrix.");
+			}
+		}
+	}
+
+
+	private: static void process_signals(int signum)
+	{
+		::std::cerr << "Caught signal " << signum << ::std::endl;
+
+		if (signum != SIGTERM && signum != SIGINT)
+		{
+			::std::clog << "[Warning] Caught the unhandled signal " << signum << ::std::endl;
+		}
+
+		// Terminate all child processes.
+		// Specifically, kill every process in the process group of the calling
+		// process
+		if (::kill(0, SIGKILL) == -1)
+		{
+			char const* err_str = ::strerror(errno);
+			::std::ostringstream oss;
+			oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::process_signals] kill(2) failed: "
+				<< ::std::string(err_str);
+			throw ::std::runtime_error(oss.str());
+		}
+		::std::abort();
+	}
+
+
+	/// The memory for the control output.
+	private: size_type n_a_;
+	/// The memory for the control input.
+	private: size_type n_b_;
+	/// The memory for the noise.
+	private: size_type n_c_;
+	/// Input delay (dead time).
+	private: size_type d_;
+	/// The size of the control output vector.
+	private: size_type n_y_;
+	/// The size of the augmented control input vector.
+	private: size_type n_u_;
+	/// Forgetting factor.
+	private: real_type ff_;
+	/// Matrix of system parameters estimated by RLS: [A_1 ... A_{n_a} B_1 ... B_{n_b} C_1 ... C_{n_c}].
+	private: ::std::vector<vector_type> theta_hats_;
+	/// The covariance matrix.
+	private: ::std::vector<matrix_type> Ps_;
+	/// The regression vector.
+	private: ::std::vector<vector_type> phis_;
+	/// The ...
+	private: ::std::vector<vector_type> psis_;
+	/// Initialization flags.
+	private: ::std::vector<bool> initialized_;
+	private: ::std::string matlab_cmd_;
+}; // rpem_ff_miso_matlab_app_proxy
+
+
+#else
+
+
+#	error "Unable to find a suitable algorithm for recursive identification."
+
+
+#endif // DCS_EESIM_USE_MATLAB_APP_*
+
 
 #else // DCS_EESIM_USE_MATLAB_*
 
@@ -2273,7 +3351,11 @@ class lq_application_controller: public base_application_controller<TraitsT>
 #if defined(DCS_EESIM_USE_MATLAB_MCR)
 	private: typedef detail::rls_ff_miso_matlab_mcr_proxy<traits_type> rls_ff_proxy_type;
 #elif defined(DCS_EESIM_USE_MATLAB_APP)
+# if defined(DCS_EESIM_USE_MATLAB_APP_RLS)
 	private: typedef detail::rls_ff_miso_matlab_app_proxy<traits_type> rls_ff_proxy_type;
+# elif defined(DCS_EESIM_USE_MATLAB_APP_RPEM)
+	private: typedef detail::rpem_ff_miso_matlab_app_proxy<traits_type> rls_ff_proxy_type;
+#endif // DCS_EESIM_USE_MATLAB_APP_*
 #else
 //	private: typedef detail::rls_ff_mimo_proxy<traits_type> rls_ff_proxy_type;
 	private: typedef detail::rls_ff_miso_proxy<traits_type> rls_ff_proxy_type;
@@ -2851,7 +3933,8 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << app_rt << " (aggregated: " << ptr_st
 //										rls_Theta_hat_,
 //										rls_P_,
 //										rls_phi_);
-		rls_ff_proxy_ = rls_ff_proxy_type(n_a_, n_b_, d_, n_p_, n_s_, rls_ff_);
+//		rls_ff_proxy_ = rls_ff_proxy_type(n_a_, n_b_, d_, n_p_, n_s_, rls_ff_);
+		rls_ff_proxy_ = rls_ff_proxy_type(n_a_, n_b_, 2, d_, n_p_, n_s_, rls_ff_);
 		rls_ff_proxy_.init();
 
 		// Completely reset all measures
