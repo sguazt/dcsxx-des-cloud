@@ -3933,8 +3933,11 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << app_rt << " (aggregated: " << ptr_st
 //										rls_Theta_hat_,
 //										rls_P_,
 //										rls_phi_);
-//		rls_ff_proxy_ = rls_ff_proxy_type(n_a_, n_b_, d_, n_p_, n_s_, rls_ff_);
+#ifdef DCS_EESIM_USE_MATLAB_APP_RPEM
 		rls_ff_proxy_ = rls_ff_proxy_type(n_a_, n_b_, 2, d_, n_p_, n_s_, rls_ff_);
+#else
+		rls_ff_proxy_ = rls_ff_proxy_type(n_a_, n_b_, d_, n_p_, n_s_, rls_ff_);
+#endif // DCS_EESIM_USE_MATLAB_APP_RPEM
 		rls_ff_proxy_.init();
 
 		// Completely reset all measures
