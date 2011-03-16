@@ -32,6 +32,7 @@ struct sla_metric_config
 	typedef RealT real_type;
 
 	real_type value;
+	real_type tolerance;
 };
 
 
@@ -78,6 +79,7 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 		}
 		os << it->first << ": {";
 		os << "value: " << it->second.value;
+		os << ",tolerance: " << it->second.tolerance;
 		os << "}";
 	}
 	os << "}";

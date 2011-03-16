@@ -107,10 +107,25 @@ struct response_time_sla_checker
 {
 	typedef ValueT value_type;
 
+	explicit response_time_sla_checker(value_type tolerance=value_type/*zero*/())
+	: tol_(tolerance)
+	{
+	}
+
 	bool operator()(value_type ref_value, value_type value) const
 	{
-		return ref_value >= value;
+//		return ref_value >= value;
+		if (tol_ > 0)
+		{
+			return (value/ref_value - static_cast<value_type>(1)) <= tol_;
+		}
+		else
+		{
+			return ref_value >= value;
+		}
 	}
+
+	private: value_type tol_;
 };
 
 
@@ -119,10 +134,25 @@ struct throughput_sla_checker
 {
 	typedef ValueT value_type;
 
+	explicit throughput_sla_checker(value_type tolerance=value_type/*zero*/())
+	: tol_(tolerance)
+	{
+	}
+
 	bool operator()(value_type ref_value, value_type value) const
 	{
-		return ref_value <= value;
+//		return ref_value <= value;
+		if (tol_ > 0)
+		{
+			return (value/ref_value - static_cast<value_type>(1)) <= tol_;
+		}
+		else
+		{
+			return ref_value >= value;
+		}
 	}
+
+	private: value_type tol_;
 };
 
 
@@ -1462,14 +1492,14 @@ template <
 
 
 template <typename ValueT>
-::dcs::perfeval::sla::any_metric_checker<ValueT> make_performance_measure_checker(metric_category category)
+::dcs::perfeval::sla::any_metric_checker<ValueT> make_performance_measure_checker(metric_category category, ValueT tolerance)
 {
 	switch (category)
 	{
 		case response_time_metric:
-			return ::dcs::perfeval::sla::any_metric_checker<ValueT>(response_time_sla_checker<ValueT>());
+			return ::dcs::perfeval::sla::any_metric_checker<ValueT>(response_time_sla_checker<ValueT>(tolerance));
 		case throughput_metric:
-			return ::dcs::perfeval::sla::any_metric_checker<ValueT>(throughput_sla_checker<ValueT>());
+			return ::dcs::perfeval::sla::any_metric_checker<ValueT>(throughput_sla_checker<ValueT>(tolerance));
 	}
 }
 
@@ -1518,7 +1548,7 @@ template <typename TraitsT, typename RealT>
 					sla.add_slo(
 							make_performance_measure_category(it->first),
 							it->second.value,
-							make_performance_measure_checker<target_real_type>(it->first)
+							make_performance_measure_checker<target_real_type>(it->first, it->second.tolerance)
 						);
 				}
 

@@ -1558,6 +1558,14 @@ template <typename RealT>
 void operator>>(::YAML::Node const& node, sla_metric_config<RealT>& metric)
 {
 	node["value"] >> metric.value;
+	if (node.FindValue("tolerance"))
+	{
+		node["tolerance"] >> metric.tolerance;
+	}
+	else
+	{
+		metric.tolerance = 0;
+	}
 }
 
 

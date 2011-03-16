@@ -3,7 +3,7 @@
  *
  * \brief Base class for SLA cost models implementing the SlaCostModel concept.
  *
- * Copyright (C) 2009-2010  Distributed Computing System (DCS) Group, Computer
+ * Copyright (C) 2009-2011  Distributed Computing System (DCS) Group, Computer
  * Science Department - University of Piemonte Orientale, Alessandria (Italy).
  *
  * This program is free software: you can redistribute it and/or modify
