@@ -53,6 +53,8 @@ namespace dcs { namespace perfeval { namespace qn {
 /**
  * \brief Open multi-class BCMP Queueing Network.
  *
+ * Inspired by the \c qnopenmulti function of the \e qnetworks Octave toolbox.
+ *
  * References:
  * -# F. Baskett,
  *    "Open, Closed, and Mixed Networks of Queues with Different Classes of
@@ -67,6 +69,11 @@ namespace dcs { namespace perfeval { namespace qn {
  * -# G. Bolch et al,
  *    "Queueing Networks and Markov Chains",
  *    John Wiley &amp; Sons, 2006.
+ * -# M. Marzolla,
+ *    "The qnetworks Toolbox: A Software Package for Queueing Networks
+ *     Analysis",
+ *    Proc. of the 17th International Conference on Analytical and Stochastic
+ *    Modeling Techniques and Applications (ASMTA 2010), Cardiff, UK, 2010.
  * .
  *
  * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
@@ -95,6 +102,36 @@ class open_multi_bcmp_network
 	//				>::promote_type real_type;
 
 
+	/**
+	 * \brief A constructor.
+	 *
+	 * \param lambda
+	 *  The external arrival rates vector.
+	 *  \f$\lambda_c\f$ is the external arrival rate of class \f$c\f$ customer.
+	 *  Constraits: \f$\lambda_c > 0\f$.
+	 * \param S
+	 *  The service times matrix.
+	 *  \f$S_{ck}\f$ is the mean service time of class \f$c\f$ customers for the
+	 *  service center \f$k\f$.
+	 *  Constraints:
+	 *  - \f$S_{ck} > 0\f$.
+	 *  - For FCFS nodes, average service times must be class-independent.
+	 *  .
+	 * \param V
+	 *  The visit ratios matrix.
+	 *  \f$V_{ck}$ is is the average number of visits of class \f$c\f$
+	 *  customers to service center \f$k\f$.
+	 *  Constraints: \f$V_{ck} \ge 0\f$.
+	 * \param m
+	 *  The service center numerosity vector.
+	 *  \f$m_k\f$ is the number of servers at service center \f$k\f$.
+	 *  Valid values are:
+	 *  - \f$m_k < 1\f$, to denote a delay center (for \f$-/G/\infty\f$ queues),
+	 *  - \f$m}_k=1\f$ to denote a single server queueing center (for either
+	 *    \f$M/M/1\text{--FCFS}\f$, \f$-/G/1\text{--LCFS-PR}\f$ or
+	 *    \f$-/G/1\text{--PS}\f$).
+	 *  .
+	 */
 	public: template <typename VE1, typename ME1, typename ME2, typename VE2>
 		//open_multi_bcmp_network(vector_type const& lambda, matrix_type const& S, matrix_type const& V, vector_type const& m)
 		open_multi_bcmp_network(::boost::numeric::ublas::vector_expression<VE1> const& lambda,
@@ -112,10 +149,10 @@ class open_multi_bcmp_network
 		  U_(nc_, ns_, real_type/*zero*/()),
 		  X_(nc_, ns_, real_type/*zero*/()),
 		  R_(nc_, ns_, real_type/*zero*/()),
-		  K_(nc_, ns_, real_type/*zero*/()),
-		  solved_(false)
+		  K_(nc_, ns_, real_type/*zero*/())//,
+//		  solved_(false)
 	{
-		// precondition: all(lambda > 0)
+		// pre: all(lambda > 0)
 		DCS_ASSERT(
 			::boost::numeric::ublasx::all(
 				lambda_,
@@ -124,14 +161,13 @@ class open_multi_bcmp_network
 			throw ::std::invalid_argument("Arrival rates must be positive numbers.")
 		);
 
-		// precondition: size(lambda_) == num_columns(S_)
+		// pre: size(lambda_) == num_columns(S_)
 		DCS_ASSERT(
-//			::boost::numeric::ublasx::size(lambda_) == ::boost::numeric::ublasx::num_columns(S_),
 			nc_ == ::boost::numeric::ublasx::num_rows(S_),
 			throw ::std::invalid_argument("Arrival rates and service times are of non-compliant sizes.")
 		);
 
-		// precondition: all(S > 0)
+		// pre: all(S > 0)
 		DCS_ASSERT(
 			::boost::numeric::ublasx::all(
 				S_,
@@ -140,15 +176,15 @@ class open_multi_bcmp_network
 			throw ::std::invalid_argument("Service times must be positive numbers.")
 		);
 
-		// precondition: size(V_) ==  size(S_)
+		// pre: size(V_) ==  size(S_)
 		DCS_ASSERT(
 			::boost::numeric::ublasx::num_rows(V_) == ::boost::numeric::ublasx::num_rows(S_)
 			&&
-			::boost::numeric::ublasx::num_columns(V_) == ::boost::numeric::ublasx::num_columns(S_),
+			::boost::numeric::ublasx::num_columns(V_) == ns_,
 			throw ::std::invalid_argument("Visit rates and service times are of non-compliant sizes.")
 		);
 
-		// precondition: all(V_ >= 0)
+		// pre: all(V_ >= 0)
 		DCS_ASSERT(
 			::boost::numeric::ublasx::all(
 				V_,
@@ -157,13 +193,13 @@ class open_multi_bcmp_network
 			throw ::std::invalid_argument("Service times must be non-negative numbers.")
 		);
 
-		// precondition: size(m_) == num_columns(S_)
+		// pre: size(m_) == num_columns(S_)
 		DCS_ASSERT(
-			::boost::numeric::ublasx::size(m_) == ::boost::numeric::ublasx::num_columns(S_),
+			::boost::numeric::ublasx::size(m_) == ns_,
 			throw ::std::invalid_argument("Service centers numerosity and service times are of non-compliant sizes.")
 		);
 
-		// precondition: all(m_ <= 1)
+		// pre: all(m_ <= 1)
 		DCS_ASSERT(
 			::boost::numeric::ublasx::all(
 				m_,
@@ -222,6 +258,8 @@ class open_multi_bcmp_network
 
 
 	/**
+	 * \brief Check the stability of this queueing network.
+	 *
 	 * Check the stability condition:
 	 * \f{align*}
 	 *   \forall s=\{1,\ldots,n_s\} :& \sum_{c=1}^{n_c}{\lambda_c D_{c,s}} \le 1\\
@@ -234,7 +272,15 @@ class open_multi_bcmp_network
 	}
 
 
-	/// Per-class utilization of each station.
+	/**
+	 * \brief Per-class utilization of each station.
+	 *
+	 * If \f$k\f$ is a queueing center, then \f$U_{ck}\f$ is the class \f$c\f$
+	 * utilization of service center \f$k\f$.
+	 * If \f$k\f$ is a delay (infinite server) node, then \f$U_{ck}\f$ is the
+	 * class \f$c\f$ <em>traffic intensity</em> defined as \f$X_{ck}S_{ck}\f$,
+	 * where \f$X_{ck}\f$ is the class \f$c\f$ throughput at station \f$k\f$.
+	 */
 	public: real_matrix_type utilizations() const
 	{
 //		if (!solved_)
@@ -253,7 +299,11 @@ class open_multi_bcmp_network
 	}
 
 
-	/// Per-class throughput at each station.
+	/**
+	 * \brief Per-class throughput at each station.
+	 *
+	 * \f$X_{ck}$ is the class \f$c\f$ throughput at service center \f$k\f$.
+	 */
 	public: real_matrix_type throughputs() const
 	{
 //		if (!solved_)
@@ -265,7 +315,11 @@ class open_multi_bcmp_network
 	}
 
 
-	/// Per-class average response time per visit at each station.
+	/**
+	 * \brief Per-class average response time per visit at each station.
+	 *
+	 * \f$R_{ck}\f$ is the class \f$c\f$ response time at center \f$k\f$.
+	 */
 	public: real_matrix_type response_times() const
 	{
 //		if (!solved_)
@@ -277,15 +331,24 @@ class open_multi_bcmp_network
 	}
 
 
-	/// Per-class average number of customers (waiting + in service) at each
-	/// station.
+	/**
+ 	 * \brief Per-class average number of customers (waiting + in service) at
+ 	 *  each station.
+	 *
+	 * \f$Q_{ck}$ is the average number of class \f$c\f$ requests at service
+	 * center \f$k\f$.
+	 */
 	public: real_matrix_type customers_numbers() const
 	{
 		return K_;
 	}
 
 
-	/// Per-class average time spent at each station over all visits.
+	/**
+	 * \brief Per-class average time spent at each station over all visits.
+	 *
+	 * Is the system response time for class \f$c\f$ requests.
+	 */
 	public: real_matrix_type residence_times() const
 	{
 		return ::boost::numeric::ublas::element_prod(R_, V_);
@@ -311,21 +374,21 @@ class open_multi_bcmp_network
 //XXX: Meaningless
 //	public: real_vector_type class_utilizations() const
 //	{
-//		return ::boost::numeric::ublasx::sum<1>(U_);
+//		return ::boost::numeric::ublasx::sum<2>(U_);
 //	}
 
 
 	/// Per-station utilizations
 	public: real_vector_type station_utilizations() const
 	{
-		return ::boost::numeric::ublasx::sum<2>(U_);
+		return ::boost::numeric::ublasx::sum<1>(U_);
 	}
 
 
 	/// Per class (aggregate) average response time.
 	public: real_vector_type class_response_times() const
 	{
-		return ::boost::numeric::ublasx::sum<1>(R_);
+		return ::boost::numeric::ublasx::sum<2>(R_);
 	}
 
 
@@ -349,28 +412,28 @@ class open_multi_bcmp_network
 	/// Per station (aggregate) throughput.
 	public: real_vector_type station_throughputs() const
 	{
-		return ::boost::numeric::ublasx::sum<2>(X_);
+		return ::boost::numeric::ublasx::sum<1>(X_);
 	}
 
 
 	/// Per class (aggregate) average number of customers.
 	public: real_vector_type class_customers_numbers() const
 	{
-		return ::boost::numeric::ublasx::sum<1>(K_);
+		return ::boost::numeric::ublasx::sum<2>(K_);
 	}
 
 
 	/// Per station (aggregate) average number of customers.
 	public: real_vector_type station_customers_numbers() const
 	{
-		return ::boost::numeric::ublasx::sum<2>(K_);
+		return ::boost::numeric::ublasx::sum<1>(K_);
 	}
 
 
 	/// Per class (aggregate) average residence times.
 	public: real_vector_type class_residence_times() const
 	{
-		return ::boost::numeric::ublasx::sum<1>(residence_times());
+		return ::boost::numeric::ublasx::sum<2>(residence_times());
 	}
 
 
@@ -387,28 +450,28 @@ class open_multi_bcmp_network
 	/// Per class (aggregate) average waiting times.
 	public: real_vector_type class_waiting_times() const
 	{
-		return ::boost::numeric::ublasx::sum<1>(waiting_times());
+		return ::boost::numeric::ublasx::sum<2>(waiting_times());
 	}
 
 
 	/// Per station (aggregate) average waiting times.
 	public: real_vector_type station_waiting_times() const
 	{
-		return ::boost::numeric::ublasx::sum<2>(waiting_times());
+		return ::boost::numeric::ublasx::sum<1>(waiting_times());
 	}
 
 
 	/// Per class (aggregate) average number of waiting customers.
 	public: real_vector_type class_queue_lengths() const
 	{
-		return ::boost::numeric::ublasx::sum<1>(queue_lengths());
+		return ::boost::numeric::ublasx::sum<2>(queue_lengths());
 	}
 
 
 	/// Per station (aggregate) average number of waiting customers.
 	public: real_vector_type station_queue_lengths() const
 	{
-		return ::boost::numeric::ublasx::sum<2>(queue_lengths());
+		return ::boost::numeric::ublasx::sum<1>(queue_lengths());
 	}
 
 
@@ -416,7 +479,7 @@ class open_multi_bcmp_network
 //	/// System utilization.
 //	public: real_type system_utilizations() const
 //	{
-//		return ::boost::numeric::ublasx::sum<1>(U_);
+//		return ::boost::numeric::ublasx::sum_all(U_);
 //	}
 
 
@@ -589,7 +652,7 @@ class open_multi_bcmp_network
 			);
 		}
 
-		solved_ = true;
+//		solved_ = true;
 
 		return true;
 	}
@@ -619,13 +682,14 @@ class open_multi_bcmp_network
 	/// \c k is an IS node, then \c U(c,k) is the class \c c <em>traffic
 	/// intensity</em> defined as <em>X(c,k)*S(c,k)</em>.
 	private: real_matrix_type U_;
-	/// The per-class throughput for each service center; if \c X(c,k) is the class
-	/// \c c throughput at center \c k.
+	/// The per-class throughput for each service center; if \c X(c,k) is the
+	/// class \c c throughput at center \c k.
 	private: real_matrix_type X_;
-	/// The per-class response time for each service center; if \c R(c,k) is the class \c c response time at center \c k. The system response time for class \c c requests can be computed as \c dot(@var{R}, @var{V}, 2)}.
+	/// The per-class response time for each service center; if \c R(c,k) is the
+	/// class \c c response time at center \c k.
 	private: real_matrix_type R_;
 	private: real_matrix_type K_;
-	private: bool solved_;
+//	private: bool solved_;
 };
 
 }}} // Namespace dcs::perfeval::qn

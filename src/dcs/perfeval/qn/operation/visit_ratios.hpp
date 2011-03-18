@@ -131,7 +131,7 @@ typename ::boost::numeric::ublas::vector_temporary_traits<VectorExprT>::type vis
 		)
 		&&
 		::boost::numeric::ublasx::all(
-			::boost::numeric::ublasx::sum_rows(P),
+			::boost::numeric::ublasx::sum<2>(P),
 			::std::bind2nd(::std::less_equal<value_type>(), value_type(1+1.0e-5))
 		),
 		throw ::std::invalid_argument("[dcs::perfeval::queue::qnet::visit_ratios] Probability transitions matrix is not a stochastic matrix for closed networks.")
@@ -226,7 +226,7 @@ typename ::boost::numeric::ublas::vector_temporary_traits<VectorExprT>::type vis
 		)
 		&&
 		::boost::numeric::ublasx::all(
-			::boost::numeric::ublasx::sum_rows(P),
+			::boost::numeric::ublasx::sum<2>(P),
 			::std::bind2nd(::std::less_equal<value_type>(), value_type(1+1e-5))
 		),
 		throw ::std::invalid_argument("[dcs::perfeval::queue::qnet::visit_ratios] Probability transitions matrix is not a stochastic matrix for closed networks.")
