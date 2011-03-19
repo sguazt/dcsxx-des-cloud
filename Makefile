@@ -235,12 +235,12 @@ rebuild: realclean all
 
 $(bindir_release)/% : $(buildtmpdir)/%.$(obj_ext) $(buildtmpdir)/boost/iostreams/src/file_descriptor.$(obj_ext) $(HEADERS)
 	@echo "=== Building Target: $@ ==="
-	$(CXX) $(LDFLAGS) -o $@ $<  $(buildtmpdir)/boost/iostreams/src/file_descriptor.$(obj_ext)
+	$(CXX) -o $@ $<  $(buildtmpdir)/boost/iostreams/src/file_descriptor.$(obj_ext) $(LDFLAGS) 
 
 
 $(bindir_debug)/% : $(buildtmpdir)/%.$(obj_ext) $(buildtmpdir)/boost/iostreams/src/file_descriptor.$(obj_ext) $(HEADERS)
 	@echo "=== Building Target: $@ ==="
-	$(CXX) $(LDFLAGS) -o $@ $<  $(buildtmpdir)/boost/iostreams/src/file_descriptor.$(obj_ext)
+	$(CXX) -o $@ $<  $(buildtmpdir)/boost/iostreams/src/file_descriptor.$(obj_ext) $(LDFLAGS)
 
 
 $(buildtmpdir) $(bindir_release) $(bindir_debug):
