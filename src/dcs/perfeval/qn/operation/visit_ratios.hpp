@@ -137,8 +137,8 @@ typename ::boost::numeric::ublas::vector_temporary_traits<VectorExprT>::type vis
 		throw ::std::invalid_argument("[dcs::perfeval::queue::qnet::visit_ratios] Probability transitions matrix is not a stochastic matrix for closed networks.")
 	);
 
-	matrix_type A(n, n, 0);
-	vector_type b(n, 0);
+	matrix_type A;
+	vector_type b;
 
 	// A = [ I_n - P ]
 	A = ::boost::numeric::ublas::identity_matrix<value_type>(n) - P;
@@ -146,12 +146,13 @@ typename ::boost::numeric::ublas::vector_temporary_traits<VectorExprT>::type vis
 	// b = lambda / \sum_i lambda_i
 	b = lambda / ::boost::numeric::ublasx::sum(lambda);
 
-	vector_type v(n);
+	//vector_type v(n);
 
 	// Find V = A/b = (A'\b')'
 	A = ::boost::numeric::ublas::trans(A);
 	//b = ::boost::numeric::ublas::trans(b);
-	size_type singular = ::boost::numeric::ublasx::lu_solve_inplace(A, b);
+	size_type singular;
+	singular = ::boost::numeric::ublasx::lu_solve_inplace(A, b);
 	//if (!singular)
 	//{
 	//	v = ::boost::numeric::ublas::trans(b);

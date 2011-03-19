@@ -660,14 +660,14 @@ class open_multi_bcmp_network
 
 	/// The arrival rates vector (one element for each user class)
 	private: real_vector_type lambda_;
-	// The per-class mean service time for each service center.
+	/// The per-class mean service time for each service center.
 	private: real_matrix_type S_;
 	/// The per-class mean number of visits to each service center.
 	private: real_matrix_type V_;
-	/// The number of servers vector (one element for each service center);
-	/// Valid values are \f$m_k < 1\f$ to denote a delay center
-	/// (\f$-/G/\infty\f$), and \f$m_k==1\f$ to denote a single server queueing
-	/// center (\f$M/M/1\f$--FCFS, \f$-/G/1\f$--LCFS-PR or \f$-/G/1\f$--PS).
+	/// \brief The number of servers vector (one element for each service
+	///  center); valid values are \f$m_k < 1\f$ to denote a delay center
+	///  (\f$-/G/\infty\f$), and \f$m_k==1\f$ to denote a single server queueing
+	///  center (\f$M/M/1\f$--FCFS, \f$-/G/1\f$--LCFS-PR or \f$-/G/1\f$--PS).
 	private: uint_vector_type m_;
 	/// Number of classes.
 	private: size_type nc_;
@@ -677,17 +677,19 @@ class open_multi_bcmp_network
 	private: real_type capacity_;
 	/// The per-class service demands
 	private: real_matrix_type D_;
-	/// The per-class utilization for each service center; if \c k is a queueing
-	/// center, then \c U(c,k) is the class \c c utilization of center \c k; if
-	/// \c k is an IS node, then \c U(c,k) is the class \c c <em>traffic
-	/// intensity</em> defined as <em>X(c,k)*S(c,k)</em>.
+	/// \brief The per-class utilization for each service center; if \c k is a
+	///  queueing center, then \c U(c,k) is the class \c c utilization of center
+	///  \c k; if \c k is an IS node, then \c U(c,k) is the class \c c
+	///  <em>traffic intensity</em> defined as <em>X(c,k)*S(c,k)</em>.
 	private: real_matrix_type U_;
-	/// The per-class throughput for each service center; if \c X(c,k) is the
-	/// class \c c throughput at center \c k.
+	/// \brief The per-class throughput for each service center; if \c X(c,k) is
+	///  the class \c c throughput at center \c k.
 	private: real_matrix_type X_;
-	/// The per-class response time for each service center; if \c R(c,k) is the
-	/// class \c c response time at center \c k.
+	/// \brief The per-class response time for each service center; if \c R(c,k)
+	///  is the class \c c response time at center \c k.
 	private: real_matrix_type R_;
+ 	/// \brief Per-class average number of customers (waiting + in service) at
+ 	///  each station.
 	private: real_matrix_type K_;
 //	private: bool solved_;
 };
