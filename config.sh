@@ -26,6 +26,43 @@ USR_CXXFLAGS=
 USR_LDFLAGS=
 
 
+## Get the major version number of bash.
+function dcs_bash_major_version()
+{
+	n=0
+	found=0
+	for ((i=0;i<${#BASH_VERSION} && !$found;i++))
+	do
+		ch=${BASH_VERSION:$i:1}
+		case "$ch" in
+			[0-9])
+				n=$((n+$ch))
+				;;
+			'.')
+				found=1
+				;;
+		esac
+	done
+
+	echo -n $n
+}
+
+
+## Convert to lower case
+function dcs_tolower()
+{
+	ver=$(dcs_bash_major_version)
+
+	s=
+	if [ "$ver" -ge "4" ]; then
+		declare -l s=$1
+	else
+		s=$(echo $1 | tr '[A-Z]' '[a-z]')
+	fi
+	echo -n $s
+}
+
+
 ## Format a date
 function dcs_format_date()
 {
@@ -67,7 +104,8 @@ function dcs_log_warn()
 ## Return yes or no
 function dcs_yes_no()
 {
-	declare -l v=$1
+	#declare -l v=$1
+	v=$(dcs_tolower $1)
 	if [ "$v" = "yes" ] || [ "$v" = "true" ] || [ "$v" = "1" ]; then
 		echo -n "yes"
 	else
