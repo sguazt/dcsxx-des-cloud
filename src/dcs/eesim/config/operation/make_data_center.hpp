@@ -62,7 +62,7 @@
 #include <dcs/eesim/dummy_application_controller.hpp>
 #include <dcs/eesim/dummy_migration_controller.hpp>
 #include <dcs/eesim/dummy_physical_machine_controller.hpp>
-#include <dcs/eesim/lqr_application_controller.hpp>
+#include <dcs/eesim/lq_application_controller.hpp>
 #include <dcs/eesim/multi_tier_application.hpp>
 #include <dcs/eesim/open_multi_bcmp_qn_application_performance_model.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
@@ -73,6 +73,7 @@
 #include <dcs/eesim/qn_application_controller.hpp>
 #include <dcs/eesim/qn_application_simulation_model.hpp>
 #include <dcs/eesim/registry.hpp>
+#include <dcs/eesim/system_identification_strategy_params.hpp>
 #include <dcs/math/constants.hpp>
 #include <dcs/math/stats/distributions.hpp>
 #include <dcs/memory.hpp>
@@ -1560,6 +1561,82 @@ template <typename TraitsT, typename RealT>
 }
 
 
+template <typename TraitsT, typename ControllerConfigT>
+::dcs::shared_ptr< ::dcs::eesim::base_system_identification_strategy_params<TraitsT> > make_system_identification_strategy_params(ControllerConfigT const& controller_conf)
+{
+	typedef TraitsT traits_type;
+	typedef ControllerConfigT controller_config_type;
+	typedef ::dcs::eesim::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
+	typedef ::dcs::shared_ptr<system_identification_strategy_params_type> system_identification_strategy_params_pointer;
+
+	system_identification_strategy_params_pointer ptr_strategy_params;
+
+	switch (controller_conf.ident_category)
+	{
+		case rls_bittanti1990_system_identification:
+			{
+				typedef typename controller_config_type::rls_bittanti1990_system_identification_config_type ident_category_config_impl_type;
+				typedef ::dcs::eesim::rls_bittanti1990_system_identification_strategy_params<traits_type> system_identification_strategy_params_impl_type;
+
+				ident_category_config_impl_type const& ident_conf_impl = ::boost::get<ident_category_config_impl_type>(controller_conf.ident_category_conf);
+				ptr_strategy_params = ::dcs::make_shared<system_identification_strategy_params_impl_type>(
+				//ptr_strategy_params = system_identification_strategy_params_pointer(
+				//						new system_identification_strategy_params_impl_type(
+											ident_conf_impl.forgetting_factor,
+											ident_conf_impl.delta
+				//						)
+									);
+			}
+			break;
+		case rls_ff_system_identification:
+			{
+				typedef typename controller_config_type::rls_ff_system_identification_config_type ident_category_config_impl_type;
+				typedef ::dcs::eesim::rls_ff_system_identification_strategy_params<traits_type> system_identification_strategy_params_impl_type;
+
+				ident_category_config_impl_type const& ident_conf_impl = ::boost::get<ident_category_config_impl_type>(controller_conf.ident_category_conf);
+				ptr_strategy_params = ::dcs::make_shared<system_identification_strategy_params_impl_type>(
+				//ptr_strategy_params = system_identification_strategy_params_pointer(
+				//						new system_identification_strategy_params_impl_type(
+											ident_conf_impl.forgetting_factor
+				//						)
+									);
+			}
+			break;
+		case rls_kulhavy1984_system_identification:
+			{
+				typedef typename controller_config_type::rls_kulhavy1984_system_identification_config_type ident_category_config_impl_type;
+				typedef ::dcs::eesim::rls_kulhavy1984_system_identification_strategy_params<traits_type> system_identification_strategy_params_impl_type;
+
+				ident_category_config_impl_type const& ident_conf_impl = ::boost::get<ident_category_config_impl_type>(controller_conf.ident_category_conf);
+				ptr_strategy_params = ::dcs::make_shared<system_identification_strategy_params_impl_type>(
+				//ptr_strategy_params = system_identification_strategy_params_pointer(
+				//						new system_identification_strategy_params_impl_type(
+											ident_conf_impl.forgetting_factor
+				//						)
+									);
+			}
+			break;
+		case rls_park1991_system_identification:
+			{
+				typedef typename controller_config_type::rls_park1991_system_identification_config_type ident_category_config_impl_type;
+				typedef ::dcs::eesim::rls_park1991_system_identification_strategy_params<traits_type> system_identification_strategy_params_impl_type;
+
+				ident_category_config_impl_type const& ident_conf_impl = ::boost::get<ident_category_config_impl_type>(controller_conf.ident_category_conf);
+				ptr_strategy_params = ::dcs::make_shared<system_identification_strategy_params_impl_type>(
+				//ptr_strategy_params = system_identification_strategy_params_pointer(
+				//						new system_identification_strategy_params_impl_type(
+											ident_conf_impl.forgetting_factor,
+											ident_conf_impl.rho
+				//						)
+									);
+			}
+			break;
+	}
+
+	return ptr_strategy_params;
+}
+
+
 template <typename TraitsT, typename RealT, typename UIntT>
 ::dcs::shared_ptr< ::dcs::eesim::base_application_controller<TraitsT> > make_application_controller(application_controller_config<RealT,UIntT> const& controller_conf, ::dcs::shared_ptr< ::dcs::eesim::multi_tier_application<TraitsT> > const& ptr_app)
 {
@@ -1589,8 +1666,13 @@ template <typename TraitsT, typename RealT, typename UIntT>
 			{
 				typedef typename controller_config_type::lqi_controller_config_type controller_config_impl_type;
 				typedef ::dcs::eesim::lqi_application_controller<traits_type> controller_impl_type;
+				typedef ::dcs::eesim::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
+				typedef ::dcs::shared_ptr<system_identification_strategy_params_type> system_identification_strategy_params_pointer;
 
 				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
+
+				system_identification_strategy_params_pointer ptr_ident_strategy_params;
+				ptr_ident_strategy_params = make_system_identification_strategy_params<traits_type>(controller_conf_impl);
 
 //FIXME: Don't work... Why?!!?
 //				ptr_controller = ::dcs::make_shared<controller_impl_type>(
@@ -1616,18 +1698,54 @@ template <typename TraitsT, typename RealT, typename UIntT>
 							ptr_app,
 							controller_conf.sampling_time,
 //							controller_conf_impl.integral_weight,
-							controller_conf_impl.rls_forgetting_factor,
+//							controller_conf_impl.rls_forgetting_factor,
+							ptr_ident_strategy_params,
 							controller_conf_impl.ewma_smoothing_factor
 						)
 					);
 			}
 			break;
+//		case lqiy_application_controller:
+//			{
+//				typedef typename controller_config_type::lqiy_controller_config_type controller_config_impl_type;
+//				typedef ::dcs::eesim::lqiy_application_controller<traits_type> controller_impl_type;
+//				typedef ::dcs::eesim::base_system_identification_strategy<traits_type> system_identification_strategy_type;
+//				typedef ::dcs::shared_ptr<system_identification_strategy_type> system_identification_strategy_pointer;
+//
+//				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
+//
+//				system_identification_strategy_pointer ptr_ident_strategy;
+//				ptr_ident_strategy = make_system_identification_strategy<traits_type>(controller_conf_impl);
+//
+//				ptr_controller = ::dcs::shared_ptr<controller_impl_type>(
+//						new controller_impl_type(
+//							controller_conf_impl.n_a,
+//							controller_conf_impl.n_b,
+//							controller_conf_impl.d,
+//							make_ublas_matrix(controller_conf_impl.Q),
+//							make_ublas_matrix(controller_conf_impl.R),
+//							make_ublas_matrix(controller_conf_impl.N),
+//							ptr_app,
+//							controller_conf.sampling_time,
+////							controller_conf_impl.integral_weight,
+////							controller_conf_impl.rls_forgetting_factor,
+//							ptr_ident_strategy_params,
+//							controller_conf_impl.ewma_smoothing_factor
+//						)
+//					);
+//			}
+//			break;
 		case lqr_application_controller:
 			{
 				typedef typename controller_config_type::lqr_controller_config_type controller_config_impl_type;
 				typedef ::dcs::eesim::lqr_application_controller<traits_type> controller_impl_type;
+				typedef ::dcs::eesim::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
+				typedef ::dcs::shared_ptr<system_identification_strategy_params_type> system_identification_strategy_params_pointer;
 
 				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
+
+				system_identification_strategy_params_pointer ptr_ident_strategy_params;
+				ptr_ident_strategy_params = make_system_identification_strategy_params<traits_type>(controller_conf_impl);
 
 //FIXME: Don't work... Why?!!?
 //				ptr_controller = ::dcs::make_shared<controller_impl_type>(
@@ -1652,7 +1770,8 @@ template <typename TraitsT, typename RealT, typename UIntT>
 							make_ublas_matrix(controller_conf_impl.N),
 							ptr_app,
 							controller_conf.sampling_time,
-							controller_conf_impl.rls_forgetting_factor,
+//							controller_conf_impl.rls_forgetting_factor,
+							ptr_ident_strategy_params,
 							controller_conf_impl.ewma_smoothing_factor
 						)
 					);
@@ -1662,8 +1781,14 @@ template <typename TraitsT, typename RealT, typename UIntT>
 			{
 				typedef typename controller_config_type::lqry_controller_config_type controller_config_impl_type;
 				typedef ::dcs::eesim::lqry_application_controller<traits_type> controller_impl_type;
+				typedef ::dcs::eesim::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
+				typedef ::dcs::shared_ptr<system_identification_strategy_params_type> system_identification_strategy_params_pointer;
 
 				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
+
+				system_identification_strategy_params_pointer ptr_ident_strategy_params;
+				ptr_ident_strategy_params = make_system_identification_strategy_params<traits_type>(controller_conf_impl);
+
 				ptr_controller = ::dcs::shared_ptr<controller_impl_type>(
 						new controller_impl_type(
 							controller_conf_impl.n_a,
@@ -1674,7 +1799,8 @@ template <typename TraitsT, typename RealT, typename UIntT>
 							make_ublas_matrix(controller_conf_impl.N),
 							ptr_app,
 							controller_conf.sampling_time,
-							controller_conf_impl.rls_forgetting_factor,
+//							controller_conf_impl.rls_forgetting_factor,
+							ptr_ident_strategy_params,
 							controller_conf_impl.ewma_smoothing_factor
 						)
 					);

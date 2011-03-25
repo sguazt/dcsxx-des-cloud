@@ -377,6 +377,10 @@ application_controller_category text_to_application_controller_category(::std::s
 	{
 		return lqi_application_controller;
 	}
+//	if (!istr.compare("lqiy"))
+//	{
+//		return lqiy_application_controller;
+//	}
 	if (!istr.compare("lqr"))
 	{
 		return lqr_application_controller;
@@ -481,6 +485,36 @@ replication_size_detector_category text_to_replication_size_detector_category(::
 
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_replication_size_detector_category Unknown replication size detector category.");
 }
+
+
+system_identification_category text_to_system_identification_category(::std::string const& str)
+{
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("rls-bittanti1990"))
+	{
+		return rls_bittanti1990_system_identification;
+	}
+	if (!istr.compare("rls-ff"))
+	{
+		return rls_ff_system_identification;
+	}
+	if (!istr.compare("rls-kulhavy1984"))
+	{
+		return rls_kulhavy1984_system_identification;
+	}
+	if (!istr.compare("rls-park1991"))
+	{
+		return rls_park1991_system_identification;
+	}
+//	if (!istr.compare("none") || !istr.compare("dummy"))
+//	{
+//		return dummy_system_identification;
+//	}
+
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_system_identification_category Unknown system identification category.");
+}
+
 
 }} // Namespace detail::<unnamed>
 
@@ -1647,63 +1681,252 @@ void operator>>(::YAML::Node const& node, application_tier_config<RealT>& tier)
 
 
 template <typename RealT, typename UIntT>
-void operator>>(::YAML::Node const& node, lq_application_controller_config<RealT,UIntT>& controller_conf_impl)
+void operator>>(::YAML::Node const& node, base_rls_system_identification_config<RealT,UIntT>& ident_conf)
+{
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+
+	if (node.FindValue("miso"))
+	{
+		node["miso"] >> ident_conf.mimo_as_miso;
+	}
+	else
+	{
+		ident_conf.mimo_as_miso = false;
+	}
+//	if (node.FindValue("ewma-smoothing-filter"))
+//	{
+//		node["ewma-smoothing-filter"] >> ident_conf.enable_ewma_smoothing_filter;
+//		if (ident_conf.enable_ewma_smoothing_filter)
+//		{
+//			node["ewma-smoothing-factor"] >> ident_conf.ewma_smoothing_factor;
+//		}
+//	}
+//	else
+//	{
+//		ident_conf.enable_ewma_smoothing_filter = false;
+//	}
+	if (node.FindValue("max-covariance-heuristic"))
+	{
+		node["max-covariance-heuristic"] >> ident_conf.enable_max_cov_heuristic;
+		if (ident_conf.enable_max_cov_heuristic)
+		{
+			node["max-covariance-value"] >> ident_conf.max_cov_heuristic_value;
+		}
+	}
+	else
+	{
+		ident_conf.enable_max_cov_heuristic = false;
+	}
+	if (node.FindValue("cond-covariance-heuristic"))
+	{
+		node["cond-covariance-heuristic"] >> ident_conf.enable_cond_cov_heuristic;
+		if (ident_conf.enable_cond_cov_heuristic)
+		{
+			node["cond-covariance-trusted-digits"] >> ident_conf.cond_cov_heuristic_trust_digits;
+		}
+	}
+	else
+	{
+		ident_conf.enable_cond_cov_heuristic = false;
+	}
+}
+
+
+template <typename RealT, typename UIntT>
+void operator>>(::YAML::Node const& node, rls_bittanti1990_system_identification_config<RealT,UIntT>& ident_conf)
+{
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+
+	if (node.FindValue("forgetting-factor"))
+	{
+		node["forgetting-factor"] >> ident_conf.forgetting_factor;
+	}
+	else
+	{
+		ident_conf.forgetting_factor = 1.0;
+	}
+	if (node.FindValue("delta"))
+	{
+		node["delta"] >> ident_conf.delta;
+	}
+	else
+	{
+		ident_conf.delta = 0.001;
+	}
+}
+
+
+template <typename RealT, typename UIntT>
+void operator>>(::YAML::Node const& node, rls_ff_system_identification_config<RealT,UIntT>& ident_conf)
+{
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+
+	base_rls_system_identification_config<real_type,uint_type>* ptr_base_ident_conf = &ident_conf;
+	node >> *ptr_base_ident_conf;
+
+	if (node.FindValue("forgetting-factor"))
+	{
+		node["forgetting-factor"] >> ident_conf.forgetting_factor;
+	}
+	else
+	{
+		ident_conf.forgetting_factor = 1.0;
+	}
+}
+
+
+template <typename RealT, typename UIntT>
+void operator>>(::YAML::Node const& node, rls_kulhavy1984_system_identification_config<RealT,UIntT>& ident_conf)
+{
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+
+	base_rls_system_identification_config<real_type,uint_type>* ptr_base_ident_conf = &ident_conf;
+	node >> *ptr_base_ident_conf;
+
+	if (node.FindValue("forgetting-factor"))
+	{
+		node["forgetting-factor"] >> ident_conf.forgetting_factor;
+	}
+	else
+	{
+		ident_conf.forgetting_factor = 1.0;
+	}
+}
+
+
+template <typename RealT, typename UIntT>
+void operator>>(::YAML::Node const& node, rls_park1991_system_identification_config<RealT,UIntT>& ident_conf)
+{
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+
+	if (node.FindValue("forgetting-factor"))
+	{
+		node["forgetting-factor"] >> ident_conf.forgetting_factor;
+	}
+	else
+	{
+		ident_conf.forgetting_factor = 1.0;
+	}
+	if (node.FindValue("rho"))
+	{
+		node["rho"] >> ident_conf.rho;
+	}
+	else
+	{
+		ident_conf.rho = 1.0;
+	}
+}
+
+
+template <typename RealT, typename UIntT>
+void operator>>(::YAML::Node const& node, lq_application_controller_config<RealT,UIntT>& controller_conf)
 {
 	typedef RealT real_type;
 	typedef UIntT uint_type;
 
 	if (node.FindValue("ewma-smoothing-factor"))
 	{
-		node["ewma-smoothing-factor"] >> controller_conf_impl.ewma_smoothing_factor;
+		node["ewma-smoothing-factor"] >> controller_conf.ewma_smoothing_factor;
 	}
 	else
 	{
-		controller_conf_impl.ewma_smoothing_factor = 0.7;
+		controller_conf.ewma_smoothing_factor = 0;
 	}
-	if (node.FindValue("rls-forgetting-factor"))
+	if (node.FindValue("sys-ident"))
 	{
-		node["rls-forgetting-factor"] >> controller_conf_impl.rls_forgetting_factor;
+		::std::string label;
+
+		node["sys-ident"]["type"] >> label;
+		controller_conf.ident_category = detail::text_to_system_identification_category(label);
+		switch (controller_conf.ident_category)
+		{
+			case rls_bittanti1990_system_identification:
+				{
+					typedef rls_bittanti1990_system_identification_config<real_type,uint_type> ident_config_impl_type;
+
+					ident_config_impl_type ident_config_impl;
+					node["sys-ident"] >> ident_config_impl;
+					controller_conf.ident_category_conf = ident_config_impl;
+				}
+				break;
+			case rls_ff_system_identification:
+				{
+					typedef rls_ff_system_identification_config<real_type,uint_type> ident_config_impl_type;
+
+					ident_config_impl_type ident_config_impl;
+					node["sys-ident"] >> ident_config_impl;
+					controller_conf.ident_category_conf = ident_config_impl;
+				}
+				break;
+			case rls_kulhavy1984_system_identification:
+				{
+					typedef rls_kulhavy1984_system_identification_config<real_type,uint_type> ident_config_impl_type;
+
+					ident_config_impl_type ident_config_impl;
+					node["sys-ident"] >> ident_config_impl;
+					controller_conf.ident_category_conf = ident_config_impl;
+				}
+				break;
+			case rls_park1991_system_identification:
+				{
+					typedef rls_park1991_system_identification_config<real_type,uint_type> ident_config_impl_type;
+
+					ident_config_impl_type ident_config_impl;
+					node["sys-ident"] >> ident_config_impl;
+					controller_conf.ident_category_conf = ident_config_impl;
+				}
+				break;
+		}
 	}
-	else
-	{
-		controller_conf_impl.rls_forgetting_factor = 0.98;
-	}
+//	if (node.FindValue("rls-forgetting-factor"))
+//	{
+//		node["rls-forgetting-factor"] >> controller_conf.rls_forgetting_factor;
+//	}
+//	else
+//	{
+//		controller_conf_impl.rls_forgetting_factor = 1.0;
+//	}
 	if (node.FindValue("output-order"))
 	{
-		node["output-order"] >> controller_conf_impl.n_a;
+		node["output-order"] >> controller_conf.n_a;
 	}
 	else
 	{
-		controller_conf_impl.n_a = 2;
+		controller_conf.n_a = 2;
 	}
 	if (node.FindValue("input-order"))
 	{
-		node["input-order"] >> controller_conf_impl.n_b;
+		node["input-order"] >> controller_conf.n_b;
 	}
 	else
 	{
-		controller_conf_impl.n_b = 1;
+		controller_conf.n_b = 1;
 	}
 	if (node.FindValue("input-delay"))
 	{
-		node["input-delay"] >> controller_conf_impl.d;
+		node["input-delay"] >> controller_conf.d;
 	}
 	else
 	{
-		controller_conf_impl.d = 0;
+		controller_conf.d = 1;
 	}
-	node["Q"] >> controller_conf_impl.Q;
-	node["R"] >> controller_conf_impl.R;
+	node["Q"] >> controller_conf.Q;
+	node["R"] >> controller_conf.R;
 	if (node.FindValue("N"))
 	{
-		node["N"] >> controller_conf_impl.N;
+		node["N"] >> controller_conf.N;
 	}
 	else
 	{
 		// default to N=[0...0;...;0...0]
-		controller_conf_impl.N = numeric_matrix<real_type>(
-				controller_conf_impl.Q.num_rows(),
-				controller_conf_impl.R.num_rows(),
+		controller_conf.N = numeric_matrix<real_type>(
+				controller_conf.Q.num_rows(),
+				controller_conf.R.num_rows(),
 				real_type/*zero*/()
 			);
 	}

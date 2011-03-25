@@ -10,10 +10,78 @@
 
 namespace dcs { namespace eesim { namespace config {
 
+enum system_identification_category
+{
+	rls_bittanti1990_system_identification,
+	rls_ff_system_identification,
+	rls_kulhavy1984_system_identification,
+	rls_park1991_system_identification
+};
+
+
+template <typename RealT, typename UIntT>
+struct base_rls_system_identification_config
+{
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+
+	bool mimo_as_miso;
+	bool enable_max_cov_heuristic;
+	real_type max_cov_heuristic_value;
+	bool enable_cond_cov_heuristic;
+	uint_type cond_cov_heuristic_trust_digits;
+//	bool enable_ewma_smoothing_filter;
+//	real_type ewma_smoothing_factor;
+};
+
+
+template <typename RealT, typename UIntT>
+struct rls_bittanti1990_system_identification_config: public base_rls_system_identification_config<RealT,UIntT>
+{
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+
+	real_type forgetting_factor; // The forgetting factor.
+	real_type delta; // The Bittanti's delta correction
+};
+
+
+template <typename RealT, typename UIntT>
+struct rls_ff_system_identification_config: public base_rls_system_identification_config<RealT,UIntT>
+{
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+
+	real_type forgetting_factor; // The forgetting factor
+};
+
+
+template <typename RealT, typename UIntT>
+struct rls_kulhavy1984_system_identification_config: public base_rls_system_identification_config<RealT,UIntT>
+{
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+
+	real_type forgetting_factor; // The forgetting factor.
+};
+
+
+template <typename RealT, typename UIntT>
+struct rls_park1991_system_identification_config: public base_rls_system_identification_config<RealT,UIntT>
+{
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+
+	real_type forgetting_factor; // The minimum forgetting factor
+	real_type rho; // The sensivity gain
+};
+
+
 enum application_controller_category
 {
 	dummy_application_controller,
 	lqi_application_controller,
+//	lqiy_application_controller,
 	lqr_application_controller,
 	lqry_application_controller,
 	qn_application_controller
@@ -30,6 +98,10 @@ struct lq_application_controller_config
 {
 	typedef RealT real_type;
 	typedef UIntT uint_type;
+	typedef rls_bittanti1990_system_identification_config<real_type,uint_type> rls_bittanti1990_system_identification_config_type;
+	typedef rls_ff_system_identification_config<real_type,uint_type> rls_ff_system_identification_config_type;
+	typedef rls_kulhavy1984_system_identification_config<real_type,uint_type> rls_kulhavy1984_system_identification_config_type;
+	typedef rls_park1991_system_identification_config<real_type,uint_type> rls_park1991_system_identification_config_type;
 
 	uint_type n_a; // output order of the ARX system model
 	uint_type n_b; // input order of the ARX system model
@@ -38,7 +110,12 @@ struct lq_application_controller_config
 	numeric_matrix<real_type> R; // control weighting matrix
 	numeric_matrix<real_type> N; // state-control cross-coupling matrix
 	real_type ewma_smoothing_factor; // The smoothing factor used by the EWMA filter
-	real_type rls_forgetting_factor; // The forgetting factor used by the RLS algorithm
+	system_identification_category ident_category;
+	::boost::variant<rls_bittanti1990_system_identification_config_type,
+					 rls_ff_system_identification_config_type,
+					 rls_kulhavy1984_system_identification_config_type,
+					 rls_park1991_system_identification_config_type> ident_category_conf;
+//	real_type rls_forgetting_factor; // The forgetting factor used by the RLS algorithm
 };
 
 
@@ -51,6 +128,17 @@ struct lqi_application_controller_config: public lq_application_controller_confi
 
 //	real_type integral_weight; // The weight assigned to the integral error at each control time
 };
+
+
+//template <typename RealT, typename UIntT>
+//struct lqiy_application_controller_config: public lq_application_controller_config<RealT,UIntT>
+//{
+//	typedef RealT real_type;
+//	typedef UIntT uint_type;
+//	typedef lq_application_controller_config<RealT,UIntT> base_type;
+//
+////	real_type integral_weight; // The weight assigned to the integral error at each control time
+//};
 
 
 template <typename RealT, typename UIntT>
@@ -83,6 +171,7 @@ struct application_controller_config
 	typedef UIntT uint_type;
 	typedef dummy_application_controller_config dummy_controller_config_type;
 	typedef lqi_application_controller_config<real_type,uint_type> lqi_controller_config_type;
+//	typedef lqiy_application_controller_config<real_type,uint_type> lqiy_controller_config_type;
 	typedef lqr_application_controller_config<real_type,uint_type> lqr_controller_config_type;
 	typedef lqry_application_controller_config<real_type,uint_type> lqry_controller_config_type;
 	typedef qn_application_controller_config qn_controller_config_type;
@@ -91,6 +180,7 @@ struct application_controller_config
 	application_controller_category category;
 	::boost::variant<dummy_controller_config_type,
 					 lqi_controller_config_type,
+//					 lqiy_controller_config_type,
 					 lqr_controller_config_type,
 					 lqry_controller_config_type,
 					 qn_controller_config_type> category_conf;
@@ -137,8 +227,8 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 	   << ", Q: " << controller.Q
 	   << ", R: " << controller.R
 	   << ", N: " << controller.N
-	   << ", smoothing-factor: " << controller.ewma_smoothing_factor
-	   << ", forgetting-factor: " << controller.rls_forgetting_factor;
+//	   << ", forgetting-factor: " << controller.rls_forgetting_factor
+	   << ", smoothing-factor: " << controller.ewma_smoothing_factor;
 
 	return os;
 }
