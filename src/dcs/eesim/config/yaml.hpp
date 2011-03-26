@@ -1739,6 +1739,11 @@ void operator>>(::YAML::Node const& node, rls_bittanti1990_system_identification
 	typedef RealT real_type;
 	typedef UIntT uint_type;
 
+	// Read common properties
+	base_rls_system_identification_config<real_type,uint_type>* ptr_base_ident_conf = &ident_conf;
+	node >> *ptr_base_ident_conf;
+
+	// Read specialized properties
 	if (node.FindValue("forgetting-factor"))
 	{
 		node["forgetting-factor"] >> ident_conf.forgetting_factor;
@@ -1764,9 +1769,11 @@ void operator>>(::YAML::Node const& node, rls_ff_system_identification_config<Re
 	typedef RealT real_type;
 	typedef UIntT uint_type;
 
+	// Read common properties
 	base_rls_system_identification_config<real_type,uint_type>* ptr_base_ident_conf = &ident_conf;
 	node >> *ptr_base_ident_conf;
 
+	// Read specialized properties
 	if (node.FindValue("forgetting-factor"))
 	{
 		node["forgetting-factor"] >> ident_conf.forgetting_factor;
@@ -1784,9 +1791,11 @@ void operator>>(::YAML::Node const& node, rls_kulhavy1984_system_identification_
 	typedef RealT real_type;
 	typedef UIntT uint_type;
 
+	// Read common properties
 	base_rls_system_identification_config<real_type,uint_type>* ptr_base_ident_conf = &ident_conf;
 	node >> *ptr_base_ident_conf;
 
+	// Read specialized properties
 	if (node.FindValue("forgetting-factor"))
 	{
 		node["forgetting-factor"] >> ident_conf.forgetting_factor;
@@ -1804,6 +1813,11 @@ void operator>>(::YAML::Node const& node, rls_park1991_system_identification_con
 	typedef RealT real_type;
 	typedef UIntT uint_type;
 
+	// Read common properties
+	base_rls_system_identification_config<real_type,uint_type>* ptr_base_ident_conf = &ident_conf;
+	node >> *ptr_base_ident_conf;
+
+	// Read specialized properties
 	if (node.FindValue("forgetting-factor"))
 	{
 		node["forgetting-factor"] >> ident_conf.forgetting_factor;
