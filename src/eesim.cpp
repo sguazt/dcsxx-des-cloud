@@ -407,7 +407,7 @@ int main(int argc, char* argv[])
 	// Print configuration (for ease later info retrieval)
 	::std::cout << "CONFIGURATION:" << ::std::endl
 				<< conf << ::std::endl
-				<< "--------------------------------------------------------------------------------" << ::std::endl;
+				<< "--------------------------------------------------------------------------------" << ::std::endl
 				<< ::std::endl;
 
 	// Report statistics
