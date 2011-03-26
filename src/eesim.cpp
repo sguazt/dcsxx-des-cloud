@@ -404,6 +404,14 @@ int main(int argc, char* argv[])
 	// Detach the simulation observer
 	ptr_sim_log->detach(*ptr_des_eng);
 
+	// Print configuration (for ease later info retrieval)
+	::std::cout << "CONFIGURATION:" << ::std::endl
+				<< conf << ::std::endl
+				<< "--------------------------------------------------------------------------------" << ::std::endl;
+				<< ::std::endl;
+
 	// Report statistics
+	::std::cout << "STATISTICS:" << ::std::endl;
 	detail::report_stats(::std::cout, ptr_dc);
+	::std::cout << "--------------------------------------------------------------------------------" << ::std::endl;
 }
