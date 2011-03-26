@@ -237,7 +237,7 @@ class rls_bittanti1990_system_identification_strategy_params: public rls_system_
 
 	private: system_identification_strategy_category do_category() const
 	{
-		return rls_ff_system_identification_strategy;
+		return rls_bittanti1990_system_identification_strategy;
 	}
 
 
@@ -320,7 +320,7 @@ class rls_kulhavy1984_system_identification_strategy_params: public rls_system_i
 
 	private: system_identification_strategy_category do_category() const
 	{
-		return rls_ff_system_identification_strategy;
+		return rls_kulhavy1984_system_identification_strategy;
 	}
 
 
@@ -356,7 +356,7 @@ class rls_park1991_system_identification_strategy_params: public rls_system_iden
 
 	private: system_identification_strategy_category do_category() const
 	{
-		return rls_ff_system_identification_strategy;
+		return rls_park1991_system_identification_strategy;
 	}
 
 

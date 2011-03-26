@@ -619,7 +619,7 @@ class lq_application_controller: public base_application_controller<TraitsT>
 //					}
 //					break;
 //				default:
-//					throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::process_request_departure] LQR application controller currently handles only the response-time category.");
+//					throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::process_request_departure] LQ application controller currently handles only the response-time category.");
 //			}
 //		}
 //		DCS_DEBUG_TRACE("(" << this << ") END Processing REQUEST-TIER-ARRIVAL (Clock: " << ctx.simulated_time() << ")");
@@ -655,7 +655,7 @@ class lq_application_controller: public base_application_controller<TraitsT>
 //					}
 //					break;
 //				default:
-//					throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::process_tier_request_departure] LQR application controller currently handles only the response-time category.");
+//					throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::process_tier_request_departure] LQ application controller currently handles only the response-time category.");
 //			}
 //		}
 //
@@ -733,7 +733,7 @@ DCS_DEBUG_TRACE("HERE!!!!! tier: " << tier_id << " ==> rt: " << rt << " (aggrega
 						}
 						break;
 					default:
-						throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::process_request_departure] LQR application controller currently handles only the response-time category.");
+						throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::process_request_departure] LQ application controller currently handles only the response-time category.");
 				}
 			}
 		}
@@ -764,7 +764,7 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << app_rt << " (aggregated: " << ptr_st
 					}
 					break;
 				default:
-					throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::process_request_departure] LQR application controller currently handles only the response-time category.");
+					throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::process_request_departure] LQ application controller currently handles only the response-time category.");
 			}
 		}
 
@@ -947,7 +947,7 @@ DCS_DEBUG_TRACE("TIER " << tier_id << " OBSERVATION: ref: " << ref_measure << " 
 							}
 							break;
 					default:
-						throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::do_process_control] LQR application controller currently handles only the response-time category.");
+						throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::do_process_control] LQ application controller currently handles only the response-time category.");
 				}
 			}
 		}

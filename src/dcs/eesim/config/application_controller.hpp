@@ -228,6 +228,7 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 	   << ", R: " << controller.R
 	   << ", N: " << controller.N
 //	   << ", forgetting-factor: " << controller.rls_forgetting_factor
+	   << ", system-identification: " << controller.ident_category
 	   << ", smoothing-factor: " << controller.ewma_smoothing_factor;
 
 	return os;

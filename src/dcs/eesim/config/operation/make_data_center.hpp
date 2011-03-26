@@ -1561,6 +1561,18 @@ template <typename TraitsT, typename RealT>
 }
 
 
+template <typename RealT, typename UIntT, typename TraitsT>
+void make_common_system_identification_strategy_params(base_rls_system_identification_config<RealT,UIntT> const& ident_conf,
+													   ::dcs::eesim::rls_system_identification_strategy_params<TraitsT>& params)
+{
+	params.mimo_as_miso(ident_conf.mimo_as_miso);
+	params.max_covariance_heuristic(ident_conf.enable_max_cov_heuristic);
+	params.max_covariance_heuristic_max_value(ident_conf.max_cov_heuristic_value);
+	params.condition_number_covariance_heuristic(ident_conf.enable_cond_cov_heuristic);
+	params.condition_number_covariance_heuristic_trusted_digits(ident_conf.cond_cov_heuristic_trust_digits);
+}
+
+
 template <typename TraitsT, typename ControllerConfigT>
 ::dcs::shared_ptr< ::dcs::eesim::base_system_identification_strategy_params<TraitsT> > make_system_identification_strategy_params(ControllerConfigT const& controller_conf)
 {
@@ -1577,60 +1589,82 @@ template <typename TraitsT, typename ControllerConfigT>
 			{
 				typedef typename controller_config_type::rls_bittanti1990_system_identification_config_type ident_category_config_impl_type;
 				typedef ::dcs::eesim::rls_bittanti1990_system_identification_strategy_params<traits_type> system_identification_strategy_params_impl_type;
+				typedef ::dcs::shared_ptr<system_identification_strategy_params_impl_type> system_identification_strategy_params_impl_pointer;
 
 				ident_category_config_impl_type const& ident_conf_impl = ::boost::get<ident_category_config_impl_type>(controller_conf.ident_category_conf);
-				ptr_strategy_params = ::dcs::make_shared<system_identification_strategy_params_impl_type>(
-				//ptr_strategy_params = system_identification_strategy_params_pointer(
-				//						new system_identification_strategy_params_impl_type(
-											ident_conf_impl.forgetting_factor,
-											ident_conf_impl.delta
-				//						)
-									);
+				//ptr_strategy_params = ::dcs::make_shared<system_identification_strategy_params_impl_type>(
+				system_identification_strategy_params_impl_pointer ptr_strategy_params_impl(
+						new system_identification_strategy_params_impl_type(
+								ident_conf_impl.forgetting_factor,
+								ident_conf_impl.delta
+							)
+					);
+
+				make_common_system_identification_strategy_params(ident_conf_impl, *ptr_strategy_params_impl);
+
+				ptr_strategy_params = ptr_strategy_params_impl;
 			}
 			break;
 		case rls_ff_system_identification:
 			{
 				typedef typename controller_config_type::rls_ff_system_identification_config_type ident_category_config_impl_type;
 				typedef ::dcs::eesim::rls_ff_system_identification_strategy_params<traits_type> system_identification_strategy_params_impl_type;
+				typedef ::dcs::shared_ptr<system_identification_strategy_params_impl_type> system_identification_strategy_params_impl_pointer;
 
 				ident_category_config_impl_type const& ident_conf_impl = ::boost::get<ident_category_config_impl_type>(controller_conf.ident_category_conf);
-				ptr_strategy_params = ::dcs::make_shared<system_identification_strategy_params_impl_type>(
-				//ptr_strategy_params = system_identification_strategy_params_pointer(
-				//						new system_identification_strategy_params_impl_type(
+				//ptr_strategy_params = ::dcs::make_shared<system_identification_strategy_params_impl_type>(
+				system_identification_strategy_params_impl_pointer ptr_strategy_params_impl(
+						new system_identification_strategy_params_impl_type(
 											ident_conf_impl.forgetting_factor
-				//						)
-									);
+							)
+					);
+
+				make_common_system_identification_strategy_params(ident_conf_impl, *ptr_strategy_params_impl);
+
+				ptr_strategy_params = ptr_strategy_params_impl;
 			}
 			break;
 		case rls_kulhavy1984_system_identification:
 			{
 				typedef typename controller_config_type::rls_kulhavy1984_system_identification_config_type ident_category_config_impl_type;
 				typedef ::dcs::eesim::rls_kulhavy1984_system_identification_strategy_params<traits_type> system_identification_strategy_params_impl_type;
+				typedef ::dcs::shared_ptr<system_identification_strategy_params_impl_type> system_identification_strategy_params_impl_pointer;
 
 				ident_category_config_impl_type const& ident_conf_impl = ::boost::get<ident_category_config_impl_type>(controller_conf.ident_category_conf);
-				ptr_strategy_params = ::dcs::make_shared<system_identification_strategy_params_impl_type>(
-				//ptr_strategy_params = system_identification_strategy_params_pointer(
-				//						new system_identification_strategy_params_impl_type(
+				//ptr_strategy_params = ::dcs::make_shared<system_identification_strategy_params_impl_type>(
+				system_identification_strategy_params_impl_pointer ptr_strategy_params_impl(
+						new system_identification_strategy_params_impl_type(
 											ident_conf_impl.forgetting_factor
-				//						)
-									);
+							)
+					);
+
+				make_common_system_identification_strategy_params(ident_conf_impl, *ptr_strategy_params_impl);
+
+				ptr_strategy_params = ptr_strategy_params_impl;
 			}
 			break;
 		case rls_park1991_system_identification:
 			{
 				typedef typename controller_config_type::rls_park1991_system_identification_config_type ident_category_config_impl_type;
 				typedef ::dcs::eesim::rls_park1991_system_identification_strategy_params<traits_type> system_identification_strategy_params_impl_type;
+				typedef ::dcs::shared_ptr<system_identification_strategy_params_impl_type> system_identification_strategy_params_impl_pointer;
 
 				ident_category_config_impl_type const& ident_conf_impl = ::boost::get<ident_category_config_impl_type>(controller_conf.ident_category_conf);
-				ptr_strategy_params = ::dcs::make_shared<system_identification_strategy_params_impl_type>(
-				//ptr_strategy_params = system_identification_strategy_params_pointer(
-				//						new system_identification_strategy_params_impl_type(
+				//ptr_strategy_params = ::dcs::make_shared<system_identification_strategy_params_impl_type>(
+				system_identification_strategy_params_impl_pointer ptr_strategy_params_impl(
+						new system_identification_strategy_params_impl_type(
 											ident_conf_impl.forgetting_factor,
 											ident_conf_impl.rho
-				//						)
-									);
+							)
+					);
+
+				make_common_system_identification_strategy_params(ident_conf_impl, *ptr_strategy_params_impl);
+
+				ptr_strategy_params = ptr_strategy_params_impl;
 			}
 			break;
+		default:
+			throw ::std::runtime_error("[dcs::eesim::config::make_data_center] RLS variant not yet implemented.");
 	}
 
 	return ptr_strategy_params;

@@ -1747,9 +1747,9 @@ void operator>>(::YAML::Node const& node, rls_bittanti1990_system_identification
 	{
 		ident_conf.forgetting_factor = 1.0;
 	}
-	if (node.FindValue("delta"))
+	if (node.FindValue("correction-factor"))
 	{
-		node["delta"] >> ident_conf.delta;
+		node["correction-factor"] >> ident_conf.delta;
 	}
 	else
 	{
@@ -1812,9 +1812,9 @@ void operator>>(::YAML::Node const& node, rls_park1991_system_identification_con
 	{
 		ident_conf.forgetting_factor = 1.0;
 	}
-	if (node.FindValue("rho"))
+	if (node.FindValue("sensitivity-gain"))
 	{
-		node["rho"] >> ident_conf.rho;
+		node["sensitivity-gain"] >> ident_conf.rho;
 	}
 	else
 	{
@@ -1828,7 +1828,49 @@ void operator>>(::YAML::Node const& node, lq_application_controller_config<RealT
 {
 	typedef RealT real_type;
 	typedef UIntT uint_type;
+	::std::string label;
 
+	node["sys-ident"]["type"] >> label;
+	controller_conf.ident_category = detail::text_to_system_identification_category(label);
+	switch (controller_conf.ident_category)
+	{
+		case rls_bittanti1990_system_identification:
+			{
+				typedef rls_bittanti1990_system_identification_config<real_type,uint_type> ident_config_impl_type;
+
+				ident_config_impl_type ident_config_impl;
+				node["sys-ident"] >> ident_config_impl;
+				controller_conf.ident_category_conf = ident_config_impl;
+			}
+			break;
+		case rls_ff_system_identification:
+			{
+				typedef rls_ff_system_identification_config<real_type,uint_type> ident_config_impl_type;
+
+				ident_config_impl_type ident_config_impl;
+				node["sys-ident"] >> ident_config_impl;
+				controller_conf.ident_category_conf = ident_config_impl;
+			}
+			break;
+		case rls_kulhavy1984_system_identification:
+			{
+				typedef rls_kulhavy1984_system_identification_config<real_type,uint_type> ident_config_impl_type;
+
+				ident_config_impl_type ident_config_impl;
+				node["sys-ident"] >> ident_config_impl;
+				controller_conf.ident_category_conf = ident_config_impl;
+			}
+			break;
+		case rls_park1991_system_identification:
+			{
+				typedef rls_park1991_system_identification_config<real_type,uint_type> ident_config_impl_type;
+
+				ident_config_impl_type ident_config_impl;
+				node["sys-ident"] >> ident_config_impl;
+				controller_conf.ident_category_conf = ident_config_impl;
+			}
+			break;
+	}
 	if (node.FindValue("ewma-smoothing-factor"))
 	{
 		node["ewma-smoothing-factor"] >> controller_conf.ewma_smoothing_factor;
@@ -1836,52 +1878,6 @@ void operator>>(::YAML::Node const& node, lq_application_controller_config<RealT
 	else
 	{
 		controller_conf.ewma_smoothing_factor = 0;
-	}
-	if (node.FindValue("sys-ident"))
-	{
-		::std::string label;
-
-		node["sys-ident"]["type"] >> label;
-		controller_conf.ident_category = detail::text_to_system_identification_category(label);
-		switch (controller_conf.ident_category)
-		{
-			case rls_bittanti1990_system_identification:
-				{
-					typedef rls_bittanti1990_system_identification_config<real_type,uint_type> ident_config_impl_type;
-
-					ident_config_impl_type ident_config_impl;
-					node["sys-ident"] >> ident_config_impl;
-					controller_conf.ident_category_conf = ident_config_impl;
-				}
-				break;
-			case rls_ff_system_identification:
-				{
-					typedef rls_ff_system_identification_config<real_type,uint_type> ident_config_impl_type;
-
-					ident_config_impl_type ident_config_impl;
-					node["sys-ident"] >> ident_config_impl;
-					controller_conf.ident_category_conf = ident_config_impl;
-				}
-				break;
-			case rls_kulhavy1984_system_identification:
-				{
-					typedef rls_kulhavy1984_system_identification_config<real_type,uint_type> ident_config_impl_type;
-
-					ident_config_impl_type ident_config_impl;
-					node["sys-ident"] >> ident_config_impl;
-					controller_conf.ident_category_conf = ident_config_impl;
-				}
-				break;
-			case rls_park1991_system_identification:
-				{
-					typedef rls_park1991_system_identification_config<real_type,uint_type> ident_config_impl_type;
-
-					ident_config_impl_type ident_config_impl;
-					node["sys-ident"] >> ident_config_impl;
-					controller_conf.ident_category_conf = ident_config_impl;
-				}
-				break;
-		}
 	}
 //	if (node.FindValue("rls-forgetting-factor"))
 //	{

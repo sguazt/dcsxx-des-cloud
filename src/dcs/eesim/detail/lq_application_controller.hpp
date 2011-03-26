@@ -98,41 +98,42 @@
 
 namespace dcs { namespace eesim {
 
-enum system_identification_strategy_category
-{
-	rls_bittanti1990_system_identification_strategy,
-	rls_ff_system_identification_strategy,
-	rls_kulhavy1984_system_identification_strategy,
-	rls_park1991_system_identification_strategy
-};
+//enum system_identification_strategy_category
+//{
+//	rls_bittanti1990_system_identification_strategy,
+//	rls_ff_system_identification_strategy,
+//	rls_kulhavy1984_system_identification_strategy,
+//	rls_park1991_system_identification_strategy
+//};
 
 
-template <typename TraitsT>
-class base_system_identification_strategy_params;
+//template <typename TraitsT>
+//class base_system_identification_strategy_params;
 
 
-template <typename TraitsT>
-class rls_system_identification_strategy_params;
+//template <typename TraitsT>
+//class rls_system_identification_strategy_params;
 
 
-template <typename TraitsT>
-class rls_kulhavy1984_system_identification_strategy_params;
+//template <typename TraitsT>
+//class rls_kulhavy1984_system_identification_strategy_params;
 
 
-template <typename TraitsT>
-class rls_bittanti1990_system_identification_strategy_params;
+//template <typename TraitsT>
+//class rls_bittanti1990_system_identification_strategy_params;
 
 
-template <typename TraitsT>
-class rls_park1991_system_identification_strategy_params;
+//template <typename TraitsT>
+//class rls_park1991_system_identification_strategy_params;
 
 
-template <typename TraitsT>
-class rls_ff_system_identification_strategy_params;
+//template <typename TraitsT>
+//class rls_ff_system_identification_strategy_params;
 
 
 namespace detail { namespace /*<unnamed>*/ {
 
+#if 0
 #if defined(DCS_EESIM_USE_MATLAB_MCR)
 
 /**
@@ -4317,22 +4318,29 @@ template <typename TraitsT>
 
 	strategy_pointer ptr_strategy;
 
+DCS_DEBUG_TRACE("HERE.1");//XXX
 	switch (params.category())
 	{
 		case rls_bittanti1990_system_identification_strategy:
 			{
+DCS_DEBUG_TRACE("HERE.1.1");//XXX
 				typedef rls_bittanti1990_system_identification_strategy_params<traits_type> const* strategy_params_impl_pointer;
 
 				strategy_params_impl_pointer ptr_params_impl = dynamic_cast<strategy_params_impl_pointer>(&params);
+DCS_DEBUG_TRACE("HERE.1.2");//XXX
 				if (!ptr_params_impl)
 				{
-					throw ::std::runtime_error("[dcs::eesim::detail::make_system_identification_strategy] Failed to retrieve RLS FF strategy parameters.");
+					throw ::std::runtime_error("[dcs::eesim::detail::make_system_identification_strategy] Failed to retrieve RLS (Bittanti, 1990) strategy parameters.");
 				}
+DCS_DEBUG_TRACE("HERE.1.3");//XXX
 				if (ptr_params_impl->mimo_as_miso())
 				{
+DCS_DEBUG_TRACE("HERE.1.4");//XXX
 					typedef rls_bittanti1990_miso_proxy<traits_type> strategy_impl_type;
 
+DCS_DEBUG_TRACE("HERE.1.5");//XXX
 					ptr_strategy = ::dcs::make_shared<strategy_impl_type>(*ptr_params_impl);
+DCS_DEBUG_TRACE("HERE.1.7");//XXX
 				}
 //				else
 //				{
@@ -4340,6 +4348,7 @@ template <typename TraitsT>
 //
 //					ptr_strategy = ::dcs::make_shared<strategy_impl_type>(*ptr_params_impl);
 //				}
+DCS_DEBUG_TRACE("HERE.1.4");//XXX
 			}
 			break;
 		case rls_ff_system_identification_strategy:
@@ -4372,7 +4381,7 @@ template <typename TraitsT>
 				strategy_params_impl_pointer ptr_params_impl = dynamic_cast<strategy_params_impl_pointer>(&params);
 				if (!ptr_params_impl)
 				{
-					throw ::std::runtime_error("[dcs::eesim::detail::make_system_identification_strategy] Failed to retrieve RLS FF strategy parameters.");
+					throw ::std::runtime_error("[dcs::eesim::detail::make_system_identification_strategy] Failed to retrieve RLS (Kulhavy, 1984) strategy parameters.");
 				}
 				if (ptr_params_impl->mimo_as_miso())
 				{
@@ -4395,7 +4404,7 @@ template <typename TraitsT>
 				strategy_params_impl_pointer ptr_params_impl = dynamic_cast<strategy_params_impl_pointer>(&params);
 				if (!ptr_params_impl)
 				{
-					throw ::std::runtime_error("[dcs::eesim::detail::make_system_identification_strategy] Failed to retrieve RLS FF strategy parameters.");
+					throw ::std::runtime_error("[dcs::eesim::detail::make_system_identification_strategy] Failed to retrieve RLS (Park, 1991) strategy parameters.");
 				}
 				if (ptr_params_impl->mimo_as_miso())
 				{
@@ -4413,8 +4422,11 @@ template <typename TraitsT>
 			break;
 	}
 
+DCS_DEBUG_TRACE("HERE.1.6 --> " << ptr_strategy);//XXX
 	return ptr_strategy;
 }
+
+#endif // 0
 
 
 template <
@@ -4650,7 +4662,9 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	}
 
 
-	public: lq_application_controller(application_pointer const& ptr_app, real_type ts/*, system_identification_strategy_params_pointer const& ptr_ident_strategy_params*/)
+	public: lq_application_controller(application_pointer const& ptr_app,
+									  real_type ts,
+									  system_identification_strategy_params_pointer const& ptr_ident_strategy_params)
 	: base_type(ptr_app, ts),
 //	  controller_(),
 	  n_a_(default_output_order_),
@@ -4662,7 +4676,7 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	  n_y_(0),
 	  n_u_(0),
 //	  rls_ff_(default_rls_forgetting_factor),
-//	  ptr_ident_strategy_params_(ptr_ident_strategy_params),
+	  ptr_ident_strategy_params_(ptr_ident_strategy_params),
 	  ewma_smooth_(default_ewma_smoothing_factor),
 	  x_offset_(0),
 	  u_offset_(0),
@@ -5539,6 +5553,8 @@ const typename lq_application_controller<TraitsT>::real_type lq_application_cont
 }} // Namespace detail::<unnamed>
 
 
+#if 0
+
 template <typename TraitsT>
 class base_system_identification_strategy_params
 {
@@ -5736,7 +5752,7 @@ class rls_bittanti1990_system_identification_strategy_params: public rls_system_
 
 	private: system_identification_strategy_category do_category() const
 	{
-		return rls_ff_system_identification_strategy;
+		return rls_bittanti1990_system_identification_strategy;
 	}
 
 
@@ -5819,7 +5835,7 @@ class rls_kulhavy1984_system_identification_strategy_params: public rls_system_i
 
 	private: system_identification_strategy_category do_category() const
 	{
-		return rls_ff_system_identification_strategy;
+		return rls_kulhavy1984_system_identification_strategy;
 	}
 
 
@@ -5855,7 +5871,7 @@ class rls_park1991_system_identification_strategy_params: public rls_system_iden
 
 	private: system_identification_strategy_category do_category() const
 	{
-		return rls_ff_system_identification_strategy;
+		return rls_park1991_system_identification_strategy;
 	}
 
 
@@ -6287,6 +6303,8 @@ class lqry_application_controller: public detail::lq_application_controller<Trai
 	/// The LQ (regulator) controller
 	private: lq_controller_type controller_;
 }; // lqry_application_controller
+
+#endif
 
 }} // Namespace dcs::eesim
 
