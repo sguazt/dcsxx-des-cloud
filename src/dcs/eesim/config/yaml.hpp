@@ -1711,7 +1711,7 @@ void operator>>(::YAML::Node const& node, base_rls_system_identification_config<
 		node["max-covariance-heuristic"] >> ident_conf.enable_max_cov_heuristic;
 		if (ident_conf.enable_max_cov_heuristic)
 		{
-			node["max-covariance-value"] >> ident_conf.max_cov_heuristic_value;
+			node["max-covariance-heuristic-max-value"] >> ident_conf.max_cov_heuristic_value;
 		}
 	}
 	else
@@ -1723,7 +1723,7 @@ void operator>>(::YAML::Node const& node, base_rls_system_identification_config<
 		node["cond-covariance-heuristic"] >> ident_conf.enable_cond_cov_heuristic;
 		if (ident_conf.enable_cond_cov_heuristic)
 		{
-			node["cond-covariance-trusted-digits"] >> ident_conf.cond_cov_heuristic_trust_digits;
+			node["cond-covariance-heuristic-trusted-digits"] >> ident_conf.cond_cov_heuristic_trust_digits;
 		}
 	}
 	else
