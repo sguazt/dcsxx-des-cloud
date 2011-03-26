@@ -187,6 +187,69 @@ struct application_controller_config
 };
 
 
+template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, base_rls_system_identification_config<RealT,UIntT> const& sys_ident)
+{
+	os << " mimo-as-miso: " << ::std::boolalpha << sys_ident.mimo_as_miso
+	   << ", max-covariance-heuristic: " << ::std::boolalpha << sys_ident.enable_max_cov_heuristic
+	   << ", max-covariance-heuristic-max-value: " << sys_ident.max_cov_heuristic_value
+	   << ", condition-number-covariance-heuristic: " << ::std::boolalpha << sys_ident.enable_cond_cov_heuristic
+	   << ", condition-number-covariance-heuristic-trusted-digits: " << sys_ident.cond_cov_heuristic_trust_digits;
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, rls_bittanti1990_system_identification_config<RealT,UIntT> const& sys_ident)
+{
+	os << "<(rls-bittanti1990-system-identification)"
+	   << static_cast<base_rls_system_identification_config<RealT,UIntT> const&>(sys_ident)
+	   << ", forgetting-factor: " << sys_ident.forgetting_factor
+	   << ", correction-factor: " << sys_ident.delta
+	   << ">";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, rls_ff_system_identification_config<RealT,UIntT> const& sys_ident)
+{
+	os << "<(rls-ff-system-identification)"
+	   << static_cast<base_rls_system_identification_config<RealT,UIntT> const&>(sys_ident)
+	   << ", forgetting-factor: " << sys_ident.forgetting_factor
+	   << ">";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, rls_kulhavy1984_system_identification_config<RealT,UIntT> const& sys_ident)
+{
+	os << "<(rls-kulhavy1984-system-identification)"
+	   << static_cast<base_rls_system_identification_config<RealT,UIntT> const&>(sys_ident)
+	   << ", forgetting-factor: " << sys_ident.forgetting_factor
+	   << ">";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, rls_park1991_system_identification_config<RealT,UIntT> const& sys_ident)
+{
+	os << "<(rls-park1991-system-identification)"
+	   << static_cast<base_rls_system_identification_config<RealT,UIntT> const&>(sys_ident)
+	   << ", forgetting-factor: " << sys_ident.forgetting_factor
+	   << ", sensitivity-gain: " << sys_ident.rho
+	   << ">";
+
+	return os;
+}
+
+
 template <typename CharT, typename CharTraitsT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, application_controller_category category)
 {
@@ -195,8 +258,14 @@ template <typename CharT, typename CharTraitsT>
 		case dummy_application_controller:
 			os << "dummy";
 			break;
+		case lqi_application_controller:
+			os << "lqi";
+			break;
 		case lqr_application_controller:
 			os << "lqr";
+			break;
+		case lqry_application_controller:
+			os << "lqry";
 			break;
 		case qn_application_controller:
 			os << "qn";
@@ -228,7 +297,7 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 	   << ", R: " << controller.R
 	   << ", N: " << controller.N
 //	   << ", forgetting-factor: " << controller.rls_forgetting_factor
-	   << ", system-identification: " << controller.ident_category
+	   << ", system-identification: " << controller.ident_category_conf
 	   << ", smoothing-factor: " << controller.ewma_smoothing_factor;
 
 	return os;
