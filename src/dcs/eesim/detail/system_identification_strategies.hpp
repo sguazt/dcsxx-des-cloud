@@ -3454,6 +3454,12 @@ class rls_park1991_miso_proxy: public rls_system_identification_strategy<TraitsT
 	}
 
 
+	public: real_type sensitivity_gain() const
+	{
+		return rho_;
+	}
+
+
 	private: matrix_type do_Theta_hat() const
 	{
 		namespace ublas = ::boost::numeric::ublas;
@@ -3586,9 +3592,10 @@ DCS_DEBUG_TRACE("u(k): " << u);//XXX
 DCS_DEBUG_TRACE("theta_hat["<< i << "](k): " << theta_hats_[i]);//XXX
 DCS_DEBUG_TRACE("P["<< i << "](k): " << Ps_[i]);//XXX
 DCS_DEBUG_TRACE("phi["<< i << "](k): " << phis_[i]);//XXX
-			y_hat(i) = ::dcs::sysid::rls_ff_arx_miso(y(i),
+			y_hat(i) = ::dcs::sysid::rls_park1991_arx_miso(y(i),
 													 u,
 													 ff_,
+													 rho_,
 													 na,
 													 nb,
 													 d,
@@ -3870,7 +3877,7 @@ DCS_DEBUG_TRACE("u(k): " << u);//XXX
 DCS_DEBUG_TRACE("theta_hat["<< i << "](k): " << theta_hats_[i]);//XXX
 DCS_DEBUG_TRACE("P["<< i << "](k): " << Ps_[i]);//XXX
 DCS_DEBUG_TRACE("phi["<< i << "](k): " << phis_[i]);//XXX
-			y_hat(i) = ::dcs::sysid::rls_ff_arx_miso(y(i),
+			y_hat(i) = ::dcs::sysid::rls_kulhavy1984_arx_miso(y(i),
 													 u,
 													 ff_,
 													 na,
@@ -4019,6 +4026,12 @@ class rls_bittanti1990_miso_proxy: public rls_system_identification_strategy<Tra
 	public: real_type forgetting_factor() const
 	{
 		return ff_;
+	}
+
+
+	public: real_type correction_factor() const
+	{
+		return delta_;
 	}
 
 
