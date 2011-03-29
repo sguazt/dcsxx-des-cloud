@@ -2963,7 +2963,7 @@ class rls_ff_mimo_proxy: public rls_system_identification_strategy<TraitsT>
 
 	public: rls_ff_mimo_proxy(size_type n_a, size_type n_b, size_type d, size_type n_y, size_type n_u, real_type ff)
 	: base_type(n_a, n_b, d, n_y, n_u),
-	  ff_(ff)
+	  ff_(ff),
 	  Theta_hat_(),
 	  P_(),
 	  phi_()
