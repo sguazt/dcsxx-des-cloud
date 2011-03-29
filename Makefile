@@ -111,15 +111,16 @@ pch_ext := hpp.gch
 use_pch := true
 #use_pch := false
 CXXFLAGS_common = -Wall -Wextra -ansi -pedantic -DBOOST_UBLAS_TYPE_CHECK=0 $(addprefix -I, $(incdirs)) -I$(libsdir)/include
-CXXFLAGS_debug := -ggdb -O0 $(CXXFLAGS_common)
+#CXXFLAGS_debug := -g $(CXXFLAGS_common)
+CXXFLAGS_debug := -g $(CXXFLAGS_common)
 CXXFLAGS_release := -g0 -O3 -DNDEBUG $(CXXFLAGS_common)
-CXXFLAGS_test := -ggdb -O0 $(CXXFLAGS_common)
-CXXFLAGS_xmp := -ggdb -O0 $(CXXFLAGS_common)
+CXXFLAGS_test := -g -O0 $(CXXFLAGS_common)
+CXXFLAGS_xmp := -g -O0 $(CXXFLAGS_common)
 LDFLAGS_common = $(addprefix -L, $(libdirs)) -L$(libsdir)/lib $(addprefix -l,$(libs))
-LDFLAGS_debug := -ggdb -O0 $(LDFLAGS_common)
+LDFLAGS_debug := -g -O0 $(LDFLAGS_common)
 LDFLAGS_release := -g0 -O3 $(LDFLAGS_common)
-LDFLAGS_test := -ggdb -O0 $(LDFLAGS_common) $(addprefix -L, $(test_libdirs)) $(addprefix -l,$(test_libs))
-LDFLAGS_xmp := -ggdb -O0 $(LDFLAGS_common) $(addprefix -L, $(xmp_libdirs)) $(addprefix -l,$(xmp_libs))
+LDFLAGS_test := -g -O0 $(LDFLAGS_common) $(addprefix -L, $(test_libdirs)) $(addprefix -l,$(test_libs))
+LDFLAGS_xmp := -g -O0 $(LDFLAGS_common) $(addprefix -L, $(xmp_libdirs)) $(addprefix -l,$(xmp_libs))
 CPPFLAGS += -MD
 
 CLEANER := rm -rf
