@@ -25,6 +25,15 @@ struct base_rls_system_identification_config
 	typedef RealT real_type;
 	typedef UIntT uint_type;
 
+	base_rls_system_identification_config()
+	: mimo_as_miso(false),
+	  enable_max_cov_heuristic(false),
+	  max_cov_heuristic_value(0),
+	  enable_cond_cov_heuristic(false),
+	  cond_cov_heuristic_trust_digits(0)
+	{
+	}
+
 	bool mimo_as_miso;
 	bool enable_max_cov_heuristic;
 	real_type max_cov_heuristic_value;
@@ -38,8 +47,16 @@ struct base_rls_system_identification_config
 template <typename RealT, typename UIntT>
 struct rls_bittanti1990_system_identification_config: public base_rls_system_identification_config<RealT,UIntT>
 {
+	typedef base_rls_system_identification_config<RealT,UIntT> base_type;
 	typedef RealT real_type;
 	typedef UIntT uint_type;
+
+	rls_bittanti1990_system_identification_config()
+	: base_type(),
+	  forgetting_factor(0),
+	  delta(0)
+	{
+	}
 
 	real_type forgetting_factor; // The forgetting factor.
 	real_type delta; // The Bittanti's delta correction
@@ -49,8 +66,15 @@ struct rls_bittanti1990_system_identification_config: public base_rls_system_ide
 template <typename RealT, typename UIntT>
 struct rls_ff_system_identification_config: public base_rls_system_identification_config<RealT,UIntT>
 {
+	typedef base_rls_system_identification_config<RealT,UIntT> base_type;
 	typedef RealT real_type;
 	typedef UIntT uint_type;
+
+	rls_ff_system_identification_config()
+	: base_type(),
+	  forgetting_factor(0)
+	{
+	}
 
 	real_type forgetting_factor; // The forgetting factor
 };
@@ -59,8 +83,15 @@ struct rls_ff_system_identification_config: public base_rls_system_identificatio
 template <typename RealT, typename UIntT>
 struct rls_kulhavy1984_system_identification_config: public base_rls_system_identification_config<RealT,UIntT>
 {
+	typedef base_rls_system_identification_config<RealT,UIntT> base_type;
 	typedef RealT real_type;
 	typedef UIntT uint_type;
+
+	rls_kulhavy1984_system_identification_config()
+	: base_type(),
+	  forgetting_factor(0)
+	{
+	}
 
 	real_type forgetting_factor; // The forgetting factor.
 };
@@ -69,8 +100,16 @@ struct rls_kulhavy1984_system_identification_config: public base_rls_system_iden
 template <typename RealT, typename UIntT>
 struct rls_park1991_system_identification_config: public base_rls_system_identification_config<RealT,UIntT>
 {
+	typedef base_rls_system_identification_config<RealT,UIntT> base_type;
 	typedef RealT real_type;
 	typedef UIntT uint_type;
+
+	rls_park1991_system_identification_config()
+	: base_type(),
+	  forgetting_factor(0),
+	  rho(0)
+	{
+	}
 
 	real_type forgetting_factor; // The minimum forgetting factor
 	real_type rho; // The sensivity gain
@@ -102,6 +141,13 @@ struct lq_application_controller_config
 	typedef rls_ff_system_identification_config<real_type,uint_type> rls_ff_system_identification_config_type;
 	typedef rls_kulhavy1984_system_identification_config<real_type,uint_type> rls_kulhavy1984_system_identification_config_type;
 	typedef rls_park1991_system_identification_config<real_type,uint_type> rls_park1991_system_identification_config_type;
+
+	lq_application_controller_config()
+	: n_a(0),
+	  n_b(0),
+	  d(0)
+	{
+	}
 
 	uint_type n_a; // output order of the ARX system model
 	uint_type n_b; // input order of the ARX system model
