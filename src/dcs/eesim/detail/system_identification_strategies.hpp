@@ -100,7 +100,8 @@ class base_system_identification_strategy
 	  n_b_(0),
 	  d_(0),
 	  n_y_(0),
-	  n_u_(0)
+	  n_u_(0),
+	  count_(0)
 	{
 	}
 
@@ -110,7 +111,8 @@ class base_system_identification_strategy
 	  n_b_(n_b),
 	  d_(d),
 	  n_y_(n_y),
-	  n_u_(n_u)
+	  n_u_(n_u),
+	  count_(0)
 	{
 	}
 
@@ -120,7 +122,13 @@ class base_system_identification_strategy
 	  n_b_(params.input_order()),
 	  d_(params.input_delay()),
 	  n_y_(params.num_outputs()),
-	  n_u_(params.num_inputs())
+	  n_u_(params.num_inputs()),
+	  count_(0)
+	{
+	}
+
+
+	public: virtual ~base_system_identification_strategy()
 	{
 	}
 
@@ -266,13 +274,21 @@ class rls_system_identification_strategy: public base_system_identification_stra
 
 
 	public: rls_system_identification_strategy(size_type n_a, size_type n_b, size_type d, size_type n_y, size_type n_u)
-	: base_type(n_a, n_b, d, n_y, n_u)
+	: base_type(n_a, n_b, d, n_y, n_u),
+	  max_cov_heuristic_(false),
+	  max_cov_heuristic_max_val_(0),
+	  cond_cov_heuristic_(false),
+	  cond_cov_heuristic_trust_digits_(0)
 	{
 	}
 
 
 	public: rls_system_identification_strategy(rls_system_identification_strategy_params<traits_type> const& params)
-	: base_type(params)
+	: base_type(params),
+	  max_cov_heuristic_(false),
+	  max_cov_heuristic_max_val_(0),
+	  cond_cov_heuristic_(false),
+	  cond_cov_heuristic_trust_digits_(0)
 	{
 	}
 
@@ -2937,7 +2953,10 @@ class rls_ff_mimo_proxy: public rls_system_identification_strategy<TraitsT>
 
 	public: rls_ff_mimo_proxy()
 	: base_type(),
-	  ff_(0)
+	  ff_(0),
+	  Theta_hat_(),
+	  P_(),
+	  phi_()
 	{
 	}
 
@@ -2945,13 +2964,19 @@ class rls_ff_mimo_proxy: public rls_system_identification_strategy<TraitsT>
 	public: rls_ff_mimo_proxy(size_type n_a, size_type n_b, size_type d, size_type n_y, size_type n_u, real_type ff)
 	: base_type(n_a, n_b, d, n_y, n_u),
 	  ff_(ff)
+	  Theta_hat_(),
+	  P_(),
+	  phi_()
 	{
 	}
 
 
 	public: rls_ff_mimo_proxy(rls_ff_system_identification_strategy_params<traits_type> const& params)
 	: base_type(params),
-	  ff_(params.forgetting_factor())
+	  ff_(params.forgetting_factor()),
+	  Theta_hat_(),
+	  P_(),
+	  phi_()
 	{
 	}
 
@@ -3143,7 +3168,10 @@ class rls_ff_miso_proxy: public rls_system_identification_strategy<TraitsT>
 
 	public: rls_ff_miso_proxy()
 	: base_type(),
-	  ff_(0)
+	  ff_(0),
+	  theta_hats_(),
+	  Ps_(),
+	  phis_()
 	{
 	}
 
@@ -3410,6 +3438,23 @@ DCS_DEBUG_TRACE("END estimation");//XXX
  * \brief Proxy to identify a MIMO system model by applying the Recursive Least
  *  Square with forgetting-factor algorithm to several MISO system models.
  *
+ * The forgetting-factor is varied according to the following law [1]:
+ * \f[
+ *   \lambda(t) = \lambda_{\text{min}}+(1-\lambda_{\text{min}})2^{-\text{NINT}[\rho \epsilon^2(t)]}
+ * \f]
+ * where
+ * - \f$\rho\f$, the <em>sensitivity gain</em>, is a design parameter.
+ * - \f$\epsilon\f$, is the estimation error (i.e., the difference between the
+ *    value of the current observed output and the one of the current estimated output).
+ * - \f$\text{NINT}[\cdot]\f$ is the nearest integer of \f$[\cdot\]\f$.
+ * .
+ *
+ * References:
+ * -# Park et al.
+ *    "Fast Tracking RLS Algorithm Using Novel Variable Forgetting Factor with Unity Zone",
+ *    Electronic Letters, Vol. 23, 1991.
+ * .
+ *
  * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
  */
 template <typename TraitsT>
@@ -3425,7 +3470,11 @@ class rls_park1991_miso_proxy: public rls_system_identification_strategy<TraitsT
 
 	public: rls_park1991_miso_proxy()
 	: base_type(),
-	  ff_(0)
+	  ff_(0),
+	  rho_(0),
+	  theta_hats_(),
+	  Ps_(),
+	  phis_()
 	{
 	}
 
@@ -3718,7 +3767,10 @@ class rls_kulhavy1984_miso_proxy: public rls_system_identification_strategy<Trai
 
 	public: rls_kulhavy1984_miso_proxy()
 	: base_type(),
-	  ff_(0)
+	  ff_(0),
+	  theta_hats_(),
+	  Ps_(),
+	  phis_()
 	{
 	}
 
@@ -4000,7 +4052,11 @@ class rls_bittanti1990_miso_proxy: public rls_system_identification_strategy<Tra
 
 	public: rls_bittanti1990_miso_proxy()
 	: base_type(),
-	  ff_(0)
+	  ff_(0),
+	  delta_(0),
+	  theta_hats_(),
+	  Ps_(),
+	  phis_()
 	{
 	}
 
