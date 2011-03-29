@@ -256,7 +256,11 @@ class rls_system_identification_strategy: public base_system_identification_stra
 
 
 	public: rls_system_identification_strategy()
-	: base_type()
+	: base_type(),
+	  max_cov_heuristic_(false),
+	  max_cov_heuristic_max_val_(0),
+	  cond_cov_heuristic_(false),
+	  cond_cov_heuristic_trust_digits_(0)
 	{
 	}
 

@@ -47,6 +47,22 @@ class base_system_identification_strategy_params
 	public: typedef ::std::size_t size_type;
 
 
+	public: base_system_identification_strategy_params()
+	: n_a_(0),
+	  n_b_(0),
+	  n_c_(0),
+	  d_(0),
+	  n_y_(0),
+	  n_u_(0)
+	{
+	}
+
+
+	public: virtual ~base_system_identification_strategy_params()
+	{
+	}
+
+
 	public: system_identification_strategy_category category() const
 	{
 		return do_category();
@@ -153,6 +169,17 @@ class rls_system_identification_strategy_params: public base_system_identificati
 	public: typedef typename traits_type::uint_type uint_type;
 
 
+	public: rls_system_identification_strategy_params()
+	: base_type(),
+	  miso_(false),
+	  max_cov_heuristic_(false),
+	  max_cov_heuristic_val_(0),
+	  cond_cov_heuristic_(false),
+	  cond_cov_heuristic_trust_digits_(0)
+	{
+	}
+
+
 	public: void mimo_as_miso(bool value)
 	{
 		miso_ = value;
@@ -224,12 +251,14 @@ class rls_system_identification_strategy_params: public base_system_identificati
 template <typename TraitsT>
 class rls_bittanti1990_system_identification_strategy_params: public rls_system_identification_strategy_params<TraitsT>
 {
-	typedef TraitsT traits_type;
-	typedef typename traits_type::real_type real_type;
+	private: typedef rls_system_identification_strategy_params<TraitsT> base_type;
+	public: typedef TraitsT traits_type;
+	public: typedef typename traits_type::real_type real_type;
 
 
 	public: rls_bittanti1990_system_identification_strategy_params(real_type ff, real_type delta)
-	: ff_(ff),
+	: base_type(),
+	  ff_(ff),
 	  delta_(delta)
 	{
 	}
@@ -273,12 +302,14 @@ class rls_bittanti1990_system_identification_strategy_params: public rls_system_
 template <typename TraitsT>
 class rls_ff_system_identification_strategy_params: public rls_system_identification_strategy_params<TraitsT>
 {
-	typedef TraitsT traits_type;
-	typedef typename traits_type::real_type real_type;
+	private: typedef rls_system_identification_strategy_params<TraitsT> base_type;
+	public: typedef TraitsT traits_type;
+	public: typedef typename traits_type::real_type real_type;
 
 
 	public: rls_ff_system_identification_strategy_params(real_type ff)
-	: ff_(ff)
+	: base_type(),
+	  ff_(ff)
 	{
 	}
 
@@ -308,12 +339,14 @@ class rls_ff_system_identification_strategy_params: public rls_system_identifica
 template <typename TraitsT>
 class rls_kulhavy1984_system_identification_strategy_params: public rls_system_identification_strategy_params<TraitsT>
 {
-	typedef TraitsT traits_type;
-	typedef typename traits_type::real_type real_type;
+	private: typedef rls_system_identification_strategy_params<TraitsT> base_type;
+	public: typedef TraitsT traits_type;
+	public: typedef typename traits_type::real_type real_type;
 
 
 	public: rls_kulhavy1984_system_identification_strategy_params(real_type ff)
-	: ff_(ff)
+	: base_type(),
+	  ff_(ff)
 	{
 	}
 
@@ -343,12 +376,14 @@ class rls_kulhavy1984_system_identification_strategy_params: public rls_system_i
 template <typename TraitsT>
 class rls_park1991_system_identification_strategy_params: public rls_system_identification_strategy_params<TraitsT>
 {
-	typedef TraitsT traits_type;
-	typedef typename traits_type::real_type real_type;
+	private: typedef rls_system_identification_strategy_params<TraitsT> base_type;
+	public: typedef TraitsT traits_type;
+	public: typedef typename traits_type::real_type real_type;
 
 
 	public: rls_park1991_system_identification_strategy_params(real_type ff, real_type rho)
-	: ff_(ff),
+	: base_type(),
+	  ff_(ff),
 	  rho_(rho)
 	{
 	}
