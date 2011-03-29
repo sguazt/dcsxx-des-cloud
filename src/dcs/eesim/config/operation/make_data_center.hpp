@@ -199,6 +199,8 @@ template <typename T>
 			throw ::std::runtime_error("NIC resource not yet handled.");
 			break;
 	}
+
+	throw ::std::runtime_error("[dcs::eesim::detail::make_physical_resource_category] Unknown physical resource category.");
 }
 
 
@@ -561,6 +563,8 @@ performance_measure_category make_performance_measure_category(metric_category c
 		case throughput_metric:
 			return throughput_performance_measure;
 	}
+
+	throw ::std::runtime_error("[dcs::eesim::config::detail::make_performance_measure_category] Unknown performance measure category.");
 }
 
 
@@ -1502,6 +1506,8 @@ template <typename ValueT>
 		case throughput_metric:
 			return ::dcs::perfeval::sla::any_metric_checker<ValueT>(throughput_sla_checker<ValueT>(tolerance));
 	}
+
+	throw ::std::runtime_error("[dcs::eesim::detail::make_performance_measure_checker] Unknown performance measure category.");
 }
 
 
