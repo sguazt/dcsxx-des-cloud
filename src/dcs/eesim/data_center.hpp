@@ -163,9 +163,8 @@ class data_center
 			throw ::std::invalid_argument("[dcs::eesim::remove_application] Invalid physical machine identifier.")
 		);
 
-		undeploy_application(mach_id);
-
 		pms_.erase(pms_.begin()+mach_id);
+		pm_ctrls_.erase(pms_.begin()+mach_id);
 	}
 
 
@@ -359,15 +358,16 @@ class data_center
 		iterator end_it = placement_.end();
 		for (iterator it = placement_.begin(); it != end_it; ++it)
 		{
-			virtual_machine_identifier_type vm_id(it->first.first);
-			physical_machine_identifier_type pm_id(it->first.second);
+			virtual_machine_identifier_type vm_id(placement_.vm_id(it));
+			physical_machine_identifier_type pm_id(placement_.pm_id(it));
 			physical_machine_pointer ptr_pm(pms_[pm_id]);
 			virtual_machine_pointer ptr_vm(vms_[vm_id]);
 
 			pms_[pm_id]->vmm().power_off(ptr_vm);
 			pms_[pm_id]->vmm().destroy_domain(ptr_vm);
-			placement_.displace(*ptr_vm);
+//			placement_.displace(*ptr_vm);
 		}
+		placement_.displace_all();
 	}
 
 
@@ -429,12 +429,12 @@ class data_center
 			::std::vector<virtual_machine_pointer> app_vms;
 			for (vm_iterator vm_it = app_it->second.begin(); vm_it != vm_end_it; ++vm_it)
 			{
-//				vm_placement_iterator vm_place_it(placement_.find(*vm_it));
-//				physical_machine_pointer ptr_pm(pms_[placement_.pm_id(vm_place_it->first)]);
-//				virtual_machine_pointer ptr_vm(mms_[placement_.vm_id(vm_place_it->first)]);
-//				ptr_pm->vmm().power_on(ptr_vm);
-				virtual_machine_pointer ptr_vm(vms_[*vm_it]);
-				ptr_vm->power_on();
+				vm_placement_iterator vm_place_it(placement_.find(*vm_it));
+				physical_machine_pointer ptr_pm(pms_[placement_.pm_id(vm_place_it)]);
+				virtual_machine_pointer ptr_vm(vms_[placement_.vm_id(vm_place_it)]);
+				ptr_pm->vmm().power_on(ptr_vm);
+//				virtual_machine_pointer ptr_vm(vms_[*vm_it]);
+//				ptr_vm->power_on();
 				app_vms.push_back(ptr_vm);
 			}
 			this->application_ptr(app_id)->start(app_vms.begin(), app_vms.end());

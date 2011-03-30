@@ -255,14 +255,14 @@ DCS_DEBUG_TRACE("TRUE");//XXX
 	}
 
 
-	public: iterator find(virtual_machine_identifier_type const& vm)
+	public: iterator find(virtual_machine_identifier_type vm_id)
 	{
 		//return placements_.find(::std::make_pair(vm_id, by_vm_idx_[vm_id]));
 		return placements_.find(make_vm_pm_pair_by_vm(vm_id));
 	}
 
 
-	public: const_iterator find(virtual_machine_identifier_type const& vm) const
+	public: const_iterator find(virtual_machine_identifier_type vm_id)
 	{
 		//return placements_.find(::std::make_pair(vm_id, by_vm_idx_[vm_id]));
 		return placements_.find(make_vm_pm_pair_by_vm(vm_id));
