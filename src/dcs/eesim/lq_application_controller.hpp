@@ -1092,10 +1092,10 @@ DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Scaled share: " << new_share);//
 					}
 					else
 					{
-						new_share = actual_share;
+						new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
 					}
 
-DCS_DEBUG_TRACE("Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << res_category << " ==> Share: " << new_share);//XXX
+DCS_DEBUG_TRACE("Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share);//XXX
 					ptr_vm->wanted_resource_share(res_category, new_share);
 				}
 DCS_DEBUG_TRACE("Optimal control applied");//XXX
