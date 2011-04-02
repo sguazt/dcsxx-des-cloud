@@ -111,7 +111,6 @@ pch_ext := hpp.gch
 use_pch := true
 #use_pch := false
 CXXFLAGS_common = -Wall -Wextra -ansi -pedantic -DBOOST_UBLAS_TYPE_CHECK=0 $(addprefix -I, $(incdirs)) -I$(libsdir)/include
-#CXXFLAGS_debug := -g $(CXXFLAGS_common)
 CXXFLAGS_debug := -g $(CXXFLAGS_common)
 CXXFLAGS_release := -g0 -O3 -DNDEBUG $(CXXFLAGS_common)
 CXXFLAGS_test := -g -O0 $(CXXFLAGS_common)

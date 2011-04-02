@@ -1060,18 +1060,17 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 					virtual_machine_pointer ptr_vm(app_sim_model.tier_virtual_machine(tier_id));
 					physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
 					real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
-					real_type actual_share;
-					actual_share = ::dcs::eesim::scale_resource_share(pm.resource(res_category)->capacity(),
-																	  pm.resource(res_category)->utilization_threshold(),
-																	  app.reference_resource(res_category).capacity(),
-																	  app.reference_resource(res_category).utilization_threshold(),
-																	  ptr_vm->resource_share(res_category));
-
-
+//					real_type actual_share;
+//					actual_share = ::dcs::eesim::scale_resource_share(pm.resource(res_category)->capacity(),
+//																	  pm.resource(res_category)->utilization_threshold(),
+//																	  app.reference_resource(res_category).capacity(),
+//																	  app.reference_resource(res_category).utilization_threshold(),
+//																	  ptr_vm->resource_share(res_category));
+//
+//
+//DCS_DEBUG_TRACE("Tier " << tier_id << " --> Actual share: " << actual_share);//XXX
+DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Unscaled share: " << (ref_share*(opt_u(u_offset_+tier_id)+real_type(1))));//XXX
 					real_type new_share;
-DCS_DEBUG_TRACE("Tier " << tier_id << " --> Actual share: " << actual_share);//XXX
-DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Unscaled share: " << (ref_share/(opt_u(u_offset_+tier_id)+real_type(1))));//XXX
-//DCS_DEBUG_TRACE("Tier " << tier_id << " --> Unscaled share: " << (actual_share/(opt_u(tier_id)+1)));//XXX
 					new_share = ::dcs::eesim::scale_resource_share(
 									// Reference resource capacity and threshold
 									app.reference_resource(res_category).capacity(),
@@ -1082,7 +1081,6 @@ DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Unscaled share: " << (ref_share/
 									//// Old resource share + computed deviation
 									//ptr_vm->wanted_resource_share(res_category)+opt_u(tier_id)
 									ref_share*(opt_u(u_offset_+tier_id)+real_type(1))
-//									actual_share/(opt_u(tier_id)+1)
 						);
 DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Scaled share: " << new_share);//XXX
 

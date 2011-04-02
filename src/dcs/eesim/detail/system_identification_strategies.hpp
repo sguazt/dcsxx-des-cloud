@@ -3033,7 +3033,7 @@ class rls_ff_mimo_proxy: public rls_system_identification_strategy<TraitsT>
 			}
 		}
 		// Apply the "condition-number-covariance" heuristic (if enabled)
-		if (!reset && this->max_covariance_heuristic())
+		if (!reset && this->condition_number_covariance_heuristic())
 		{
 			real_type check_val = ::std::floor(
 							::std::numeric_limits<real_type>::epsilon()
@@ -3303,7 +3303,7 @@ class rls_ff_miso_proxy: public rls_system_identification_strategy<TraitsT>
 			}
 		}
 		// Apply the "condition-number-covariance" heuristic (if enabled)
-		if (this->max_covariance_heuristic())
+		if (this->condition_number_covariance_heuristic())
 		{
 			real_type check_val = ::std::floor(
 							::std::numeric_limits<real_type>::epsilon()
@@ -3614,7 +3614,7 @@ class rls_park1991_miso_proxy: public rls_system_identification_strategy<TraitsT
 			}
 		}
 		// Apply the "condition-number-covariance" heuristic (if enabled)
-		if (this->max_covariance_heuristic())
+		if (this->condition_number_covariance_heuristic())
 		{
 			real_type check_val = ::std::floor(
 							::std::numeric_limits<real_type>::epsilon()
@@ -3902,7 +3902,7 @@ class rls_kulhavy1984_miso_proxy: public rls_system_identification_strategy<Trai
 			}
 		}
 		// Apply the "condition-number-covariance" heuristic (if enabled)
-		if (this->max_covariance_heuristic())
+		if (this->condition_number_covariance_heuristic())
 		{
 			real_type check_val = ::std::floor(
 							::std::numeric_limits<real_type>::epsilon()
@@ -4196,7 +4196,7 @@ class rls_bittanti1990_miso_proxy: public rls_system_identification_strategy<Tra
 			}
 		}
 		// Apply the "condition-number-covariance" heuristic (if enabled)
-		if (this->max_covariance_heuristic())
+		if (this->condition_number_covariance_heuristic())
 		{
 			real_type check_val = ::std::floor(
 							::std::numeric_limits<real_type>::epsilon()

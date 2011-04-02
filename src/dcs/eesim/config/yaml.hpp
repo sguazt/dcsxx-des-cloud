@@ -2001,7 +2001,7 @@ void operator>>(::YAML::Node const& node, application_controller_config<RealT,UI
 			break;
 		case lqry_application_controller:
 			{
-				typedef typename controller_config_type::lqr_controller_config_type controller_config_impl_type;
+				typedef typename controller_config_type::lqry_controller_config_type controller_config_impl_type;
 				typedef typename controller_config_impl_type::base_type base_controller_config_impl_type;;
 
 				controller_config_impl_type controller_conf_impl;
