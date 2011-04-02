@@ -1086,7 +1086,7 @@ DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Scaled share: " << new_share);//
 
 					if (new_share >= 0)
 					{
-						new_share = ::std::max(new_share, default_min_share_);
+						new_share = ::std::min(::std::max(new_share, default_min_share_), real_type(1));
 					}
 					else
 					{
