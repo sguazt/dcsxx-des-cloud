@@ -2504,20 +2504,20 @@ class yaml_reader
 	private: void traverse(YAML::Node const& node, unsigned int depth = 0)
 	{
 		::std::string out;
-		::YAML::CONTENT_TYPE type = node.GetType();
+		::YAML::NodeType::value type = node.Type();
 		::std::string indent((size_t)depth, '\t');
 
-		::std::string tag = node.GetTag();
+		::std::string tag = node.Tag();
 
 		if (tag.empty())
 		{
 			switch (type)
 			{
-				case ::YAML::CT_SCALAR:
+				case ::YAML::NodeType::Scalar:
 					node >> out;
 					::std::cout << indent << "SCALAR: " << out << ::std::endl;
 					break;
-				case ::YAML::CT_SEQUENCE:
+				case ::YAML::NodeType::Sequence:
 					::std::cout << indent << "SEQUENCE:" << ::std::endl;
 					for (unsigned int i = 0; i < node.size(); i++) {
 						const ::YAML::Node & subnode = node[i];
@@ -2525,7 +2525,7 @@ class yaml_reader
 						traverse(subnode, depth + 1);
 					}
 					break;
-				case ::YAML::CT_MAP:
+				case ::YAML::NodeType::Map:
 					::std::cout << indent << "MAP:" << ::std::endl;
 					for (::YAML::Iterator i = node.begin(); i != node.end(); ++i) {
 						const ::YAML::Node & key   = i.first();
@@ -2536,7 +2536,7 @@ class yaml_reader
 						traverse(value, depth + 1);
 					}
 					break;
-				case ::YAML::CT_NONE:
+				case ::YAML::NodeType::Null:
 					::std::cout << indent << "(empty)" << ::std::endl;
 					break;
 				default:
@@ -2545,18 +2545,18 @@ class yaml_reader
 		}
 //		else if (!tag.compare(0, tag_dcs_eesim.length(), tag_dcs_eesim))
 //		{
-//			::std::cout << indent << "(tag: " << node.GetTag() << ")" << ::std::endl;
+//			::std::cout << indent << "(tag: " << node.Tag() << ")" << ::std::endl;
 //		}
 		else if (!tag.compare(tag_dcs_eesim_sim_qn_node))
 		{
-			::std::cout << indent << "(tag: " << node.GetTag() << ")" << ::std::endl;
+			::std::cout << indent << "(tag: " << node.Tag() << ")" << ::std::endl;
 			detail::matrix<double> m;
 			node >> m;
 			::std::cout << "Matrix: " << m << std::endl;
 		}
 		else if (!tag.compare(tag_dcs_eesim_matrix))
 		{
-			::std::cout << indent << "(tag: " << node.GetTag() << ")" << ::std::endl;
+			::std::cout << indent << "(tag: " << node.Tag() << ")" << ::std::endl;
 			detail::matrix<double> m;
 			node >> m;
 			::std::cout << "Matrix: " << m << std::endl;
