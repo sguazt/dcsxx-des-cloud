@@ -2482,17 +2482,17 @@ class yaml_reader
 	}
 
 
-	private: ::std::string type_to_string(::YAML::CONTENT_TYPE type)
+	private: ::std::string type_to_string(::YAML::NodeType::value type)
 	{
 			switch (type)
 			{
-				case ::YAML::CT_SCALAR:
+				case ::YAML::NodeType::Scalar:
 					return "SCALAR";
-				case ::YAML::CT_SEQUENCE:
+				case ::YAML::NodeType::Sequence:
 					return "SEQUENCE";
-				case ::YAML::CT_MAP:
+				case ::YAML::NodeType::Map:
 					return "MAP";
-				case ::YAML::CT_NONE:
+				case ::YAML::NodeType::Null:
 					return "(empty)";
 				default:
 					return "(unknown)";

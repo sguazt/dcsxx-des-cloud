@@ -20,7 +20,10 @@
 //#include <dcs/math/random/any_generator.hpp>
 #include <dcs/math/random.hpp>
 #include <dcs/memory.hpp>
+#include <exception>
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -32,12 +35,6 @@ enum configuration_category
 	yaml_configuration/*, TODO:
 	xml_configuration*/
 };
-
-
-void usage()
-{
-	std::cerr << "Usage: " << prog_name << " conf_file" << std::endl;
-}
 
 
 //namespace detail { namespace /*<unnamed>*/ {
@@ -69,29 +66,53 @@ typedef dcs::eesim::registry<traits_type> registry_type;
 typedef ::dcs::math::random::minstd_rand1 random_seeder_type;
 
 
-namespace detail {
+namespace detail { namespace /*<unnamed>*/ {
 
 typedef ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
 typedef ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
 
 
-void process_sys_init_sim_event(des_event_type const& evt, des_engine_context_type& ctx, random_seeder_type& seeder)
+void usage()
 {
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+//	::std::cerr << "Usage: " << prog_name << " conf_file" << std::endl;
+	::std::cerr << "Usage: " << prog_name << " <options>" << ::std::endl
+				<< "Options:" << ::std::endl
+				<< "  --partial-stats" << ::std::endl
+				<< "  --conf <configuration-file>" << ::std::endl;
+}
 
-	typedef random_seeder_type::result_type seed_type;
 
-	DCS_DEBUG_TRACE("BEGIN Process System Initialization at Clock: " << ctx.simulated_time());
+template <typename ForwardIterT>
+ForwardIterT find_option(ForwardIterT begin, ForwardIterT end, std::string const& option)
+{
+	ForwardIterT it = ::std::find(begin, end, option);
+//    if (it != end && ++it != end)
+	if (it != end)
+	{
+		return it;
+	}
+	return end;
+}
 
-	seed_type seed = seeder();
 
-	DCS_DEBUG_TRACE("Generated new seed: " << seed);//XXX
+template <typename T, typename ForwardIterT>
+T get_option(ForwardIterT begin, ForwardIterT end, std::string const& option)
+{
+    ForwardIterT it = find_option(begin, end, option);
 
-	registry_type& ref_reg = registry_type::instance();
-	ref_reg.uniform_random_generator_ptr()->seed(seed);
+    if (it == end || ++it == end)
+    {
+		::std::ostringstream oss;
+		oss << "Unable to find option: '" << option << "'";
+    	throw ::std::runtime_error(oss.str());
+    }
 
-	DCS_DEBUG_TRACE("END Process System Initialization at Clock: " << ctx.simulated_time());
+	T value;
+
+	::std::istringstream iss(*it);
+	iss >> value;
+
+    return value;
 }
 
 
@@ -300,7 +321,48 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 	}
 }
 
-} // Namespace detail
+
+void process_sys_init_sim_event(des_event_type const& evt, des_engine_context_type& ctx, random_seeder_type& seeder)
+{
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+	typedef random_seeder_type::result_type seed_type;
+
+	DCS_DEBUG_TRACE("BEGIN Process System Initialization at Clock: " << ctx.simulated_time());
+
+	seed_type seed = seeder();
+
+	DCS_DEBUG_TRACE("Generated new seed: " << seed);//XXX
+
+	registry_type& ref_reg = registry_type::instance();
+	ref_reg.uniform_random_generator_ptr()->seed(seed);
+
+	DCS_DEBUG_TRACE("END Process System Initialization at Clock: " << ctx.simulated_time());
+}
+
+
+//template <
+//	typename CharT,
+//	typename CharTraitsT,
+//	typename TraitsT
+//>
+//void process_sys_finit_sim_event(des_event_type const& evt, des_engine_context_type& ctx, ::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr< ::dcs::eesim::data_center<TraitsT> > const& ptr_dc)
+template <typename TraitsT>
+void process_sys_finit_sim_event(des_event_type const& evt, des_engine_context_type& ctx, ::dcs::shared_ptr< ::dcs::eesim::data_center<TraitsT> > const& ptr_dc)
+{
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+	DCS_DEBUG_TRACE("BEGIN Process System Finalization at Clock: " << ctx.simulated_time());
+
+	::std::cout << "PARTIAL STATISTICS:" << ::std::endl;
+	detail::report_stats(::std::cout, ptr_dc);
+
+	DCS_DEBUG_TRACE("END Process System Finalization at Clock: " << ctx.simulated_time());
+}
+
+}} // Namespace detail::<unnamed>
 
 
 int main(int argc, char* argv[])
@@ -330,14 +392,38 @@ int main(int argc, char* argv[])
 
 	if (argc < 2)
 	{
-		usage();
+		detail::usage();
 		return -1;
 	}
 
 
+	// Parse command line arguments
+
+	std::string conf_fname; // (argv[1]);
+	bool partial_stats(false);
+
+	if (argc > 2)
+	{
+		try
+		{
+			partial_stats = detail::get_option<bool>(argv, argv+argc, "--partial-stats");
+			conf_fname = detail::get_option<std::string>(argv, argv+argc, "--conf");
+		}
+		catch (std::exception const& e)
+		{
+			std::cerr << "[Error] Error while parsing command-line options: " << e.what() << std::endl;
+			detail::usage();
+			std::abort();
+		}
+	}
+	else
+	{
+		// old-style usage: exec_name <conf-file>
+		conf_fname = argv[1];
+	}
+
 	// Read configuration
 
-	std::string conf_fname(argv[1]);
 	configuration_category conf_cat = yaml_configuration;
 
 	dcs::eesim::config::configuration<real_type,uint_type> conf;
@@ -379,13 +465,13 @@ int main(int argc, char* argv[])
 
 	// Register some DES event hooks
 	ptr_des_eng->system_initialization_event_source().connect(
-		::dcs::functional::bind(
-			&detail::process_sys_init_sim_event,
-			::dcs::functional::placeholders::_1,
-			::dcs::functional::placeholders::_2,
-			seeder
-		)
-	);
+			::dcs::functional::bind(
+				&detail::process_sys_init_sim_event,
+				::dcs::functional::placeholders::_1,
+				::dcs::functional::placeholders::_2,
+				seeder
+			)
+		);
 
 	// Attach a simulation observer
 	dcs::shared_ptr< dcs::eesim::logging::base_logger<traits_type> > ptr_sim_log;
@@ -404,6 +490,14 @@ int main(int argc, char* argv[])
 	ptr_dc = dcs::eesim::config::make_data_center<traits_type>(conf, ptr_rng, ptr_des_eng);
 	ptr_dc_mngr = dcs::eesim::config::make_data_center_manager<traits_type>(conf, ptr_dc);
 
+	ptr_des_eng->system_finalization_event_source().connect(
+			::dcs::functional::bind(
+				&detail::process_sys_finit_sim_event<traits_type>,
+				::dcs::functional::placeholders::_1,
+				::dcs::functional::placeholders::_2,
+				ptr_dc
+			)
+		);
 	// Run the simulation
 	ptr_des_eng->run();
 
