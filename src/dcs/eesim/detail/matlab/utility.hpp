@@ -133,7 +133,7 @@ template <typename MatrixExprT>
 
 
 template <typename ArgsT, typename ConsumerT>
-void run_matlab_command(::std::string const& cmd,
+bool run_matlab_command(::std::string const& cmd,
 						ArgsT const& args,
 						ConsumerT& consumer)
 {
@@ -345,69 +345,6 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
 
 	consumer(is);
 
-/*
-	// Read from the stdin
-DCS_DEBUG_TRACE("BEGIN parsing MATLAB output");//XXX
-	bool parse_line(false);
-	while (is.good())
-	{
-		::std::string line;
-		::std::getline(is, line);
-DCS_DEBUG_TRACE("Read from MATLAB --> " << line);//XXX
-
-		if (parse_line)
-		{
-			if (line.find("[/eesim]") != ::std::string::npos)
-			{
-				// The end of parsable lines
-				parse_line = false;
-			}
-			else
-			{
-				typename ::std::string::size_type pos;
-				if ((pos = line.find("th=")) != ::std::string::npos)
-				{
-					parse_str(line.substr(pos+3), th);
-DCS_DEBUG_TRACE("Parsed as th=" << th);//XXX
-				}
-				else if ((pos = line.find("yh=")) != ::std::string::npos)
-				{
-					parse_str(line.substr(pos+3), yh);
-DCS_DEBUG_TRACE("Parsed as yh=" << yh);//XXX
-				}
-				else if ((pos = line.find("P=")) != ::std::string::npos)
-				{
-					parse_str(line.substr(pos+2), P);
-DCS_DEBUG_TRACE("Parsed as P=" << P);//XXX
-				}
-				else if ((pos = line.find("phi=")) != ::std::string::npos)
-				{
-					parse_str(line.substr(pos+4), phi);
-DCS_DEBUG_TRACE("Parsed as phi=" << phi);//XXX
-
-					// Actually the RARX function of the current System
-					// Identification Toolbox (MATLAB 2010b) returns a
-					// \phi vector with one additional and useless entry
-					// placed at the end of the vector.
-					// Remove it.
-
-					//TODO: check for current MATLAB version and issue a
-					//      warning if the versio is newer than 2010b.
-
-					phi = ::boost::numeric::ublas::subrange(phi, 0, ::boost::numeric::ublasx::size(phi)-1);
-				}
-			}
-		}
-		else
-		{
-			if (line.find("[eesim]") != ::std::string::npos)
-			{
-				// The beginning of parsable lines
-				parse_line = true;
-			}
-		}
-	}
-*/
 DCS_DEBUG_TRACE("END parsing MATLAB output");//XXX
 DCS_DEBUG_TRACE("IS state: " << is.good() << " - " << is.eof() << " - " << is.fail() << " - " << is.bad());//XXX
 
@@ -428,6 +365,7 @@ DCS_DEBUG_TRACE("IS state: " << is.good() << " - " << is.eof() << " - " << is.fa
 		throw ::std::runtime_error(oss.str());
 	}
 DCS_DEBUG_TRACE("MATLAB exited");//XXX
+	bool ok(true);
 	if (WIFEXITED(status))
 	{
 DCS_DEBUG_TRACE("MATLAB exited with a call to 'exit(" << WEXITSTATUS(status) << ")'");//XXX
@@ -435,21 +373,25 @@ DCS_DEBUG_TRACE("MATLAB exited with a call to 'exit(" << WEXITSTATUS(status) << 
 		{
 			// status != 0 --> error in the execution
 			::std::clog << "[Warning] MATLAB command exited with status " << WEXITSTATUS(status) << ::std::endl;
+			ok = false;
 		}
 	}
 	else if (WIFSIGNALED(status))
 	{
 DCS_DEBUG_TRACE("MATLAB exited with a call to 'kill(" << WTERMSIG(status) << ")'");//XXX
 	   ::std::clog << "[Warning] MATLAB command received signal " << WTERMSIG(status) << ::std::endl;
+		ok = false;
 	}
 	else
 	{
 DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
+		ok = false;
 	}
 
 //	// Restore signal handler
 //	::sigaction(SIGTERM, &old_sigterm_act, 0);
 //	::sigaction(SIGINT, &old_sigint_act, 0);
+	return ok;
 }
 
 

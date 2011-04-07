@@ -35,6 +35,8 @@ class lqi_matlab_output_consumer
 	public: template <typename CharT, typename CharTraitsT>
 		void operator()(::std::basic_istream<CharT,CharTraitsT>& is)
 	{
+		success_ = true;
+
 		// Read from the stdin
 DCS_DEBUG_TRACE("BEGIN parsing MATLAB output");//XXX
 		bool parse_line(false);
@@ -43,6 +45,14 @@ DCS_DEBUG_TRACE("BEGIN parsing MATLAB output");//XXX
 			::std::string line;
 			::std::getline(is, line);
 DCS_DEBUG_TRACE("Read from MATLAB --> " << line);//XXX
+::std::cerr << "Read from MATLAB --> " << line << ::std::endl;//XXX
+
+			if (line.find("???") != ::std::string::npos || line.find("Error:") != ::std::string::npos)
+			{
+				DCS_DEBUG_TRACE("An error is occurred while executing MATLAB");//XXX
+				success_ = false;
+				break;
+			}
 
 			if (parse_line)
 			{
@@ -58,16 +68,19 @@ DCS_DEBUG_TRACE("Read from MATLAB --> " << line);//XXX
 					{
 						parse_str(line.substr(pos+2), K_);
 DCS_DEBUG_TRACE("Parsed as K=" << K_);//XXX
+::std::cerr << "Parsed as K=" << K_ << ::std::endl;//XXX
 					}
 					else if ((pos = line.find("S=")) != ::std::string::npos)
 					{
 						parse_str(line.substr(pos+2), S_);
 DCS_DEBUG_TRACE("Parsed as S=" << S_);//XXX
+::std::cerr << "Parsed as S=" << S_ << ::std::endl;//XXX
 					}
 					else if ((pos = line.find("e=")) != ::std::string::npos)
 					{
 						parse_str(line.substr(pos+2), e_);
 DCS_DEBUG_TRACE("Parsed as e=" << e_);//XXX
+::std::cerr << "Parsed as e=" << e_ << ::std::endl;//XXX
 					}
 				}
 			}
@@ -82,6 +95,12 @@ DCS_DEBUG_TRACE("Parsed as e=" << e_);//XXX
 		}
 DCS_DEBUG_TRACE("END parsing MATLAB output");//XXX
 DCS_DEBUG_TRACE("IS state: " << is.good() << " - " << is.eof() << " - " << is.fail() << " - " << is.bad());//XXX
+	}
+
+
+	public: bool success() const
+	{
+		return success_;
 	}
 
 
@@ -103,6 +122,7 @@ DCS_DEBUG_TRACE("IS state: " << is.good() << " - " << is.eof() << " - " << is.fa
 	}
 
 
+	private: bool success_;
 	private: matrix_type K_;
 	private: matrix_type S_;
 	private: vector_type e_;
@@ -215,7 +235,8 @@ class dlqi_controller_proxy
 		args.push_back("-nodisplay");
 		args.push_back("-nojvm");
 		::std::ostringstream oss;
-		oss << "-r \"[K,S,e]=lqi("
+		oss << "-r \"try "
+			<< "[K,S,e]=lqi("
 			<< "ss("
 			<< to_str(A)
 			<< "," << to_str(B)
@@ -232,12 +253,20 @@ class dlqi_controller_proxy
 			<< " disp(['S=', mat2str(S), ]);"
 			<< " disp(['e=', mat2str(e), ]);"
 			<< " disp('--- [/eesim] ---');"
+			<< "catch me, "
+			<< "disp(['??? Error: ', me.message]);"
+			<< "end;"
 			<< " quit force\"";
 		args.push_back(oss.str());
 
 		// Run MATLAB and retrieve its results
+		bool ok;
 		lqi_matlab_output_consumer<real_type> consumer;
-		run_matlab_command(find_matlab_command(), args, consumer);
+		ok = run_matlab_command(find_matlab_command(), args, consumer);
+		if (!ok || !consumer.success())
+		{
+			throw ::std::runtime_error("[dcs::eesim::detail::matlab::dlqi_controller_proxy::solve] Wrong state dimensiion.");
+		}
 		K_ = consumer.K();
 		S_ = consumer.S();
 		e_ = consumer.e();
@@ -250,7 +279,7 @@ class dlqi_controller_proxy
 		// preconditions: size(x) == num_columns(K_)
 		DCS_ASSERT(
 			::boost::numeric::ublasx::size(x) == ::boost::numeric::ublasx::num_columns(K_),
-			throw ::std::invalid_argument("[dcs::eesim::detail::matlab::dlqi_controller::control_proxy] Wrong state dimensiion.")
+			throw ::std::invalid_argument("[dcs::eesim::detail::matlab::dlqi_controller_proxy::control] Wrong state dimensiion.")
 		);
 
 		return -::boost::numeric::ublas::prod(K_, x);
