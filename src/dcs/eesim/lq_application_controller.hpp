@@ -54,6 +54,7 @@
 #include <dcs/des/mean_estimator.hpp>
 #include <dcs/eesim/base_application_controller.hpp>
 #include <dcs/eesim/detail/system_identification_strategies.hpp>
+#include <dcs/eesim/detail/matlab/controller_proxies.hpp>
 #include <dcs/eesim/multi_tier_application.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
 #include <dcs/eesim/physical_machine.hpp>
@@ -308,7 +309,9 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	  ewma_smooth_(default_ewma_smoothing_factor),
 	  x_offset_(0),
 	  u_offset_(0),
-	  count_(0)
+	  count_(0),
+	  ident_fail_count_(0),
+	  ctrl_fail_count_(0)
 	{
 		init();
 	}
@@ -330,7 +333,9 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	  ewma_smooth_(default_ewma_smoothing_factor),
 	  x_offset_(0),
 	  u_offset_(0),
-	  count_(0)
+	  count_(0),
+	  ident_fail_count_(0),
+	  ctrl_fail_count_(0)
 	{
 		init();
 	}
@@ -362,7 +367,9 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	  ewma_smooth_(ewma_smoothing_factor),
 	  x_offset_(0),
 	  u_offset_(0),
-	  count_(0)
+	  count_(0),
+	  ident_fail_count_(0),
+	  ctrl_fail_count_(0)
 	{
 		init();
 	}
@@ -587,7 +594,9 @@ class lq_application_controller: public base_application_controller<TraitsT>
 			}
 		}
 
-		count_ = size_type/*zero*/();
+		count_ = ident_fail_count_
+			   = ctrl_fail_count_
+			   = size_type/*zero*/();
 		x_ = vector_type(n_x_, 0);
 		u_ = vector_type(n_u_, 0);
 	}
@@ -981,8 +990,11 @@ DCS_DEBUG_TRACE("TIER " << tier_id << " SHARE: ref: " << ref_share << " - actual
 		}
 
 		// Estimate system parameters
+		bool ok(true);
 		vector_type p_hat;
-		p_hat = ptr_ident_strategy_->estimate(p, s);
+		try
+		{
+			p_hat = ptr_ident_strategy_->estimate(p, s);
 DCS_DEBUG_TRACE("RLS estimation:");//XXX
 DCS_DEBUG_TRACE("p=" << p);//XXX
 DCS_DEBUG_TRACE("s=" << s);//XXX
@@ -990,12 +1002,20 @@ DCS_DEBUG_TRACE("p_hat=" << p_hat);//XXX
 DCS_DEBUG_TRACE("Theta_hat=" << ptr_ident_strategy_->Theta_hat());//XXX
 DCS_DEBUG_TRACE("P=" << ptr_ident_strategy_->P());//XXX
 DCS_DEBUG_TRACE("phi=" << ptr_ident_strategy_->phi());//XXX
+		}
+		catch (::std::exception const& e)
+		{
+			::std::clog << "[Warning] Unable to estimate system parameters: " << e.what() << "." << ::std::endl;
+			DCS_DEBUG_TRACE( "Caught exception: " << e.what() );
+
+			ok = false;
+		}
 
 		// Check if RLS (and LQR) can be applied.
 		// If not, then no control is performed.
 //		if (count_ >= ::std::max(n_a_,n_b_))
 //		if (count_ > ::std::min(n_a_,n_b_))
-		if (ptr_ident_strategy_->count() > ::std::min(n_a_,n_b_))
+		if (ok && ptr_ident_strategy_->count() > ::std::min(n_a_,n_b_))
 		{
 			// Create the state-space representation of the system model:
 			//  x(k+1) = Ax(k)+Bu(k)
@@ -1014,7 +1034,7 @@ DCS_DEBUG_TRACE("phi=" << ptr_ident_strategy_->phi());//XXX
 			detail::make_ss(*ptr_ident_strategy_, A, B, C, D);
 
 			// Compute the optimal control
-DCS_DEBUG_TRACE("Solving LQR with");//XXX
+DCS_DEBUG_TRACE("APP: " << app.id() << " - Solving LQ with");//XXX
 DCS_DEBUG_TRACE("A=" << A);//XXX
 DCS_DEBUG_TRACE("B=" << B);//XXX
 DCS_DEBUG_TRACE("C=" << C);//XXX
@@ -1022,7 +1042,14 @@ DCS_DEBUG_TRACE("D=" << D);//XXX
 DCS_DEBUG_TRACE("y= " << y);//XXX
 DCS_DEBUG_TRACE("x= " << x_);//XXX
 DCS_DEBUG_TRACE("u= " << u_);//XXX
-			bool ok(true);
+::std::cerr << "Solving LQ with" << ::std::endl;//XXX
+::std::cerr << "A=" << A << ::std::endl;//XXX
+::std::cerr << "B=" << B << ::std::endl;//XXX
+::std::cerr << "C=" << C << ::std::endl;//XXX
+::std::cerr << "D=" << D << ::std::endl;//XXX
+::std::cerr << "y= " << y << ::std::endl;//XXX
+::std::cerr << "x= " << x_ << ::std::endl;//XXX
+::std::cerr << "u= " << u_ << ::std::endl;//XXX
 			vector_type opt_u;
 			try
 			{
@@ -1050,7 +1077,8 @@ DCS_DEBUG_TRACE("u= " << u_);//XXX
 			{
 DCS_DEBUG_TRACE("Solved!");//XXX
 DCS_DEBUG_TRACE("Optimal Control u*=> " << opt_u);//XXX
-DCS_DEBUG_TRACE("Expected application response time: " << (app.sla_cost_model().slo_value(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)));//XXX
+DCS_DEBUG_TRACE("APP: " << app.id() << " Expected application response time: " << (app.sla_cost_model().slo_value(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)));//XXX
+::std::cerr << "APP: " << app.id() << " Expected application response time: " << (app.sla_cost_model().slo_value(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)) << ::std::endl;//XXX
 
 DCS_DEBUG_TRACE("Applying optimal control");//XXX
 				for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
@@ -1082,7 +1110,6 @@ DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Unscaled share: " << (ref_share*
 									//ptr_vm->wanted_resource_share(res_category)+opt_u(tier_id)
 									ref_share*(opt_u(u_offset_+tier_id)+real_type(1))
 						);
-DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Scaled share: " << new_share);//XXX
 
 					if (new_share >= 0)
 					{
@@ -1093,15 +1120,28 @@ DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Scaled share: " << new_share);//
 						new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
 					}
 
-DCS_DEBUG_TRACE("Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share);//XXX
+					DCS_DEBUG_TRACE("APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share);
+::std::cerr << "APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share << ::std::endl;//XXX
+
 					ptr_vm->wanted_resource_share(res_category, new_share);
 				}
 DCS_DEBUG_TRACE("Optimal control applied");//XXX
 			}
+			else
+			{
+				++ctrl_fail_count_;
+			}
+		}
+		else if (!ok)
+		{
+			++ident_fail_count_;
 		}
 
 		// Reset previously collected system measure in order to collect a new ones.
 		reset_measures();
+
+		DCS_DEBUG_TRACE("APP: " << app.id() << " - Control stats: Count: " << count_ << " - Identification Failure Count: " << ident_fail_count_ << " - Control Failures Count: " << ctrl_fail_count_);
+::std::cerr << "APP: " << app.id() << " - Control stats: Count: " << count_ << " - Identification Failure Count: " << ident_fail_count_ << " - Control Failures Count: " << ctrl_fail_count_ << ::std::endl;
 
 		DCS_DEBUG_TRACE("(" << this << ") END Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")");
 	}
@@ -1145,6 +1185,8 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 	private: size_type x_offset_;
 	private: size_type u_offset_;
 	private: size_type count_;
+	private: size_type ident_fail_count_;
+	private: size_type ctrl_fail_count_;
 	private: vector_type x_;
 	private: vector_type u_;
 	/// System-level measures collected during the last control interval.
@@ -1190,6 +1232,266 @@ const typename lq_application_controller<TraitsT>::real_type lq_application_cont
 template <typename TraitsT>
 const typename lq_application_controller<TraitsT>::real_type lq_application_controller<TraitsT>::default_ewma_smoothing_factor = 0.7;
 
+
+/*
+template <typename ValueT>
+class matlab_output_consumer
+{
+	public: typedef ValueT value_type;
+	public: typedef ::boost::numeric::ublas::matrix<value_type> matrix_type;
+	public: typedef ::boost::numeric::ublas::vector<value_type> vector_type;
+
+
+	public: template <typename CharT, typename CharTraitsT>
+		void operator()(::std::basic_istream<CharT,CharTraitsT>& is)
+	{
+		// Read from the stdin
+DCS_DEBUG_TRACE("BEGIN parsing MATLAB output");//XXX
+		bool parse_line(false);
+		while (is.good())
+		{
+			::std::string line;
+			::std::getline(is, line);
+DCS_DEBUG_TRACE("Read from MATLAB --> " << line);//XXX
+
+			if (parse_line)
+			{
+				if (line.find("[/eesim]") != ::std::string::npos)
+				{
+					// The end of parsable lines
+					parse_line = false;
+				}
+				else
+				{
+					typename ::std::string::size_type pos;
+					if ((pos = line.find("th=")) != ::std::string::npos)
+					{
+						matlab::parse_str(line.substr(pos+3), K_);
+DCS_DEBUG_TRACE("Parsed as K=" << K_);//XXX
+					}
+					else if ((pos = line.find("yh=")) != ::std::string::npos)
+					{
+						matlab::parse_str(line.substr(pos+3), S_);
+DCS_DEBUG_TRACE("Parsed as S=" << S_);//XXX
+					}
+					else if ((pos = line.find("P=")) != ::std::string::npos)
+					{
+						matlab::parse_str(line.substr(pos+2), e_);
+DCS_DEBUG_TRACE("Parsed as e=" << e_);//XXX
+					}
+				}
+			}
+			else
+			{
+				if (line.find("[eesim]") != ::std::string::npos)
+				{
+					// The beginning of parsable lines
+					parse_line = true;
+				}
+			}
+		}
+DCS_DEBUG_TRACE("END parsing MATLAB output");//XXX
+DCS_DEBUG_TRACE("IS state: " << is.good() << " - " << is.eof() << " - " << is.fail() << " - " << is.bad());//XXX
+	}
+
+
+	public: matrix_type const& K() const
+	{
+		return K_;
+	}
+
+
+	public: matrix_type const& S() const
+	{
+		return S_;
+	}
+
+
+	public: vector_type const& e() const
+	{
+		return e_;
+	}
+
+
+	private: matrix_type K_;
+	private: matrix_type S_;
+	private: vector_type e_;
+};
+
+
+template <typename RealT>
+class matlab_dlqi_controller_proxy
+{
+	public: typedef RealT real_type;
+	public: typedef ::boost::numeric::ublas::matrix<real_type> matrix_type;
+	public: typedef ::boost::numeric::ublas::vector<real_type> vector_type;
+	public: typedef ::std::size_t size_type;
+
+
+	public: template <
+				typename AMatrixT,
+				typename BMatrixT,
+				typename CMatrixT,
+				typename DMatrixT,
+				typename QMatrixT,
+				typename RMatrixT,
+				typename NMatrixT
+		> matlab_dlqi_controller_proxy(::boost::numeric::ublas::matrix_expression<AMatrixT> const& A,
+						  ::boost::numeric::ublas::matrix_expression<BMatrixT> const& B,
+						  ::boost::numeric::ublas::matrix_expression<CMatrixT> const& C,
+						  ::boost::numeric::ublas::matrix_expression<DMatrixT> const& D,
+						  real_type ts,
+						  ::boost::numeric::ublas::matrix_expression<QMatrixT> const& Q,
+						  ::boost::numeric::ublas::matrix_expression<RMatrixT> const& R,
+						  ::boost::numeric::ublas::matrix_expression<NMatrixT> const& N)
+		: Q_(Q),
+		  R_(R),
+		  N_(N)
+	{
+		solve(A, B, C, D, ts);
+	}
+
+
+	public: template <
+				typename AMatrixT,
+				typename BMatrixT,
+				typename CMatrixT,
+				typename DMatrixT,
+				typename QMatrixT,
+				typename RMatrixT
+		> matlab_dlqi_controller_proxy(::boost::numeric::ublas::matrix_expression<AMatrixT> const& A,
+						  ::boost::numeric::ublas::matrix_expression<BMatrixT> const& B,
+						  ::boost::numeric::ublas::matrix_expression<CMatrixT> const& C,
+						  ::boost::numeric::ublas::matrix_expression<DMatrixT> const& D,
+						  real_type ts,
+						  ::boost::numeric::ublas::matrix_expression<QMatrixT> const& Q,
+						  ::boost::numeric::ublas::matrix_expression<RMatrixT> const& R)
+		: Q_(Q),
+		  R_(R),
+		  N_(::boost::numeric::ublas::zero_matrix<real_type>(
+					::boost::numeric::ublasx::num_rows(Q),
+					::boost::numeric::ublasx::num_rows(R)
+				)
+			)
+	{
+		solve(A, B, C, D, ts);
+	}
+
+
+	public: template <
+				typename QMatrixT,
+				typename RMatrixT,
+				typename NMatrixT
+		> matlab_dlqi_controller_proxy(::boost::numeric::ublas::matrix_expression<QMatrixT> const& Q,
+						  ::boost::numeric::ublas::matrix_expression<RMatrixT> const& R,
+						  ::boost::numeric::ublas::matrix_expression<NMatrixT> const& N)
+		: Q_(Q),
+		  R_(R),
+		  N_(N)
+	{
+	}
+
+
+	public: template <
+				typename QMatrixT,
+				typename RMatrixT
+		> matlab_dlqi_controller_proxy(::boost::numeric::ublas::matrix_expression<QMatrixT> const& Q,
+						  ::boost::numeric::ublas::matrix_expression<RMatrixT> const& R)
+		: Q_(Q),
+		  R_(R),
+		  N_(::boost::numeric::ublas::zero_matrix<real_type>(
+					::boost::numeric::ublasx::num_rows(Q),
+					::boost::numeric::ublasx::num_rows(R)
+				)
+			)
+	{
+	}
+
+
+	public: template <typename AMatrixT,
+					  typename BMatrixT,
+					  typename CMatrixT,
+					  typename DMatrixT>
+		void solve(::boost::numeric::ublas::matrix_expression<AMatrixT> const& A,
+				   ::boost::numeric::ublas::matrix_expression<BMatrixT> const& B,
+				   ::boost::numeric::ublas::matrix_expression<CMatrixT> const& C,
+				   ::boost::numeric::ublas::matrix_expression<DMatrixT> const& D,
+					real_type ts)
+	{
+		// Prepare the MATLAB command
+		::std::vector< ::std::string > args;
+		args.push_back("-nodisplay");
+		args.push_back("-nojvm");
+		::std::ostringstream oss;
+		oss << "-r \"[K,S,e]=lqi("
+			<< "ss("
+			<< matlab::to_str(A)
+			<< "," << matlab::to_str(B)
+			<< "," << matlab::to_str(C)
+			<< "," << matlab::to_str(D)
+			<< "," << ts
+			<< "),"
+			<< "," << matlab::to_str(Q_)
+			<< "," << matlab::to_str(R_)
+			<< "," << matlab::to_str(N_)
+			<< "); format long;"
+			<< " disp('--- [eesim] ---');"
+			<< " disp(['K=', mat2str(K), ]);"
+			<< " disp(['S=', num2str(S), ]);"
+			<< " disp(['e=', mat2str(e), ]);"
+			<< " disp('--- [/eesim] ---');"
+			<< " quit force\"";
+		args.push_back(oss.str());
+
+		// Run MATLAB and retrieve its results
+		matlab_output_consumer<real_type> consumer;
+		matlab::run_matlab_command(matlab::find_matlab_command(), args, consumer);
+		K_ = consumer.K();
+		S_ = consumer.S();
+		e_ = consumer.e();
+	}
+
+
+    public: template <typename VectorExprT>
+        vector_type control(::boost::numeric::ublas::vector_expression<VectorExprT> const& x) const
+    {
+		// preconditions: size(x) == num_columns(K_)
+		DCS_ASSERT(
+			::boost::numeric::ublasx::size(x) == ::boost::numeric::ublasx::num_columns(K_),
+			throw ::std::invalid_argument("[dcs::control::dlqi_controller::control] Wrong state dimensiion.")
+		);
+
+		return -::boost::numeric::ublas::prod(K_, x);
+	}
+ 
+
+    public: template <typename MatrixExprT>
+        matrix_type control(::boost::numeric::ublas::matrix_expression<MatrixExprT> const& X) const
+    {
+		// preconditions: num_columns(X) == num_columns(K_)
+		DCS_ASSERT(
+			::boost::numeric::ublasx::num_columns(X) == ::boost::numeric::ublasx::num_columns(K_),
+			throw ::std::invalid_argument("[dcs::control::dlqi_controller::control] Wrong state dimensiion.")
+		);
+		
+		return -::boost::numeric::ublas::prod(K_, ::boost::numeric::ublas::trans(X));
+	}
+
+
+	private: matrix_type Q_;
+	/// The control weigthed matrix.
+	private: matrix_type R_;
+	/// The cross-coupling weigthed matrix.
+	private: matrix_type N_;
+	/// The optimal feedback gain matrix.
+	private: matrix_type K_;
+	/// The solution to the associated DARE.
+	private: matrix_type S_;
+	/// The closed-loop eigenvalues which gives the closed-loop poles of \f$A-BK\f$.
+	private: vector_type e_;
+}; // matlab_dlqi_controller_proxy
+*/
+
 }} // Namespace detail::<unnamed>
 
 
@@ -1213,6 +1515,9 @@ class lqi_application_controller: public detail::lq_application_controller<Trait
 	private: typedef ::dcs::control::dlqi_controller<real_type> lq_controller_type;
 	private: typedef typename base_type::vector_type vector_type;
 	private: typedef typename base_type::matrix_type matrix_type;
+	private: typedef typename traits_type::des_engine_type des_engine_type;
+	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
+	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
 
 
 	public: lqi_application_controller()
@@ -1264,6 +1569,21 @@ class lqi_application_controller: public detail::lq_application_controller<Trait
 	  controller_(Q, R, N),
 	  xi_(1,0)
 	{
+	}
+
+
+	protected: void do_process_sys_init(des_event_type const& evt, des_engine_context_type& ctx)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process SYSTEM-INITIALIZATION event (Clock: " << ctx.simulated_time() << ")");
+
+		base_type::do_process_sys_init(evt, ctx);
+
+		xi_ = vector_type(1,0);
+
+		DCS_DEBUG_TRACE("(" << this << ") END Do Process SYSTEM-INITIALIZATION event (Clock: " << ctx.simulated_time() << ")");
 	}
 
 
@@ -1592,6 +1912,148 @@ class lqry_application_controller: public detail::lq_application_controller<Trai
 	/// The LQ (regulator) controller
 	private: lq_controller_type controller_;
 }; // lqry_application_controller
+
+
+/**
+ * \brief Application controller based on the Linear-Quadratic-Integrator
+ *  control.
+ * 
+ * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ */
+template <typename TraitsT>
+class matlab_lqi_application_controller: public detail::lq_application_controller<TraitsT>
+{
+	private: typedef detail::lq_application_controller<TraitsT> base_type;
+	public: typedef TraitsT traits_type;
+	public: typedef typename traits_type::real_type real_type;
+	public: typedef typename traits_type::uint_type uint_type;
+	public: typedef typename base_type::application_pointer application_pointer;
+	public: typedef typename base_type::system_identification_strategy_params_pointer system_identification_strategy_params_pointer;
+//	public: typedef base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
+//	public: typedef ::dcs::shared_ptr<system_identification_strategy_params_type> system_identification_strategy_params_pointer;
+	private: typedef detail::matlab::dlqi_controller_proxy<real_type> lq_controller_type;
+	private: typedef typename base_type::vector_type vector_type;
+	private: typedef typename base_type::matrix_type matrix_type;
+	private: typedef typename traits_type::des_engine_type des_engine_type;
+	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
+	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
+
+
+	public: matlab_lqi_application_controller()
+	: base_type()
+	{
+	}
+
+
+	public: matlab_lqi_application_controller(application_pointer const& ptr_app, real_type ts)
+	: base_type(ptr_app, ts),
+	  xi_(1,0)
+	{
+	}
+
+
+	public: template <typename QMatrixExprT, typename RMatrixExprT>
+		matlab_lqi_application_controller(uint_type n_a,
+								   uint_type n_b,
+								   uint_type d,
+								   ::boost::numeric::ublas::matrix_expression<QMatrixExprT> const& Q,
+								   ::boost::numeric::ublas::matrix_expression<RMatrixExprT> const& R,
+								   application_pointer const& ptr_app,
+								   real_type ts,
+//								   real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
+								   system_identification_strategy_params_pointer const& ptr_ident_strategy_params,
+								   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
+//	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
+	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, ewma_smoothing_factor),
+	  controller_(Q, R),
+	  xi_(1,0)
+	{
+	}
+
+
+	public: template <typename QMatrixExprT, typename RMatrixExprT, typename NMatrixExprT>
+		matlab_lqi_application_controller(uint_type n_a,
+								   uint_type n_b,
+								   uint_type d,
+								   ::boost::numeric::ublas::matrix_expression<QMatrixExprT> const& Q,
+								   ::boost::numeric::ublas::matrix_expression<RMatrixExprT> const& R,
+								   ::boost::numeric::ublas::matrix_expression<NMatrixExprT> const& N,
+								   application_pointer const& ptr_app,
+								   real_type ts,
+//								   real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
+								   system_identification_strategy_params_pointer const& ptr_ident_strategy_params,
+								   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
+//	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
+	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, ewma_smoothing_factor),
+	  controller_(Q, R, N),
+	  xi_(1,0)
+	{
+	}
+
+
+	protected: void do_process_sys_init(des_event_type const& evt, des_engine_context_type& ctx)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process SYSTEM-INITIALIZATION event (Clock: " << ctx.simulated_time() << ")");
+
+		base_type::do_process_sys_init(evt, ctx);
+
+		xi_ = vector_type(1,0);
+
+		DCS_DEBUG_TRACE("(" << this << ") END Do Process SYSTEM-INITIALIZATION event (Clock: " << ctx.simulated_time() << ")");
+	}
+
+
+	private: vector_type do_optimal_control(vector_type const& x, vector_type const& u, vector_type const& y, matrix_type const& A, matrix_type const& B, matrix_type const& C, matrix_type const& D)
+	{
+		namespace ublas = ::boost::numeric::ublas;
+		namespace ublasx = ::boost::numeric::ublasx;
+
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( u );
+
+		vector_type opt_u;
+
+		controller_.solve(A, B, C, D, this->sampling_time());
+
+		// Form the augmented state-vector
+		//
+		//  z(k+1) = [x(k+1); xi(k+1)]
+		//         = [ A      0][x(k) ]+[ B     ]u(k)+[0]
+		//           [-C|t_s| I][xi(k)]+[-D|t_s|]    +[r]
+		//  y(k+1) = [C 0]z(k)+Du(k)
+		//
+		// where r is the reference value to be tracked and xi is the current
+		// integrated control error:
+		//  xi(k) = xi(k-1) + e(k-1)
+		//        = xi(k-1) + (r-y(k-1))
+		//        = xi(k-1) + (r-Cx(k-1)-Du(k-1))
+		//
+
+		// Update the integrated control error.
+		// NOTE: In our case the reference value r is zero
+		//xi_ = xi_- ublas::subrange(x, ublasx::num_rows(A)-ublasx::num_rows(C), ublasx::num_rows(A));
+		xi_ = xi_- y;
+		//xi_ = xi_+ublas::scalar_vector<real_type>(1,1)- ublas::subrange(x, ublasx::num_rows(A)-ublasx::num_rows(C), ublasx::num_rows(A));
+
+		vector_type z(ublasx::num_rows(A)+ublasx::num_rows(C));
+		ublas::subrange(z, 0, ublasx::num_rows(A)) = x;
+		ublas::subrange(z, ublasx::num_rows(A), ublasx::num_rows(A)+ublasx::num_rows(C)) = xi_;
+DCS_DEBUG_TRACE("Augmented x=" << z);//XXX
+
+		opt_u = ublas::real(controller_.control(z));
+
+		return opt_u;
+	}
+
+
+	/// The LQI controller implementation.
+	private: lq_controller_type controller_;
+	/// The integrated control error.
+	private: vector_type xi_;
+}; // lqi_application_controller
+
 
 }} // Namespace dcs::eesim
 

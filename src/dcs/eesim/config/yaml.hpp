@@ -389,6 +389,10 @@ application_controller_category text_to_application_controller_category(::std::s
 	{
 		return lqry_application_controller;
 	}
+	if (!istr.compare("matlab-lqi"))
+	{
+		return matlab_lqi_application_controller;
+	}
 	if (!istr.compare("none") || !istr.compare("dummy"))
 	{
 		return dummy_application_controller;
@@ -2007,6 +2011,27 @@ void operator>>(::YAML::Node const& node, application_controller_config<RealT,UI
 				controller_config_impl_type controller_conf_impl;
 
 				node >> static_cast<base_controller_config_impl_type&>(controller_conf_impl);
+
+				controller_conf.category_conf = controller_conf_impl;
+			}
+			break;
+		case matlab_lqi_application_controller:
+			{
+				typedef typename controller_config_type::matlab_lqi_controller_config_type controller_config_impl_type;
+				typedef typename controller_config_impl_type::base_type base_controller_config_impl_type;;
+
+				controller_config_impl_type controller_conf_impl;
+
+				node >> static_cast<base_controller_config_impl_type&>(controller_conf_impl);
+
+//				if (node.FindValue("integral-weight"))
+//				{
+//					node["integral-weight"] >> controller_conf_impl.integral_weight;
+//				}
+//				else
+//				{
+//					controller_conf_impl.integral_weight = 0.98;
+//				}
 
 				controller_conf.category_conf = controller_conf_impl;
 			}

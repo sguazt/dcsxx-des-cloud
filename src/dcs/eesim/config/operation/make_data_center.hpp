@@ -1846,6 +1846,49 @@ template <typename TraitsT, typename RealT, typename UIntT>
 					);
 			}
 			break;
+		case matlab_lqi_application_controller:
+			{
+				typedef typename controller_config_type::matlab_lqi_controller_config_type controller_config_impl_type;
+				typedef ::dcs::eesim::matlab_lqi_application_controller<traits_type> controller_impl_type;
+				typedef ::dcs::eesim::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
+				typedef ::dcs::shared_ptr<system_identification_strategy_params_type> system_identification_strategy_params_pointer;
+
+				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
+
+				system_identification_strategy_params_pointer ptr_ident_strategy_params;
+				ptr_ident_strategy_params = make_system_identification_strategy_params<traits_type>(controller_conf_impl);
+
+//FIXME: Don't work... Why?!!?
+//				ptr_controller = ::dcs::make_shared<controller_impl_type>(
+//						controller_conf_impl.n_a,
+//						controller_conf_impl.n_b,
+//						controller_conf_impl.d,
+//						make_ublas_matrix(controller_conf_impl.Q),
+//						make_ublas_matrix(controller_conf_impl.R),
+//						make_ublas_matrix(controller_conf_impl.N),
+//						ptr_app,
+//						controller_conf.sampling_time,
+//						controller_conf_impl.rls_forgetting_factor,
+//						controller_conf_impl.ewma_smoothing_factor
+//					);
+				ptr_controller = ::dcs::shared_ptr<controller_impl_type>(
+						new controller_impl_type(
+							controller_conf_impl.n_a,
+							controller_conf_impl.n_b,
+							controller_conf_impl.d,
+							make_ublas_matrix(controller_conf_impl.Q),
+							make_ublas_matrix(controller_conf_impl.R),
+							make_ublas_matrix(controller_conf_impl.N),
+							ptr_app,
+							controller_conf.sampling_time,
+//							controller_conf_impl.integral_weight,
+//							controller_conf_impl.rls_forgetting_factor,
+							ptr_ident_strategy_params,
+							controller_conf_impl.ewma_smoothing_factor
+						)
+					);
+			}
+			break;
 		case qn_application_controller:
 			{
 				//typedef typename controller_config_type::qn_controller_config_type controller_config_impl_type;
