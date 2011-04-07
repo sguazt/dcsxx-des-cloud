@@ -56,12 +56,12 @@ DCS_DEBUG_TRACE("Read from MATLAB --> " << line);//XXX
 					typename ::std::string::size_type pos;
 					if ((pos = line.find("K=")) != ::std::string::npos)
 					{
-						parse_str(line.substr(pos+3), K_);
+						parse_str(line.substr(pos+2), K_);
 DCS_DEBUG_TRACE("Parsed as K=" << K_);//XXX
 					}
 					else if ((pos = line.find("S=")) != ::std::string::npos)
 					{
-						parse_str(line.substr(pos+3), S_);
+						parse_str(line.substr(pos+2), S_);
 DCS_DEBUG_TRACE("Parsed as S=" << S_);//XXX
 					}
 					else if ((pos = line.find("e=")) != ::std::string::npos)
@@ -250,7 +250,7 @@ class dlqi_controller_proxy
 		// preconditions: size(x) == num_columns(K_)
 		DCS_ASSERT(
 			::boost::numeric::ublasx::size(x) == ::boost::numeric::ublasx::num_columns(K_),
-			throw ::std::invalid_argument("[dcs::control::dlqi_controller::control] Wrong state dimensiion.")
+			throw ::std::invalid_argument("[dcs::eesim::detail::matlab::dlqi_controller::control_proxy] Wrong state dimensiion.")
 		);
 
 		return -::boost::numeric::ublas::prod(K_, x);
@@ -263,7 +263,7 @@ class dlqi_controller_proxy
 		// preconditions: num_columns(X) == num_columns(K_)
 		DCS_ASSERT(
 			::boost::numeric::ublasx::num_columns(X) == ::boost::numeric::ublasx::num_columns(K_),
-			throw ::std::invalid_argument("[dcs::control::dlqi_controller::control] Wrong state dimensiion.")
+			throw ::std::invalid_argument("[dcs::eesim::detail::matlab::dlqi_controller_proxy::control] Wrong state dimensiion.")
 		);
 		
 		return -::boost::numeric::ublas::prod(K_, ::boost::numeric::ublas::trans(X));
@@ -281,7 +281,7 @@ class dlqi_controller_proxy
 	private: matrix_type S_;
 	/// The closed-loop eigenvalues which gives the closed-loop poles of \f$A-BK\f$.
 	private: vector_type e_;
-}; // matlab_dlqi_controller_proxy
+}; // dlqi_controller_proxy
 
 }}}} // Namespace dcs::eesim::detail::matlab
 

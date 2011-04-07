@@ -135,7 +135,7 @@ template <typename MatrixExprT>
 template <typename ArgsT, typename ConsumerT>
 void run_matlab_command(::std::string const& cmd,
 						ArgsT const& args,
-						ConsumerT consumer)
+						ConsumerT& consumer)
 {
 	int pipefd[2];
 
@@ -147,7 +147,7 @@ void run_matlab_command(::std::string const& cmd,
 	{
 		char const* err_str = ::strerror(errno);
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] pipe(2) failed: "
+		oss << "[dcs::eesim::detail::matlab::run_matlab] pipe(2) failed: "
 			<< ::std::string(err_str);
 		throw ::std::runtime_error(oss.str());
 	}
@@ -176,7 +176,7 @@ void run_matlab_command(::std::string const& cmd,
 	{
 		char const* err_str = ::strerror(errno);
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] fork(2) failed: "
+		oss << "[dcs::eesim::detail::matlab::run_matlab] fork(2) failed: "
 			<< ::std::string(err_str);
 		throw ::std::runtime_error(oss.str());
 	}
@@ -203,7 +203,7 @@ void run_matlab_command(::std::string const& cmd,
 			{
 				char const* err_str = ::strerror(errno);
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] getrlimit(2) failed: "
+				oss << "[dcs::eesim::detail::matlab::run_matlab] getrlimit(2) failed: "
 					<< ::std::string(err_str);
 				throw ::std::runtime_error(oss.str());
 			}
@@ -219,7 +219,7 @@ void run_matlab_command(::std::string const& cmd,
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] getrlimit(2) failed: "
+			oss << "[dcs::eesim::detail::matlab::run_matlab] getrlimit(2) failed: "
 				<< ::std::string(err_str);
 			throw ::std::runtime_error(oss.str());
 		}
@@ -241,7 +241,7 @@ void run_matlab_command(::std::string const& cmd,
 			{
 				char const* err_str = ::strerror(errno);
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] dup2(2) failed: "
+				oss << "[dcs::eesim::detail::matlab::run_matlab] dup2(2) failed: "
 					<< ::std::string(err_str);
 				throw ::std::runtime_error(oss.str());
 			}
@@ -329,7 +329,7 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] dup2(2) failed: "
+			oss << "[dcs::eesim::detail::matlab::run_matlab] dup2(2) failed: "
 				<< ::std::string(err_str);
 			throw ::std::runtime_error(oss.str());
 		}
@@ -423,7 +423,7 @@ DCS_DEBUG_TRACE("IS state: " << is.good() << " - " << is.eof() << " - " << is.fa
 	{
 		char const* err_str = ::strerror(errno);
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] waitpid(2) failed: "
+		oss << "[dcs::eesim::detail::matlab::run_matlab] waitpid(2) failed: "
 			<< ::std::string(err_str);
 		throw ::std::runtime_error(oss.str());
 	}
@@ -474,7 +474,7 @@ void parse_str(::std::string const& text, T& x)
 		}
 		else
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy] Unable to parse a MATLAB number");
+			throw ::std::runtime_error("[dcs::eesim::detail::matlab::parse_str] Unable to parse a MATLAB number");
 		}
 	}
 }
@@ -545,7 +545,7 @@ void parse_str(::std::string const& text, ::boost::numeric::ublas::vector<T>& v)
 
 		if (ko)
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy] Unable to parse a MATLAB vector.");
+			throw ::std::runtime_error("[dcs::eesim::detail::matlab::parse_str] Unable to parse a MATLAB vector.");
 		}
 	}
 }
@@ -632,7 +632,7 @@ void parse_str(::std::string const& text, ::boost::numeric::ublas::matrix<T>& A)
 
 		if (ko)
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy] Unable to parse a MATLAB matrix.");
+			throw ::std::runtime_error("[dcs::eesim::detail::matlab::parse_str] Unable to parse a MATLAB matrix.");
 		}
 	}
 }
