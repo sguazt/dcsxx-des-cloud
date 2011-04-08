@@ -1889,6 +1889,62 @@ template <typename TraitsT, typename RealT, typename UIntT>
 					);
 			}
 			break;
+		case matlab_lqr_application_controller:
+			{
+				typedef typename controller_config_type::matlab_lqr_controller_config_type controller_config_impl_type;
+				typedef ::dcs::eesim::matlab_lqr_application_controller<traits_type> controller_impl_type;
+				typedef ::dcs::eesim::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
+				typedef ::dcs::shared_ptr<system_identification_strategy_params_type> system_identification_strategy_params_pointer;
+
+				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
+
+				system_identification_strategy_params_pointer ptr_ident_strategy_params;
+				ptr_ident_strategy_params = make_system_identification_strategy_params<traits_type>(controller_conf_impl);
+
+				ptr_controller = ::dcs::shared_ptr<controller_impl_type>(
+						new controller_impl_type(
+							controller_conf_impl.n_a,
+							controller_conf_impl.n_b,
+							controller_conf_impl.d,
+							make_ublas_matrix(controller_conf_impl.Q),
+							make_ublas_matrix(controller_conf_impl.R),
+							make_ublas_matrix(controller_conf_impl.N),
+							ptr_app,
+							controller_conf.sampling_time,
+							ptr_ident_strategy_params,
+							controller_conf_impl.ewma_smoothing_factor
+						)
+					);
+			}
+			break;
+		case matlab_lqry_application_controller:
+			{
+				typedef typename controller_config_type::matlab_lqry_controller_config_type controller_config_impl_type;
+				typedef ::dcs::eesim::matlab_lqry_application_controller<traits_type> controller_impl_type;
+				typedef ::dcs::eesim::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
+				typedef ::dcs::shared_ptr<system_identification_strategy_params_type> system_identification_strategy_params_pointer;
+
+				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
+
+				system_identification_strategy_params_pointer ptr_ident_strategy_params;
+				ptr_ident_strategy_params = make_system_identification_strategy_params<traits_type>(controller_conf_impl);
+
+				ptr_controller = ::dcs::shared_ptr<controller_impl_type>(
+						new controller_impl_type(
+							controller_conf_impl.n_a,
+							controller_conf_impl.n_b,
+							controller_conf_impl.d,
+							make_ublas_matrix(controller_conf_impl.Q),
+							make_ublas_matrix(controller_conf_impl.R),
+							make_ublas_matrix(controller_conf_impl.N),
+							ptr_app,
+							controller_conf.sampling_time,
+							ptr_ident_strategy_params,
+							controller_conf_impl.ewma_smoothing_factor
+						)
+					);
+			}
+			break;
 		case qn_application_controller:
 			{
 				//typedef typename controller_config_type::qn_controller_config_type controller_config_impl_type;

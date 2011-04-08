@@ -124,6 +124,8 @@ enum application_controller_category
 	lqr_application_controller,
 	lqry_application_controller,
 	matlab_lqi_application_controller,
+	matlab_lqr_application_controller,
+	matlab_lqry_application_controller,
 	qn_application_controller
 };
 
@@ -217,6 +219,28 @@ struct matlab_lqi_application_controller_config: public lq_application_controlle
 };
 
 
+template <typename RealT, typename UIntT>
+struct matlab_lqr_application_controller_config: public lq_application_controller_config<RealT,UIntT>
+{
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+	typedef lq_application_controller_config<RealT,UIntT> base_type;
+
+//	real_type integral_weight; // The weight assigned to the integral error at each control time
+};
+
+
+template <typename RealT, typename UIntT>
+struct matlab_lqry_application_controller_config: public lq_application_controller_config<RealT,UIntT>
+{
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+	typedef lq_application_controller_config<RealT,UIntT> base_type;
+
+//	real_type integral_weight; // The weight assigned to the integral error at each control time
+};
+
+
 struct qn_application_controller_config
 {
 };
@@ -233,6 +257,8 @@ struct application_controller_config
 	typedef lqr_application_controller_config<real_type,uint_type> lqr_controller_config_type;
 	typedef lqry_application_controller_config<real_type,uint_type> lqry_controller_config_type;
 	typedef matlab_lqi_application_controller_config<real_type,uint_type> matlab_lqi_controller_config_type;
+	typedef matlab_lqr_application_controller_config<real_type,uint_type> matlab_lqr_controller_config_type;
+	typedef matlab_lqry_application_controller_config<real_type,uint_type> matlab_lqry_controller_config_type;
 	typedef qn_application_controller_config qn_controller_config_type;
 
 	real_type sampling_time;
@@ -243,6 +269,8 @@ struct application_controller_config
 					 lqr_controller_config_type,
 					 lqry_controller_config_type,
 					 matlab_lqi_controller_config_type,
+					 matlab_lqr_controller_config_type,
+					 matlab_lqry_controller_config_type,
 					 qn_controller_config_type> category_conf;
 };
 
@@ -328,7 +356,13 @@ template <typename CharT, typename CharTraitsT>
 			os << "lqry";
 			break;
 		case matlab_lqi_application_controller:
-			os << "matlab_lqi";
+			os << "matlab-lqi";
+			break;
+		case matlab_lqr_application_controller:
+			os << "matlab-lqr";
+			break;
+		case matlab_lqry_application_controller:
+			os << "matlab-lqry";
 			break;
 		case qn_application_controller:
 			os << "qn";
@@ -404,6 +438,28 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, matlab_lqi_application_controller_config<RealT,UIntT> const& controller)
 {
 	os << "<(matlab_lqi-application-controller)"
+	   << static_cast<lq_application_controller_config<RealT,UIntT> const&>(controller)
+	   << ">";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, matlab_lqr_application_controller_config<RealT,UIntT> const& controller)
+{
+	os << "<(matlab_lqr-application-controller)"
+	   << static_cast<lq_application_controller_config<RealT,UIntT> const&>(controller)
+	   << ">";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, matlab_lqry_application_controller_config<RealT,UIntT> const& controller)
+{
+	os << "<(matlab_lqry-application-controller)"
 	   << static_cast<lq_application_controller_config<RealT,UIntT> const&>(controller)
 	   << ">";
 

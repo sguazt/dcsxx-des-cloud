@@ -1077,6 +1077,7 @@ DCS_DEBUG_TRACE("u= " << u_);//XXX
 			{
 DCS_DEBUG_TRACE("Solved!");//XXX
 DCS_DEBUG_TRACE("Optimal Control u*=> " << opt_u);//XXX
+::std:: cerr << "Optimal Control u*=> " << opt_u << ::std::endl;//XXX
 DCS_DEBUG_TRACE("APP: " << app.id() << " Expected application response time: " << (app.sla_cost_model().slo_value(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)));//XXX
 ::std::cerr << "APP: " << app.id() << " Expected application response time: " << (app.sla_cost_model().slo_value(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)) << ::std::endl;//XXX
 
@@ -1792,8 +1793,169 @@ DCS_DEBUG_TRACE("Augmented x=" << z);//XXX
 	private: lq_controller_type controller_;
 	/// The integrated control error.
 	private: vector_type xi_;
-}; // lqi_application_controller
+}; // matlab_lqi_application_controller
 
+
+template <typename TraitsT>
+class matlab_lqr_application_controller: public detail::lq_application_controller<TraitsT>
+{
+	private: typedef detail::lq_application_controller<TraitsT> base_type;
+	public: typedef TraitsT traits_type;
+	public: typedef typename traits_type::real_type real_type;
+	public: typedef typename traits_type::uint_type uint_type;
+	public: typedef typename base_type::application_pointer application_pointer;
+	public: typedef typename base_type::system_identification_strategy_params_pointer system_identification_strategy_params_pointer;
+	private: typedef detail::matlab::dlqr_controller_proxy<real_type> lq_controller_type;
+	private: typedef typename base_type::vector_type vector_type;
+	private: typedef typename base_type::matrix_type matrix_type;
+
+
+	public: matlab_lqr_application_controller()
+	: base_type()
+	{
+	}
+
+
+	public: matlab_lqr_application_controller(application_pointer const& ptr_app, real_type ts)
+	: base_type(ptr_app, ts)
+	{
+	}
+
+
+	public: template <typename QMatrixExprT, typename RMatrixExprT>
+		matlab_lqr_application_controller(uint_type n_a,
+								   uint_type n_b,
+								   uint_type d,
+								   ::boost::numeric::ublas::matrix_expression<QMatrixExprT> const& Q,
+								   ::boost::numeric::ublas::matrix_expression<RMatrixExprT> const& R,
+								   application_pointer const& ptr_app,
+								   real_type ts,
+								   system_identification_strategy_params_pointer const& ptr_ident_strategy_params,
+//								   real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
+								   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
+//	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
+	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, ewma_smoothing_factor),
+	  controller_(Q, R)
+	{
+	}
+
+
+	public: template <typename QMatrixExprT, typename RMatrixExprT, typename NMatrixExprT>
+		matlab_lqr_application_controller(uint_type n_a,
+								   uint_type n_b,
+								   uint_type d,
+								   ::boost::numeric::ublas::matrix_expression<QMatrixExprT> const& Q,
+								   ::boost::numeric::ublas::matrix_expression<RMatrixExprT> const& R,
+								   ::boost::numeric::ublas::matrix_expression<NMatrixExprT> const& N,
+								   application_pointer const& ptr_app,
+								   real_type ts,
+								   system_identification_strategy_params_pointer const& ptr_ident_strategy_params,
+//								   real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
+								   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
+//	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
+	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, ewma_smoothing_factor),
+	  controller_(Q, R, N)
+	{
+	}
+
+
+	private: vector_type do_optimal_control(vector_type const& x, vector_type const& u, vector_type const& y, matrix_type const& A, matrix_type const& B, matrix_type const& C, matrix_type const& D)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( u );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( y );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( C );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( D );
+
+		vector_type opt_u;
+
+		controller_.solve(A, B);
+		opt_u = ::boost::numeric::ublas::real(controller_.control(x));
+
+		return opt_u;
+	}
+
+
+	/// The LQ (regulator) controller
+	private: lq_controller_type controller_;
+}; // matlab_lqr_application_controller
+
+
+template <typename TraitsT>
+class matlab_lqry_application_controller: public detail::lq_application_controller<TraitsT>
+{
+	private: typedef detail::lq_application_controller<TraitsT> base_type;
+	public: typedef TraitsT traits_type;
+	public: typedef typename traits_type::real_type real_type;
+	public: typedef typename traits_type::uint_type uint_type;
+	public: typedef typename base_type::application_pointer application_pointer;
+	public: typedef typename base_type::system_identification_strategy_params_pointer system_identification_strategy_params_pointer;
+	private: typedef detail::matlab::dlqry_controller_proxy<real_type> lq_controller_type;
+	private: typedef typename base_type::vector_type vector_type;
+	private: typedef typename base_type::matrix_type matrix_type;
+
+
+	public: matlab_lqry_application_controller()
+	: base_type()
+	{
+	}
+
+
+	public: matlab_lqry_application_controller(application_pointer const& ptr_app, real_type ts)
+	: base_type(ptr_app, ts)
+	{
+	}
+
+
+	public: template <typename QMatrixExprT, typename RMatrixExprT>
+		matlab_lqry_application_controller(uint_type n_a,
+										   uint_type n_b,
+										   uint_type d,
+										   ::boost::numeric::ublas::matrix_expression<QMatrixExprT> const& Q,
+										   ::boost::numeric::ublas::matrix_expression<RMatrixExprT> const& R,
+										   application_pointer const& ptr_app,
+										   real_type ts,
+										   system_identification_strategy_params_pointer const& ptr_ident_strategy_params,
+										   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
+	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, ewma_smoothing_factor),
+	  controller_(Q, R)
+	{
+	}
+
+
+	public: template <typename QMatrixExprT, typename RMatrixExprT, typename NMatrixExprT>
+		matlab_lqry_application_controller(uint_type n_a,
+										   uint_type n_b,
+										   uint_type d,
+										   ::boost::numeric::ublas::matrix_expression<QMatrixExprT> const& Q,
+										   ::boost::numeric::ublas::matrix_expression<RMatrixExprT> const& R,
+										   ::boost::numeric::ublas::matrix_expression<NMatrixExprT> const& N,
+										   application_pointer const& ptr_app,
+										   real_type ts,
+										   system_identification_strategy_params_pointer const& ptr_ident_strategy_params,
+										   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
+	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, ewma_smoothing_factor),
+	  controller_(Q, R, N)
+	{
+	}
+
+
+	private: vector_type do_optimal_control(vector_type const& x, vector_type const& u, vector_type const& y, matrix_type const& A, matrix_type const& B, matrix_type const& C, matrix_type const& D)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( u );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( y );
+
+		vector_type opt_u;
+
+		controller_.solve(A, B, C, D);
+		opt_u = ::boost::numeric::ublas::real(controller_.control(x));
+
+		return opt_u;
+	}
+
+
+	/// The LQ (regulator) controller
+	private: lq_controller_type controller_;
+}; // matlab_lqry_application_controller
 
 }} // Namespace dcs::eesim
 
