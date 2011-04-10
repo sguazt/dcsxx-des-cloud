@@ -39,7 +39,8 @@
 #include <boost/numeric/ublas/vector_expression.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <boost/numeric/ublas/traits.hpp>
-#include <boost/numeric/ublasx/operation/cond.hpp>
+#include <boost/numeric/ublasx/operation/all.hpp>
+#include <boost/numeric/ublasx/operation/isfinite.hpp>
 #include <boost/numeric/ublasx/operation/num_columns.hpp>
 #include <boost/numeric/ublasx/operation/num_rows.hpp>
 #include <boost/numeric/ublasx/operation/size.hpp>
@@ -850,6 +851,7 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << app_rt << " (aggregated: " << ptr_st
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 		namespace ublas = ::boost::numeric::ublas;
+		namespace ublasx = ::boost::numeric::ublasx;
 
 		typedef typename base_type::application_type application_type;
 		typedef typename application_type::simulation_model_type application_simulation_model_type;
@@ -1002,6 +1004,19 @@ DCS_DEBUG_TRACE("p_hat=" << p_hat);//XXX
 DCS_DEBUG_TRACE("Theta_hat=" << ptr_ident_strategy_->Theta_hat());//XXX
 DCS_DEBUG_TRACE("P=" << ptr_ident_strategy_->P());//XXX
 DCS_DEBUG_TRACE("phi=" << ptr_ident_strategy_->phi());//XXX
+::std::cerr << "APP: " << app.id() << " - RLS estimation:" << ::std::endl;//XXX
+::std::cerr << "p=" << p << ::std::endl;//XXX
+::std::cerr << "s=" << s << ::std::endl;//XXX
+::std::cerr << "p_hat=" << p_hat << ::std::endl;//XXX
+::std::cerr << "Theta_hat=" << ptr_ident_strategy_->Theta_hat() << ::std::endl;//XXX
+::std::cerr << "P=" << ptr_ident_strategy_->P() << ::std::endl;//XXX
+::std::cerr << "phi=" << ptr_ident_strategy_->phi() << ::std::endl;//XXX
+
+			if (!ublasx::all(ublasx::isfinite(ptr_ident_strategy_->Theta_hat())))
+			{
+				::std::clog << "[Warning] Unable to estimate system parameters: infinite values in system parameters." << ::std::endl;
+				ok = false;
+			}
 		}
 		catch (::std::exception const& e)
 		{
@@ -1042,7 +1057,7 @@ DCS_DEBUG_TRACE("D=" << D);//XXX
 DCS_DEBUG_TRACE("y= " << y);//XXX
 DCS_DEBUG_TRACE("x= " << x_);//XXX
 DCS_DEBUG_TRACE("u= " << u_);//XXX
-::std::cerr << "Solving LQ with" << ::std::endl;//XXX
+::std::cerr << "APP: " << app.id() << " - Solving LQ with" << ::std::endl;//XXX
 ::std::cerr << "A=" << A << ::std::endl;//XXX
 ::std::cerr << "B=" << B << ::std::endl;//XXX
 ::std::cerr << "C=" << C << ::std::endl;//XXX
