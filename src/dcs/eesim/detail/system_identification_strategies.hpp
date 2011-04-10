@@ -3035,13 +3035,23 @@ class rls_ff_mimo_proxy: public rls_system_identification_strategy<TraitsT>
 		// Apply the "condition-number-covariance" heuristic (if enabled)
 		if (!reset && this->condition_number_covariance_heuristic())
 		{
-			real_type check_val = ::std::floor(
-							::std::numeric_limits<real_type>::epsilon()
-							*static_cast<real_type>(2)
-							*::std::pow(10, this->condition_number_covariance_heuristic())
-				);
+			// Use the following rule-of-thumb [1]:
+			//   if cond(A)*eps >= 0.5*10^{-d} then d significant digits of the
+			//   solution of the problem involving A are at least correct.
+			// NOTE #1: we use reciprocal condition estimator since it's less
+			//          time-consuming.
+			// NOTE #2: we use log10 to avoid to compute 10^d which can
+			//          potentially lead to overflow problems.
+			//
+			// References:
+			// [1] Holistic Numerical Methods Institute,
+			//     "Chapter 04.09 -- Adequacy of Solutions"
+			//     Found online at http://numericalmethods.eng.usf.edu/mws/gen/04sle/mws_gen_sle_spe_adequacy.pdf
 
-			if (::boost::numeric::ublasx::rcond(P_) > check_val)
+			real_type check_val = ::std::log10(static_cast<real_type>(2)*::std::numeric_limits<real_type>::epsilon())
+								  + this->condition_number_covariance_heuristic_trusted_digits();
+
+			if (::std::log10(::boost::numeric::ublasx::rcond(P_)) > check_val)
 			{
 				reset = true;
 			}
@@ -3305,15 +3315,25 @@ class rls_ff_miso_proxy: public rls_system_identification_strategy<TraitsT>
 		// Apply the "condition-number-covariance" heuristic (if enabled)
 		if (this->condition_number_covariance_heuristic())
 		{
-			real_type check_val = ::std::floor(
-							::std::numeric_limits<real_type>::epsilon()
-							*static_cast<real_type>(2)
-							*::std::pow(10, this->condition_number_covariance_heuristic())
-				);
+			// Use the following rule-of-thumb:
+			//   if cond(A)*eps >= 0.5*10^{-d} then d significant digits of the
+			//   solution of the problem involving A are at least correct.
+			// NOTE #1: we use reciprocal condition estimator since it's less
+			//          time-consuming.
+			// NOTE #2: we use log10 to avoid to compute 10^d which can
+			//          potentially lead to overflow problems.
+			//
+			// References:
+			// [1] Holistic Numerical Methods Institute,
+			//     "Chapter 04.09 -- Adequacy of Solutions"
+			//     Found online at http://numericalmethods.eng.usf.edu/mws/gen/04sle/mws_gen_sle_spe_adequacy.pdf
+
+			real_type check_val = ::std::log10(static_cast<real_type>(2)*::std::numeric_limits<real_type>::epsilon())
+								  + this->condition_number_covariance_heuristic_trusted_digits();
 
 			for (size_type i = 0; i < ny && !reset; ++i)
 			{
-				if (::boost::numeric::ublasx::rcond(Ps_[i]) > check_val)
+				if (::std::log10(::boost::numeric::ublasx::rcond(Ps_[i])) > check_val)
 				{
 					reset = true;
 				}
@@ -3616,15 +3636,25 @@ class rls_park1991_miso_proxy: public rls_system_identification_strategy<TraitsT
 		// Apply the "condition-number-covariance" heuristic (if enabled)
 		if (this->condition_number_covariance_heuristic())
 		{
-			real_type check_val = ::std::floor(
-							::std::numeric_limits<real_type>::epsilon()
-							*static_cast<real_type>(2)
-							*::std::pow(10, this->condition_number_covariance_heuristic())
-				);
+			// Use the following rule-of-thumb:
+			//   if cond(A)*eps >= 0.5*10^{-d} then d significant digits of the
+			//   solution of the problem involving A are at least correct.
+			// NOTE #1: we use reciprocal condition estimator since it's less
+			//          time-consuming.
+			// NOTE #2: we use log10 to avoid to compute 10^d which can
+			//          potentially lead to overflow problems.
+			//
+			// References:
+			// [1] Holistic Numerical Methods Institute,
+			//     "Chapter 04.09 -- Adequacy of Solutions"
+			//     Found online at http://numericalmethods.eng.usf.edu/mws/gen/04sle/mws_gen_sle_spe_adequacy.pdf
+
+			real_type check_val = ::std::log10(static_cast<real_type>(2)*::std::numeric_limits<real_type>::epsilon())
+								  + this->condition_number_covariance_heuristic_trusted_digits();
 
 			for (size_type i = 0; i < ny && !reset; ++i)
 			{
-				if (::boost::numeric::ublasx::rcond(Ps_[i]) > check_val)
+				if (::std::log10(::boost::numeric::ublasx::rcond(Ps_[i])) > check_val)
 				{
 					reset = true;
 				}
@@ -3904,15 +3934,25 @@ class rls_kulhavy1984_miso_proxy: public rls_system_identification_strategy<Trai
 		// Apply the "condition-number-covariance" heuristic (if enabled)
 		if (this->condition_number_covariance_heuristic())
 		{
-			real_type check_val = ::std::floor(
-							::std::numeric_limits<real_type>::epsilon()
-							*static_cast<real_type>(2)
-							*::std::pow(10, this->condition_number_covariance_heuristic())
-				);
+			// Use the following rule-of-thumb:
+			//   if cond(A)*eps >= 0.5*10^{-d} then d significant digits of the
+			//   solution of the problem involving A are at least correct.
+			// NOTE #1: we use reciprocal condition estimator since it's less
+			//          time-consuming.
+			// NOTE #2: we use log10 to avoid to compute 10^d which can
+			//          potentially lead to overflow problems.
+			//
+			// References:
+			// [1] Holistic Numerical Methods Institute,
+			//     "Chapter 04.09 -- Adequacy of Solutions"
+			//     Found online at http://numericalmethods.eng.usf.edu/mws/gen/04sle/mws_gen_sle_spe_adequacy.pdf
+
+			real_type check_val = ::std::log10(static_cast<real_type>(2)*::std::numeric_limits<real_type>::epsilon())
+								  + this->condition_number_covariance_heuristic_trusted_digits();
 
 			for (size_type i = 0; i < ny && !reset; ++i)
 			{
-				if (::boost::numeric::ublasx::rcond(Ps_[i]) > check_val)
+				if (::std::log10(::boost::numeric::ublasx::rcond(Ps_[i])) > check_val)
 				{
 					reset = true;
 				}
@@ -4198,15 +4238,25 @@ class rls_bittanti1990_miso_proxy: public rls_system_identification_strategy<Tra
 		// Apply the "condition-number-covariance" heuristic (if enabled)
 		if (this->condition_number_covariance_heuristic())
 		{
-			real_type check_val = ::std::floor(
-							::std::numeric_limits<real_type>::epsilon()
-							*static_cast<real_type>(2)
-							*::std::pow(10, this->condition_number_covariance_heuristic())
-				);
+			// Use the following rule-of-thumb:
+			//   if cond(A)*eps >= 0.5*10^{-d} then d significant digits of the
+			//   solution of the problem involving A are at least correct.
+			// NOTE #1: we use reciprocal condition estimator since it's less
+			//          time-consuming.
+			// NOTE #2: we use log10 to avoid to compute 10^d which can
+			//          potentially lead to overflow problems.
+			//
+			// References:
+			// [1] Holistic Numerical Methods Institute,
+			//     "Chapter 04.09 -- Adequacy of Solutions"
+			//     Found online at http://numericalmethods.eng.usf.edu/mws/gen/04sle/mws_gen_sle_spe_adequacy.pdf
+
+			real_type check_val = ::std::log10(static_cast<real_type>(2)*::std::numeric_limits<real_type>::epsilon())
+								  + this->condition_number_covariance_heuristic_trusted_digits();
 
 			for (size_type i = 0; i < ny && !reset; ++i)
 			{
-				if (::boost::numeric::ublasx::rcond(Ps_[i]) > check_val)
+				if (::std::log10(::boost::numeric::ublasx::rcond(Ps_[i])) > check_val)
 				{
 					reset = true;
 				}
