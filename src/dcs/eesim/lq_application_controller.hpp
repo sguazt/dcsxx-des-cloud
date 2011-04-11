@@ -536,7 +536,14 @@ class lq_application_controller: public base_application_controller<TraitsT>
 
 			// Apply the EWMA filter to previously observed measurements
 			//real_type ewma_old_s(ewma_s_.at(category));
-			ewma_s_[category] = ewma_smooth_*ptr_stat->estimate() + (1-ewma_smooth_)*ewma_s_.at(category);
+			if (count_ > 1)
+			{
+				ewma_s_[category] = ewma_smooth_*ptr_stat->estimate() + (1-ewma_smooth_)*ewma_s_.at(category);
+			}
+			else
+			{
+				ewma_s_[category] = ptr_stat->estimate();
+			}
 
 			// Reset stat and set as the first observation a memory of the past
 			ptr_stat->reset();
@@ -554,7 +561,14 @@ class lq_application_controller: public base_application_controller<TraitsT>
 
 				// Apply the EWMA filter to previously observed measurements
 				//real_type ewma_old_s(ewma_tier_s_[tier_id].at(category));
-				ewma_tier_s_[tier_id][category] = ewma_smooth_*ptr_stat->estimate() + (1-ewma_smooth_)*ewma_tier_s_[tier_id].at(category);
+				if (count_ > 1)
+				{
+					ewma_tier_s_[tier_id][category] = ewma_smooth_*ptr_stat->estimate() + (1-ewma_smooth_)*ewma_tier_s_[tier_id].at(category);
+				}
+				else
+				{
+					ewma_tier_s_[tier_id][category] = ptr_stat->estimate();
+				}
 
 				// Reset stat and set as the first observation a memory of the past
 				ptr_stat->reset();
