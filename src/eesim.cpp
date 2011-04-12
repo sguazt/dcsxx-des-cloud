@@ -1,3 +1,4 @@
+#include <dcs/assert.hpp>
 #include <dcs/des/engine.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/eesim/config/configuration.hpp>
@@ -72,6 +73,7 @@ typedef ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
 typedef ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
 
 
+inline
 void usage()
 {
 //	::std::cerr << "Usage: " << prog_name << " conf_file" << std::endl;
@@ -83,6 +85,7 @@ void usage()
 
 
 template <typename ForwardIterT>
+inline
 ForwardIterT find_option(ForwardIterT begin, ForwardIterT end, std::string const& option)
 {
 	ForwardIterT it = ::std::find(begin, end, option);
@@ -116,6 +119,7 @@ T get_option(ForwardIterT begin, ForwardIterT end, std::string const& option)
 }
 
 
+inline
 ::std::string to_string(::dcs::eesim::performance_measure_category category)
 {
 	switch (category)
@@ -136,17 +140,70 @@ T get_option(ForwardIterT begin, ForwardIterT end, std::string const& option)
 }
 
 
+template <typename TraitsT>
+class simulated_system
+{
+	public: typedef TraitsT traits_type;
+	public: typedef ::dcs::eesim::data_center<traits_type> data_center_type;
+	public: typedef ::dcs::shared_ptr<data_center_type> data_center_pointer;
+	public: typedef ::dcs::eesim::data_center_manager<traits_type> data_center_manager_type;
+	public: typedef ::dcs::shared_ptr<data_center_manager_type> data_center_manager_pointer;
+
+
+	public: void data_center(data_center_pointer const& ptr_dc)
+	{
+		ptr_dc_ = ptr_dc;
+	}
+
+
+	public: data_center_type const& data_center() const
+	{
+		// pre: data center must have been set
+		DCS_ASSERT(
+				ptr_dc_,
+				throw ::std::runtime_error("Invalid data center pointer.")
+			);
+
+		return *ptr_dc_;
+	}
+
+
+	public: void data_center_manager(data_center_manager_pointer const& ptr_dc_mngr)
+	{
+		ptr_dc_mngr_ = ptr_dc_mngr;
+	}
+
+
+	public: data_center_manager_type const& data_center_manager() const
+	{
+		// pre: data center must have been set
+		DCS_ASSERT(
+				ptr_dc_mngr_,
+				throw ::std::runtime_error("Invalid data center manager pointer.")
+			);
+
+		return *ptr_dc_mngr_;
+	}
+
+
+	private: data_center_pointer ptr_dc_;
+	private: data_center_manager_pointer ptr_dc_mngr_;
+};
+
+
 template <
 	typename CharT,
 	typename CharTraitsT,
 	typename TraitsT
 >
-void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr< ::dcs::eesim::data_center<TraitsT> > const& ptr_dc)
+void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<TraitsT> const& sys)
 {
 	typedef TraitsT traits_type;
 	typedef typename traits_type::uint_type uint_type;
 	typedef typename traits_type::real_type real_type;
-	typedef ::dcs::eesim::data_center<traits_type> data_center_type;
+	typedef typename simulated_system<TraitsT>::data_center_type data_center_type;
+
+	data_center_type const& dc(sys.data_center());
 
 	::std::string indent("  ");
 
@@ -160,7 +217,7 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 
 		os << ::std::endl << "-- Last Virtual Machines Placement --" << ::std::endl;
 
-		vm_placement_type const& vm_placement = ptr_dc->current_virtual_machines_placement();
+		vm_placement_type const& vm_placement = dc.current_virtual_machines_placement();
 		vm_placement_iterator place_end_it = vm_placement.end();
 		for (vm_placement_iterator place_it = vm_placement.begin(); place_it != place_end_it; ++place_it)
 		{
@@ -168,9 +225,9 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 			vm_identifier_type pm_id(vm_placement.pm_id(place_it));
 
 			os << indent
-			   << "VM: " << vm_id << " ('" << ptr_dc->virtual_machine_ptr(vm_id)->name() << "')"
+			   << "VM: " << vm_id << " ('" << dc.virtual_machine_ptr(vm_id)->name() << "')"
 			   << " --> "
-			   << "PM: " << pm_id << " ('" << ptr_dc->physical_machine_ptr(pm_id)->name() << "')"
+			   << "PM: " << pm_id << " ('" << dc.physical_machine_ptr(pm_id)->name() << "')"
 			   << ::std::endl;
 
 			vm_share_iterator share_end_it = vm_placement.shares_end(place_it);
@@ -204,7 +261,7 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 
 		os << ::std::endl << "-- Applications --" << ::std::endl;
 
-		application_container apps = ptr_dc->applications();
+		application_container apps = dc.applications();
 		application_iterator app_end_it = apps.end();
 		for (application_iterator app_it = apps.begin(); app_it != app_end_it; ++app_it)
 		{
@@ -305,7 +362,7 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 
 		os << ::std::endl << "-- Physical Machines --" << ::std::endl;
 
-		physical_machine_container machs = ptr_dc->physical_machines();
+		physical_machine_container machs = dc.physical_machines();
 		physical_machine_iterator mach_end_it = machs.end();
 		for (physical_machine_iterator mach_it = machs.begin(); mach_it != mach_end_it; ++mach_it)
 		{
@@ -342,6 +399,7 @@ void process_sys_init_sim_event(des_event_type const& evt, des_engine_context_ty
 }
 
 
+//FIXME: Add a fourth parameter for the output stream
 //template <
 //	typename CharT,
 //	typename CharTraitsT,
@@ -349,15 +407,20 @@ void process_sys_init_sim_event(des_event_type const& evt, des_engine_context_ty
 //>
 //void process_sys_finit_sim_event(des_event_type const& evt, des_engine_context_type& ctx, ::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr< ::dcs::eesim::data_center<TraitsT> > const& ptr_dc)
 template <typename TraitsT>
-void process_sys_finit_sim_event(des_event_type const& evt, des_engine_context_type& ctx, ::dcs::shared_ptr< ::dcs::eesim::data_center<TraitsT> > const& ptr_dc)
+void process_sys_finit_sim_event(des_event_type const& evt, des_engine_context_type& ctx, simulated_system<TraitsT> const* sys)
 {
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 	DCS_DEBUG_TRACE("BEGIN Process System Finalization at Clock: " << ctx.simulated_time());
 
+	//FIXME: std::cout hard-coded... Add an additional parameter to this function
 	::std::cout << "PARTIAL STATISTICS:" << ::std::endl;
-	detail::report_stats(::std::cout, ptr_dc);
+	::std::cout << "Simulator state: " << ::std::endl
+				<< ctx << ::std::endl;
+	::std::cout << "Statistics: " << ::std::endl
+	detail::report_stats(::std::cout, *sys);
+	::std::cout << "--------------------------------------------------------------------------------" << ::std::endl;
 
 	DCS_DEBUG_TRACE("END Process System Finalization at Clock: " << ctx.simulated_time());
 }
@@ -463,6 +526,8 @@ int main(int argc, char* argv[])
 
 	random_seeder_type seeder(conf.rng().seed);
 
+	detail::simulated_system<traits_type> sys;
+
 	// Register some DES event hooks
 	ptr_des_eng->system_initialization_event_source().connect(
 			::dcs::functional::bind(
@@ -472,14 +537,14 @@ int main(int argc, char* argv[])
 				seeder
 			)
 		);
-//	ptr_des_eng->system_finalization_event_source().connect(
-//			::dcs::functional::bind(
-//				&detail::process_sys_finit_sim_event<traits_type>,
-//				::dcs::functional::placeholders::_1,
-//				::dcs::functional::placeholders::_2,
-//				ptr_dc
-//			)
-//		);
+	ptr_des_eng->system_finalization_event_source().connect(
+			::dcs::functional::bind(
+				&detail::process_sys_finit_sim_event<traits_type>,
+				::dcs::functional::placeholders::_1,
+				::dcs::functional::placeholders::_2,
+				&sys
+			)
+		);
 
 	// Attach a simulation observer
 	dcs::shared_ptr< dcs::eesim::logging::base_logger<traits_type> > ptr_sim_log;
@@ -498,6 +563,9 @@ int main(int argc, char* argv[])
 	ptr_dc = dcs::eesim::config::make_data_center<traits_type>(conf, ptr_rng, ptr_des_eng);
 	ptr_dc_mngr = dcs::eesim::config::make_data_center_manager<traits_type>(conf, ptr_dc);
 
+	sys.data_center(ptr_dc);
+	sys.data_center_manager(ptr_dc_mngr);
+
 	// Run the simulation
 	ptr_des_eng->run();
 
@@ -506,6 +574,6 @@ int main(int argc, char* argv[])
 
 	// Report statistics
 	::std::cout << "STATISTICS:" << ::std::endl;
-	detail::report_stats(::std::cout, ptr_dc);
+	detail::report_stats(::std::cout, sys);
 	::std::cout << "--------------------------------------------------------------------------------" << ::std::endl;
 }
