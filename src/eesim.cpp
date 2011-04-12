@@ -469,7 +469,7 @@ int main(int argc, char* argv[])
 	{
 		try
 		{
-//			partial_stats = detail::get_option<bool>(argv, argv+argc, "--partial-stats");
+			partial_stats = detail::get_option<bool>(argv, argv+argc, "--partial-stats");
 			conf_fname = detail::get_option<std::string>(argv, argv+argc, "--conf");
 		}
 		catch (std::exception const& e)
@@ -537,14 +537,17 @@ int main(int argc, char* argv[])
 				seeder
 			)
 		);
-	ptr_des_eng->system_finalization_event_source().connect(
-			::dcs::functional::bind(
-				&detail::process_sys_finit_sim_event<traits_type>,
-				::dcs::functional::placeholders::_1,
-				::dcs::functional::placeholders::_2,
-				&sys
-			)
-		);
+	if (partial_stats)
+	{
+		ptr_des_eng->system_finalization_event_source().connect(
+				::dcs::functional::bind(
+					&detail::process_sys_finit_sim_event<traits_type>,
+					::dcs::functional::placeholders::_1,
+					::dcs::functional::placeholders::_2,
+					&sys
+				)
+			);
+	}
 
 	// Attach a simulation observer
 	dcs::shared_ptr< dcs::eesim::logging::base_logger<traits_type> > ptr_sim_log;
