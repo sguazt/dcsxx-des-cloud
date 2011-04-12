@@ -119,6 +119,16 @@ T get_option(ForwardIterT begin, ForwardIterT end, std::string const& option)
 }
 
 
+/// Get a boolean option; also tell if a given option does exist.
+template <typename ForwardIterT>
+bool get_option(ForwardIterT begin, ForwardIterT end, std::string const& option)
+{
+    ForwardIterT it = find_option(begin, end, option);
+
+	return it != end;
+}
+
+
 inline
 ::std::string to_string(::dcs::eesim::performance_measure_category category)
 {
@@ -469,7 +479,7 @@ int main(int argc, char* argv[])
 	{
 		try
 		{
-			partial_stats = detail::get_option<bool>(argv, argv+argc, "--partial-stats");
+			partial_stats = detail::get_option(argv, argv+argc, "--partial-stats");
 			conf_fname = detail::get_option<std::string>(argv, argv+argc, "--conf");
 		}
 		catch (std::exception const& e)
