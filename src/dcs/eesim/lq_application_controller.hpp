@@ -312,7 +312,9 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	  u_offset_(0),
 	  count_(0),
 	  ident_fail_count_(0),
-	  ctrl_fail_count_(0)
+	  ctrl_fail_count_(0),
+	  actual_val_ko_sla_trigger_(false),
+	  predicted_val_ko_sla_trigger_(true)
 	{
 		init();
 	}
@@ -336,7 +338,9 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	  u_offset_(0),
 	  count_(0),
 	  ident_fail_count_(0),
-	  ctrl_fail_count_(0)
+	  ctrl_fail_count_(0),
+	  actual_val_ko_sla_trigger_(false),
+	  predicted_val_ko_sla_trigger_(true)
 	{
 		init();
 	}
@@ -370,7 +374,9 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	  u_offset_(0),
 	  count_(0),
 	  ident_fail_count_(0),
-	  ctrl_fail_count_(0)
+	  ctrl_fail_count_(0),
+	  actual_val_ko_sla_trigger_(false),
+	  predicted_val_ko_sla_trigger_(true)
 	{
 		init();
 	}
@@ -883,6 +889,7 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << app_rt << " (aggregated: " << ptr_st
 		vector_type s(n_s_,0); // control input (relative error of tier resource shares)
 		vector_type p(n_p_,0); // control state (relative error of tier peformance measures)
 		vector_type y(n_y_,0); // control output (relative error of app peformance measures)
+		bool sla_ok(false);
 
 
 		++count_;
@@ -945,7 +952,21 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << app_rt << " (aggregated: " << ptr_st
 				// No observation -> Assume perfect behavior
 				actual_measure = ref_measure;
 			}
-DCS_DEBUG_TRACE("APP OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure);//XXX
+DCS_DEBUG_TRACE("APP " << app.id() << " - OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure);//XXX
+::std::cerr << "APP " << app.id() << " - OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure << ::std::endl;//XXX
+
+			if (actual_val_ko_sla_trigger_)
+			{
+				::std::vector<performance_measure_category> cats(1);
+				cats[0] = category;
+				::std::vector<real_type> meas(1);
+				meas[0] = actual_measure;
+				if (app.sla_cost_model().satisfied(cats.begin(), cats.end(), meas.begin()))
+				{
+					sla_ok = true;
+				}
+			}
+
 			y(0) = actual_measure/ref_measure - real_type(1);
 
 			for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
@@ -1005,12 +1026,14 @@ DCS_DEBUG_TRACE("TIER " << tier_id << " SHARE: ref: " << ref_share << " - actual
 								  = actual_share/ref_share - real_type(1);
 		}
 
-		// Estimate system parameters
-		bool ok(true);
-		vector_type p_hat;
-		try
+		if (!actual_val_ko_sla_trigger_ || !sla_ok)
 		{
-			p_hat = ptr_ident_strategy_->estimate(p, s);
+			// Estimate system parameters
+			bool ok(true);
+			vector_type p_hat;
+			try
+			{
+				p_hat = ptr_ident_strategy_->estimate(p, s);
 DCS_DEBUG_TRACE("RLS estimation:");//XXX
 DCS_DEBUG_TRACE("p=" << p);//XXX
 DCS_DEBUG_TRACE("s=" << s);//XXX
@@ -1026,43 +1049,43 @@ DCS_DEBUG_TRACE("phi=" << ptr_ident_strategy_->phi());//XXX
 //::std::cerr << "P=" << ptr_ident_strategy_->P() << ::std::endl;//XXX
 //::std::cerr << "phi=" << ptr_ident_strategy_->phi() << ::std::endl;//XXX
 
-			if (!ublasx::all(ublasx::isfinite(ptr_ident_strategy_->Theta_hat())))
+				if (!ublasx::all(ublasx::isfinite(ptr_ident_strategy_->Theta_hat())))
+				{
+					::std::clog << "[Warning] Unable to estimate system parameters: infinite values in system parameters." << ::std::endl;
+					ok = false;
+				}
+			}
+			catch (::std::exception const& e)
 			{
-				::std::clog << "[Warning] Unable to estimate system parameters: infinite values in system parameters." << ::std::endl;
+				::std::clog << "[Warning] Unable to estimate system parameters: " << e.what() << "." << ::std::endl;
+				DCS_DEBUG_TRACE( "Caught exception: " << e.what() );
+
 				ok = false;
 			}
-		}
-		catch (::std::exception const& e)
-		{
-			::std::clog << "[Warning] Unable to estimate system parameters: " << e.what() << "." << ::std::endl;
-			DCS_DEBUG_TRACE( "Caught exception: " << e.what() );
 
-			ok = false;
-		}
+			// Check if RLS (and LQR) can be applied.
+			// If not, then no control is performed.
+//			if (count_ >= ::std::max(n_a_,n_b_))
+//			if (count_ > ::std::min(n_a_,n_b_))
+			if (ok && ptr_ident_strategy_->count() > ::std::min(n_a_,n_b_))
+			{
+				// Create the state-space representation of the system model:
+				//  x(k+1) = Ax(k)+Bu(k)
+				//  y(k) = Cx(k)+Du(k)
+				// where
+				// x(k) = [p(k-n_a+1); ... p(k)]
+				// u(k) = [s(k-n_b+1); ... s(k)]
+				// y(k) = \sum_i x_i(k)
+				//
 
-		// Check if RLS (and LQR) can be applied.
-		// If not, then no control is performed.
-//		if (count_ >= ::std::max(n_a_,n_b_))
-//		if (count_ > ::std::min(n_a_,n_b_))
-		if (ok && ptr_ident_strategy_->count() > ::std::min(n_a_,n_b_))
-		{
-			// Create the state-space representation of the system model:
-			//  x(k+1) = Ax(k)+Bu(k)
-			//  y(k) = Cx(k)+Du(k)
-			// where
-			// x(k) = [p(k-n_a+1); ... p(k)]
-			// u(k) = [s(k-n_b+1); ... s(k)]
-			// y(k) = \sum_i x_i(k)
-			//
+				matrix_type A;
+				matrix_type B;
+				matrix_type C;
+				matrix_type D;
 
-			matrix_type A;
-			matrix_type B;
-			matrix_type C;
-			matrix_type D;
+				detail::make_ss(*ptr_ident_strategy_, A, B, C, D);
 
-			detail::make_ss(*ptr_ident_strategy_, A, B, C, D);
-
-			// Compute the optimal control
+				// Compute the optimal control
 DCS_DEBUG_TRACE("APP: " << app.id() << " - Solving LQ with");//XXX
 DCS_DEBUG_TRACE("A=" << A);//XXX
 DCS_DEBUG_TRACE("B=" << B);//XXX
@@ -1079,92 +1102,203 @@ DCS_DEBUG_TRACE("u= " << u_);//XXX
 //::std::cerr << "y= " << y << ::std::endl;//XXX
 //::std::cerr << "x= " << x_ << ::std::endl;//XXX
 //::std::cerr << "u= " << u_ << ::std::endl;//XXX
-			vector_type opt_u;
-			try
-			{
-				opt_u = this->do_optimal_control(x_, u_, y, A, B, C, D);
-			}
-			catch (::std::exception const& e)
-			{
-				::std::clog << "[Warning] Unable to compute control input: " << e.what() << "." << ::std::endl;
-				DCS_DEBUG_TRACE( "Caught exception: " << e.what() );
+				vector_type opt_u;
+				try
+				{
+					opt_u = this->do_optimal_control(x_, u_, y, A, B, C, D);
+				}
+				catch (::std::exception const& e)
+				{
+					::std::clog << "[Warning] Unable to compute control input: " << e.what() << "." << ::std::endl;
+					DCS_DEBUG_TRACE( "Caught exception: " << e.what() );
 
-				ok = false;
-			}
-//			try
-//			{
-//				controller_.solve(A, B, C, D);
-//			}
-//			catch (::std::exception const& e)
-//			{
-//				::std::clog << "[Warning] Unable to compute control input." << ::std::endl;
-//				DCS_DEBUG_TRACE( "Caught exception: " << e.what() );
+					ok = false;
+				}
+//				try
+//				{
+//					controller_.solve(A, B, C, D);
+//				}
+//				catch (::std::exception const& e)
+//				{
+//					::std::clog << "[Warning] Unable to compute control input." << ::std::endl;
+//					DCS_DEBUG_TRACE( "Caught exception: " << e.what() );
 //
-//				ok = false;
-//			}
-			if (ok)
-			{
-DCS_DEBUG_TRACE("Solved!");//XXX
-DCS_DEBUG_TRACE("Optimal Control u*=> " << opt_u);//XXX
-::std:: cerr << "Optimal Control u*=> " << opt_u << ::std::endl;//XXX
-DCS_DEBUG_TRACE("APP: " << app.id() << " Expected application response time: " << (app.sla_cost_model().slo_value(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)));//XXX
-//::std::cerr << "APP: " << app.id() << " Expected application response time: " << (app.sla_cost_model().slo_value(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)) << ::std::endl;//XXX
+//					ok = false;
+//				}
+				if (ok)
+				{
+DCS_DEBUG_TRACE("APP: " << app.id() << " - Solved!");//XXX
+DCS_DEBUG_TRACE("APP: " << app.id() << " - Optimal Control u*=> " << opt_u);//XXX
+::std:: cerr << "APP: " << app.id() << " - Optimal Control u*=> " << opt_u << ::std::endl;//XXX
+DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: " << (app.sla_cost_model().slo_value(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)));//XXX
+::std::cerr << "APP: " << app.id() << " Expected application response time: " << (app.sla_cost_model().slo_value(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)) << ::std::endl;//XXX
 
 DCS_DEBUG_TRACE("Applying optimal control");//XXX
-				for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
-				{
-					physical_resource_category res_category(cpu_resource_category);//FIXME
-
-					virtual_machine_pointer ptr_vm(app_sim_model.tier_virtual_machine(tier_id));
-					physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
-					real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
-//					real_type actual_share;
-//					actual_share = ::dcs::eesim::scale_resource_share(pm.resource(res_category)->capacity(),
-//																	  pm.resource(res_category)->utilization_threshold(),
-//																	  app.reference_resource(res_category).capacity(),
-//																	  app.reference_resource(res_category).utilization_threshold(),
-//																	  ptr_vm->resource_share(res_category));
-//
-//
-//DCS_DEBUG_TRACE("Tier " << tier_id << " --> Actual share: " << actual_share);//XXX
-DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Unscaled share: " << (ref_share*(opt_u(u_offset_+tier_id)+real_type(1))));//XXX
-					real_type new_share;
-					new_share = ::dcs::eesim::scale_resource_share(
-									// Reference resource capacity and threshold
-									app.reference_resource(res_category).capacity(),
-									app.reference_resource(res_category).utilization_threshold(),
-									// Actual resource capacity and threshold
-									pm.resource(res_category)->capacity(),
-									pm.resource(res_category)->utilization_threshold(),
-									//// Old resource share + computed deviation
-									//ptr_vm->wanted_resource_share(res_category)+opt_u(tier_id)
-									ref_share*(opt_u(u_offset_+tier_id)+real_type(1))
-						);
-
-					if (new_share >= 0)
+					if (predicted_val_ko_sla_trigger_)
 					{
-						new_share = ::std::min(::std::max(new_share, default_min_share_), real_type(1));
+						vector_type adj_opt_u(opt_u);
+
+						for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+						{
+							physical_resource_category res_category(cpu_resource_category);//FIXME
+
+							virtual_machine_pointer ptr_vm(app_sim_model.tier_virtual_machine(tier_id));
+							physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
+							real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
+	//						real_type actual_share;
+	//						actual_share = ::dcs::eesim::scale_resource_share(pm.resource(res_category)->capacity(),
+	//																		  pm.resource(res_category)->utilization_threshold(),
+	//																		  app.reference_resource(res_category).capacity(),
+	//																		  app.reference_resource(res_category).utilization_threshold(),
+	//																		  ptr_vm->resource_share(res_category));
+	//
+	//
+	//DCS_DEBUG_TRACE("Tier " << tier_id << " --> Actual share: " << actual_share);//XXX
+	DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Unscaled share: " << (ref_share*(opt_u(u_offset_+tier_id)+real_type(1))));//XXX
+							real_type new_share;
+							new_share = ::dcs::eesim::scale_resource_share(
+											// Reference resource capacity and threshold
+											app.reference_resource(res_category).capacity(),
+											app.reference_resource(res_category).utilization_threshold(),
+											// Actual resource capacity and threshold
+											pm.resource(res_category)->capacity(),
+											pm.resource(res_category)->utilization_threshold(),
+											//// Old resource share + computed deviation
+											ref_share*(opt_u(u_offset_+tier_id) + static_cast<real_type>(1))
+								);
+
+							if (new_share >= 0)
+							{
+								new_share = ::std::min(::std::max(new_share, default_min_share_), real_type(1));
+							}
+							else
+							{
+								new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
+							}
+
+//							DCS_DEBUG_TRACE("APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share);
+//	::std::cerr << "APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share << ::std::endl;//XXX
+
+							new_share = ::dcs::eesim::scale_resource_share(
+											// Actual resource capacity and threshold
+											pm.resource(res_category)->capacity(),
+											pm.resource(res_category)->utilization_threshold(),
+											// Reference resource capacity and threshold
+											app.reference_resource(res_category).capacity(),
+											app.reference_resource(res_category).utilization_threshold(),
+											//// Old resource share + computed deviation
+											new_share
+								);
+							adj_opt_u(u_offset_+tier_id) = new_share/ref_share - static_cast<real_type>(1);
+						}
+
+						real_type pred_measure = app.sla_cost_model().slo_value(response_time_performance_measure)
+												 + (ublas::prod(C, ublas::prod(A,x_)+ ublas::prod(B,opt_u))+ublas::prod(D,adj_opt_u))(0);
+::std::cerr << "APP: " << app.id() << " - Adjusted Optimal Control u*=> " << adj_opt_u << ::std::endl;//XXX
+::std::cerr << "APP: " << app.id() << " - Expected application response time: " << pred_measure << ::std::endl;//XXX
+
+						::std::vector<performance_measure_category> cats(1);
+						cats[0] = response_time_performance_measure;
+						::std::vector<real_type> meas(1);
+						meas[0] = pred_measure;
+						if (app.sla_cost_model().satisfied(cats.begin(), cats.end(), meas.begin()))
+						{
+							for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+							{
+								physical_resource_category res_category(cpu_resource_category);//FIXME
+
+								virtual_machine_pointer ptr_vm(app_sim_model.tier_virtual_machine(tier_id));
+								physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
+								real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
+
+								real_type new_share;
+								new_share = ::dcs::eesim::scale_resource_share(
+												// Reference resource capacity and threshold
+												app.reference_resource(res_category).capacity(),
+												app.reference_resource(res_category).utilization_threshold(),
+												// Actual resource capacity and threshold
+												pm.resource(res_category)->capacity(),
+												pm.resource(res_category)->utilization_threshold(),
+												//// Old resource share + computed deviation
+												ref_share*(adj_opt_u(u_offset_+tier_id)+real_type(1))
+									);
+
+								DCS_DEBUG_TRACE("APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share);
+::std::cerr << "APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share << ::std::endl;//XXX
+
+								ptr_vm->wanted_resource_share(res_category, new_share);
+							}
+						}
+						else
+						{
+							++ctrl_fail_count_;
+							::std::clog << "[Warning] Control not applied for Application '" << app.id() << "': failed to find suitable control inputs." << ::std::endl;
+						}
 					}
 					else
 					{
-						new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
+						for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+						{
+							physical_resource_category res_category(cpu_resource_category);//FIXME
+
+							virtual_machine_pointer ptr_vm(app_sim_model.tier_virtual_machine(tier_id));
+							physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
+							real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
+	//						real_type actual_share;
+	//						actual_share = ::dcs::eesim::scale_resource_share(pm.resource(res_category)->capacity(),
+	//																		  pm.resource(res_category)->utilization_threshold(),
+	//																		  app.reference_resource(res_category).capacity(),
+	//																		  app.reference_resource(res_category).utilization_threshold(),
+	//																		  ptr_vm->resource_share(res_category));
+	//
+	//
+	//DCS_DEBUG_TRACE("Tier " << tier_id << " --> Actual share: " << actual_share);//XXX
+	DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Unscaled share: " << (ref_share*(opt_u(u_offset_+tier_id)+real_type(1))));//XXX
+							real_type new_share;
+							new_share = ::dcs::eesim::scale_resource_share(
+											// Reference resource capacity and threshold
+											app.reference_resource(res_category).capacity(),
+											app.reference_resource(res_category).utilization_threshold(),
+											// Actual resource capacity and threshold
+											pm.resource(res_category)->capacity(),
+											pm.resource(res_category)->utilization_threshold(),
+											//// Old resource share + computed deviation
+											//ptr_vm->wanted_resource_share(res_category)+opt_u(tier_id)
+											ref_share*(opt_u(u_offset_+tier_id)+real_type(1))
+								);
+
+							if (new_share >= 0)
+							{
+								new_share = ::std::min(::std::max(new_share, default_min_share_), real_type(1));
+							}
+							else
+							{
+								new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
+							}
+
+							DCS_DEBUG_TRACE("APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share);
+	::std::cerr << "APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share << ::std::endl;//XXX
+
+							ptr_vm->wanted_resource_share(res_category, new_share);
+						}
 					}
-
-					DCS_DEBUG_TRACE("APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share);
-::std::cerr << "APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share << ::std::endl;//XXX
-
-					ptr_vm->wanted_resource_share(res_category, new_share);
-				}
 DCS_DEBUG_TRACE("Optimal control applied");//XXX
+				}
+				else
+				{
+					++ctrl_fail_count_;
+					::std::clog << "[Warning] Control not applied for Application '" << app.id() << "': failed to solve the control problem." << ::std::endl;
+				}
 			}
-			else
+			else if (!ok)
 			{
-				++ctrl_fail_count_;
+				++ident_fail_count_;
+				::std::clog << "[Warning] Control not applied for Application '" << app.id() << "': failed to solve the identification problem." << ::std::endl;
 			}
 		}
-		else if (!ok)
+		else
 		{
-			++ident_fail_count_;
+			::std::clog << "[Info] Control not applied for Application '" << app.id() << "': SLA preserved." << ::std::endl;
 		}
 
 		// Reset previously collected system measure in order to collect a new ones.
@@ -1226,6 +1360,8 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 	private: category_value_container ewma_s_;
 	private: category_value_container_container ewma_tier_s_;
 	private: system_identification_strategy_pointer ptr_ident_strategy_;
+	private: bool actual_val_ko_sla_trigger_;
+	private: bool predicted_val_ko_sla_trigger_;
 }; // lq_application_controller
 
 
