@@ -1018,13 +1018,13 @@ DCS_DEBUG_TRACE("p_hat=" << p_hat);//XXX
 DCS_DEBUG_TRACE("Theta_hat=" << ptr_ident_strategy_->Theta_hat());//XXX
 DCS_DEBUG_TRACE("P=" << ptr_ident_strategy_->P());//XXX
 DCS_DEBUG_TRACE("phi=" << ptr_ident_strategy_->phi());//XXX
-::std::cerr << "APP: " << app.id() << " - RLS estimation:" << ::std::endl;//XXX
-::std::cerr << "p=" << p << ::std::endl;//XXX
-::std::cerr << "s=" << s << ::std::endl;//XXX
-::std::cerr << "p_hat=" << p_hat << ::std::endl;//XXX
-::std::cerr << "Theta_hat=" << ptr_ident_strategy_->Theta_hat() << ::std::endl;//XXX
-::std::cerr << "P=" << ptr_ident_strategy_->P() << ::std::endl;//XXX
-::std::cerr << "phi=" << ptr_ident_strategy_->phi() << ::std::endl;//XXX
+//::std::cerr << "APP: " << app.id() << " - RLS estimation:" << ::std::endl;//XXX
+//::std::cerr << "p=" << p << ::std::endl;//XXX
+//::std::cerr << "s=" << s << ::std::endl;//XXX
+//::std::cerr << "p_hat=" << p_hat << ::std::endl;//XXX
+//::std::cerr << "Theta_hat=" << ptr_ident_strategy_->Theta_hat() << ::std::endl;//XXX
+//::std::cerr << "P=" << ptr_ident_strategy_->P() << ::std::endl;//XXX
+//::std::cerr << "phi=" << ptr_ident_strategy_->phi() << ::std::endl;//XXX
 
 			if (!ublasx::all(ublasx::isfinite(ptr_ident_strategy_->Theta_hat())))
 			{
@@ -1071,14 +1071,14 @@ DCS_DEBUG_TRACE("D=" << D);//XXX
 DCS_DEBUG_TRACE("y= " << y);//XXX
 DCS_DEBUG_TRACE("x= " << x_);//XXX
 DCS_DEBUG_TRACE("u= " << u_);//XXX
-::std::cerr << "APP: " << app.id() << " - Solving LQ with" << ::std::endl;//XXX
-::std::cerr << "A=" << A << ::std::endl;//XXX
-::std::cerr << "B=" << B << ::std::endl;//XXX
-::std::cerr << "C=" << C << ::std::endl;//XXX
-::std::cerr << "D=" << D << ::std::endl;//XXX
-::std::cerr << "y= " << y << ::std::endl;//XXX
-::std::cerr << "x= " << x_ << ::std::endl;//XXX
-::std::cerr << "u= " << u_ << ::std::endl;//XXX
+//::std::cerr << "APP: " << app.id() << " - Solving LQ with" << ::std::endl;//XXX
+//::std::cerr << "A=" << A << ::std::endl;//XXX
+//::std::cerr << "B=" << B << ::std::endl;//XXX
+//::std::cerr << "C=" << C << ::std::endl;//XXX
+//::std::cerr << "D=" << D << ::std::endl;//XXX
+//::std::cerr << "y= " << y << ::std::endl;//XXX
+//::std::cerr << "x= " << x_ << ::std::endl;//XXX
+//::std::cerr << "u= " << u_ << ::std::endl;//XXX
 			vector_type opt_u;
 			try
 			{
@@ -1108,7 +1108,7 @@ DCS_DEBUG_TRACE("Solved!");//XXX
 DCS_DEBUG_TRACE("Optimal Control u*=> " << opt_u);//XXX
 ::std:: cerr << "Optimal Control u*=> " << opt_u << ::std::endl;//XXX
 DCS_DEBUG_TRACE("APP: " << app.id() << " Expected application response time: " << (app.sla_cost_model().slo_value(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)));//XXX
-::std::cerr << "APP: " << app.id() << " Expected application response time: " << (app.sla_cost_model().slo_value(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)) << ::std::endl;//XXX
+//::std::cerr << "APP: " << app.id() << " Expected application response time: " << (app.sla_cost_model().slo_value(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)) << ::std::endl;//XXX
 
 DCS_DEBUG_TRACE("Applying optimal control");//XXX
 				for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
