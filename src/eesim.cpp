@@ -418,7 +418,7 @@ void process_sys_finit_sim_event(des_event_type const& evt, des_engine_context_t
 	::std::cout << "PARTIAL STATISTICS:" << ::std::endl;
 	::std::cout << "Simulator state: " << ::std::endl
 				<< ctx << ::std::endl;
-	::std::cout << "Statistics: " << ::std::endl
+	::std::cout << "Statistics: " << ::std::endl;
 	detail::report_stats(::std::cout, *sys);
 	::std::cout << "--------------------------------------------------------------------------------" << ::std::endl;
 
