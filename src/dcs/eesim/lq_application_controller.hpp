@@ -53,6 +53,7 @@
 #include <dcs/des/base_statistic.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/mean_estimator.hpp>
+#include <dcs/eesim/application_controller_triggers.hpp>
 #include <dcs/eesim/base_application_controller.hpp>
 #include <dcs/eesim/detail/system_identification_strategies.hpp>
 #include <dcs/eesim/detail/matlab/controller_proxies.hpp>
@@ -279,6 +280,7 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	private: typedef ::dcs::shared_ptr<system_identification_strategy_type> system_identification_strategy_pointer;
 	public: typedef base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
 	public: typedef ::dcs::shared_ptr<system_identification_strategy_params_type> system_identification_strategy_params_pointer;
+	public: typedef application_controller_triggers<traits_type> triggers_type;
 
 
 	private: static const size_type default_input_order_;
@@ -312,9 +314,9 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	  u_offset_(0),
 	  count_(0),
 	  ident_fail_count_(0),
-	  ctrl_fail_count_(0),
-	  actual_val_ko_sla_trigger_(false),
-	  predicted_val_ko_sla_trigger_(true)
+	  ctrl_fail_count_(0)
+//	  actual_val_ko_sla_trigger_(false),
+//	  predicted_val_ko_sla_trigger_(true)
 	{
 		init();
 	}
@@ -338,9 +340,9 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	  u_offset_(0),
 	  count_(0),
 	  ident_fail_count_(0),
-	  ctrl_fail_count_(0),
-	  actual_val_ko_sla_trigger_(false),
-	  predicted_val_ko_sla_trigger_(true)
+	  ctrl_fail_count_(0)
+//	  actual_val_ko_sla_trigger_(false),
+//	  predicted_val_ko_sla_trigger_(true)
 	{
 		init();
 	}
@@ -356,6 +358,7 @@ class lq_application_controller: public base_application_controller<TraitsT>
 								  real_type ts,
 //								  real_type rls_forgetting_factor/* = default_rls_forgetting_factor*/,
 								  system_identification_strategy_params_pointer const& ptr_ident_strategy_params,
+								  triggers_type const& triggers,
 								  real_type ewma_smoothing_factor/* = default_ewma_smoothing_factor*/)
 	: base_type(ptr_app, ts),
 //	  controller_(Q, R),
@@ -375,8 +378,9 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	  count_(0),
 	  ident_fail_count_(0),
 	  ctrl_fail_count_(0),
-	  actual_val_ko_sla_trigger_(false),
-	  predicted_val_ko_sla_trigger_(true)
+	  triggers_(triggers)
+//	  actual_val_ko_sla_trigger_(false),
+//	  predicted_val_ko_sla_trigger_(true)
 	{
 		init();
 	}
@@ -955,7 +959,7 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << app_rt << " (aggregated: " << ptr_st
 DCS_DEBUG_TRACE("APP " << app.id() << " - OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure);//XXX
 ::std::cerr << "APP " << app.id() << " - OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure << ::std::endl;//XXX
 
-			if (actual_val_ko_sla_trigger_)
+			if (triggers_.actual_value_sla_ko())
 			{
 				::std::vector<performance_measure_category> cats(1);
 				cats[0] = category;
@@ -1026,7 +1030,7 @@ DCS_DEBUG_TRACE("TIER " << tier_id << " SHARE: ref: " << ref_share << " - actual
 								  = actual_share/ref_share - real_type(1);
 		}
 
-		if (!actual_val_ko_sla_trigger_ || !sla_ok)
+		if (!triggers_.actual_value_sla_ko() || !sla_ok)
 		{
 			// Estimate system parameters
 			bool ok(true);
@@ -1134,7 +1138,7 @@ DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: "
 ::std::cerr << "APP: " << app.id() << " Expected application response time: " << (app.sla_cost_model().slo_value(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)) << ::std::endl;//XXX
 
 DCS_DEBUG_TRACE("Applying optimal control");//XXX
-					if (predicted_val_ko_sla_trigger_)
+					if (triggers_.predicted_value_sla_ko())
 					{
 						vector_type adj_opt_u(opt_u);
 
@@ -1360,8 +1364,9 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 	private: category_value_container ewma_s_;
 	private: category_value_container_container ewma_tier_s_;
 	private: system_identification_strategy_pointer ptr_ident_strategy_;
-	private: bool actual_val_ko_sla_trigger_;
-	private: bool predicted_val_ko_sla_trigger_;
+//	private: bool actual_val_ko_sla_trigger_;
+//	private: bool predicted_val_ko_sla_trigger_;
+	private: triggers_type triggers_;
 }; // lq_application_controller
 
 
@@ -1416,6 +1421,7 @@ class lqi_application_controller: public detail::lq_application_controller<Trait
 	public: typedef typename traits_type::uint_type uint_type;
 	public: typedef typename base_type::application_pointer application_pointer;
 	public: typedef typename base_type::system_identification_strategy_params_pointer system_identification_strategy_params_pointer;
+	public: typedef typename base_type::triggers_type triggers_type;
 //	public: typedef base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
 //	public: typedef ::dcs::shared_ptr<system_identification_strategy_params_type> system_identification_strategy_params_pointer;
 	private: typedef ::dcs::control::dlqi_controller<real_type> lq_controller_type;
@@ -1449,9 +1455,10 @@ class lqi_application_controller: public detail::lq_application_controller<Trait
 								   real_type ts,
 //								   real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
 								   system_identification_strategy_params_pointer const& ptr_ident_strategy_params,
+								   triggers_type const& triggers,
 								   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
 //	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
-	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, ewma_smoothing_factor),
+	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, triggers, ewma_smoothing_factor),
 	  controller_(Q, R),
 	  xi_(1,0)
 	{
@@ -1469,9 +1476,10 @@ class lqi_application_controller: public detail::lq_application_controller<Trait
 								   real_type ts,
 //								   real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
 								   system_identification_strategy_params_pointer const& ptr_ident_strategy_params,
+								   triggers_type const& triggers,
 								   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
 //	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
-	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, ewma_smoothing_factor),
+	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, triggers, ewma_smoothing_factor),
 	  controller_(Q, R, N),
 	  xi_(1,0)
 	{
@@ -1663,6 +1671,7 @@ class lqr_application_controller: public detail::lq_application_controller<Trait
 	public: typedef typename traits_type::uint_type uint_type;
 	public: typedef typename base_type::application_pointer application_pointer;
 	public: typedef typename base_type::system_identification_strategy_params_pointer system_identification_strategy_params_pointer;
+	public: typedef typename base_type::triggers_type triggers_type;
 	private: typedef ::dcs::control::dlqr_controller<real_type> lq_controller_type;
 	private: typedef typename base_type::vector_type vector_type;
 	private: typedef typename base_type::matrix_type matrix_type;
@@ -1689,10 +1698,11 @@ class lqr_application_controller: public detail::lq_application_controller<Trait
 								   application_pointer const& ptr_app,
 								   real_type ts,
 								   system_identification_strategy_params_pointer const& ptr_ident_strategy_params,
+								   triggers_type const& triggers,
 //								   real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
 								   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
 //	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
-	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, ewma_smoothing_factor),
+	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, triggers, ewma_smoothing_factor),
 	  controller_(Q, R)
 	{
 	}
@@ -1708,10 +1718,11 @@ class lqr_application_controller: public detail::lq_application_controller<Trait
 								   application_pointer const& ptr_app,
 								   real_type ts,
 								   system_identification_strategy_params_pointer const& ptr_ident_strategy_params,
+								   triggers_type const& triggers,
 //								   real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
 								   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
 //	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
-	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, ewma_smoothing_factor),
+	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, triggers, ewma_smoothing_factor),
 	  controller_(Q, R, N)
 	{
 	}
@@ -1747,6 +1758,7 @@ class lqry_application_controller: public detail::lq_application_controller<Trai
 	public: typedef typename traits_type::uint_type uint_type;
 	public: typedef typename base_type::application_pointer application_pointer;
 	public: typedef typename base_type::system_identification_strategy_params_pointer system_identification_strategy_params_pointer;
+	public: typedef typename base_type::triggers_type triggers_type;
 	private: typedef ::dcs::control::dlqry_controller<real_type> lq_controller_type;
 	private: typedef typename base_type::vector_type vector_type;
 	private: typedef typename base_type::matrix_type matrix_type;
@@ -1773,10 +1785,11 @@ class lqry_application_controller: public detail::lq_application_controller<Trai
 								    application_pointer const& ptr_app,
 								    real_type ts,
 									system_identification_strategy_params_pointer const& ptr_ident_strategy_params,
+								    triggers_type const& triggers,
 //								    real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
 								    real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
 //	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
-	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, ewma_smoothing_factor),
+	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, triggers, ewma_smoothing_factor),
 	  controller_(Q, R)
 	{
 	}
@@ -1792,10 +1805,11 @@ class lqry_application_controller: public detail::lq_application_controller<Trai
 								    application_pointer const& ptr_app,
 								    real_type ts,
 									system_identification_strategy_params_pointer const& ptr_ident_strategy_params,
+								    triggers_type const& triggers,
 //								    real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
 								    real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
 //	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
-	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, ewma_smoothing_factor),
+	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, triggers, ewma_smoothing_factor),
 	  controller_(Q, R, N)
 	{
 	}
@@ -1835,6 +1849,7 @@ class matlab_lqi_application_controller: public detail::lq_application_controlle
 	public: typedef typename traits_type::uint_type uint_type;
 	public: typedef typename base_type::application_pointer application_pointer;
 	public: typedef typename base_type::system_identification_strategy_params_pointer system_identification_strategy_params_pointer;
+	public: typedef typename base_type::triggers_type triggers_type;
 //	public: typedef base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
 //	public: typedef ::dcs::shared_ptr<system_identification_strategy_params_type> system_identification_strategy_params_pointer;
 	private: typedef detail::matlab::dlqi_controller_proxy<real_type> lq_controller_type;
@@ -1868,9 +1883,10 @@ class matlab_lqi_application_controller: public detail::lq_application_controlle
 								   real_type ts,
 //								   real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
 								   system_identification_strategy_params_pointer const& ptr_ident_strategy_params,
+								   triggers_type const& triggers,
 								   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
 //	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
-	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, ewma_smoothing_factor),
+	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, triggers, ewma_smoothing_factor),
 	  controller_(Q, R),
 	  xi_(1,0)
 	{
@@ -1888,9 +1904,10 @@ class matlab_lqi_application_controller: public detail::lq_application_controlle
 								   real_type ts,
 //								   real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
 								   system_identification_strategy_params_pointer const& ptr_ident_strategy_params,
+								   triggers_type const& triggers,
 								   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
 //	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
-	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, ewma_smoothing_factor),
+	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, triggers, ewma_smoothing_factor),
 	  controller_(Q, R, N),
 	  xi_(1,0)
 	{
@@ -1970,6 +1987,7 @@ class matlab_lqr_application_controller: public detail::lq_application_controlle
 	public: typedef typename traits_type::uint_type uint_type;
 	public: typedef typename base_type::application_pointer application_pointer;
 	public: typedef typename base_type::system_identification_strategy_params_pointer system_identification_strategy_params_pointer;
+	public: typedef typename base_type::triggers_type triggers_type;
 	private: typedef detail::matlab::dlqr_controller_proxy<real_type> lq_controller_type;
 	private: typedef typename base_type::vector_type vector_type;
 	private: typedef typename base_type::matrix_type matrix_type;
@@ -1996,10 +2014,11 @@ class matlab_lqr_application_controller: public detail::lq_application_controlle
 								   application_pointer const& ptr_app,
 								   real_type ts,
 								   system_identification_strategy_params_pointer const& ptr_ident_strategy_params,
+								   triggers_type const& triggers,
 //								   real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
 								   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
 //	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
-	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, ewma_smoothing_factor),
+	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, triggers, ewma_smoothing_factor),
 	  controller_(Q, R)
 	{
 	}
@@ -2015,10 +2034,11 @@ class matlab_lqr_application_controller: public detail::lq_application_controlle
 								   application_pointer const& ptr_app,
 								   real_type ts,
 								   system_identification_strategy_params_pointer const& ptr_ident_strategy_params,
+								   triggers_type const& triggers,
 //								   real_type rls_forgetting_factor/* = base_type::default_rls_forgetting_factor*/,
 								   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
 //	: base_type(n_a, n_b, d, ptr_app, ts, rls_forgetting_factor, ewma_smoothing_factor),
-	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, ewma_smoothing_factor),
+	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, triggers, ewma_smoothing_factor),
 	  controller_(Q, R, N)
 	{
 	}
@@ -2054,6 +2074,7 @@ class matlab_lqry_application_controller: public detail::lq_application_controll
 	public: typedef typename traits_type::uint_type uint_type;
 	public: typedef typename base_type::application_pointer application_pointer;
 	public: typedef typename base_type::system_identification_strategy_params_pointer system_identification_strategy_params_pointer;
+	public: typedef typename base_type::triggers_type triggers_type;
 	private: typedef detail::matlab::dlqry_controller_proxy<real_type> lq_controller_type;
 	private: typedef typename base_type::vector_type vector_type;
 	private: typedef typename base_type::matrix_type matrix_type;
@@ -2080,8 +2101,9 @@ class matlab_lqry_application_controller: public detail::lq_application_controll
 										   application_pointer const& ptr_app,
 										   real_type ts,
 										   system_identification_strategy_params_pointer const& ptr_ident_strategy_params,
+										   triggers_type const& triggers,
 										   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
-	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, ewma_smoothing_factor),
+	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, triggers, ewma_smoothing_factor),
 	  controller_(Q, R)
 	{
 	}
@@ -2097,8 +2119,9 @@ class matlab_lqry_application_controller: public detail::lq_application_controll
 										   application_pointer const& ptr_app,
 										   real_type ts,
 										   system_identification_strategy_params_pointer const& ptr_ident_strategy_params,
+										   triggers_type const& triggers,
 										   real_type ewma_smoothing_factor/* = base_type::default_ewma_smoothing_factor*/)
-	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, ewma_smoothing_factor),
+	: base_type(n_a, n_b, d, ptr_app, ts, ptr_ident_strategy_params, triggers, ewma_smoothing_factor),
 	  controller_(Q, R, N)
 	{
 	}

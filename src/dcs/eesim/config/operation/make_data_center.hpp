@@ -36,6 +36,7 @@
 #include <dcs/des/replications/fixed_duration_replication_size_detector.hpp>
 #include <dcs/des/replications/fixed_num_obs_replication_size_detector.hpp>
 #include <dcs/des/statistic_categories.hpp>
+#include <dcs/eesim/application_controller_triggers.hpp>
 #include <dcs/eesim/application_performance_model_adaptor.hpp>
 #include <dcs/eesim/application_performance_model_traits.hpp>
 //#include <dcs/eesim/application_simulation_model_adaptor.hpp>
@@ -1685,8 +1686,13 @@ template <typename TraitsT, typename RealT, typename UIntT>
 	typedef application_controller_config<RealT,UIntT> controller_config_type;
 	typedef ::dcs::eesim::multi_tier_application<traits_type> application_type;
 	typedef ::dcs::shared_ptr<application_type> application_pointer;
+	typedef ::dcs::eesim::application_controller_triggers<traits_type> application_controller_triggers_type;
 
 	::dcs::shared_ptr<controller_type> ptr_controller;
+
+	application_controller_triggers_type triggers;
+	triggers.actual_value_sla_ko(controller_conf.triggers.actual_value_sla_ko_enabled);
+	triggers.predicted_value_sla_ko(controller_conf.triggers.predicted_value_sla_ko_enabled);
 
 	switch (controller_conf.category)
 	{
@@ -1740,6 +1746,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 //							controller_conf_impl.integral_weight,
 //							controller_conf_impl.rls_forgetting_factor,
 							ptr_ident_strategy_params,
+							triggers,
 							controller_conf_impl.ewma_smoothing_factor
 						)
 					);
@@ -1787,19 +1794,10 @@ template <typename TraitsT, typename RealT, typename UIntT>
 				system_identification_strategy_params_pointer ptr_ident_strategy_params;
 				ptr_ident_strategy_params = make_system_identification_strategy_params<traits_type>(controller_conf_impl);
 
-//FIXME: Don't work... Why?!!?
-//				ptr_controller = ::dcs::make_shared<controller_impl_type>(
-//						controller_conf_impl.n_a,
-//						controller_conf_impl.n_b,
-//						controller_conf_impl.d,
-//						make_ublas_matrix(controller_conf_impl.Q),
-//						make_ublas_matrix(controller_conf_impl.R),
-//						make_ublas_matrix(controller_conf_impl.N),
-//						ptr_app,
-//						controller_conf.sampling_time,
-//						controller_conf_impl.rls_forgetting_factor,
-//						controller_conf_impl.ewma_smoothing_factor
-//					);
+//				application_controller_triggers_type triggers;
+//				triggers.actual_value_sla_ko(controller_conf_impl.triggers.actual_value_sla_ko_enabled);
+//				triggers.predicted_value_sla_ko(controller_conf_impl.triggers.predicted_value_sla_ko_enabled);
+
 				ptr_controller = ::dcs::shared_ptr<controller_impl_type>(
 						new controller_impl_type(
 							controller_conf_impl.n_a,
@@ -1812,6 +1810,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 							controller_conf.sampling_time,
 //							controller_conf_impl.rls_forgetting_factor,
 							ptr_ident_strategy_params,
+							triggers,
 							controller_conf_impl.ewma_smoothing_factor
 						)
 					);
@@ -1841,6 +1840,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 							controller_conf.sampling_time,
 //							controller_conf_impl.rls_forgetting_factor,
 							ptr_ident_strategy_params,
+							triggers,
 							controller_conf_impl.ewma_smoothing_factor
 						)
 					);
@@ -1884,6 +1884,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 //							controller_conf_impl.integral_weight,
 //							controller_conf_impl.rls_forgetting_factor,
 							ptr_ident_strategy_params,
+							triggers,
 							controller_conf_impl.ewma_smoothing_factor
 						)
 					);
@@ -1912,6 +1913,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 							ptr_app,
 							controller_conf.sampling_time,
 							ptr_ident_strategy_params,
+							triggers,
 							controller_conf_impl.ewma_smoothing_factor
 						)
 					);
@@ -1940,6 +1942,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 							ptr_app,
 							controller_conf.sampling_time,
 							ptr_ident_strategy_params,
+							triggers,
 							controller_conf_impl.ewma_smoothing_factor
 						)
 					);

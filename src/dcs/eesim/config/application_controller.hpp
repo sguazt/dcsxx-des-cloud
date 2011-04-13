@@ -5,6 +5,7 @@
 #include <boost/variant.hpp>
 #include <dcs/eesim/config/numeric_matrix.hpp>
 #include <dcs/macro.hpp>
+#include <iomanip>
 #include <iostream>
 
 
@@ -113,6 +114,13 @@ struct rls_park1991_system_identification_config: public base_rls_system_identif
 
 	real_type forgetting_factor; // The minimum forgetting factor
 	real_type rho; // The sensivity gain
+};
+
+
+struct application_controller_triggers
+{
+	bool actual_value_sla_ko_enabled;
+	bool predicted_value_sla_ko_enabled;
 };
 
 
@@ -262,6 +270,7 @@ struct application_controller_config
 	typedef qn_application_controller_config qn_controller_config_type;
 
 	real_type sampling_time;
+	application_controller_triggers triggers;
 	application_controller_category category;
 	::boost::variant<dummy_controller_config_type,
 					 lqi_controller_config_type,
@@ -478,11 +487,24 @@ template <typename CharT, typename CharTraitsT>
 }
 
 
+template <typename CharT, typename CharTraitsT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, application_controller_triggers const& triggers)
+{
+	os << "<(application-controller-triggers)"
+	   << " actual-value-sla-ko: " << ::std::boolalpha << triggers.actual_value_sla_ko_enabled
+	   << ", predicted-value-sla-ko: " << ::std::boolalpha << triggers.predicted_value_sla_ko_enabled
+	   << ">";
+
+	return os;
+}
+
+
 template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, application_controller_config<RealT,UIntT> const& controller)
 {
 	os << "<(application-controller)"
 	   << " sampling-time: " << controller.sampling_time
+	   << ", " << controller.triggers
 	   << ", " << controller.category_conf
 	   << ">";
 
