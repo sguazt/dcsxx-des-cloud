@@ -899,10 +899,10 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << app_rt << " (aggregated: " << ptr_st
 		++count_;
 
 		// Rotate old with new inputs/outputs:
-		//  x = [p(k-n_a+1) ... p(k)]^T
-		//    = [x_{n_p:n_x} p(k)]^T
-		//  u = [s(k-n_b+1) ... s(k)]^T
-		//    = [u_{n_s:n_u} s(k)]^T
+		//  x(k) = [p(k-n_a+1) ... p(k)]^T
+		//       = [x_{n_p:n_x}(k-1) p(k)]^T
+		//  u(k) = [s(k-n_b+1) ... s(k)]^T
+		//       = [u_{n_s:n_u}(k-1) s(k)]^T
 		// Check if a measure rotation is needed (always but the first time)
 		if (count_ > 1)
 		{
@@ -991,9 +991,10 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - OBSERVATION: ref: " << ref_measure << 
 									// No observation -> Assume perfect behavior
 									actual_measure = ref_measure;
 								}
-DCS_DEBUG_TRACE("TIER " << tier_id << " OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure);//XXX
+DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure);//XXX
+::std::cerr << "APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure << ::std::endl;//XXX
 								x_(x_offset_+tier_id) = p(tier_id)
-													  = actual_measure/ref_measure - real_type(1);
+													  = actual_measure/ref_measure - 1;
 							}
 							break;
 					default:
@@ -1025,9 +1026,10 @@ DCS_DEBUG_TRACE("TIER " << tier_id << " OBSERVATION: ref: " << ref_measure << " 
 															  ptr_vm->resource_share(res_category));
 
 			//FIXME: should u contain relative errore w.r.t. resource share given from performance model?
-DCS_DEBUG_TRACE("TIER " << tier_id << " SHARE: ref: " << ref_share << " - actual: " << ptr_vm->resource_share(res_category) << " - actual-scaled: " << actual_share);//XXX
+DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " SHARE: ref: " << ref_share << " - actual: " << ptr_vm->resource_share(res_category) << " - actual-scaled: " << actual_share);//XXX
+::std::cerr << "APP " << app.id() << " - TIER " << tier_id << " SHARE: ref: " << ref_share << " - actual: " << ptr_vm->resource_share(res_category) << " - actual-scaled: " << actual_share << ::std::endl;//XXX
 			u_(u_offset_+tier_id) = s(tier_id)
-								  = actual_share/ref_share - real_type(1);
+								  = actual_share/ref_share - 1;
 		}
 
 		if (!triggers_.actual_value_sla_ko() || !sla_ok)
