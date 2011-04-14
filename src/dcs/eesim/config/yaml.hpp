@@ -2112,6 +2112,8 @@ void operator>>(::YAML::Node const& node, application_controller_config<RealT,UI
 	}
 
 	// Read triggers
+	controller_conf.triggers.actual_value_sla_ko_enabled = false; // default value
+	controller_conf.triggers.predicted_value_sla_ko_enabled = false; // default value
 	if (controller_conf.category != dummy_application_controller)
 	{
 		if (node.FindValue("triggers"))
@@ -2121,24 +2123,11 @@ void operator>>(::YAML::Node const& node, application_controller_config<RealT,UI
 			{
 				subnode["actual-value-sla-ko"] >> controller_conf.triggers.actual_value_sla_ko_enabled;
 			}
-			else
-			{
-				controller_conf.triggers.actual_value_sla_ko_enabled = false;
-			}
 			if (subnode.FindValue("predicted-value-sla-ko"))
 			{
 				subnode["predicted-value-sla-ko"] >> controller_conf.triggers.predicted_value_sla_ko_enabled;
 			}
-			else
-			{
-				controller_conf.triggers.predicted_value_sla_ko_enabled = false;
-			}
 		}
-	}
-	else
-	{
-		controller_conf.triggers.actual_value_sla_ko_enabled = false;
-		controller_conf.triggers.predicted_value_sla_ko_enabled = false;
 	}
 }
 
