@@ -347,6 +347,10 @@ initial_placement_strategy_category text_to_initial_placement_strategy_category(
 	{
 		return first_fit_initial_placement_strategy;
 	}
+	if (!istr.compare("random-scaleout"))
+	{
+		return random_scaleout_initial_placement_strategy;
+	}
 
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_initial_placement_strategy_category Unknown init VM placement strategy category.");
 }
@@ -2358,6 +2362,15 @@ void operator>>(::YAML::Node const& node, initial_placement_strategy_config& str
 		case first_fit_initial_placement_strategy:
 			{
 				typedef strategy_config_type::first_fit_initial_placement_strategy_config_type strategy_config_impl_type;
+
+				strategy_config_impl_type strategy_conf_impl;
+
+				strategy_conf.category_conf = strategy_conf_impl;
+			}
+			break;
+		case random_scaleout_initial_placement_strategy:
+			{
+				typedef strategy_config_type::random_scaleout_initial_placement_strategy_config_type strategy_config_impl_type;
 
 				strategy_config_impl_type strategy_conf_impl;
 

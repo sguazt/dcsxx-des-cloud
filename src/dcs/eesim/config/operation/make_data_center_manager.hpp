@@ -13,6 +13,7 @@
 #include <dcs/eesim/data_center_manager.hpp>
 #include <dcs/eesim/first_fit_initial_placement_strategy.hpp>
 #include <dcs/eesim/lp_migration_controller.hpp>
+#include <dcs/eesim/random_scaleout_initial_placement_strategy.hpp>
 #include <dcs/memory.hpp>
 #include <stdexcept>
 
@@ -48,6 +49,18 @@ template <typename TraitsT>
 			{
 				//typedef typename strategy_config_type::first_fit_initial_placement_strategy_config_type strategy_config_impl_type;
 				typedef ::dcs::eesim::first_fit_initial_placement_strategy<traits_type> strategy_impl_type;
+
+				//strategy_config_impl_type const& strategy_conf_impl = ::boost::get<strategy_config_impl_type>(strategy_conf.category_conf);
+
+				// Note: there is nothing to configure
+
+				ptr_strategy = ::dcs::make_shared<strategy_impl_type>();
+			}
+			break;
+		case random_scaleout_initial_placement_strategy:
+			{
+				//typedef typename strategy_config_type::random_scaleout_initial_placement_strategy_config_type strategy_config_impl_type;
+				typedef ::dcs::eesim::random_scaleout_initial_placement_strategy<traits_type> strategy_impl_type;
 
 				//strategy_config_impl_type const& strategy_conf_impl = ::boost::get<strategy_config_impl_type>(strategy_conf.category_conf);
 
