@@ -107,8 +107,7 @@ class random_scaleout_initial_placement_strategy: public base_initial_placement_
 		typedef ::dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
 		typedef typename physical_machine_type::identifier_type pm_identifier_type;
 		typedef typename virtual_machine_type::identifier_type vm_identifier_type;
-		typedef ::std::vector<physical_machine_pointer> tmp_pm_container;
-		typedef ::std::set<physical_machine_pointer> pm_container;
+		typedef ::std::vector<physical_machine_pointer> pm_container;
 		typedef ::std::vector<virtual_machine_pointer> vm_container;
 		typedef typename pm_container::const_iterator pm_iterator;
 		typedef typename vm_container::const_iterator vm_iterator;
@@ -120,9 +119,7 @@ class random_scaleout_initial_placement_strategy: public base_initial_placement_
 
 		vm_container vms(dc.virtual_machines());
 
-		tmp_pm_container tmp_machs(dc.physical_machines());
-		pm_container machs(tmp_machs.begin(), tmp_machs.end());
-		tmp_machs.clear();
+		pm_container machs(dc.physical_machines());
 
 		size_type nmachs = machs.size();
 		size_type nvms = vms.size();
@@ -139,6 +136,7 @@ DCS_DEBUG_TRACE("#VMs: " << nvms);//XXX
 		virtual_machines_placement<traits_type> deployment;
 
 		::std::vector< ::std::pair<physical_resource_category,real_type> > shares;
+		::std::set<pm_identifier_type> used_machs;
 		vm_iterator vm_end_it = vms.end();
 		for (vm_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
 		{
@@ -157,6 +155,12 @@ DCS_DEBUG_TRACE("#VMs: " << nvms);//XXX
 			for (pm_iterator pm_it = machs.begin(); pm_it != pm_end_it && !placed; ++pm_it)
 			{
 				ptr_mach = *pm_it;
+
+				if (used_machs.count(ptr_mach->id()))
+				{
+					// Machine already occupied
+					continue;
+				}
 
 				// Reference to actual resource shares
 				share_container shares;
@@ -191,7 +195,8 @@ DCS_DEBUG_TRACE("Placed: VM(" << ptr_vm->id() << ") -> PM(" << ptr_mach->id() <<
 
 			if (placed)
 			{
-				machs.erase(ptr_mach);
+//				machs.erase(ptr_mach);
+				used_machs.insert(ptr_mach->id());
 			}
 		}
 
