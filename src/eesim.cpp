@@ -579,6 +579,9 @@ int main(int argc, char* argv[])
 	sys.data_center(ptr_dc);
 	sys.data_center_manager(ptr_dc_mngr);
 
+	std::cerr.precision(16);
+	std::cout.precision(16);
+
 	// Run the simulation
 	ptr_des_eng->run();
 
@@ -586,7 +589,7 @@ int main(int argc, char* argv[])
 	ptr_sim_log->detach(*ptr_des_eng);
 
 	// Report statistics
-	::std::cout << "STATISTICS:" << ::std::endl;
-	detail::report_stats(::std::cout, sys);
-	::std::cout << "--------------------------------------------------------------------------------" << ::std::endl;
+	std::cout << "STATISTICS:" << std::endl;
+	detail::report_stats(std::cout, sys);
+	std::cout << "--------------------------------------------------------------------------------" << std::endl;
 }
