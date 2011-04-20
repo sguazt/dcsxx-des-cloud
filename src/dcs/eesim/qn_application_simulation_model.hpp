@@ -610,7 +610,8 @@ DCS_DEBUG_TRACE("Actual machine threshold: " << this->tier_virtual_machine(tier_
 DCS_DEBUG_TRACE("Multiplier: " << multiplier);///XXX
 		multiplier *= share;
 DCS_DEBUG_TRACE("New scaled share: " << multiplier);///XXX
-		ptr_svc_node->service_strategy().capacity_multiplier(multiplier);
+		//ptr_svc_node->service_strategy().capacity_multiplier(multiplier);
+		ptr_svc_node->capacity_multiplier(multiplier);//[sguazt] EXP
 	}
 
 	//@} Interface Member Functions
