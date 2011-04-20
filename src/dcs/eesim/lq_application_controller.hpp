@@ -947,6 +947,7 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << app_rt << " (aggregated: " << ptr_st
 			real_type actual_measure;
 
 			ref_measure = app.sla_cost_model().slo_value(category);
+			//ref_measure = static_cast<real_type>(.5)*app.sla_cost_model().slo_value(category);//EXP
 			if (ptr_stat->num_observations() > 0)
 			{
 				actual_measure = ptr_stat->estimate();
@@ -982,6 +983,7 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - OBSERVATION: ref: " << ref_measure << 
 								ptr_stat = tier_measures_[tier_id].at(category);
 
 								ref_measure = app_perf_model.tier_measure(tier_id, category);
+								//ref_measure = static_cast<real_type>(.5)*app_perf_model.tier_measure(tier_id, category);//EXP
 								if (ptr_stat->num_observations() > 0)
 								{
 									actual_measure = ptr_stat->estimate();
@@ -1199,6 +1201,7 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 						}
 
 						real_type pred_measure = app.sla_cost_model().slo_value(response_time_performance_measure)
+						//real_type pred_measure = static_cast<real_type>(.5)*app.sla_cost_model().slo_value(response_time_performance_measure)//EXP
 												 + (ublas::prod(C, ublas::prod(A,x_)+ ublas::prod(B,opt_u))+ublas::prod(D,adj_opt_u))(0);
 //::std::cerr << "APP: " << app.id() << " - Adjusted Optimal Control u*=> " << adj_opt_u << ::std::endl;//XXX
 //::std::cerr << "APP: " << app.id() << " - Expected application response time: " << pred_measure << ::std::endl;//XXX
@@ -1311,7 +1314,7 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 		reset_measures();
 
 		DCS_DEBUG_TRACE("APP: " << app.id() << " - Control stats: Count: " << count_ << " - Identification Failure Count: " << ident_fail_count_ << " - Control Failures Count: " << ctrl_fail_count_);
-//::std::cerr << "APP: " << app.id() << " - Control stats: Count: " << count_ << " - Identification Failure Count: " << ident_fail_count_ << " - Control Failures Count: " << ctrl_fail_count_ << ::std::endl;
+::std::cerr << "APP: " << app.id() << " - Control stats: Count: " << count_ << " - Identification Failure Count: " << ident_fail_count_ << " - Control Failures Count: " << ctrl_fail_count_ << ::std::endl;
 
 		DCS_DEBUG_TRACE("(" << this << ") END Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")");
 	}
