@@ -884,6 +884,7 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << app_rt << " (aggregated: " << ptr_st
 //		typedef typename category_statistic_container_container::const_iterator tier_iterator;
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")");
+::std::cerr << "APP: " << this->application().id() << " - Process CONTROL event -- Actual Output: " << measures_.at(response_time_performance_measure)->estimate() << " (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")" << ::std::endl;//XXX
 
 		application_type const& app(this->application());
 		application_simulation_model_type const& app_sim_model(app.simulation_model());
@@ -1233,8 +1234,7 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 									);
 
 								DCS_DEBUG_TRACE("APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share);
-//::std::cerr << "APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share << ::std::endl;//XXX
-
+::std::cerr << "APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << measures_.at(response_time_performance_measure)->estimate() << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << ::std::endl;//XXX
 								ptr_vm->wanted_resource_share(res_category, new_share);
 							}
 						}
@@ -1286,7 +1286,7 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 							}
 
 							DCS_DEBUG_TRACE("APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share);
-//	::std::cerr << "APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share << ::std::endl;//XXX
+::std::cerr << "APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << measures_.at(response_time_performance_measure)->estimate() << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << ::std::endl;//XXX
 
 							ptr_vm->wanted_resource_share(res_category, new_share);
 						}

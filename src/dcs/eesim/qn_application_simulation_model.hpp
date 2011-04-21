@@ -724,6 +724,7 @@ DCS_DEBUG_TRACE("New scaled share: " << multiplier);///XXX
 		if (!this->application().sla_cost_model().satisfied(categories.begin(), categories.end(), measures.begin()))
 		{
 			DCS_DEBUG_TRACE("Found SLA violation for measures: " << measures[0]);
+::std::cerr << "APP " << this->application().id() << " -- SLA violation: " << measures[0] << " vs " << this->application().sla_cost_model().slo_value(response_time_performance_measure) << " (Clock: " << ctx.simulated_time() << ")" << ::std::endl;//XXX
 
 			++num_sla_viols_;
 		}

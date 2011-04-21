@@ -330,6 +330,12 @@ class virtual_machine
 					share
 				);
 		}
+		else
+		{
+			// Issue a warning. This is not an error since we may call this
+			// method when a VM is still to be deployed.
+			::std::clog << "[Warning] VM " << id_ << " (" << name_ << ") not correctly deployed." << ::std::endl;
+		}
 	}
 
 
