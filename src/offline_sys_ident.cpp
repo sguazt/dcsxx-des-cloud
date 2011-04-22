@@ -149,6 +149,16 @@ T get_option(ForwardIterT begin, ForwardIterT end, std::string const& option)
 }
 
 
+/// Get a boolean option; also tell if a given option does exist.
+template <typename ForwardIterT>
+bool get_option(ForwardIterT begin, ForwardIterT end, std::string const& option)
+{
+	ForwardIterT it = find_option(begin, end, option);
+
+	return it != end;
+}
+
+
 signal_category parse_signal_category(::std::string const& str)
 {
 	if (!str.compare("step"))
@@ -737,7 +747,6 @@ class base_system_identificator
 				)
 			);
 */
-
 	}
 
 
@@ -1134,6 +1143,12 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
+		// Output the preamble
+		::std::cout << "##" << ::std::endl
+					<< "## Application: " << app.name() << ::std::endl
+					<< "## Nr. Tiers: " << app.num_tiers() << ::std::endl
+					<< "##" << ::std::endl;
+
 		// Output the header
 		::std::cout << "\"tid\",\"rid\"";
 		typedef ::std::vector<typename application_type::reference_physical_resource_type> resource_container;
@@ -1144,10 +1159,10 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		::std::size_t num_tiers(app.num_tiers());
 		for (resource_iterator it = resources.begin(); it != end_it; ++it)
 		{
-			::std::cout << ",\"category_" << count;
+			::std::cout << ",\"category_" << count << "\"";
 			for (::std::size_t tier_id = 0; tier_id < num_tiers; ++tier_id)
 			{
-				::std::cout << "\",\"share_" << tier_id << "_" << count << "\",\"delta_share_" << tier_id << "_" << count << "\"";
+				::std::cout << ",\"share_" << tier_id << "_" << count << "\",\"delta_share_" << tier_id << "_" << count << "\"";
 			}
 			++count;
 		}
@@ -1393,12 +1408,12 @@ int main(int argc, char* argv[])
 	// Build the registry
 
 	registry_type& reg(registry_type::instance());
-	des_engine_pointer ptr_des_eng;
-	ptr_des_eng = detail::make_des_engine<traits_type>();
-	reg.des_engine(ptr_des_eng);
-	random_generator_pointer ptr_rng;
-	ptr_rng = dcs::eesim::config::make_random_number_generator(conf);
-	reg.uniform_random_generator(ptr_rng);
+//	des_engine_pointer ptr_des_eng;
+//	ptr_des_eng = detail::make_des_engine<traits_type>();
+//	reg.des_engine(ptr_des_eng);
+//	random_generator_pointer ptr_rng;
+//	ptr_rng = dcs::eesim::config::make_random_number_generator(conf);
+//	reg.uniform_random_generator(ptr_rng);
 
 //	// Build the Data Center
 //	data_center_pointer ptr_dc;
@@ -1418,6 +1433,16 @@ int main(int argc, char* argv[])
 	{
 		dcs::shared_ptr<application_type> ptr_app;
 		dcs::shared_ptr< detail::base_signal_generator<real_type> > ptr_sig_gen;
+
+		// Build the simulator
+		des_engine_pointer ptr_des_eng;
+		ptr_des_eng = detail::make_des_engine<traits_type>();
+		reg.des_engine(ptr_des_eng);
+
+		// Build the random number generator
+		random_generator_pointer ptr_rng;
+		ptr_rng = dcs::eesim::config::make_random_number_generator(conf);
+		reg.uniform_random_generator(ptr_rng);
 
 		// Build the application
 		ptr_app = dcs::eesim::config::make_multi_tier_application<traits_type>(*app_it, conf, ptr_rng, ptr_des_eng);
