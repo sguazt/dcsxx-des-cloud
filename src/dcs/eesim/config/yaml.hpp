@@ -925,8 +925,9 @@ void operator>>(::YAML::Node const& node, simulation_config<RealT,UIntT>& sim)
 		}
 		else
 		{
-			// Default to 4%
-			output_analysis_conf.relative_precision = 0.04;
+			//// Default to 4%
+			//output_analysis_conf.relative_precision = 0.04;
+			output_analysis_conf.relative_precision = ::std::numeric_limits<RealT>::infinity();
 		}
 
 		sim.output_analysis = output_analysis_conf;
