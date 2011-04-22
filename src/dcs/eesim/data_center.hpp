@@ -239,6 +239,30 @@ class data_center
 	}
 
 
+	public: physical_machine_controller_pointer physical_machine_controller_ptr(physical_machine_identifier_type id) const
+	{
+		return pm_ctrls_[id];
+	}
+
+
+	public: physical_machine_controller_pointer physical_machine_controller_ptr(physical_machine_identifier_type id)
+	{
+		return pm_ctrls_[id];
+	}
+
+
+	public: application_controller_pointer application_controller_ptr(application_identifier_type id) const
+	{
+		return app_ctrls_[id];
+	}
+
+
+	public: application_controller_pointer application_controller_ptr(application_identifier_type id)
+	{
+		return app_ctrls_[id];
+	}
+
+
 	public: ::std::vector<application_pointer> applications() const
 	{
 		return apps_;
