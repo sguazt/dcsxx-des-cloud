@@ -104,7 +104,7 @@ class multi_tier_application
 	public: typedef application_tier<traits_type> application_tier_type;
 	public: typedef ::dcs::shared_ptr<application_tier_type> application_tier_pointer;
 	public: typedef data_center<traits_type> data_center_type;//[sguazt] EXP
-	public: typedef ::dcs::shared_ptr<data_center_type> data_center_pointer;//[sguazt] EXP
+	public: typedef data_center_type* data_center_pointer;//[sguazt] EXP
 //	public: typedef physical_resource<traits_type> physical_resource_type;
 //	public: typedef ::dcs::shared_ptr<physical_resource_type> physical_resource_pointer;
 //	public: typedef ::dcs::perfeval::workload::enterprise::any_model<int_type,real_type> workload_model_type;

@@ -112,6 +112,8 @@ class data_center
 
 		deploy_application(id);
 
+		ptr_app->data_centre(this);
+
 		return id;
 	}
 
