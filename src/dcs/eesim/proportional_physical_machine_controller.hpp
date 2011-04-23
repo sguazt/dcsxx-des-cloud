@@ -52,12 +52,12 @@ class proportional_physical_machine_controller: public base_physical_machine_con
 
 	//@{ Interface Member Functions
 
-	private: void do_process_control(des_event_type const& evt, des_engine_context_type& ctx)
+	private: void do_control()
 	{
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+//		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+//		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
-		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Processing CONTROL (Clock: " << ctx.simulated_time() << ")");//XXX
+//		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Processing CONTROL (Clock: " << ctx.simulated_time() << ")");//XXX
 
         // pre: physical machine must have already been set
         DCS_DEBUG_ASSERT( this->machine_ptr() );
@@ -143,9 +143,22 @@ class proportional_physical_machine_controller: public base_physical_machine_con
 			++step;
 		}
 		while (step <= 2);
-
-		DCS_DEBUG_TRACE("(" << this << ") END Do Processing CONTROL (Clock: " << ctx.simulated_time() << ")");//XXX
+//
+//		DCS_DEBUG_TRACE("(" << this << ") END Do Processing CONTROL (Clock: " << ctx.simulated_time() << ")");//XXX
 	}
+
+
+//	private: void do_process_control(des_event_type const& evt, des_engine_context_type& ctx)
+//	{
+//		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+//		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+//
+//		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Processing CONTROL (Clock: " << ctx.simulated_time() << ")");//XXX
+//
+//		this->control();
+//
+//		DCS_DEBUG_TRACE("(" << this << ") END Do Processing CONTROL (Clock: " << ctx.simulated_time() << ")");//XXX
+//	}
 
 	//@} Interface Member Functions
 };

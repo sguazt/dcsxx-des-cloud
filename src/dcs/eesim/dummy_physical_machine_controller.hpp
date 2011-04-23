@@ -37,11 +37,8 @@ class dummy_physical_machine_controller: public base_physical_machine_controller
 	}
 
 
-    private: void do_process_control(des_event_type const& evt, des_engine_context_type& ctx)
+    private: void do_control()
 	{
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-
 		// empty
 	}
 };

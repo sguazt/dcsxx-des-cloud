@@ -1215,7 +1215,7 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 						{
 							for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 							{
-								physical_resource_category res_category(cpu_resource_category);//FIXME
+								physical_resource_category res_category(cpu_resource_category);//FIXME: category hard-coded
 
 								virtual_machine_pointer ptr_vm(app_sim_model.tier_virtual_machine(tier_id));
 								physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
@@ -1241,6 +1241,7 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 						else
 						{
 							++ctrl_fail_count_;
+							ok = false;
 							::std::clog << "[Warning] Control not applied for Application '" << app.id() << "': failed to find suitable control inputs." << ::std::endl;
 						}
 					}
@@ -1248,7 +1249,7 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 					{
 						for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 						{
-							physical_resource_category res_category(cpu_resource_category);//FIXME
+							physical_resource_category res_category(cpu_resource_category);//FIXME: category hard-coded
 
 							virtual_machine_pointer ptr_vm(app_sim_model.tier_virtual_machine(tier_id));
 							physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
@@ -1291,7 +1292,29 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 							ptr_vm->wanted_resource_share(res_category, new_share);
 						}
 					}
+
+					if (ok)
+					{
+						typedef typename traits_type::physical_machine_identifier_type pm_identifier_type;
+						::std::set<pm_identifier_type> seen_machs;
+						for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+						{
+							physical_resource_category res_category(cpu_resource_category);//FIXME: category hard-coded
+
+							virtual_machine_pointer ptr_vm(app_sim_model.tier_virtual_machine(tier_id));
+							physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
+
+							pm_identifier_type pm_id(pm.id());
+
+							if (!seen_machs.count(pm_id))
+							{
+								seen_machs.insert(pm_id);
+								this->application().data_centre().physical_machine_controller(pm_id).control();
+							}
+							
+						}
 DCS_DEBUG_TRACE("Optimal control applied");//XXX
+					}
 				}
 				else
 				{

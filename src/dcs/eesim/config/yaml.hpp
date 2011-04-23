@@ -2290,10 +2290,17 @@ void operator>>(::YAML::Node const& node, physical_machine_controller_config<Rea
 	// Read sampling time
 	if (controller_conf.category != dummy_physical_machine_controller)
 	{
-		node["sampling-time"] >> controller_conf.sampling_time;
-		if (controller_conf.sampling_time <= 0)
+		if (node.FindValue("sampling-time"))
 		{
-			throw ::std::runtime_error("[dcs::eesim::config::>>] Invalid sampling time for physical machine controller: non-positive value.");
+			node["sampling-time"] >> controller_conf.sampling_time;
+			if (controller_conf.sampling_time <= 0)
+			{
+				throw ::std::runtime_error("[dcs::eesim::config::>>] Invalid sampling time for physical machine controller: non-positive value.");
+			}
+		}
+		else
+		{
+			controller_conf.sampling_time = 0;
 		}
 	}
 	else

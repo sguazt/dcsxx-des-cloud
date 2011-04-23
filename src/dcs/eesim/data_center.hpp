@@ -239,6 +239,17 @@ class data_center
 	}
 
 
+	public: physical_machine_controller_type const& physical_machine_controller(physical_machine_identifier_type id) const
+	{
+		return *(pm_ctrls_[id]);
+	}
+
+
+	public: physical_machine_controller_type& physical_machine_controller(physical_machine_identifier_type id)
+	{
+		return *(pm_ctrls_[id]);
+	}
+
 	public: physical_machine_controller_pointer physical_machine_controller_ptr(physical_machine_identifier_type id) const
 	{
 		return pm_ctrls_[id];
@@ -248,6 +259,18 @@ class data_center
 	public: physical_machine_controller_pointer physical_machine_controller_ptr(physical_machine_identifier_type id)
 	{
 		return pm_ctrls_[id];
+	}
+
+
+	public: application_controller_type const& application_controller(application_identifier_type id) const
+	{
+		return *(app_ctrls_[id]);
+	}
+
+
+	public: application_controller_type& application_controller(application_identifier_type id)
+	{
+		return *(app_ctrls_[id]);
 	}
 
 

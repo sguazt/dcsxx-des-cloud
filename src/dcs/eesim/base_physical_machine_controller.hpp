@@ -39,6 +39,7 @@ class base_physical_machine_controller
 	protected: base_physical_machine_controller()
 	: ptr_mach_(),
 	  ts_(0),
+//	  passive_(false),
 	  ptr_control_evt_src_(/*new des_event_source_type(control_event_source_name)*/)
 	{
 		init();
@@ -49,6 +50,7 @@ class base_physical_machine_controller
 	protected: explicit base_physical_machine_controller(physical_machine_pointer const& ptr_mach, real_type ts)
 	: ptr_mach_(ptr_mach),
 	  ts_(ts),
+//	  passive_(false),
 	  ptr_control_evt_src_(/*new des_event_source_type(control_event_source_name)*/)
 	{
 		init();
@@ -59,6 +61,7 @@ class base_physical_machine_controller
 	public: base_physical_machine_controller(base_physical_machine_controller const& that)
 	: ptr_mach_(that.ptr_mach_),
 	  ts_(that.ts_),
+//	  passive_(that.passive_)
 	  ptr_control_evt_src_(that.ptr_control_evt_src_ ? new des_event_source_type(*that.ptr_control_evt_src_) : new des_event_source_type(control_event_source_name))
 	{
 		init();
@@ -74,6 +77,7 @@ class base_physical_machine_controller
 
 			ptr_mach_ = rhs.ptr_mach_;
 			ts_ = rhs.ts_;
+//			passive_ = rhs.passive;
 			if (rhs.ptr_control_evt_src_)
 			{
 				ptr_control_evt_src_ = ::dcs::make_shared<des_event_source_type>(*(rhs.ptr_control_evt_src_));
@@ -143,6 +147,26 @@ class base_physical_machine_controller
 	{
 		return ts_;
 	}
+
+
+	//FIXME: [sguazt] EXP
+//	public: void passive(bool value)
+//	{
+//		passive_ = value;
+//	}
+
+
+//	public: bool passive() const
+//	{
+//		return passive_;
+//	}
+
+
+	public: void control()
+	{
+		do_control();
+	}
+	//FIXME: [sguazt] EXP
 
 
 	protected: physical_machine_pointer machine_ptr() const
@@ -258,9 +282,17 @@ class base_physical_machine_controller
 
 	private: void process_control(des_event_type const& evt, des_engine_context_type& ctx)
 	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing CONTROL (Clock: " << ctx.simulated_time() << ")");//XXX
+
 		schedule_control();
 
-		do_process_control(evt, ctx);
+//		do_process_control(evt, ctx);
+		control();
+
+		DCS_DEBUG_TRACE("(" << this << ") END Processing CONTROL (Clock: " << ctx.simulated_time() << ")");//XXX
 	}
 
 
@@ -285,7 +317,10 @@ class base_physical_machine_controller
 	}
 
 
-	private: virtual void do_process_control(des_event_type const& evt, des_engine_context_type& ctx) = 0;
+	private: virtual void do_control() = 0;
+
+
+//	private: virtual void do_process_control(des_event_type const& evt, des_engine_context_type& ctx) = 0;
 
 
 	protected: virtual void do_schedule_control()
@@ -298,6 +333,7 @@ class base_physical_machine_controller
 
 	private: physical_machine_pointer ptr_mach_;
 	private: real_type ts_;
+//	private: bool passive_;
 	private: des_event_source_pointer ptr_control_evt_src_;
 };
 

@@ -61,11 +61,8 @@ class conservative_physical_machine_controller: public base_physical_machine_con
 
 	//@{ Interface Member Functions
 
-	private: void do_process_control(des_event_type const& evt, des_engine_context_type& ctx)
+	private: void do_control()
 	{
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-
 #if 0
 		// pre: physical machine must have already been set
 		DCS_DEBUG_ASSERT( this->machine_ptr() );

@@ -33,6 +33,7 @@
 #include <dcs/eesim/application_tier.hpp>
 #include <dcs/eesim/base_application_performance_model.hpp>
 #include <dcs/eesim/base_application_simulation_model.hpp>
+#include <dcs/eesim/data_center.hpp>//[sguazt] EXP
 //#include <dcs/eesim/performance_measure.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
 //#include <dcs/eesim/physical_resource.hpp>
@@ -102,6 +103,8 @@ class multi_tier_application
 	public: typedef typename traits_type::application_identifier_type identifier_type;
 	public: typedef application_tier<traits_type> application_tier_type;
 	public: typedef ::dcs::shared_ptr<application_tier_type> application_tier_pointer;
+	public: typedef data_center<traits_type> data_center_type;//[sguazt] EXP
+	public: typedef ::dcs::shared_ptr<data_center_type> data_center_pointer;//[sguazt] EXP
 //	public: typedef physical_resource<traits_type> physical_resource_type;
 //	public: typedef ::dcs::shared_ptr<physical_resource_type> physical_resource_pointer;
 //	public: typedef ::dcs::perfeval::workload::enterprise::any_model<int_type,real_type> workload_model_type;
@@ -215,6 +218,26 @@ class multi_tier_application
 	{
 		return name_;
 	}
+
+
+	// BEGIN [sguazt] EXP
+	public: void data_centre(data_center_pointer const& ptr_dc)
+	{
+		ptr_dc_ = ptr_dc;
+	}
+
+
+	public: data_center_type const& data_centre() const
+	{
+		return *ptr_dc_;
+	}
+
+
+	public: data_center_type& data_centre()
+	{
+		return *ptr_dc_;
+	}
+	// END [sguazt] EXP
 
 
 	public: void performance_model(performance_model_pointer const& ptr_model)
@@ -868,6 +891,7 @@ class multi_tier_application
 //	private: ::std::vector<des_event_source_pointer> ptr_tier_response_evt_srcs_;
 //	private: des_event_source_pointer ptr_control_evt_src_;
 //	private: uint_type priority_;
+	private: data_center_pointer ptr_dc_;//[sguazt] EXP
 };
 
 
