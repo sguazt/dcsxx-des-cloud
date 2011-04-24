@@ -2481,18 +2481,11 @@ class yaml_reader
 	{
 		configuration_type conf;
 
-		try
+		::YAML::Parser parser(is);
+		::YAML::Node doc;
+		while(parser.GetNextDocument(doc))
 		{
-			::YAML::Parser parser(is);
-			::YAML::Node doc;
-			while(parser.GetNextDocument(doc))
-			{
-				conf = read(doc);
-			}
-		}
-		catch(::YAML::Exception const& e)
-		{
-			::std::cerr << e.what() << "\n";
+			conf = read(doc);
 		}
 
 		return conf;

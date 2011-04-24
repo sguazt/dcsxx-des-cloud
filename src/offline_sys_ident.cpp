@@ -1390,18 +1390,26 @@ int main(int argc, char* argv[])
 
 	dcs::eesim::config::configuration<real_type,uint_type> conf;
 
-	switch (conf_cat)
+	try
 	{
-		case yaml_configuration:
+		switch (conf_cat)
+		{
+			case yaml_configuration:
 
-			conf = dcs::eesim::config::read_file(
-				conf_fname,
-				::dcs::eesim::config::yaml_reader<real_type,uint_type>()
-			);
-			break;
-		default:
-			return -2;
+				conf = dcs::eesim::config::read_file(
+					conf_fname,
+					::dcs::eesim::config::yaml_reader<real_type,uint_type>()
+				);
+				break;
+			default:
+				throw ::std::runtime_error("Unknown configuration category.");
+		}
 	}
+    catch (::std::exception const& e)
+    {
+		::std::clog << "[Error] Unable to read configuration: " << e.what() << ::std::endl;
+		return -2;
+    }
 
 	DCS_DEBUG_TRACE("Configuration: " << conf); //XXX
 
