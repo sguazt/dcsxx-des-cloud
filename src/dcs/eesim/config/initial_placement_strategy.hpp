@@ -13,7 +13,7 @@ enum initial_placement_strategy_category
 {
 	best_fit_initial_placement_strategy,
 	first_fit_initial_placement_strategy,
-	random_scaleout_initial_placement_strategy
+	first_fit_scaleout_initial_placement_strategy
 };
 
 
@@ -27,7 +27,7 @@ struct first_fit_initial_placement_strategy_config
 };
 
 
-struct random_scaleout_initial_placement_strategy_config
+struct first_fit_scaleout_initial_placement_strategy_config
 {
 };
 
@@ -36,13 +36,13 @@ struct initial_placement_strategy_config
 {
     typedef best_fit_initial_placement_strategy_config best_fit_initial_placement_strategy_config_type;
     typedef first_fit_initial_placement_strategy_config first_fit_initial_placement_strategy_config_type;
-    typedef random_scaleout_initial_placement_strategy_config random_scaleout_initial_placement_strategy_config_type;
+    typedef first_fit_scaleout_initial_placement_strategy_config first_fit_scaleout_initial_placement_strategy_config_type;
 
 
 	initial_placement_strategy_category category;
     ::boost::variant<best_fit_initial_placement_strategy_config_type,
 					 first_fit_initial_placement_strategy_config_type,
-					 random_scaleout_initial_placement_strategy_config_type> category_conf;
+					 first_fit_scaleout_initial_placement_strategy_config_type> category_conf;
 
 };
 
@@ -58,8 +58,8 @@ template <typename CharT, typename CharTraitsT>
 		case first_fit_initial_placement_strategy:
 			os << "first-fit";
 			break;
-		case random_scaleout_initial_placement_strategy:
-			os << "random-scaleout";
+		case first_fit_scaleout_initial_placement_strategy:
+			os << "first-fit-scaleout";
 			break;
 	}
 
@@ -90,11 +90,11 @@ template <typename CharT, typename CharTraitsT>
 
 
 template <typename CharT, typename CharTraitsT>
-::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, random_scaleout_initial_placement_strategy_config const& strategy)
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, first_fit_scaleout_initial_placement_strategy_config const& strategy)
 {
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( strategy );
 
-	os << "<(random-scaleout-initial-placement)>";
+	os << "<(first-fit-scaleout-initial-placement)>";
 
 	return os;
 }

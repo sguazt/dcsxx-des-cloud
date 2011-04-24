@@ -1,5 +1,5 @@
-#ifndef DCS_EESIM_RANDOM_SCALEOUT_INITIAL_PLACEMENT_STRATEGY_HPP
-#define DCS_EESIM_RANDOM_SCALEOUT_INITIAL_PLACEMENT_STRATEGY_HPP
+#ifndef DCS_EESIM_FIRST_FIT_SCALEOUT_INITIAL_PLACEMENT_STRATEGY_HPP
+#define DCS_EESIM_FIRST_FIT_SCALEOUT_INITIAL_PLACEMENT_STRATEGY_HPP
 
 
 #include <cstddef>
@@ -93,7 +93,7 @@ void random_permutation(RandomAccessIterT first, RandomAccessIterT last, Uniform
 
 /// Assign at most one virtual machine to each physical machine.
 template <typename TraitsT>
-class random_scaleout_initial_placement_strategy: public base_initial_placement_strategy<TraitsT>
+class first_fit_scaleout_initial_placement_strategy: public base_initial_placement_strategy<TraitsT>
 {
 	public: typedef TraitsT traits_type;
 	private: typedef typename traits_type::real_type real_type;
@@ -130,7 +130,7 @@ DCS_DEBUG_TRACE("#VMs: " << nvms);//XXX
 
 		if (nvms > nmachs)
 		{
-			throw ::std::logic_error("[dcs::eesim::random_scaleout_initial_placement_strategy] Too many virtual machines.");
+			throw ::std::logic_error("[dcs::eesim::first_fit_scaleout_initial_placement_strategy] Too many virtual machines.");
 		}
 
 		virtual_machines_placement<traits_type> deployment;
@@ -208,4 +208,4 @@ DCS_DEBUG_TRACE("END Initial Placement ==> " << deployment);///XXX
 }} // Namespace dcs::eesim
 
 
-#endif // DCS_EESIM_RANDOM_SCALEOUT_INITIAL_PLACEMENT_STRATEGY_HPP
+#endif // DCS_EESIM_FIRST_FIT_SCALEOUT_INITIAL_PLACEMENT_STRATEGY_HPP
