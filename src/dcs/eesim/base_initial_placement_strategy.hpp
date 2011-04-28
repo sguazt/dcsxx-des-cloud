@@ -15,6 +15,12 @@ class base_initial_placement_strategy
 	public: typedef typename traits_type::real_type real_type;
 
 
+	public: base_initial_placement_strategy()
+	: ref_penalty_(0)
+	{
+	}
+
+
 	public: virtual ~base_initial_placement_strategy() { }
 
 
@@ -24,7 +30,23 @@ class base_initial_placement_strategy
 	}
 
 
+	public: void reference_share_penalty(real_type penalty)
+	{
+		ref_penalty_ = penalty;
+	}
+
+
+	public: real_type reference_share_penalty() const
+	{
+		return ref_penalty_;
+	}
+
+
 	private: virtual virtual_machines_placement<traits_type> do_placement(data_center<traits_type> const& dc) = 0;
+
+
+	/// The penalty (in percentage) to assign to the reference share 
+	private: real_type ref_penalty_;
 };
 
 }} // Namespace dcs::eesim

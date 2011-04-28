@@ -22,12 +22,12 @@ namespace dcs { namespace eesim { namespace config {
 
 namespace detail { namespace /*<unnamed>*/ {
 
-template <typename TraitsT>
-::dcs::shared_ptr< ::dcs::eesim::base_initial_placement_strategy<TraitsT> > make_initial_placement_strategy(initial_placement_strategy_config const& strategy_conf)
+template <typename TraitsT, typename RealT>
+::dcs::shared_ptr< ::dcs::eesim::base_initial_placement_strategy<TraitsT> > make_initial_placement_strategy(initial_placement_strategy_config<RealT> const& strategy_conf)
 {
 	typedef TraitsT traits_type;
 	typedef ::dcs::eesim::base_initial_placement_strategy<traits_type> strategy_type;
-	typedef initial_placement_strategy_config strategy_config_type;
+	typedef initial_placement_strategy_config<RealT> strategy_config_type;
 
 	::dcs::shared_ptr<strategy_type> ptr_strategy;
 

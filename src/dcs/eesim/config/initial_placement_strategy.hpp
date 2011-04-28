@@ -32,8 +32,10 @@ struct first_fit_scaleout_initial_placement_strategy_config
 };
 
 
+template <typename RealT>
 struct initial_placement_strategy_config
 {
+	typedef RealT real_type;
     typedef best_fit_initial_placement_strategy_config best_fit_initial_placement_strategy_config_type;
     typedef first_fit_initial_placement_strategy_config first_fit_initial_placement_strategy_config_type;
     typedef first_fit_scaleout_initial_placement_strategy_config first_fit_scaleout_initial_placement_strategy_config_type;
@@ -43,7 +45,7 @@ struct initial_placement_strategy_config
     ::boost::variant<best_fit_initial_placement_strategy_config_type,
 					 first_fit_initial_placement_strategy_config_type,
 					 first_fit_scaleout_initial_placement_strategy_config_type> category_conf;
-
+	real_type ref_penalty;
 };
 
 
@@ -100,8 +102,8 @@ template <typename CharT, typename CharTraitsT>
 }
 
 
-template <typename CharT, typename CharTraitsT>
-::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, initial_placement_strategy_config const& strategy)
+template <typename CharT, typename CharTraitsT, typename RealT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, initial_placement_strategy_config<RealT> const& strategy)
 {
 	os << strategy.category_conf;
 

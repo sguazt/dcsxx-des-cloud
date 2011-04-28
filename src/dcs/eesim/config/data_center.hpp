@@ -23,7 +23,7 @@ class data_center_config
 	public: typedef physical_machine_config<real_type> physical_machine_config_type;
 	public: typedef ::std::vector<application_config_type> application_config_container;
 	public: typedef ::std::vector<physical_machine_config_type> physical_machine_config_container;
-	public: typedef initial_placement_strategy_config initial_placement_strategy_config_type;
+	public: typedef initial_placement_strategy_config<RealT> initial_placement_strategy_config_type;
 	public: typedef migration_controller_config<real_type> migration_controller_config_type;
 
 

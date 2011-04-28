@@ -2346,9 +2346,10 @@ void operator>>(::YAML::Node const& node, physical_machine_config<RealT>& mach)
 }
 
 
-void operator>>(::YAML::Node const& node, initial_placement_strategy_config& strategy_conf)
+template <typename RealT>
+void operator>>(::YAML::Node const& node, initial_placement_strategy_config<RealT>& strategy_conf)
 {
-	typedef initial_placement_strategy_config strategy_config_type;
+	typedef initial_placement_strategy_config<RealT> strategy_config_type;
 
 	::std::string label;
 
@@ -2360,7 +2361,7 @@ void operator>>(::YAML::Node const& node, initial_placement_strategy_config& str
 	{
 		case best_fit_initial_placement_strategy:
 			{
-				typedef strategy_config_type::best_fit_initial_placement_strategy_config_type strategy_config_impl_type;
+				typedef typename strategy_config_type::best_fit_initial_placement_strategy_config_type strategy_config_impl_type;
 
 				strategy_config_impl_type strategy_conf_impl;
 
@@ -2369,7 +2370,7 @@ void operator>>(::YAML::Node const& node, initial_placement_strategy_config& str
 			break;
 		case first_fit_initial_placement_strategy:
 			{
-				typedef strategy_config_type::first_fit_initial_placement_strategy_config_type strategy_config_impl_type;
+				typedef typename strategy_config_type::first_fit_initial_placement_strategy_config_type strategy_config_impl_type;
 
 				strategy_config_impl_type strategy_conf_impl;
 
@@ -2378,13 +2379,18 @@ void operator>>(::YAML::Node const& node, initial_placement_strategy_config& str
 			break;
 		case first_fit_scaleout_initial_placement_strategy:
 			{
-				typedef strategy_config_type::first_fit_scaleout_initial_placement_strategy_config_type strategy_config_impl_type;
+				typedef typename strategy_config_type::first_fit_scaleout_initial_placement_strategy_config_type strategy_config_impl_type;
 
 				strategy_config_impl_type strategy_conf_impl;
 
 				strategy_conf.category_conf = strategy_conf_impl;
 			}
 			break;
+	}
+
+	if (node.FindValue("ref-penalty"))
+	{
+		node["ref-penalty"] >> strategy_conf.ref_penalty;
 	}
 }
 
