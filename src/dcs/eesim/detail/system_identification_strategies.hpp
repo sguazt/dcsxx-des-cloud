@@ -217,6 +217,19 @@ class base_system_identification_strategy
 	}
 
 
+	public: void reset()
+	{
+		init();
+
+		do_reset();
+	}
+
+
+	protected: virtual void do_reset()
+	{
+	}
+
+
 	private: virtual matrix_type do_Theta_hat() const = 0;
 
 
@@ -3058,7 +3071,7 @@ class rls_ff_mimo_proxy: public rls_system_identification_strategy<TraitsT>
 		}
 		if (reset)
 		{
-			this->init();
+			this->reset();
 		}
 
 		// Estimate system parameters
@@ -3341,7 +3354,7 @@ class rls_ff_miso_proxy: public rls_system_identification_strategy<TraitsT>
 		}
 		if (reset)
 		{
-			this->init();
+			this->reset();
 		}
 
 		// Estimate system parameters
@@ -3662,7 +3675,7 @@ class rls_park1991_miso_proxy: public rls_system_identification_strategy<TraitsT
 		}
 		if (reset)
 		{
-			this->init();
+			this->reset();
 		}
 
 		// Estimate system parameters
@@ -3960,7 +3973,7 @@ class rls_kulhavy1984_miso_proxy: public rls_system_identification_strategy<Trai
 		}
 		if (reset)
 		{
-			this->init();
+			this->reset();
 		}
 
 		// Estimate system parameters
@@ -4264,7 +4277,7 @@ class rls_bittanti1990_miso_proxy: public rls_system_identification_strategy<Tra
 		}
 		if (reset)
 		{
-			this->init();
+			this->reset();
 		}
 
 		// Estimate system parameters

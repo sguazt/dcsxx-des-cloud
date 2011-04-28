@@ -1321,6 +1321,8 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 			}
 			else if (!ok)
 			{
+				ptr_ident_strategy_->reset();
+
 				++ident_fail_count_;
 				::std::clog << "[Warning] Control not applied for Application '" << app.id() << "': failed to solve the identification problem." << ::std::endl;
 			}
