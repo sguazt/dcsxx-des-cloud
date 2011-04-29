@@ -1201,6 +1201,7 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 							adj_opt_u(u_offset_+tier_id) = new_share/ref_share - static_cast<real_type>(1);
 						}
 
+						//FIXME: performance measure hard-coded
 						real_type pred_measure = app.sla_cost_model().slo_value(response_time_performance_measure)
 						//real_type pred_measure = static_cast<real_type>(.5)*app.sla_cost_model().slo_value(response_time_performance_measure)//EXP
 												 + (ublas::prod(C, ublas::prod(A,x_)+ ublas::prod(B,opt_u))+ublas::prod(D,adj_opt_u))(0);
@@ -1234,7 +1235,7 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 									);
 
 								DCS_DEBUG_TRACE("APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share);
-::std::cerr << "APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << measures_.at(response_time_performance_measure)->estimate() << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << ::std::endl;//XXX
+::std::cerr << "APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (SLA: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << ::std::endl;//XXX
 								ptr_vm->wanted_resource_share(res_category, new_share);
 							}
 						}
@@ -1287,7 +1288,7 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 							}
 
 							DCS_DEBUG_TRACE("APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share);
-::std::cerr << "APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << measures_.at(response_time_performance_measure)->estimate() << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << ::std::endl;//XXX
+::std::cerr << "APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (SLA: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << ::std::endl;//XXX
 
 							ptr_vm->wanted_resource_share(res_category, new_share);
 						}
