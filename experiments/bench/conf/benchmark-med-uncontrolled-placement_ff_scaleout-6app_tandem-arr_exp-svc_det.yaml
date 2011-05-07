@@ -13,7 +13,7 @@ logging:
 
 random-number-generation:
     engine: mt19937
-    seed: 123456
+    seed: 8945
     seeder: lcg
 
 
@@ -23,15 +23,15 @@ simulation:
         relative-precision: 0.04
         type: independent-replications
         num-replications:
-            type: constant
-            value: 5
-#            type: banks2005
-#            min-value: 5
-#            max-value: 200
+#            type: constant
+#            value: 5
+            type: banks2005
+            min-value: 5
+            max-value: 200
         replication-size:
             type: fixed-num-observations
-#            num-observations: 1000000
-            num-observations: 1000
+            num-observations: 1000000
+#            num-observations: 1000
 
 
 data-center:
