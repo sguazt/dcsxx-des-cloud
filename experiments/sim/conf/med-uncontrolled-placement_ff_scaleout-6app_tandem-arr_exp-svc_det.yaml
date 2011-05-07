@@ -323,9 +323,17 @@ data-center:
                     penalty: -10
                     revenue: 10
                 performance-metrics:
+#[old]
+#                    response-time:
+#                        value: 1.935484
+#                        tolerance: 0.05
+#[/old]
                     response-time:
-                        value: 1.935484
+                        value: 2.278175
                         tolerance: 0.05
+                        statistic:
+                            type: quantile
+                            probability: 0.99
             tiers:
                 - tier: &app1webserver
                     name: Web Server
@@ -340,19 +348,30 @@ data-center:
                     shares:
                         cpu: 1.0
             perf-model:
-                type: open-multi-bcmp-qn
-                arrival-rates: [0.45]
-                visit-ratios:
-                    rows: 1
-                    cols: 3
-                    byrow: false
-                    data: [1, 1, 1]
-                service-times:
-                    rows: 1
-                    cols: 3
-                    byrow: true
-                    data: [0.5, 0.5, 0.5]
-                num-servers: [1, 1, 1]
+#[old]
+#                type: open-multi-bcmp-qn
+#                arrival-rates: [0.45]
+#                visit-ratios:
+#                    rows: 1
+#                    cols: 3
+#                    byrow: false
+#                    data: [1, 1, 1]
+#                service-times:
+#                    rows: 1
+#                    cols: 3
+#                    byrow: true
+#                    data: [0.5, 0.5, 0.5]
+#                num-servers: [1, 1, 1]
+#[/old]
+                type: fixed
+                performance-metrics:
+                    response-time:
+                        # Mean
+                        overall: 1.572581
+                        tiers: [0.572581, 0.5, 0.5]
+#                        # Median
+#                        overall: 1.5
+#                        tiers: [0.5, 0.5, 0.5]
             sim-model:
                 type: qn
                 nodes:
@@ -438,9 +457,17 @@ data-center:
                     penalty: -10
                     revenue: 10
                 performance-metrics:
+#[old]
+#                    response-time:
+#                        value: 1.935484
+#                        tolerance: 0.05
+#[/old]
                     response-time:
-                        value: 1.935484
+                        value: 2.278175
                         tolerance: 0.05
+                        statistic:
+                            type: quantile
+                            probability: 0.99
             tiers:
                 - tier: &app2webserver
                     name: Web Server
@@ -455,19 +482,30 @@ data-center:
                     shares:
                         cpu: 1.0
             perf-model:
-                type: open-multi-bcmp-qn
-                arrival-rates: [0.45]
-                visit-ratios:
-                    rows: 1
-                    cols: 3
-                    byrow: false
-                    data: [1, 1, 1]
-                service-times:
-                    rows: 1
-                    cols: 3
-                    byrow: true
-                    data: [0.5, 0.5, 0.5]
-                num-servers: [1, 1, 1]
+#[old]
+#                type: open-multi-bcmp-qn
+#                arrival-rates: [0.45]
+#                visit-ratios:
+#                    rows: 1
+#                    cols: 3
+#                    byrow: false
+#                    data: [1, 1, 1]
+#                service-times:
+#                    rows: 1
+#                    cols: 3
+#                    byrow: true
+#                    data: [0.5, 0.5, 0.5]
+#                num-servers: [1, 1, 1]
+#[/old]
+                type: fixed
+                performance-metrics:
+                    response-time:
+                        # Mean
+                        overall: 1.572581
+                        tiers: [0.572581, 0.5, 0.5]
+#                        # Median
+#                        overall: 1.5
+#                        tiers: [0.5, 0.5, 0.5]
             sim-model:
                 type: qn
                 nodes:
@@ -553,9 +591,17 @@ data-center:
                     penalty: -10
                     revenue: 10
                 performance-metrics:
+#[old]
+#                    response-time:
+#                        value: 3.108504
+#                        tolerance: 0.05
+#[/old]
                     response-time:
-                        value: 3.108504
+                        value: 4.900327
                         tolerance: 0.05
+                        statistic:
+                            type: quantile
+                            probability: 0.99
             tiers:
                 - tier: &app3webserver
                     name: Web Server
@@ -570,19 +616,30 @@ data-center:
                     shares:
                         cpu: 1.0
             perf-model:
-                type: open-multi-bcmp-qn
-                arrival-rates: [0.45]
-                visit-ratios:
-                    rows: 1
-                    cols: 3
-                    byrow: false
-                    data: [1, 1, 1]
-                service-times:
-                    rows: 1
-                    cols: 3
-                    byrow: true
-                    data: [0.5, 1.0, 0.5]
-                num-servers: [1, 1, 1]
+#[old]
+#                type: open-multi-bcmp-qn
+#                arrival-rates: [0.45]
+#                visit-ratios:
+#                    rows: 1
+#                    cols: 3
+#                    byrow: false
+#                    data: [1, 1, 1]
+#                service-times:
+#                    rows: 1
+#                    cols: 3
+#                    byrow: true
+#                    data: [0.5, 1.0, 0.5]
+#                num-servers: [1, 1, 1]
+#[old]
+                type: fixed
+                performance-metrics:
+                    response-time:
+                        # Mean
+                        overall: 2.409417
+                        tiers: [0.572615, 1.336802, 0.5]
+#                        # Median
+#                        overall: 2.0000006
+#                        tiers: [0.5, 1.000004, 0.5]
             sim-model:
                 type: qn
                 nodes:
@@ -668,9 +725,17 @@ data-center:
                     penalty: -10
                     revenue: 10
                 performance-metrics:
+#[old]
+#                    response-time:
+#                        value: 3.108504
+#                        tolerance: 0.05
+#[/old]
                     response-time:
-                        value: 3.108504
+                        value: 4.900327
                         tolerance: 0.05
+                        statistic:
+                            type: quantile
+                            probability: 0.99
             tiers:
                 - tier: &app4webserver
                     name: Web Server
@@ -685,19 +750,30 @@ data-center:
                     shares:
                         cpu: 1.0
             perf-model:
-                type: open-multi-bcmp-qn
-                arrival-rates: [0.45]
-                visit-ratios:
-                    rows: 1
-                    cols: 3
-                    byrow: false
-                    data: [1, 1, 1]
-                service-times:
-                    rows: 1
-                    cols: 3
-                    byrow: true
-                    data: [0.5, 1.0, 0.5]
-                num-servers: [1, 1, 1]
+#[old]
+#                type: open-multi-bcmp-qn
+#                arrival-rates: [0.45]
+#                visit-ratios:
+#                    rows: 1
+#                    cols: 3
+#                    byrow: false
+#                    data: [1, 1, 1]
+#                service-times:
+#                    rows: 1
+#                    cols: 3
+#                    byrow: true
+#                    data: [0.5, 1.0, 0.5]
+#                num-servers: [1, 1, 1]
+#[/old]
+                type: fixed
+                performance-metrics:
+                    response-time:
+                        # Mean
+                        overall: 2.409417
+                        tiers: [0.572615, 1.336802, 0.5]
+#                        # Median
+#                        overall: 2.0000006
+#                        tiers: [0.5, 1.000004, 0.5]
             sim-model:
                 type: qn
                 nodes:
@@ -783,9 +859,17 @@ data-center:
                     penalty: -10
                     revenue: 10
                 performance-metrics:
+#[old]
+#                    response-time:
+#                        value: 5.290296
+#                        tolerance: 0.05
+#[/old]
                     response-time:
-                        value: 5.290296
+                        value: 8.337823
                         tolerance: 0.05
+                        statistic:
+                            type: quantile
+                            probability: 0.99
             tiers:
                 - tier: &app5webserver
                     name: Web Server
@@ -800,19 +884,30 @@ data-center:
                     shares:
                         cpu: 1.0
             perf-model:
-                type: open-multi-bcmp-qn
-                arrival-rates: [0.45]
-                visit-ratios:
-                    rows: 1
-                    cols: 3
-                    byrow: false
-                    data: [1, 1, 1]
-                service-times:
-                    rows: 1
-                    cols: 3
-                    byrow: true
-                    data: [0.5, 0.9, 1.3]
-                num-servers: [1, 1, 1]
+#[old]
+#                type: open-multi-bcmp-qn
+#                arrival-rates: [0.45]
+#                visit-ratios:
+#                    rows: 1
+#                    cols: 3
+#                    byrow: false
+#                    data: [1, 1, 1]
+#                service-times:
+#                    rows: 1
+#                    cols: 3
+#                    byrow: true
+#                    data: [0.5, 0.9, 1.3]
+#                num-servers: [1, 1, 1]
+#[/old]
+                type: fixed
+                performance-metrics:
+                    response-time:
+                        # Mean
+                        overall: 3.615892
+                        tiers: [0.572540, 1.133650, 1.909702]
+#                        # Median
+#                        overall: 3.114412
+#                        tiers: [0.5, 0.900002, 1.699032]
             sim-model:
                 type: qn
                 nodes:
@@ -898,9 +993,17 @@ data-center:
                     penalty: -10
                     revenue: 10
                 performance-metrics:
+#[old]
+#                    response-time:
+#                        value: 5.290296
+#                        tolerance: 0.05
+#[/old]
                     response-time:
-                        value: 5.290296
+                        value: 8.337823
                         tolerance: 0.05
+                        statistic:
+                            type: quantile
+                            probability: 0.99
             tiers:
                 - tier: &app6webserver
                     name: Web Server
@@ -915,19 +1018,30 @@ data-center:
                     shares:
                         cpu: 1.0
             perf-model:
-                type: open-multi-bcmp-qn
-                arrival-rates: [0.45]
-                visit-ratios:
-                    rows: 1
-                    cols: 3
-                    byrow: false
-                    data: [1, 1, 1]
-                service-times:
-                    rows: 1
-                    cols: 3
-                    byrow: true
-                    data: [0.5, 0.9, 1.3]
-                num-servers: [1, 1, 1]
+#[old]
+#                type: open-multi-bcmp-qn
+#                arrival-rates: [0.45]
+#                visit-ratios:
+#                    rows: 1
+#                    cols: 3
+#                    byrow: false
+#                    data: [1, 1, 1]
+#                service-times:
+#                    rows: 1
+#                    cols: 3
+#                    byrow: true
+#                    data: [0.5, 0.9, 1.3]
+#                num-servers: [1, 1, 1]
+#[/old]
+                type: fixed
+                performance-metrics:
+                    response-time:
+                        # Mean
+                        overall: 3.615892
+                        tiers: [0.572540, 1.133650, 1.909702]
+#                        # Median
+#                        overall: 3.114412
+#                        tiers: [0.5, 0.900002, 1.699032]
             sim-model:
                 type: qn
                 nodes:
