@@ -25,6 +25,7 @@
 #include <dcs/eesim/config/probability_distribution.hpp>
 #include <dcs/eesim/config/rng.hpp>
 #include <dcs/eesim/config/simulation.hpp>
+#include <dcs/eesim/config/statistic.hpp>
 #include <dcs/math/constants.hpp>
 #include <dcs/string/algorithm/to_lower.hpp>
 #include <fstream>
@@ -225,6 +226,10 @@ statistic_category text_to_statistic_category(::std::string const& str)
 	{
 		return mean_statistic;
 	}
+	if (!istr.compare("quantile"))
+	{
+		return quantile_statistic;
+	}
 
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_statistic_category] Unknown simulation statistic category.");
 }
@@ -253,6 +258,10 @@ probability_distribution_category text_to_probability_distribution_category(::st
 	if (!istr.compare("map"))
 	{
 		return map_probability_distribution;
+	}
+	if (!istr.compare("mmpp"))
+	{
+		return mmpp_probability_distribution;
 	}
 	if (!istr.compare("pmpp"))
 	{
@@ -532,6 +541,21 @@ system_identification_category text_to_system_identification_category(::std::str
 }
 
 
+application_performance_model_category text_to_application_performance_model_category(::std::string const& str)
+{
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("open-multi-bcmp-qn"))
+	{
+		return open_multi_bcmp_qn_model;
+	}
+	if (!istr.compare("fixed"))
+	{
+		return fixed_application_performance_model;
+	}
+
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_application_performance_model_category Unknown application performance model category.");
+}
 }} // Namespace detail::<unnamed>
 
 
@@ -679,19 +703,47 @@ void operator>>(::YAML::Node const& node, rng_config<UIntT>& rng)
 
 
 template <typename RealT>
-void operator>>(::YAML::Node const& node, statistic_config<RealT>& stat)
+void operator>>(::YAML::Node const& node, statistic_config<RealT>& conf)
 {
-	// Read category
-	if (node.FindValue("type"))
+	typedef statistic_config<RealT> config_type;
+
+	::std::string label;
+
+	node["type"] >> label;
+	conf.category = detail::text_to_statistic_category(label);
+
+	switch (conf.category)
 	{
-		::std::string label;
-		node["type"] >> label;
-		stat.category = detail::text_to_statistic_category(label);
+		case mean_statistic:
+			{
+				typedef typename config_type::mean_statistic_config_type config_impl_type;
+
+				config_impl_type conf_impl;
+
+				conf.category_conf = conf_impl;
+			}
+			break;
+		case quantile_statistic:
+			{
+				typedef typename config_type::quantile_statistic_config_type config_impl_type;
+
+				config_impl_type conf_impl;
+
+				node["probability"] >> conf_impl.probability;
+
+				conf.category_conf = conf_impl;
+			}
+			break;
 	}
-	else
-	{
-		stat.category = mean_statistic;
-	}
+}
+
+
+template <typename RealT>
+void operator>>(::YAML::Node const& node, simulation_statistic_config<RealT>& stat)
+{
+	// Read statistic configuration
+	node >> stat.statistic;
+
 	// Read precision
 	if (node.FindValue("precision"))
 	{
@@ -936,44 +988,73 @@ void operator>>(::YAML::Node const& node, simulation_config<RealT,UIntT>& sim)
 
 
 template <typename RealT, typename UIntT>
-void operator>>(::YAML::Node const& node, application_performance_model_config<RealT,UIntT>& model)
+void operator>>(::YAML::Node const& node, application_performance_model_config<RealT,UIntT>& conf)
 {
-	application_performance_model_category type;
-	::std::string type_lbl;
-	node["type"] >> type_lbl;
-	if (!type_lbl.compare("open-multi-bcmp-qn"))
-	{
-		type = open_multi_bcmp_qn_model;
-	}
-	else
-	{
-		throw ::std::runtime_error("[dcs::eesim::config::>>] Unknown application performance model.");
-	}
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+	typedef application_performance_model_config<real_type,uint_type> config_type;
 
-	model.type = type;
+	::std::string label;
+	node["type"] >> label;
+	conf.category = detail::text_to_application_performance_model_category(label);
 
-	switch (type)
+	switch (conf.category)
 	{
 		case open_multi_bcmp_qn_model:
 			{
-				typename application_performance_model_config<RealT,UIntT>::open_multi_bcmp_qn_config conf;
-				node["arrival-rates"] >> conf.arrival_rates;
+				typedef typename config_type::open_multi_bcmp_qn_config_type config_impl_type;
+
+				config_impl_type conf_impl;
+
+				node["arrival-rates"] >> conf_impl.arrival_rates;
 				if (node.FindValue("visit-ratios"))
 				{
-					node["visit-ratios"] >> conf.visit_ratios;
+					node["visit-ratios"] >> conf_impl.visit_ratios;
 				}
 				else if (node.FindValue("routing-probabilities"))
 				{
-					node["routing-probabilities"] >> conf.routing_probabilities;
+					node["routing-probabilities"] >> conf_impl.routing_probabilities;
 				}
 				else
 				{
 					throw ::std::runtime_error("[dcs::eesim::config::>>] Missing both visit ratios and routing probabilities.");
 				}
-				node["service-times"] >> conf.service_times;
-				node["num-servers"] >> conf.num_servers;
+				node["service-times"] >> conf_impl.service_times;
+				node["num-servers"] >> conf_impl.num_servers;
 
-				model.type_conf = conf;
+				conf.category_conf = conf_impl;
+			}
+			break;
+		case fixed_application_performance_model:
+			{
+				typedef typename config_type::fixed_config_type config_impl_type;
+
+				config_impl_type conf_impl;
+
+				::YAML::Node const& subnode = node["performance-metrics"];
+				for(::YAML::Iterator it = subnode.begin(); it != subnode.end(); ++it)
+				{
+					::YAML::Node const& key_node = it.first();
+					::YAML::Node const& value_node = it.second();
+
+					metric_category category;
+					real_type overall_value;
+					::std::vector<real_type> tier_values;
+
+					key_node >> label;
+					category = detail::text_to_metric_category(label);
+
+					value_node["overall"] >> overall_value;
+					value_node["tiers"] >> tier_values;
+					
+					conf_impl.app_measures[category] = overall_value;
+					for (::std::size_t tier_id = 0; tier_id < tier_values.size(); ++tier_id)
+					{
+						conf_impl.tier_measures[tier_id][category] = tier_values[tier_id];
+					}
+				}
+
+				conf.category_conf = conf_impl;
 			}
 			break;
 	}
@@ -1070,6 +1151,18 @@ void operator>>(::YAML::Node const& node, probability_distribution_config<RealT>
 						}
 						break;
 				}
+
+				distr_conf.category_conf = distr_conf_impl;
+			}
+			break;
+		case mmpp_probability_distribution:
+			{
+				typedef typename distribution_config_type::mmpp_distribution_config_type distribution_config_impl_type;
+
+				distribution_config_impl_type distr_conf_impl;
+
+				node["Q"] >> distr_conf_impl.Q;
+				node["rates"] >> distr_conf_impl.rates;
 
 				distr_conf.category_conf = distr_conf_impl;
 			}
@@ -1617,6 +1710,7 @@ void operator>>(::YAML::Node const& node, sla_metric_config<RealT>& metric)
 	{
 		metric.tolerance = 0;
 	}
+	node["statistic"] >> metric.statistic;
 }
 
 

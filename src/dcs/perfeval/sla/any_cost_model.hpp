@@ -86,7 +86,7 @@ class any_cost_model
 	public: template <typename CheckerT>
 		void add_slo(metric_category_type category, value_type value, CheckerT const& checker)
 	{
-		return ptr_model_->add_slo(category, value, checker);
+		ptr_model_->add_slo(category, value, checker);
 	}
 
 

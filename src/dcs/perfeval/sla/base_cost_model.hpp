@@ -163,7 +163,9 @@ class base_cost_model
 	/// Alias for the type of real numbers.
 	public: typedef RealT real_type;
 //	public: typedef ::std::pair<metric_category_type,value_type> metric_type;
-	protected: typedef slo_model<metric_category_type,value_type,any_metric_checker<value_type> > slo_model_type; 
+	protected: typedef slo_model<metric_category_type,
+								 value_type,
+								 any_metric_checker<value_type> > slo_model_type; 
 	protected: typedef ::dcs::iterator::any_forward_iterator<metric_category_type> metric_category_iterator;
 	protected: typedef ::dcs::iterator::any_forward_iterator<value_type> metric_iterator;
 
@@ -172,9 +174,17 @@ class base_cost_model
 
 
 	public: template <typename CheckerT>
-		void add_slo(metric_category_type category, value_type value, CheckerT checker)
+		void add_slo(metric_category_type category,
+					 value_type value,
+					 CheckerT checker)
 	{
-		do_add_slo(slo_model_type(category, value, any_metric_checker<value_type>(checker)));
+		do_add_slo(
+				slo_model_type(
+					category,
+					value,
+					any_metric_checker<value_type>(checker)
+				)
+			);
 	}
 
 
@@ -185,7 +195,9 @@ class base_cost_model
 
 
 	public: template <typename CategoryFwdIterT, typename MeasureFwdIterT>
-		real_type score(CategoryFwdIterT category_first, CategoryFwdIterT category_last, MeasureFwdIterT measure_first) const
+		real_type score(CategoryFwdIterT category_first,
+						CategoryFwdIterT category_last,
+						MeasureFwdIterT measure_first) const
 	{
 		return do_score(
 				::dcs::iterator::make_any_forward_iterator(category_first),
@@ -196,12 +208,29 @@ class base_cost_model
 
 
 	public: template <typename CategoryFwdIterT, typename MeasureFwdIterT>
-		bool satisfied(CategoryFwdIterT category_first, CategoryFwdIterT category_last, MeasureFwdIterT measure_first) const
+		bool satisfied(CategoryFwdIterT category_first,
+					   CategoryFwdIterT category_last,
+					   MeasureFwdIterT measure_first) const
 	{
 		return do_satisfied(
 				::dcs::iterator::make_any_forward_iterator(category_first),
 				::dcs::iterator::make_any_forward_iterator(category_last),
 				::dcs::iterator::make_any_forward_iterator(measure_first)
+			);
+	}
+
+
+	public: bool slo_satisfied(metric_category_type category, value_type value) const
+	{
+		metric_category_type cats[1];
+		cats[0] = category;
+		value_type vals[1];
+		vals[0] = value;
+
+		return do_satisfied(
+				::dcs::iterator::make_any_forward_iterator(cats),
+				::dcs::iterator::make_any_forward_iterator(cats+1),
+				::dcs::iterator::make_any_forward_iterator(vals)
 			);
 	}
 

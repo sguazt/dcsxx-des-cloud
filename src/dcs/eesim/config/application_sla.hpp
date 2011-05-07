@@ -4,6 +4,7 @@
 
 #include <boost/variant.hpp>
 #include <dcs/eesim/config/metric_category.hpp>
+#include <dcs/eesim/config/statistic.hpp>
 #include <iostream>
 #include <map>
 #include <string>
@@ -30,9 +31,11 @@ template <typename RealT>
 struct sla_metric_config
 {
 	typedef RealT real_type;
+	typedef statistic_config<real_type> statistic_config_type;
 
 	real_type value;
 	real_type tolerance;
+	statistic_config_type statistic;
 };
 
 
@@ -79,7 +82,8 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 		}
 		os << it->first << ": {";
 		os << "value: " << it->second.value;
-		os << ",tolerance: " << it->second.tolerance;
+		os << ", tolerance: " << it->second.tolerance;
+		os << ", statistic: " << it->second.statistic;
 		os << "}";
 	}
 	os << "}";

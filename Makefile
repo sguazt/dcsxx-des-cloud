@@ -59,7 +59,7 @@
 ## - srcdirs: list of source paths (relative to $(srcdir)).
 ## - targets: targets executable's filename.
 
-export targets := eesim offline_sys_ident
+export targets := eesim offline_sys_ident offline_bench
 export docdir := ./docs
 export srcdir := ./src
 export builddir := ./build

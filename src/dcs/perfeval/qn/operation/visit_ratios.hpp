@@ -58,7 +58,7 @@ namespace dcs { namespace perfeval { namespace qn {
 /**
  * \brief Compute the single-class visit ratios for an open queueing network.
  *
- * Visit ratios are computed according to the <em>Visit Ratios Equatios</em>
+ * Visit ratios are computed according to the <em>Visit Ratios Equations</em>
  * [1,2] for which:
  * \f{align}{
  *   V_0 &= 1 \\
@@ -132,7 +132,8 @@ typename ::boost::numeric::ublas::vector_temporary_traits<VectorExprT>::type vis
 		&&
 		::boost::numeric::ublasx::all(
 			::boost::numeric::ublasx::sum<2>(P),
-			::std::bind2nd(::std::less_equal<value_type>(), value_type(1+1.0e-5))
+//			::std::bind2nd(::std::less_equal<value_type>(), value_type(1+1.0e-5))
+			::std::bind2nd(::std::less_equal<value_type>(), value_type(1))
 		),
 		throw ::std::invalid_argument("[dcs::perfeval::queue::qnet::visit_ratios] Probability transitions matrix is not a stochastic matrix for closed networks.")
 	);
@@ -228,7 +229,8 @@ typename ::boost::numeric::ublas::vector_temporary_traits<VectorExprT>::type vis
 		&&
 		::boost::numeric::ublasx::all(
 			::boost::numeric::ublasx::sum<2>(P),
-			::std::bind2nd(::std::less_equal<value_type>(), value_type(1+1e-5))
+//			::std::bind2nd(::std::less_equal<value_type>(), value_type(1+1e-5))
+			::std::bind2nd(::std::less_equal<value_type>(), value_type(1))
 		),
 		throw ::std::invalid_argument("[dcs::perfeval::queue::qnet::visit_ratios] Probability transitions matrix is not a stochastic matrix for closed networks.")
 	);
@@ -236,20 +238,22 @@ typename ::boost::numeric::ublas::vector_temporary_traits<VectorExprT>::type vis
 	matrix_type A(n, n+1, 0);
 	vector_type b(n+1, 0);
 
-	// A = [ P - I_n; 0 ... 0 1 ] 
+	// A = [ P - I_n; 1 0 ... 0 ] (this will impose v_1=1)
 	::boost::numeric::ublas::subrange(A, 0, n, 0, n) = P - ::boost::numeric::ublas::identity_matrix<value_type>(n);
 	A(0, n) = value_type(1);
 
-	// b = [ 0 ... 0 1 ]
+	// b = [ 0 ... 0 1 ] (row vector)
 	b(n) = value_type(1);
 
 	vector_type v(n);
 
-	// Find v = A/b = (A'\b')'
+	// Find v s.t. v A = b
+	// Since the system is underdetermined, v is the least-squares solution,
+	// that is the solution that minimizes \|A'v'-b'\!
 	A = ::boost::numeric::ublas::trans(A);
-	//b = ::boost::numeric::ublas::trans(b);
+	//b = ::boost::numeric::ublas::trans(b); // useless
 	v = ::boost::numeric::ublasx::llsq(A, b);
-	//v = ::boost::numeric::ublas::trans(v);
+	//v = ::boost::numeric::ublas::trans(v); // useless
 
 	return v;
 }

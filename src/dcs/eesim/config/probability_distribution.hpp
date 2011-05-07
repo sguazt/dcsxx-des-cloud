@@ -18,6 +18,7 @@ enum probability_distribution_category
 	exponential_probability_distribution,
 	gamma_probability_distribution,
 	map_probability_distribution,
+	mmpp_probability_distribution,
 	normal_probability_distribution,
 	pmpp_probability_distribution
 };
@@ -92,6 +93,16 @@ struct map_probability_distribution_config
 
 
 template <typename RealT>
+struct mmpp_probability_distribution_config
+{
+	typedef RealT real_type;
+
+	numeric_matrix<real_type> Q;
+	::std::vector<real_type> rates;
+};
+
+
+template <typename RealT>
 struct normal_probability_distribution_config
 {
 	typedef RealT real_type;
@@ -121,6 +132,7 @@ struct probability_distribution_config
 	typedef exponential_probability_distribution_config<RealT> exponential_distribution_config_type;
 	typedef gamma_probability_distribution_config<RealT> gamma_distribution_config_type;
 	typedef map_probability_distribution_config<RealT> map_distribution_config_type;
+	typedef mmpp_probability_distribution_config<RealT> mmpp_distribution_config_type;
 	typedef normal_probability_distribution_config<RealT> normal_distribution_config_type;
 	typedef pmpp_probability_distribution_config<RealT> pmpp_distribution_config_type;
 
@@ -129,6 +141,7 @@ struct probability_distribution_config
 					 exponential_distribution_config_type,
 					 gamma_distribution_config_type,
 					 map_distribution_config_type,
+					 mmpp_distribution_config_type,
 					 normal_distribution_config_type,
 					 pmpp_distribution_config_type> category_conf;
 };
@@ -207,6 +220,21 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 
 
 template <typename CharT, typename CharTraitsT, typename RealT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, mmpp_probability_distribution_config<RealT> const& config)
+{
+	os << "<(mmpp-distribution)"
+	   << " Q: " << config.Q
+	   << ", rates: ";
+	::std::copy(config.rates.begin(),
+				config.rates.end(),
+				::std::ostream_iterator<RealT>(os, ", "));
+	os << ">";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT, typename RealT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, normal_probability_distribution_config<RealT> const& config)
 {
 	os << "<(normal-distribution)"
@@ -221,7 +249,8 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 template <typename CharT, typename CharTraitsT, typename RealT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, pmpp_probability_distribution_config<RealT> const& config)
 {
-	os << "<(pmpp-distribution)";
+	os << "<(pmpp-distribution)"
+	   << " rates: ";
 	::std::copy(config.rates.begin(),
 				config.rates.end(),
 				::std::ostream_iterator<RealT>(os, ", "));

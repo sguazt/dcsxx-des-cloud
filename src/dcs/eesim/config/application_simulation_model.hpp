@@ -6,6 +6,7 @@
 #include <dcs/eesim/config/metric_category.hpp>
 #include <dcs/eesim/config/numeric_multiarray.hpp>
 #include <dcs/eesim/config/probability_distribution.hpp>
+#include <dcs/eesim/config/statistic.hpp>
 #include <dcs/macro.hpp>
 #include <iostream>
 #include <map>
@@ -204,18 +205,13 @@ struct qn_model_config
 };
 
 
-enum statistic_category
-{
-	mean_statistic
-};
-
-
 template <typename RealT>
-struct statistic_config
+struct simulation_statistic_config
 {
 	typedef RealT real_type;
+	typedef statistic_config<real_type> statistic_config_type;
 
-	statistic_category category;
+	statistic_config_type statistic;
 	real_type precision;
 	real_type confidence_level;
 };
@@ -226,7 +222,7 @@ struct application_simulation_model_config
 {
 	typedef RealT real_type;
 	typedef UIntT uint_type;
-	typedef statistic_config<real_type> statistic_config_type;
+	typedef simulation_statistic_config<real_type> statistic_config_type;
 	typedef ::std::map<metric_category,statistic_config_type> statistic_container;
 	typedef qn_model_config<real_type,uint_type> qn_model_config_type;
 
@@ -479,10 +475,10 @@ template <typename CharT, typename CharTraitsT>
 
 
 template <typename CharT, typename CharTraitsT, typename RealT>
-::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, statistic_config<RealT> const& stat)
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, simulation_statistic_config<RealT> const& stat)
 {
-	os << "<(statistic)"
-	   << " category: " << stat.category
+	os << "<(simulation-statistic)"
+	   << " statistic: " << stat.statistic
 	   << ", precision: " << stat.precision
 	   << ", confidence-level: " << stat.confidence_level
 	   << ">";

@@ -442,7 +442,7 @@ struct sysid_state
 	typedef typename traits_type::uint_type uint_type;
 	typedef sysid_base_request_info<traits_type> request_info_type;
 	typedef ::dcs::shared_ptr<request_info_type> request_info_pointer;
-	typedef std::map<uint_type,request_info_pointer> request_info_map;
+	typedef ::std::map<uint_type,request_info_pointer> request_info_map;
 
 	uint_type num_arrs;
 	uint_type num_deps;

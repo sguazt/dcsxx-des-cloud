@@ -4,9 +4,11 @@
 
 #include <algorithm>
 #include <boost/variant.hpp>
+#include <dcs/eesim/config/metric_category.hpp>
 #include <dcs/eesim/config/numeric_matrix.hpp>
 #include <iostream>
 #include <iterator>
+#include <map>
 #include <vector>
 
 
@@ -14,42 +16,80 @@ namespace dcs { namespace eesim { namespace config {
 
 enum application_performance_model_category
 {
-	open_multi_bcmp_qn_model
+	open_multi_bcmp_qn_model,
+	fixed_application_performance_model
 };
 
+
+template <typename RealT, typename UIntT>
+struct fixed_application_performance_model_config
+{
+	typedef RealT real_type;
+	typedef RealT uint_type;
+	typedef ::std::map<metric_category,real_type> measure_map;
+	typedef ::std::map<uint_type,measure_map> tier_measure_map;
+
+	measure_map app_measures;
+	tier_measure_map tier_measures;
+};
+
+
+template <typename RealT, typename UIntT>
+struct open_multi_bcmp_qn_application_performance_model_config
+{
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+
+	::std::vector<real_type> arrival_rates;
+	numeric_matrix<real_type> visit_ratios;
+	numeric_matrix<real_type> routing_probabilities;
+	numeric_matrix<real_type> service_times;
+	::std::vector<uint_type> num_servers;
+};
 
 template <typename RealT, typename UIntT>
 struct application_performance_model_config
 {
 	typedef RealT real_type;
 	typedef UIntT uint_type;
+	typedef fixed_application_performance_model_config<real_type,uint_type> fixed_config_type;
+	typedef open_multi_bcmp_qn_application_performance_model_config<real_type,uint_type> open_multi_bcmp_qn_config_type;
 
-	struct open_multi_bcmp_qn_config
-	{
-		::std::vector<real_type> arrival_rates;
-		numeric_matrix<real_type> visit_ratios;
-		numeric_matrix<real_type> routing_probabilities;
-		numeric_matrix<real_type> service_times;
-		::std::vector<uint_type> num_servers;
-	};
-
-	application_performance_model_category type;
-//	union
-//	{
-//		open_multi_bcmp_qn_config open_multi_bcmp_qn_conf;
-//	};
-	::boost::variant<open_multi_bcmp_qn_config> type_conf;
+	application_performance_model_category category;
+	::boost::variant<fixed_config_type,
+					 open_multi_bcmp_qn_config_type> category_conf;
 };
 
 
-template <typename CharT, typename CharTraitsT>
-::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, application_performance_model_category category)
+template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, fixed_application_performance_model_config<RealT,UIntT> const& conf)
 {
-	switch (category)
+	os << "fixed:";
+//TODO
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, open_multi_bcmp_qn_application_performance_model_config<RealT,UIntT> const& conf)
+{
+	os << "open-multi-bcmp-qn:"
+	   << ", arrival-rates: [";
+	::std::copy(conf.arrival_rates.begin(),
+				conf.arrival_rates.end(),
+				::std::ostream_iterator<RealT>(os, " "));
+	os << "]";
+
+	if (!conf.visit_ratios.empty())
 	{
-		case open_multi_bcmp_qn_model:
-			os << "open-multi-bcmp-qn";
+		os << ", visit-ratios: " << conf.visit_ratios;
 	}
+	else if (!conf.routing_probabilities.empty())
+	{
+		os << ", routing-probabilities: " << conf.routing_probabilities;
+	}
+	os << ", service-times: " << conf.service_times;
 
 	return os;
 }
@@ -61,34 +101,8 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 	typedef application_performance_model_config<RealT,UIntT> model_config_type;
 
 	os << "<(application_performance_model)"
-	   << " type: " << model.type;
-
-	switch (model.type)
-	{
-		case open_multi_bcmp_qn_model:
-			{
-				typedef typename model_config_type::open_multi_bcmp_qn_config type_conf_type;
-				type_conf_type const& type_conf = ::boost::get<type_conf_type>(model.type_conf);
-				os << ", arrival-rates: [";
-				::std::copy(type_conf.arrival_rates.begin(),
-							type_conf.arrival_rates.end(),
-							::std::ostream_iterator<RealT>(os, " "));
-				os << "]";
-
-				if (!type_conf.visit_ratios.empty())
-				{
-					os << ", visit-ratios: " << type_conf.visit_ratios;
-				}
-				else if (!type_conf.routing_probabilities.empty())
-				{
-					os << ", routing-probabilities: " << type_conf.routing_probabilities;
-				}
-				os << ", service-times: " << type_conf.service_times;
-			}
-			break;
-	}
-
-	os << ">";
+	   << " " << model.category_conf
+	   << ">";
  
 	return os;
 }
