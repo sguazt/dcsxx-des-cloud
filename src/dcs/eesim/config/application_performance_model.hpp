@@ -65,10 +65,35 @@ struct application_performance_model_config
 template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, fixed_application_performance_model_config<RealT,UIntT> const& conf)
 {
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(conf);
+	typedef fixed_application_performance_model_config<RealT,UIntT> config_type;
+	typedef typename config_type::measure_map::const_iterator measure_iterator;
+	typedef typename config_type::tier_measure_map::const_iterator tier_measure_iterator;
 
 	os << "fixed:";
-//TODO
+
+	measure_iterator meas_end_it;
+
+	os << " overall: {";
+	meas_end_it = conf.app_measures.end();
+	for (measure_iterator it = conf.app_measures.begin(); it != meas_end_it; ++it)
+	{
+		os << it->first << ": " << it->second << ",";
+	}
+	os << "}";
+
+	os << ", tiers: {";
+	tier_measure_iterator tier_end_it(conf.tier_measures.end());
+	for (tier_measure_iterator tier_it = conf.tier_measures.begin(); tier_it != tier_end_it; ++tier_it)
+	{
+		os << tier_it->first << " => {";
+		meas_end_it = tier_it->second.end();
+		for (measure_iterator meas_it = tier_it->second.begin(); meas_it != meas_end_it; ++meas_it)
+		{
+			os << meas_it->first << ": " << meas_it->second << ",";
+		}
+		os << "},";
+	}
+	os << "}";
 
 	return os;
 }

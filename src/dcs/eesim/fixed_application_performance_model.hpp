@@ -2,9 +2,11 @@
 #define DCS_EESIM_FIXED_APPLICATION_PERFORMANCE_MODEL_HPP
 
 
+#include <dcs/assert.hpp>
 #include <dcs/eesim/base_application_performance_model.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
 #include <map>
+#include <stdexcept>
 
 
 namespace dcs { namespace eesim {
@@ -34,12 +36,29 @@ class fixed_application_performance_model: public base_application_performance_m
 
 	private: real_type do_application_measure(performance_measure_category category) const
 	{
+		// pre: category must already be present
+		DCS_ASSERT(
+				app_measure_map_.count(category),
+				throw ::std::invalid_argument("[dcs::eesim::fixed_application_performance_model::do_application_measure] Category not found.")
+			);
+
 		return app_measure_map_.at(category);
 	}
 
 
 	private: real_type do_tier_measure(uint_type tier_id, performance_measure_category category) const
 	{
+		// pre: tier-id must already be present
+		DCS_ASSERT(
+				tier_measure_map_.count(tier_id),
+				throw ::std::invalid_argument("[dcs::eesim::fixed_application_performance_model::do_tier_measure] Tier not found.")
+			);
+		// pre: category must already be present
+		DCS_ASSERT(
+				tier_measure_map_.at(tier_id).count(category),
+				throw ::std::invalid_argument("[dcs::eesim::fixed_application_performance_model::do_tier_measure] Category not found.")
+			);
+
 		return tier_measure_map_.at(tier_id).at(category);
 	}
 
