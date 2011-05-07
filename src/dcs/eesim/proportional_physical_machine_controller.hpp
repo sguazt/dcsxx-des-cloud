@@ -130,7 +130,7 @@ class proportional_physical_machine_controller: public base_physical_machine_con
 						//        and respects the utilization threshold.
 						DCS_DEBUG_ASSERT( share >= real_type(0) && share <= threshold && share <= real_type(1) );
 
-::std::cerr << "APP: " << ptr_vm->guest_system().application().id() << ", MACH: " << this->machine().id() << ", VM: " << ptr_vm->id() << ", WantedShare: " << share_it->second << ", GotShare: " << share << ::std::endl;//XXX
+//::std::cerr << "APP: " << ptr_vm->guest_system().application().id() << ", MACH: " << this->machine().id() << ", VM: " << ptr_vm->id() << ", WantedShare: " << share_it->second << ", GotShare: " << share << ::std::endl;//XXX
 						ptr_vm->resource_share(category, share);
 
 						DCS_DEBUG_TRACE("APP: " << ptr_vm->guest_system().application().id() << ", MACH: " << this->machine().id() << " - Assigned new share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << category << " - Threshold: " << threshold << " - Share Sum: " << share_sum << " ==> Wanted: " << share_it->second << " - Got: " << share);//XXX
