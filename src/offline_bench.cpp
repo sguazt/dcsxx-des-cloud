@@ -1074,6 +1074,12 @@ int main(int argc, char* argv[])
 
 	DCS_DEBUG_TRACE("Configuration: " << conf); //XXX
 
+	// Print configuration (for ease later info retrieval)
+	::std::cout << "CONFIGURATION:" << ::std::endl
+				<< conf << ::std::endl
+				<< "--------------------------------------------------------------------------------" << ::std::endl
+				<< ::std::endl;
+
 	// Build the registry
 
 	registry_type& reg(registry_type::instance());
@@ -1102,7 +1108,10 @@ int main(int argc, char* argv[])
 
 	bench.run(conf);
 
+	// Report statistics
+	std::cout << "STATISTICS:" << std::endl;
 	bench.report_stats(std::cout);
+	std::cout << "--------------------------------------------------------------------------------" << std::endl;
 
 //	app_iterator app_end_it = conf.data_center().applications().end();
 //	for (app_iterator app_it = conf.data_center().applications().begin(); app_it != app_end_it; ++app_it)

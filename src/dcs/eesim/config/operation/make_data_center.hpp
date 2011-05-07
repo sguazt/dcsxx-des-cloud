@@ -630,9 +630,11 @@ performance_measure_category make_performance_measure_category(metric_category c
 			return response_time_performance_measure;
 		case throughput_metric:
 			return throughput_performance_measure;
+		default:
+			break;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::make_performance_measure_category] Unknown performance measure category.");
+	throw ::std::runtime_error("[dcs::eesim::config::detail::make_performance_measure_category] Performance measure category not handled.");
 }
 
 

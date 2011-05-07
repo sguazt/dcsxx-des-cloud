@@ -6,6 +6,7 @@
 #include <boost/variant.hpp>
 #include <dcs/eesim/config/metric_category.hpp>
 #include <dcs/eesim/config/numeric_matrix.hpp>
+#include <dcs/macro.hpp>
 #include <iostream>
 #include <iterator>
 #include <map>
@@ -64,6 +65,8 @@ struct application_performance_model_config
 template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, fixed_application_performance_model_config<RealT,UIntT> const& conf)
 {
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(conf);
+
 	os << "fixed:";
 //TODO
 
