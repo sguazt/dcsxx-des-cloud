@@ -315,7 +315,7 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<
 						output_statistic_pointer ptr_stat(*stat_it);
 
 						os << indent << indent << indent << indent
-						   << "Mean estimator: " << *ptr_stat << ::std::endl;//FIXME: statistic type is hard-coded
+						   << ptr_stat->name() << ": " << *ptr_stat << ::std::endl;//FIXME: statistic type is hard-coded
 					}
 				}
 			}
@@ -355,7 +355,7 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<
 							output_statistic_pointer ptr_tier_stat(*tier_stat_it);
 
 							os << indent << indent << indent << indent
-							   << "Mean estimator: " << *ptr_tier_stat << ::std::endl;//FIXME: statistic type is hard-coded
+							   << ptr_tier_stat->name() << ": " << *ptr_tier_stat << ::std::endl;//FIXME: statistic type is hard-coded
 						}
 					}
 				}
