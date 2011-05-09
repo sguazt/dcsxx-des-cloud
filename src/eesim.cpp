@@ -14,6 +14,7 @@
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
 #include <dcs/eesim/registry.hpp>
+#include <dcs/eesim/virtual_machine.hpp>
 #include <dcs/eesim/traits.hpp>
 #include <dcs/eesim/logging/base_logger.hpp>
 #include <dcs/functional/bind.hpp>
@@ -217,37 +218,105 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<
 
 	::std::string indent("  ");
 
-	// VM Placement
+//	// VM Placement
+//	{
+//		typedef typename data_center_type::physical_machine_identifier_type pm_identifier_type;
+//		typedef typename data_center_type::virtual_machine_identifier_type vm_identifier_type;
+//		typedef typename data_center_type::virtual_machines_placement_type vm_placement_type;
+//		typedef typename vm_placement_type::const_iterator vm_placement_iterator;
+//		typedef typename vm_placement_type::share_const_iterator vm_share_iterator;
+//
+//		os << ::std::endl << "-- Virtual Machine Placement --" << ::std::endl;
+//
+//		vm_placement_type const& vm_placement = dc.current_virtual_machines_placement();
+//		vm_placement_iterator place_end_it = vm_placement.end();
+//		for (vm_placement_iterator place_it = vm_placement.begin(); place_it != place_end_it; ++place_it)
+//		{
+//			vm_identifier_type vm_id(vm_placement.vm_id(place_it));
+//			vm_identifier_type pm_id(vm_placement.pm_id(place_it));
+//
+//			os << indent
+//			   << "VM: " << vm_id << " ('" << dc.virtual_machine_ptr(vm_id)->name() << "')"
+//			   << " --> "
+//			   << "PM: " << pm_id << " ('" << dc.physical_machine_ptr(pm_id)->name() << "')"
+//			   << ::std::endl;
+//
+//			vm_share_iterator share_end_it = vm_placement.shares_end(place_it);
+//			for (vm_share_iterator share_it = vm_placement.shares_begin(place_it); share_it != share_end_it; ++share_it)
+//			{
+//				::dcs::eesim::physical_resource_category category(vm_placement.resource_category(share_it));
+//				real_type share(vm_placement.resource_share(share_it));
+//
+//				os << indent << indent
+//				   << "Resource: " << category << ", Share: " << share << ::std::endl;
+//			}
+//		}
+//	}
+
 	{
-		typedef typename data_center_type::physical_machine_identifier_type pm_identifier_type;
-		typedef typename data_center_type::virtual_machine_identifier_type vm_identifier_type;
-		typedef typename data_center_type::virtual_machines_placement_type vm_placement_type;
-		typedef typename vm_placement_type::const_iterator vm_placement_iterator;
-		typedef typename vm_placement_type::share_const_iterator vm_share_iterator;
+		typedef typename data_center_type::virtual_machine_type virtual_machine_type;
+		typedef typename data_center_type::virtual_machine_pointer virtual_machine_pointer;
+		typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
+		typedef typename virtual_machine_container::const_iterator virtual_machine_iterator;
+		typedef typename virtual_machine_type::statistic_pointer statistic_pointer;
+		typedef ::std::vector<statistic_pointer> vm_statistic_container;
+		typedef typename vm_statistic_container::const_iterator vm_statistic_iterator;
+		typedef ::std::map< ::dcs::eesim::physical_resource_category, vm_statistic_container> vm_resource_statistic_map;
+		typedef typename vm_resource_statistic_map::const_iterator vm_resource_statistic_iterator;
 
-		os << ::std::endl << "-- Last Virtual Machines Placement --" << ::std::endl;
+		os << ::std::endl << "-- Virtual Machines --" << ::std::endl;
 
-		vm_placement_type const& vm_placement = dc.current_virtual_machines_placement();
-		vm_placement_iterator place_end_it = vm_placement.end();
-		for (vm_placement_iterator place_it = vm_placement.begin(); place_it != place_end_it; ++place_it)
+		virtual_machine_container vms = dc.virtual_machines();
+		virtual_machine_iterator vm_end_it = vms.end();
+		for (virtual_machine_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
 		{
-			vm_identifier_type vm_id(vm_placement.vm_id(place_it));
-			vm_identifier_type pm_id(vm_placement.pm_id(place_it));
+			virtual_machine_pointer ptr_vm = *vm_it;
+			vm_resource_statistic_map vm_res_stats;
+			vm_resource_statistic_iterator res_stat_end_it;
 
 			os << indent
-			   << "VM: " << vm_id << " ('" << dc.virtual_machine_ptr(vm_id)->name() << "')"
-			   << " --> "
-			   << "PM: " << pm_id << " ('" << dc.physical_machine_ptr(pm_id)->name() << "')"
-			   << ::std::endl;
+			   << "Virtual Machine: '" << ptr_vm->name() << "' (ID: " << ptr_vm->id() << ")" << ::std::endl;
 
-			vm_share_iterator share_end_it = vm_placement.shares_end(place_it);
-			for (vm_share_iterator share_it = vm_placement.shares_begin(place_it); share_it != share_end_it; ++share_it)
+			os << indent << indent
+			   << "Wanted Resource Shares: " << ::std::endl;
+
+			vm_res_stats = ptr_vm->wanted_resource_share_statistics();
+			res_stat_end_it = vm_res_stats.end();
+			for (vm_resource_statistic_iterator res_stat_it = vm_res_stats.begin(); res_stat_it != res_stat_end_it; ++res_stat_it)
 			{
-				::dcs::eesim::physical_resource_category category(vm_placement.resource_category(share_it));
-				real_type share(vm_placement.resource_share(share_it));
+				os << indent << indent << indent
+				   << "Resource: " << res_stat_it->first << ::std::endl;
 
-				os << indent << indent
-				   << "Resource: " << category << ", Share: " << share << ::std::endl;
+				vm_statistic_container vm_stats(res_stat_it->second);
+				vm_statistic_iterator stat_end_it(vm_stats.end());
+				for (vm_statistic_iterator stat_it = vm_stats.begin(); stat_it != stat_end_it; ++stat_it)
+				{
+					statistic_pointer ptr_stat(*stat_it);
+
+					os << indent << indent << indent << indent
+					   << ptr_stat->name() << ": " << *ptr_stat << ::std::endl;
+				}
+			}
+
+			os << indent << indent
+			   << "Assigned Resource Shares: " << ::std::endl;
+
+			vm_res_stats = ptr_vm->resource_share_statistics();
+			res_stat_end_it = vm_res_stats.end();
+			for (vm_resource_statistic_iterator res_stat_it = vm_res_stats.begin(); res_stat_it != res_stat_end_it; ++res_stat_it)
+			{
+				os << indent << indent << indent
+				   << "Resource: " << res_stat_it->first << ::std::endl;
+
+				vm_statistic_container vm_stats(res_stat_it->second);
+				vm_statistic_iterator stat_end_it(vm_stats.end());
+				for (vm_statistic_iterator stat_it = vm_stats.begin(); stat_it != stat_end_it; ++stat_it)
+				{
+					statistic_pointer ptr_stat(*stat_it);
+
+					os << indent << indent << indent << indent
+					   << ptr_stat->name() << ": " << *ptr_stat << ::std::endl;
+				}
 			}
 		}
 	}
@@ -278,10 +347,9 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<
 			application_pointer ptr_app = *app_it;
 
 			os << indent
-			   << "Application: '" << ptr_app->name() << "'" << ::std::endl;
+			   << "Application: '" << ptr_app->name() << "' (ID: " << ptr_app->id() << ")" << ::std::endl;
 			os << indent << indent
 			   << "Overall: " << ::std::endl;
-
 
 			os << indent << indent << indent
 			   << "# Arrivals: " << ptr_app->simulation_model().num_arrivals() << ::std::endl;
@@ -379,7 +447,7 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<
 			physical_machine_pointer ptr_mach = *mach_it;
 
 			os << indent
-			   << "Physical Machine: '" << ptr_mach->name() << "'" << ::std::endl;
+			   << "Physical Machine: '" << ptr_mach->name() << "' (ID: " << ptr_mach->id() << ")" << ::std::endl;
 			os << indent << indent
 			   << "Uptime: " << ptr_mach->simulation_model().uptime() << ::std::endl;
 			os << indent << indent

@@ -65,8 +65,8 @@ class data_center
 	private: typedef ::std::vector<application_controller_pointer> application_controller_container;
 	private: typedef ::std::vector<physical_machine_pointer> physical_machine_container;
 	private: typedef ::std::vector<physical_machine_controller_pointer> physical_machine_controller_container;
-	private: typedef virtual_machine<traits_type> virtual_machine_type;
-	private: typedef ::dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
+	public: typedef virtual_machine<traits_type> virtual_machine_type;
+	public: typedef ::dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
 	private: typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
 	private: typedef registry<traits_type> registry_type;
 	private: typedef typename traits_type::uint_type uint_type;

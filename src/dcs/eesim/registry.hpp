@@ -85,6 +85,18 @@ class registry: public ::boost::serialization::singleton< registry<TraitsT> >
 	}
 
 
+	public: des_engine_type const& des_engine() const
+	{
+		return *ptr_des_eng_;
+	}
+
+
+	public: des_engine_type& des_engine()
+	{
+		return *ptr_des_eng_;
+	}
+
+
 	public: void uniform_random_generator(uniform_random_generator_pointer const& ptr_generator)
 	{
 		ptr_rng_ = ptr_generator;

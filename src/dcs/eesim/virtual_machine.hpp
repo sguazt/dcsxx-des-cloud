@@ -29,6 +29,11 @@
 #include <algorithm>
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
+#include <dcs/des/base_analyzable_statistic.hpp>
+#include <dcs/des/max_estimator.hpp>
+#include <dcs/des/mean_estimator.hpp>
+#include <dcs/des/min_estimator.hpp>
+#include <dcs/des/quantile_estimator.hpp>
 #include <dcs/math/stats/function/rand.hpp>
 #include <dcs/eesim/application_tier.hpp>
 #include <dcs/eesim/fwd.hpp>
@@ -36,6 +41,7 @@
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/physical_resource_view.hpp>
 #include <dcs/eesim/power_status.hpp>
+#include <dcs/eesim/registry.hpp>
 #include <dcs/eesim/utility.hpp>
 #include <dcs/eesim/virtual_machine_monitor.hpp>
 #include <dcs/memory.hpp>
@@ -65,6 +71,7 @@ class virtual_machine
 {
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::real_type real_type;
+	public: typedef typename traits_type::uint_type uint_type;
 	public: typedef typename traits_type::virtual_machine_identifier_type identifier_type;
 	private: typedef ::std::map<physical_resource_category,real_type> resource_share_impl_container;
 	private: typedef ::std::pair<physical_resource_category, real_type> resource_share_type;
@@ -79,6 +86,10 @@ class virtual_machine
 	public: typedef ::std::vector<physical_resource_view_type> resource_container;
 	public: typedef virtual_machine_monitor<traits_type> virtual_machine_monitor_type;
 	public: typedef virtual_machine_monitor_type* virtual_machine_monitor_pointer;
+	private: typedef ::dcs::des::base_analyzable_statistic<real_type,uint_type> statistic_type;
+	public: typedef ::dcs::shared_ptr<statistic_type> statistic_pointer;
+	public: typedef ::std::vector<statistic_pointer> statistic_container;
+	private: typedef ::std::map<physical_resource_category,statistic_container> resource_share_stat_impl_container;
 
 
 	public: explicit virtual_machine(std::string const& name="Unnamed VM")
@@ -228,6 +239,8 @@ class virtual_machine
 	public: void wanted_resource_share(physical_resource_category category, real_type fraction)
 	{
 		wanted_res_shares_[category] = fraction;
+
+		update_wanted_share_stats(category, fraction);
 	}
 
 
@@ -235,6 +248,8 @@ class virtual_machine
 		void wanted_resource_shares(ForwardIteratorT first, ForwardIteratorT last)
 	{
 		wanted_res_shares_ = resource_share_impl_container(first, last);
+
+		update_wanted_share_stats(first, last);
 	}
 
 
@@ -260,59 +275,16 @@ class virtual_machine
 	}
 
 
-//XXX: moved to dcs::eesim::utility
-//	public: resource_share_container wanted_resource_shares(physical_machine_type const& mach) const
-//	{
-////		// precondition: tier pointer must be a valid pointer
-////		DCS_DEBUG_ASSERT( ptr_tier_ );
-//
-////		resource_share_container wanted_shares = ptr_tier_->resource_shares();
-//		resource_share_container wanted_shares(wanted_res_shares_.begin(), wanted_res_shares_.end());
-//		typename resource_share_container::iterator end_it = wanted_shares.end();
-//		for (typename resource_share_container::iterator it = wanted_shares.begin();
-//			 it != end_it;
-//			 ++it)
-//		{
-//			physical_resource_category category(it->first);
-//			real_type ref_capacity(ptr_tier_->application().reference_resource(category).capacity());
-//			real_type ref_threshold(ptr_tier_->application().reference_resource(category).utilization_threshold());
-//			real_type actual_capacity = mach.resource(category)->capacity();
-//			real_type actual_threshold = mach.resource(category)->utilization_threshold();
-////			real_type wanted_share = it->second*ref_capacity/actual_capacity;
-////			real_type max_share = mach.resource(category)->utilization_threshold();
-////			it->second = ::std::min(wanted_share, max_share);
-//			real_type wanted_share(it->second);
-//			wanted_share = dcs::eesim::scale_resource_share(ref_capacity,
-//															ref_threshold,
-//															actual_capacity,
-//															actual_threshold,
-//															wanted_share);
-//			it->second = wanted_share;
-//		}
-//
-//		return wanted_shares;
-//	}
+	public: ::std::vector<statistic_pointer> wanted_resource_share_statistics(physical_resource_category category) const
+	{
+		return wanted_res_shares_stats_.at(category);
+	}
 
 
-//XXX: moved to dcs::eesim::utility
-//	public: real_type wanted_resource_share(physical_machine_type const& mach, physical_resource_category category) const
-//	{
-////		real_type wanted_share(ptr_tier_->resource_share(category));
-//		real_type wanted_share(wanted_res_shares_.at(category));
-//		real_type ref_capacity(ptr_tier_->application().reference_resource(category).capacity());
-//		real_type ref_threshold(ptr_tier_->application().reference_resource(category).utilization_threshold());
-//		real_type actual_capacity(mach.resource(category)->capacity());
-//		real_type actual_threshold(mach.resource(category)->utilization_threshold());
-//
-////		wanted_share *= (ref_capacity*ref_threshold)/(actual_capacity*actual_threshold);
-//		wanted_share = dcs::eesim::scale_resource_share(ref_capacity,
-//														ref_threshold,
-//														actual_capacity,
-//														actual_threshold,
-//														wanted_share);
-//
-//		return wanted_share;
-//	}
+	public: ::std::map< physical_resource_category, ::std::vector<statistic_pointer> > wanted_resource_share_statistics() const
+	{
+		return wanted_res_shares_stats_;
+	}
 
 
 	/// Set the resource share for the given resource category.
@@ -329,6 +301,8 @@ class virtual_machine
 					category,
 					share
 				);
+
+			update_share_stats(category, share);
 		}
 		else
 		{
@@ -345,6 +319,8 @@ class virtual_machine
 		void resource_shares(ForwardIteratorT first, ForwardIteratorT last)
 	{
 		res_shares_ = resource_share_impl_container(first, last);
+
+		update_share_stats(first, last);
 	}
 
 
@@ -362,6 +338,18 @@ class virtual_machine
 		);
 
 		return res_shares_.at(category);
+	}
+
+
+	public: ::std::vector<statistic_pointer> resource_share_statistics(physical_resource_category category) const
+	{
+		return res_shares_stats_.at(category);
+	}
+
+
+	public: ::std::map< physical_resource_category, ::std::vector<statistic_pointer> > resource_share_statistics() const
+	{
+		return res_shares_stats_;
 	}
 
 
@@ -431,6 +419,91 @@ class virtual_machine
 	}
 
 
+	private: void update_wanted_share_stats(physical_resource_category category, real_type value)
+	{
+		typedef ::dcs::eesim::registry<traits_type> registry_type;
+		typedef typename registry_type::des_engine_type des_engine_type;
+
+		des_engine_type& eng(registry_type::instance().des_engine());
+
+		if (!wanted_res_shares_stats_.count(category))
+		{
+			statistic_container stats;
+			stats.push_back(eng.make_analyzable_statistic(::dcs::des::min_estimator<real_type,uint_type>()));
+			stats.push_back(eng.make_analyzable_statistic(::dcs::des::quantile_estimator<real_type,uint_type>(0.25)));
+			stats.push_back(eng.make_analyzable_statistic(::dcs::des::quantile_estimator<real_type,uint_type>(0.50)));
+			stats.push_back(eng.make_analyzable_statistic(::dcs::des::quantile_estimator<real_type,uint_type>(0.75)));
+			stats.push_back(eng.make_analyzable_statistic(::dcs::des::max_estimator<real_type,uint_type>()));
+			stats.push_back(eng.make_analyzable_statistic(::dcs::des::mean_estimator<real_type,uint_type>()));
+
+			wanted_res_shares_stats_[category] = stats;
+		}
+
+		::std::for_each(
+				wanted_res_shares_stats_[category].begin(),
+				wanted_res_shares_stats_[category].end(),
+				::dcs::functional::bind(
+					&statistic_type::operator(),
+					::dcs::functional::placeholders::_1,
+					value
+				)
+			);
+	}
+
+	private: template <typename ForwardIterT>
+		void update_wanted_share_stats(ForwardIterT first, ForwardIterT last)
+	{
+		while (first != last)
+		{
+			update_wanted_share_stats(first->first, first->second);
+			++first;
+		}
+	}
+
+
+	private: void update_share_stats(physical_resource_category category, real_type value)
+	{
+		typedef ::dcs::eesim::registry<traits_type> registry_type;
+		typedef typename registry_type::des_engine_type des_engine_type;
+
+		des_engine_type& eng(registry_type::instance().des_engine());
+
+		if (!res_shares_stats_.count(category))
+		{
+			statistic_container stats;
+			stats.push_back(eng.make_analyzable_statistic(::dcs::des::min_estimator<real_type,uint_type>()));
+			stats.push_back(eng.make_analyzable_statistic(::dcs::des::quantile_estimator<real_type,uint_type>(0.25)));
+			stats.push_back(eng.make_analyzable_statistic(::dcs::des::quantile_estimator<real_type,uint_type>(0.50)));
+			stats.push_back(eng.make_analyzable_statistic(::dcs::des::quantile_estimator<real_type,uint_type>(0.75)));
+			stats.push_back(eng.make_analyzable_statistic(::dcs::des::max_estimator<real_type,uint_type>()));
+			stats.push_back(eng.make_analyzable_statistic(::dcs::des::mean_estimator<real_type,uint_type>()));
+
+			res_shares_stats_[category] = stats;
+		}
+
+		::std::for_each(
+				res_shares_stats_[category].begin(),
+				res_shares_stats_[category].end(),
+				::dcs::functional::bind(
+					&statistic_type::operator(),
+					::dcs::functional::placeholders::_1,
+					value
+				)
+			);
+	}
+
+
+	private: template <typename ForwardIterT>
+		void update_share_stats(ForwardIterT first, ForwardIterT last)
+	{
+		while (first != last)
+		{
+			update_share_stats(first->first, first->second);
+			++first;
+		}
+	}
+
+
 	private: identifier_type id_;
 	private: ::std::string name_;
 //	private: queue_model_type queue_;
@@ -441,6 +514,8 @@ class virtual_machine
 //	private: physical_machine_pointer ptr_mach_;
 //	private: virtual_machine_monitor_pointer ptr_vmm_;
 	private: virtual_machine_monitor_pointer ptr_vmm_;
+	private: resource_share_stat_impl_container wanted_res_shares_stats_;
+	private: resource_share_stat_impl_container res_shares_stats_;
 };
 
 }} // Namespace dcs::eesim
