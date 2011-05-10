@@ -106,7 +106,10 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 				{
 					physical_resource_category ref_category(ref_share_it->first);
 					real_type ref_share(ref_share_it->second);
-					ref_share -= ref_share*this->reference_share_penalty();
+					if (this->reference_share_penalty() > 0)
+					{
+						ref_share -= ref_share*this->reference_share_penalty();
+					}
 
 					real_type ref_capacity(app.reference_resource(ref_category).capacity());
 					real_type ref_threshold(app.reference_resource(ref_category).utilization_threshold());

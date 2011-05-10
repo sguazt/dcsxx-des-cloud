@@ -71,6 +71,8 @@ template <typename TraitsT, typename RealT>
 			break;
 	}
 
+	ptr_strategy->reference_share_penalty(strategy_conf.ref_penalty);
+
 	return ptr_strategy;
 }
 
