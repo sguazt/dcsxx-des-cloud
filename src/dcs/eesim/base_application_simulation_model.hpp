@@ -160,6 +160,12 @@ class base_application_simulation_model: public ::dcs::des::entity
 	}
 
 
+	public: real_type tier_busy_capacity(uint_type tier_id) const
+	{
+		return do_tier_busy_capacity(tier_id);
+	}
+
+
 	public: output_statistic_type const& num_arrivals() const
 	{
 		return do_num_arrivals();
@@ -311,6 +317,9 @@ class base_application_simulation_model: public ::dcs::des::entity
 
 
 	private: virtual real_type do_actual_tier_busy_time(uint_type tier_id) const = 0;
+
+
+	private: virtual real_type do_tier_busy_capacity(uint_type tier_id) const = 0;
 
 
 	private: virtual output_statistic_type const& do_num_arrivals() const = 0;
