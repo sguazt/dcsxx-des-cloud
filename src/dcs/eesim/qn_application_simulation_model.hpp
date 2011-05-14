@@ -394,6 +394,12 @@ class qn_application_simulation_model: public base_application_simulation_model<
 	}
 
 
+	private: real_type do_tier_busy_capacity(uint_type tier_id) const
+	{
+		return model_.get_node(node_from_tier(tier_id)).busy_capacity();
+	}
+
+
 	private: output_statistic_type const& do_num_arrivals() const
 	{
 		return *ptr_num_arrs_stat_;
