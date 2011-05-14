@@ -154,6 +154,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	}
 
 
+//FIXME: this may be wrong...review
 	private: void update_experiment_stats(des_engine_context_type& ctx)
 	{
 		typedef typename physical_machine_type::vmm_type vmm_type;
@@ -162,41 +163,58 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		typedef typename vmm_type::virtual_machine_type vm_type;
 		typedef typename vm_container::value_type vm_pointer;
 		typedef typename vm_type::application_tier_type application_tier_type;
-		typedef typename vm_type::resource_share_container resource_share_container;
-		typedef typename resource_share_container::const_iterator resource_share_iterator;
+//		typedef typename vm_type::resource_share_container resource_share_container;
+//		typedef typename resource_share_container::const_iterator resource_share_iterator;
 
 		// Update consumed energy: compute the energy consumed by each VM
 		// running on this machine without considering the energy consumed when
 		// the machine is idle; this last energy is first subtracted from the
 		// energy returned by the model and then added at the end of the
 		// computation.
-		real_type energy(0);
-		real_type idle_energy(this->machine().consumed_energy(0));
+		//real_type energy(0);
+		//real_type idle_energy(this->machine().consumed_energy(0));
 		vm_container vms(this->machine().vmm().virtual_machines());
 		vm_iterator vm_end_it(vms.end());
+		real_type busy_capacity(0);
 		for (vm_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
 		{
 			vm_pointer ptr_vm(*vm_it);
 
 			application_tier_type const& ref_tier(ptr_vm->guest_system());
 
-			real_type busy_time;
-			busy_time = ref_tier.application().simulation_model().actual_tier_busy_time(ref_tier.id());
+			busy_capacity += ref_tier.application().simulation_model().tier_busy_capacity(ref_tier.id());
+//			real_type busy_time;
+//			busy_time = ref_tier.application().simulation_model().actual_tier_busy_time(ref_tier.id());
+//
+//			if (busy_time > 0)
+//			{
+//				resource_share_container shares(ptr_vm->resource_shares());
+//				resource_share_iterator res_end_it(shares.end());
+//				for (resource_share_iterator res_it = shares.begin(); res_it != res_end_it; ++res_it)
+//				{
+//					physical_resource_category category(res_it->first);
+//					real_type share(res_it->second);
+//
+//					energy += busy_time * (this->machine().resource(category)->consumed_energy(share) - idle_energy);
+//				}
+//			}
+		}
+//		energy_ += energy + idle_energy;
+		if (busy_capacity > 0)
+		{
+			typedef typename physical_machine_type::resource_pointer resource_pointer;
+			typedef ::std::vector<resource_pointer> resource_container;
+			typedef typename resource_container::const_iterator resource_iterator;
 
-			if (busy_time > 0)
+			resource_container resources(this->machine().resources());
+			resource_iterator res_end_it(resources.end());
+			for (resource_iterator it = resources.begin(); it != res_end_it; ++it)
 			{
-				resource_share_container shares(ptr_vm->resource_shares());
-				resource_share_iterator res_end_it(shares.end());
-				for (resource_share_iterator res_it = shares.begin(); res_it != res_end_it; ++res_it)
-				{
-					physical_resource_category category(res_it->first);
-					real_type share(res_it->second);
+				resource_pointer ptr_res(*it);
 
-					energy += busy_time * (this->machine().resource(category)->consumed_energy(share) - idle_energy);
-				}
+				energy_ += ptr_res->consumed_energy(busy_capacity);
 			}
 		}
-		energy_ += energy + idle_energy;
 
 		// Update uptime
 		uptime_ += ctx.simulated_time() - last_pwron_time_;
