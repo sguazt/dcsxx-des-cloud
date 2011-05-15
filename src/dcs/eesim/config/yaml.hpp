@@ -2565,6 +2565,10 @@ class yaml_reader
 	public: configuration_type read(::std::string const& fname)
 	{
 		::std::ifstream ifs(fname.c_str());
+		if (ifs.fail())
+		{
+			throw ::std::invalid_argument("[dcs::eesim::config::yaml_reader::read] Unable to open file '" + fname + "'.");
+		}
 
 		configuration_type conf;
 

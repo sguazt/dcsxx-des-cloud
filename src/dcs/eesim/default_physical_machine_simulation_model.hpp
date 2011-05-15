@@ -212,7 +212,8 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			{
 				resource_pointer ptr_res(*it);
 
-				energy_ += ptr_res->consumed_energy(busy_capacity);
+				energy_ += ptr_res->consumed_energy(busy_capacity)-ptr_res->consumed_energy(0)
+						+  ptr_res->consumed_energy(0)*static_cast<real_type>(ctx.simulated_time() - last_pwron_time_);
 			}
 		}
 

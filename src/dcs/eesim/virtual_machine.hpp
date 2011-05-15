@@ -240,7 +240,10 @@ class virtual_machine
 	{
 		wanted_res_shares_[category] = fraction;
 
-		update_wanted_share_stats(category, fraction);
+		if (power_status_ == powered_on_power_status)
+		{
+			update_wanted_share_stats(category, fraction);
+		}
 	}
 
 
@@ -249,7 +252,10 @@ class virtual_machine
 	{
 		wanted_res_shares_ = resource_share_impl_container(first, last);
 
-		update_wanted_share_stats(first, last);
+		if (power_status_ == powered_on_power_status)
+		{
+			update_wanted_share_stats(first, last);
+		}
 	}
 
 
@@ -302,7 +308,10 @@ class virtual_machine
 					share
 				);
 
-			update_share_stats(category, share);
+			if (power_status_ == powered_on_power_status)
+			{
+				update_share_stats(category, share);
+			}
 		}
 		else
 		{
@@ -320,7 +329,10 @@ class virtual_machine
 	{
 		res_shares_ = resource_share_impl_container(first, last);
 
-		update_share_stats(first, last);
+		if (power_status_ == powered_on_power_status)
+		{
+			update_share_stats(first, last);
+		}
 	}
 
 
@@ -355,7 +367,15 @@ class virtual_machine
 
 	public: void power_on()
 	{
+		power_status old_status(power_status_);
+
 		power_status_ = powered_on_power_status;
+
+		if (old_status != power_status_)
+		{
+			update_wanted_share_stats(wanted_res_shares_.begin(), wanted_res_shares_.end());
+			update_share_stats(res_shares_.begin(), res_shares_.end());
+		}
 	}
 
 
@@ -386,6 +406,9 @@ class virtual_machine
 		);
 
 		power_status_ = powered_on_power_status;
+
+		update_wanted_share_stats(wanted_res_shares_.begin(), wanted_res_shares_.end());
+		update_share_stats(res_shares_.begin(), res_shares_.end());
 	}
 
 
@@ -424,6 +447,11 @@ class virtual_machine
 		typedef ::dcs::eesim::registry<traits_type> registry_type;
 		typedef typename registry_type::des_engine_type des_engine_type;
 
+		if (power_status_ != powered_on_power_status)
+		{
+			return;
+		}
+
 		des_engine_type& eng(registry_type::instance().des_engine());
 
 		if (!wanted_res_shares_stats_.count(category))
@@ -448,7 +476,14 @@ class virtual_machine
 					value
 				)
 			);
+//		typedef typename statistic_container::iterator iterator;
+//		iterator end_it(wanted_res_shares_stats_[category].end());
+//		for (iterator it = wanted_res_shares_stats_[category].begin(); it != end_it; ++it)
+//		{
+//			(*(*it))(value);
+//		}
 	}
+
 
 	private: template <typename ForwardIterT>
 		void update_wanted_share_stats(ForwardIterT first, ForwardIterT last)
@@ -465,6 +500,11 @@ class virtual_machine
 	{
 		typedef ::dcs::eesim::registry<traits_type> registry_type;
 		typedef typename registry_type::des_engine_type des_engine_type;
+
+		if (power_status_ != powered_on_power_status)
+		{
+			return;
+		}
 
 		des_engine_type& eng(registry_type::instance().des_engine());
 
