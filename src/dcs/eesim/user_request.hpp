@@ -4,12 +4,13 @@
 
 #include <cstddef>
 //#include <limits>
+#include <dcs/eesim/physical_resource_category.hpp>
+#include <dcs/eesim/resource_utilization_profile.hpp>
 #include <map>
 #include <vector>
 
 
 namespace dcs { namespace eesim {
-
 
 template <typename TraitsT>
 class user_request
@@ -18,6 +19,9 @@ class user_request
 	public: typedef typename traits_type::real_type real_type;
 	public: typedef typename traits_type::uint_type uint_type;
 	public: typedef uint_type identifier_type;
+//	public: typedef resource_utilization_profile_item<traits_type> utilization_profile_item_type;
+	public: typedef resource_utilization_profile<traits_type> utilization_profile_type;
+	public: typedef typename utilization_profile_type::profile_item_type utilization_profile_item_type;
 
 
 	private: static const real_type bad_time_;
@@ -153,6 +157,26 @@ class user_request
 	}
 
 
+	public: void tier_utilization_profile(uint_type tier_id, physical_resource_category resource, utilization_profile_type const& profile)
+	{
+		tier_u_profs_[tier_id][resource].push_back(profile);
+	}
+
+
+	public: ::std::vector<utilization_profile_type> tier_utilization_profiles(uint_type tier_id, physical_resource_category resource)
+	{
+		typedef ::std::vector<utilization_profile_type> return_type;
+
+		if (tier_u_profs_.count(tier_id) == 0
+			|| tier_u_profs_.at(tier_id).count(resource) == 0)
+		{
+			return return_type();
+		}
+
+		return tier_u_profs_.at(tier_id).at(resource);
+	}
+
+
 	/// The request identifier.
 	private: identifier_type id_;
 	/// The identifier of tier which is currently serving the request.
@@ -165,6 +189,8 @@ class user_request
 	private: ::std::map< uint_type, ::std::vector<real_type> > tier_arr_times_;
 	/// The per-tier request departure times.
 	private: ::std::map< uint_type, ::std::vector<real_type> > tier_dep_times_;
+	/// The per-tier and per-resource utilization profiles
+	private: ::std::map< uint_type, ::std::map< physical_resource_category, ::std::vector<utilization_profile_type> > > tier_u_profs_;
 };
 
 

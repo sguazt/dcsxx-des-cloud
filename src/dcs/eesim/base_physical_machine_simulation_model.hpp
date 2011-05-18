@@ -6,6 +6,7 @@
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/eesim/physical_machine.hpp>
 #include <dcs/eesim/power_status.hpp>
+#include <dcs/eesim/virtual_machine.hpp>
 #include <dcs/memory.hpp>
 
 
@@ -24,6 +25,8 @@ class base_physical_machine_simulation_model
 	public: typedef ::dcs::shared_ptr<output_statistic_type> output_statistic_pointer;
 	public: typedef physical_machine<traits_type> physical_machine_type;
 	public: typedef physical_machine_type* physical_machine_pointer;
+	public: typedef virtual_machine<traits_type> virtual_machine_type;
+	public: typedef ::dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
 
 
 	public: virtual ~base_physical_machine_simulation_model()
@@ -73,6 +76,24 @@ class base_physical_machine_simulation_model
 	}
 
 
+	public: power_status vm_power_state(virtual_machine_pointer const& ptr_vm) const
+	{
+		return do_vm_power_state(ptr_vm);
+	}
+
+
+	public: void vm_power_on(virtual_machine_pointer const& ptr_vm)
+	{
+		do_vm_power_on(ptr_vm);
+	}
+
+
+	public: void vm_power_off(virtual_machine_pointer const& ptr_vm)
+	{
+		do_vm_power_off(ptr_vm);
+	}
+
+
 	public: des_event_source_type& power_on_event_source()
 	{
 		return do_power_on_event_source();
@@ -97,6 +118,30 @@ class base_physical_machine_simulation_model
 	}
 
 
+	public: des_event_source_type& vm_power_on_event_source()
+	{
+		return do_vm_power_on_event_source();
+	}
+
+
+	public: des_event_source_type const& vm_power_on_event_source() const
+	{
+		return do_vm_power_on_event_source();
+	}
+
+
+	public: des_event_source_type& vm_power_off_event_source()
+	{
+		return do_vm_power_off_event_source();
+	}
+
+
+	public: des_event_source_type const& vm_power_off_event_source() const
+	{
+		return do_vm_power_off_event_source();
+	}
+
+
 	public: output_statistic_type const& consumed_energy() const
 	{
 		return do_consumed_energy();
@@ -118,6 +163,15 @@ class base_physical_machine_simulation_model
 	private: virtual void do_power_off() = 0;
 
 
+	private: virtual power_status do_vm_power_state(virtual_machine_pointer const& ptr_vm) const = 0;
+
+
+	private: virtual void do_vm_power_on(virtual_machine_pointer const& ptr_vm) = 0;
+
+
+	private: virtual void do_vm_power_off(virtual_machine_pointer const& ptr_vm) = 0;
+
+
 	private: virtual des_event_source_type& do_power_on_event_source() = 0;
 
 
@@ -128,6 +182,18 @@ class base_physical_machine_simulation_model
 
 
 	private: virtual des_event_source_type const& do_power_off_event_source() const = 0;
+
+
+	private: virtual des_event_source_type& do_vm_power_on_event_source() = 0;
+
+
+	private: virtual des_event_source_type const& do_vm_power_on_event_source() const = 0;
+
+
+	private: virtual des_event_source_type& do_vm_power_off_event_source() = 0;
+
+
+	private: virtual des_event_source_type const& do_vm_power_off_event_source() const = 0;
 
 
 	private: virtual output_statistic_type const& do_consumed_energy() const = 0;

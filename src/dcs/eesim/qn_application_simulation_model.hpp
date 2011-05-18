@@ -157,6 +157,9 @@ class qn_application_simulation_model: public base_application_simulation_model<
 	private: typedef ::dcs::des::mean_estimator<real_type,uint_type> mean_estimator_statistic_type;
 	private: typedef ::std::vector<output_statistic_pointer> output_statistic_container;
 	private: typedef typename base_type::virtual_machine_type virtual_machine_type;
+	private: typedef typename qn_model_type::customer_type customer_type;
+	private: typedef ::dcs::shared_ptr<customer_type> customer_pointer;
+
 
 
 	/// A constructor.
@@ -397,6 +400,43 @@ class qn_application_simulation_model: public base_application_simulation_model<
 	private: real_type do_tier_busy_capacity(uint_type tier_id) const
 	{
 		return model_.get_node(node_from_tier(tier_id)).busy_capacity();
+	}
+
+
+	private: ::std::vector<user_request_type> do_tier_in_service_requests(uint_type tier_id) const
+	{
+//TODO....
+		typedef typename qn_model_type::node_type node_type;
+		typedef ::dcs::des::model::qn::service_station_node<qn_model_traits_type> service_node_type;
+		typedef ::std::vector<customer_pointer> customer_container;
+		typedef typename customer_container::const_iterator customer_iterator;
+
+		node_type const& node = model_.get_node(node_from_tier(tier_id));
+
+		// pre: tier must be a service-station node.
+		DCS_ASSERT(
+				node.category() == ::dcs::des::model::qn::service_station_node_category,
+				throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_tier_in_service_requests] Expected a service station node. Got another kind of node.")
+			);
+
+		service_node_type const* ptr_svc_node(dynamic_cast<service_node_type const*>(&node));
+
+		// double-check: tier must be a service-station node.
+		DCS_ASSERT(
+				ptr_svc_node,
+				throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_request_tier_service_event_source] Unable to get a service station node.")
+			);
+
+		::std::vector<user_request_type> requests;
+
+		customer_container customers(ptr_svc_node->active_customers());
+		customer_iterator customer_end_it(customers.end());
+		for (customer_iterator it = customers.begin(); it != customer_end_it; ++it)
+		{
+			requests.push_back(make_request(*it));
+		}
+
+		return requests;
 	}
 
 
@@ -745,15 +785,29 @@ DCS_DEBUG_TRACE("New scaled share: " << multiplier);///XXX
 
 	private: user_request_type make_request(des_event_type const& evt) const
 	{
-		typedef typename qn_model_type::customer_type customer_type;
-		typedef ::dcs::shared_ptr<customer_type> customer_pointer;
+//		typedef typename qn_model_type::customer_type customer_type;
+//		typedef ::dcs::shared_ptr<customer_type> customer_pointer;
+
+		customer_pointer ptr_customer = evt.template unfolded_state<customer_pointer>();
+
+		return make_request(ptr_customer);
+	}
+
+	private: user_request_type make_request(customer_pointer const& ptr_customer) const
+	{
+//		typedef typename qn_model_type::customer_type customer_type;
+//		typedef ::dcs::shared_ptr<customer_type> customer_pointer;
 		typedef typename tier_mapping_container::const_iterator tier_node_iterator;
 		typedef ::std::vector<real_type> time_container;
 		typedef typename time_container::const_iterator time_iterator;
+		typedef typename customer_type::utilization_profile_type customer_utilization_profile_type;
+		typedef resource_utilization_profile<traits_type> request_utilization_profile_type;
+		typedef typename customer_utilization_profile_type::const_iterator customer_utilization_profile_iterator;
+
+		// check: safety check
+		DCS_DEBUG_ASSERT( ptr_customter );
 
 		user_request_type req;
-
-		customer_pointer ptr_customer = evt.template unfolded_state<customer_pointer>();
 
 		req.id(ptr_customer->id());
 		req.arrival_time(ptr_customer->arrival_time());
@@ -776,14 +830,31 @@ DCS_DEBUG_TRACE("New scaled share: " << multiplier);///XXX
 			dep_times = ptr_customer->node_departure_times(node_id);
 			::std::size_t na(arr_times.size());
 			::std::size_t nd(dep_times.size());
-			for (::std::size_t t = 0; t < na; ++t)
+			for (::std::size_t i = 0; i < na; ++i)
 			{
-				req.tier_arrival_time(tier_id, arr_times[t]);
+				req.tier_arrival_time(tier_id, arr_times[i]);
 				// check that for this arrival there is already a departure
-				if (t < nd)
+				if (i < nd)
 				{
-					req.tier_departure_time(tier_id, dep_times[t]);
+					req.tier_departure_time(tier_id, dep_times[i]);
 				}
+			}
+
+			::std::vector<customer_utilization_profile_type> profiles;
+			profiles = ptr_customer->node_utilization_profiles(node_id);
+			::std::size_t np(profiles.size());
+			for (::std::size_t i = 0; i < np; ++i)
+			{
+				customer_utilization_profile_type const& customer_profile(profiles[i]);
+
+				request_utilization_profile_type request_profile;
+				customer_utilization_profile_iterator profile_end_it(customer_profile.end());
+				for (customer_utilization_profile_iterator it = customer_profile.begin(); it != profile_end_it; ++it)
+				{
+					typename customer_utilization_profile_iterator::value_type const& item(*it);
+					request_profile(item.begin_time(), item.end_time(), item.utilization());
+				}
+				req.tier_utilization_profile(tier_id, cpu_resource_category, request_profile);
 			}
 		}
 

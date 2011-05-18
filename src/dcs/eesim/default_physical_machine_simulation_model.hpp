@@ -6,8 +6,11 @@
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/mean_estimator.hpp>
 #include <dcs/eesim/base_physical_machine_simulation_model.hpp>
+#include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/power_status.hpp>
 #include <dcs/eesim/registry.hpp>
+#include <dcs/eesim/resource_utilization_profile.hpp>
+#include <dcs/eesim/user_request.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 #include <string>
@@ -38,6 +41,9 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	private: typedef ::dcs::des::mean_estimator<real_type,uint_type> mean_estimator_statistic_type;
 	private: typedef registry<traits_type> registry_type;
 	private: typedef typename base_type::physical_machine_type physical_machine_type;
+	private: typedef typename base_type::virtual_machine_pointer virtual_machine_pointer;
+	private: typedef user_request<traits_type> user_request_type;
+	private: typedef resource_utilization_profile<traits_type> utilization_profile_type;
 
 
 	private: static const ::std::string poweron_event_source_name;
@@ -47,11 +53,13 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	public: default_physical_machine_simulation_model()
 	: base_type(),
 	  pwr_state_(powered_off_power_status),
-	  energy_(0),
+//	  energy_(0),
 	  uptime_(0),
 	  last_pwron_time_(0),
 	  ptr_pwron_evt_src_(new des_event_source_type(poweron_event_source_name)),
 	  ptr_pwroff_evt_src_(new des_event_source_type(poweroff_event_source_name)),
+	  ptr_vm_pwron_evt_src_(new des_event_source_type(poweron_event_source_name)),
+	  ptr_vm_pwroff_evt_src_(new des_event_source_type(poweroff_event_source_name)),
 	  ptr_energy_stat_(new mean_estimator_statistic_type()), //FIXME: statistic type (mean) is hard-coded
 	  ptr_uptime_stat_(new mean_estimator_statistic_type()) //FIXME: statistic type (mean) is hard-coded
 	{
@@ -157,65 +165,65 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 //FIXME: this may be wrong...review
 	private: void update_experiment_stats(des_engine_context_type& ctx)
 	{
-		typedef typename physical_machine_type::vmm_type vmm_type;
-		typedef typename vmm_type::virtual_machine_container vm_container;
-		typedef typename vm_container::const_iterator vm_iterator;
-		typedef typename vmm_type::virtual_machine_type vm_type;
-		typedef typename vm_container::value_type vm_pointer;
-		typedef typename vm_type::application_tier_type application_tier_type;
+//		typedef typename physical_machine_type::vmm_type vmm_type;
+//		typedef typename vmm_type::virtual_machine_container vm_container;
+//		typedef typename vm_container::const_iterator vm_iterator;
+//		typedef typename vmm_type::virtual_machine_type vm_type;
+//		typedef typename vm_container::value_type vm_pointer;
+//		typedef typename vm_type::application_tier_type application_tier_type;
 //		typedef typename vm_type::resource_share_container resource_share_container;
 //		typedef typename resource_share_container::const_iterator resource_share_iterator;
 
-		// Update consumed energy: compute the energy consumed by each VM
-		// running on this machine without considering the energy consumed when
-		// the machine is idle; this last energy is first subtracted from the
-		// energy returned by the model and then added at the end of the
-		// computation.
-		//real_type energy(0);
-		//real_type idle_energy(this->machine().consumed_energy(0));
-		vm_container vms(this->machine().vmm().virtual_machines());
-		vm_iterator vm_end_it(vms.end());
-		real_type busy_capacity(0);
-		for (vm_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
-		{
-			vm_pointer ptr_vm(*vm_it);
-
-			application_tier_type const& ref_tier(ptr_vm->guest_system());
-
-			busy_capacity += ref_tier.application().simulation_model().tier_busy_capacity(ref_tier.id());
-//			real_type busy_time;
-//			busy_time = ref_tier.application().simulation_model().actual_tier_busy_time(ref_tier.id());
+//		// Update consumed energy: compute the energy consumed by each VM
+//		// running on this machine without considering the energy consumed when
+//		// the machine is idle; this last energy is first subtracted from the
+//		// energy returned by the model and then added at the end of the
+//		// computation.
+//		//real_type energy(0);
+//		//real_type idle_energy(this->machine().consumed_energy(0));
+//		vm_container vms(this->machine().vmm().virtual_machines());
+//		vm_iterator vm_end_it(vms.end());
+//		real_type busy_capacity(0);
+//		for (vm_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
+//		{
+//			vm_pointer ptr_vm(*vm_it);
 //
-//			if (busy_time > 0)
+//			application_tier_type const& ref_tier(ptr_vm->guest_system());
+//
+//			busy_capacity += ref_tier.application().simulation_model().tier_busy_capacity(ref_tier.id());
+////			real_type busy_time;
+////			busy_time = ref_tier.application().simulation_model().actual_tier_busy_time(ref_tier.id());
+////
+////			if (busy_time > 0)
+////			{
+////				resource_share_container shares(ptr_vm->resource_shares());
+////				resource_share_iterator res_end_it(shares.end());
+////				for (resource_share_iterator res_it = shares.begin(); res_it != res_end_it; ++res_it)
+////				{
+////					physical_resource_category category(res_it->first);
+////					real_type share(res_it->second);
+////
+////					energy += busy_time * (this->machine().resource(category)->consumed_energy(share) - idle_energy);
+////				}
+////			}
+//		}
+////		energy_ += energy + idle_energy;
+//		if (busy_capacity > 0)
+//		{
+//			typedef typename physical_machine_type::resource_pointer resource_pointer;
+//			typedef ::std::vector<resource_pointer> resource_container;
+//			typedef typename resource_container::const_iterator resource_iterator;
+//
+//			resource_container resources(this->machine().resources());
+//			resource_iterator res_end_it(resources.end());
+//			for (resource_iterator it = resources.begin(); it != res_end_it; ++it)
 //			{
-//				resource_share_container shares(ptr_vm->resource_shares());
-//				resource_share_iterator res_end_it(shares.end());
-//				for (resource_share_iterator res_it = shares.begin(); res_it != res_end_it; ++res_it)
-//				{
-//					physical_resource_category category(res_it->first);
-//					real_type share(res_it->second);
+//				resource_pointer ptr_res(*it);
 //
-//					energy += busy_time * (this->machine().resource(category)->consumed_energy(share) - idle_energy);
-//				}
+//				energy_ += ptr_res->consumed_energy(busy_capacity)-ptr_res->consumed_energy(0)
+//						+  ptr_res->consumed_energy(0)*static_cast<real_type>(ctx.simulated_time() - last_pwron_time_);
 //			}
-		}
-//		energy_ += energy + idle_energy;
-		if (busy_capacity > 0)
-		{
-			typedef typename physical_machine_type::resource_pointer resource_pointer;
-			typedef ::std::vector<resource_pointer> resource_container;
-			typedef typename resource_container::const_iterator resource_iterator;
-
-			resource_container resources(this->machine().resources());
-			resource_iterator res_end_it(resources.end());
-			for (resource_iterator it = resources.begin(); it != res_end_it; ++it)
-			{
-				resource_pointer ptr_res(*it);
-
-				energy_ += ptr_res->consumed_energy(busy_capacity)-ptr_res->consumed_energy(0)
-						+  ptr_res->consumed_energy(0)*static_cast<real_type>(ctx.simulated_time() - last_pwron_time_);
-			}
-		}
+//		}
 
 		// Update uptime
 		uptime_ += ctx.simulated_time() - last_pwron_time_;
@@ -256,6 +264,66 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	}
 
 
+	private: power_status do_vm_power_state(virtual_machine_pointer const& ptr_vm) const
+	{
+		DCS_DEBUG_ASSERT( ptr_vm );
+
+		return ptr_vm->power_state();
+	}
+
+
+	private: void do_vm_power_on(virtual_machine_pointer const& ptr_vm)
+	{
+		DCS_DEBUG_ASSERT( ptr_vm );
+
+		ptr_vm->power_on();
+
+		registry_type& ref_reg = registry_type::instance();
+
+		ref_reg.des_engine_ptr()->schedule_event(
+				ptr_vm_pwron_evt_src_,
+				ref_reg.des_engine_ptr()->simulated_time(),
+				ptr_vm
+			);
+
+		ptr_vm->guest_system().application().simulation_model().request_tier_service_event_source(ptr_vm->guest_system().id()).connect(
+				::dcs::functional::bind(
+						&self_type::process_vm_request_service,
+						this,
+						::dcs::functional::placeholders::_1,
+						::dcs::functional::placeholders::_2,
+						ptr_vm
+					)
+			);
+	}
+
+
+	private: void do_vm_power_off(virtual_machine_pointer const& ptr_vm)
+	{
+		DCS_DEBUG_ASSERT( ptr_vm );
+
+		ptr_vm->power_off();
+
+		registry_type& ref_reg = registry_type::instance();
+
+		ref_reg.des_engine_ptr()->schedule_event(
+				ptr_vm_pwroff_evt_src_,
+				ref_reg.des_engine_ptr()->simulated_time(),
+				ptr_vm
+			);
+
+		ptr_vm->guest_system().application().simulation_model().request_tier_service_event_source(ptr_vm->guest_system().id()).disconnect(
+				::dcs::functional::bind(
+						&self_type::process_vm_request_service,
+						this,
+						::dcs::functional::placeholders::_1,
+						::dcs::functional::placeholders::_2,
+						ptr_vm
+					)
+			);
+	}
+
+
 	private: des_event_source_type& do_power_on_event_source()
 	{
 		return *ptr_pwron_evt_src_;
@@ -277,6 +345,30 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	private: des_event_source_type const& do_power_off_event_source() const
 	{
 		return *ptr_pwroff_evt_src_;
+	}
+
+
+	private: des_event_source_type& do_vm_power_on_event_source()
+	{
+		return *ptr_vm_pwron_evt_src_;
+	}
+
+
+	private: des_event_source_type const& do_vm_power_on_event_source() const
+	{
+		return *ptr_vm_pwron_evt_src_;
+	}
+
+
+	private: des_event_source_type& do_vm_power_off_event_source()
+	{
+		return *ptr_vm_pwroff_evt_src_;
+	}
+
+
+	private: des_event_source_type const& do_vm_power_off_event_source() const
+	{
+		return *ptr_vm_pwroff_evt_src_;
 	}
 
 
@@ -319,10 +411,12 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");
 
 		// Reset per-experiment stats
-		energy_ = uptime_
-				= real_type/*zero*/();
+//		energy_ = uptime_
+		uptime_ = real_type/*zero*/();
 
 		pwr_state_ = powered_off_power_status;
+
+		res_profile_map_.clear();
 
 		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");
 	}
@@ -343,8 +437,27 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			update_experiment_stats(ctx);
 		}
 
+		// Compute energy
+		typedef typename utilization_profile_type::const_iterator profile_iterator;
+		real_type idle_energy(this->machine().consumed_energy(0));
+		real_type energy(0);
+		if (res_profile_map_.size() > 0)
+		{
+			utilization_profile_type const& profile(res_profile_map_.at(cpu_resource_category));
+			profile_iterator profile_end_it(profile.end());
+			for (profile_iterator it = profile.begin(); it != profile_end_it; ++it)
+			{
+				typename utilization_profile_type::profile_item_type const& item(*it);
+
+	//FIXME: replace boost::icl::length with a wrapper function
+				energy += this->machine().consumed_energy(item.second)*::boost::icl::length(item.first);
+			}
+		}
+		energy += idle_energy*uptime_;
+::std::cerr << "Machine: " << this->machine() << " --> Uptime: " << uptime_ << " - Energy: " << energy << ::std::endl;//XXX
+
 		// Update simulation-level stats
-		(*ptr_energy_stat_)(energy_);
+		(*ptr_energy_stat_)(energy);
 		(*ptr_uptime_stat_)(uptime_);
 
 		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-FINALIZATION (Clock: " << ctx.simulated_time() << ")");
@@ -380,17 +493,47 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	}
 
 
+	private: void process_vm_request_service(des_event_type const& evt, des_engine_context_type& ctx, virtual_machine_pointer const& ptr_vm)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(ctx);
+
+		// pre: virtual machine pointer must be a valid pointer
+		DCS_DEBUG_ASSERT( ptr_vm );
+
+		user_request_type req = ptr_vm->guest_system().application().simulation_model().request_state(evt);
+
+		//FIXME: CPU resource category is hard-coded
+
+		typedef typename utilization_profile_type::const_iterator profile_iterator;
+		::std::vector<utilization_profile_type> profiles;
+		profiles = req.tier_utilization_profiles(ptr_vm->guest_system().id(), cpu_resource_category);
+		if (profiles.size() > 0)
+		{
+			// The last profiles refers to the last visit (at this tier)
+			utilization_profile_type const& profile(profiles.back());
+			profile_iterator profile_end_it(profile.end());
+			for (profile_iterator it = profile.begin(); it != profile_end_it; ++it)
+			{
+				res_profile_map_[cpu_resource_category](*it);
+			}
+		}
+	}
+
+
 	//@} Event Handlers
 
 
 	private: power_status pwr_state_;
-	private: real_type energy_;
+//	private: real_type energy_;
 	private: real_type uptime_;
 	private: real_type last_pwron_time_;
 	private: des_event_source_pointer ptr_pwron_evt_src_;
 	private: des_event_source_pointer ptr_pwroff_evt_src_;
+	private: des_event_source_pointer ptr_vm_pwron_evt_src_;
+	private: des_event_source_pointer ptr_vm_pwroff_evt_src_;
 	private: output_statistic_pointer ptr_energy_stat_;
 	private: output_statistic_pointer ptr_uptime_stat_;
+	private: ::std::map<physical_resource_category,utilization_profile_type> res_profile_map_;
 };
 
 template <typename TraitsT>

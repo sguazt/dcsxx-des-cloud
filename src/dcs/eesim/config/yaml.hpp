@@ -2486,6 +2486,10 @@ void operator>>(::YAML::Node const& node, initial_placement_strategy_config<Real
 	{
 		node["ref-penalty"] >> strategy_conf.ref_penalty;
 	}
+	else
+	{
+		strategy_conf.ref_penalty = 0;
+	}
 }
 
 

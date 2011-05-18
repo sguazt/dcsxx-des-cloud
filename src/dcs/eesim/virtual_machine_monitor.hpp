@@ -27,6 +27,7 @@
 
 
 #include <dcs/assert.hpp>
+#include <dcs/debug.hpp>
 #include <dcs/eesim/physical_machine.hpp>
 #include <dcs/eesim/virtual_machine.hpp>
 #include <dcs/memory.hpp>
@@ -85,13 +86,13 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 
 //	public: physical_machine_pointer hosting_machine() const
 //	{
-//		return ptr_mach_;
+//		return ptr_pm_;
 //	}
 
 
 //	public: physical_machine_pointer hosting_machine()
 //	{
-//		return ptr_mach_;
+//		return ptr_pm_;
 //	}
 
 
@@ -181,8 +182,11 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 			vms_.count(ptr_vm->id()) > 0,
 			throw ::std::runtime_error("[dcs::eesim::virtual_machine_monitor::power_on] Unknown virtual machine.")
 		);
+		DCS_DEBUG_ASSERT( ptr_pm_ );
 
-		ptr_vm->power_on();
+//		ptr_vm->power_on();
+
+		ptr_pm_->simulation_model().vm_power_on(ptr_vm);
 	}
 
 
@@ -193,8 +197,11 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 			vms_.count(ptr_vm->id()) > 0,
 			throw ::std::runtime_error("[dcs::eesim::virtual_machine_monitor::power_off] Unknown virtual machine.")
 		);
+		DCS_DEBUG_ASSERT( ptr_pm_ );
 
-		ptr_vm->power_off();
+//		ptr_vm->power_off();
+
+		ptr_pm_->simulation_model().vm_power_off(ptr_vm);
 	}
 
 
@@ -205,8 +212,13 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 			vms_.count(ptr_vm->id()) > 0,
 			throw ::std::runtime_error("[dcs::eesim::virtual_machine_monitor::suspend] Unknown virtual machine.")
 		);
+		DCS_DEBUG_ASSERT( ptr_pm_ );
 
-		ptr_vm->suspend();
+////		ptr_vm->suspend();
+
+//FIXME: uncomment this below
+//		ptr_pm_->simulation_model().vm_suspend(ptr_vm);
+		throw ::std::runtime_error("To Be Implemented.");
 	}
 
 
@@ -217,8 +229,13 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 			vms_.count(ptr_vm->id()) > 0,
 			throw ::std::runtime_error("[dcs::eesim::virtual_machine_monitor::resume] Unknown virtual machine.")
 		);
+		DCS_DEBUG_ASSERT( ptr_pm_ );
 
-		ptr_vm->resume();
+////		ptr_vm->resume();
+
+//FIXME: uncomment this below
+//		ptr_pm_->simulation_model().vm_resume(ptr_vm);
+		throw ::std::runtime_error("To Be Implemented.");
 	}
 
 

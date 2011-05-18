@@ -95,6 +95,7 @@ void random_permutation(RandomAccessIterT first, RandomAccessIterT last, Uniform
 template <typename TraitsT>
 class first_fit_scaleout_initial_placement_strategy: public base_initial_placement_strategy<TraitsT>
 {
+	private: typedef base_initial_placement_strategy<TraitsT> base_type;
 	public: typedef TraitsT traits_type;
 	private: typedef typename traits_type::real_type real_type;
 
