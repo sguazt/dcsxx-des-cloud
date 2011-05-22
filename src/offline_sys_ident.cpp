@@ -951,7 +951,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 		// Output the header
-		::std::cout << "\"tid\",\"rid\"";
+		::std::cout << "\"tid\",\"rid\",\"time\"";
 		typedef ::std::vector<typename application_type::reference_physical_resource_type> resource_container;
 		typedef typename resource_container::const_iterator resource_iterator;
 		resource_container resources(app.reference_resources());
@@ -1036,7 +1036,8 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 		user_request_type req = app.simulation_model().request_state(evt);
 
 		::std::cout << tier_id
-					<< "," << req.id();
+					<< "," << req.id()
+					<< "," << ctx.simulated_time();
 
 //		virtual_machine_pointer ptr_vm = app.simulation_model().tier_virtual_machine(tier_id);
 //		typedef virtual_machine_type::resource_share_container resource_share_container;
@@ -1150,7 +1151,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 					<< "##" << ::std::endl;
 
 		// Output the header
-		::std::cout << "\"tid\",\"rid\"";
+		::std::cout << "\"tid\",\"rid\",\"time\"";
 		typedef ::std::vector<typename application_type::reference_physical_resource_type> resource_container;
 		typedef typename resource_container::const_iterator resource_iterator;
 		resource_container resources(app.reference_resources());
@@ -1244,7 +1245,8 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		user_request_type req = app.simulation_model().request_state(evt);
 
 		::std::cout << tier_id
-					<< "," << req.id();
+					<< "," << req.id()
+					<< "," << ctx.simulated_time();
 
 //		virtual_machine_pointer ptr_vm = app.simulation_model().tier_virtual_machine(tier_id);
 //		typedef virtual_machine_type::resource_share_container resource_share_container;

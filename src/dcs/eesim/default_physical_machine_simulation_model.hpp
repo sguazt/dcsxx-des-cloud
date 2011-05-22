@@ -446,20 +446,17 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		// - Update energy profile with utilizations due to not-yet-terminated requests running on powered-on VMs
 		virtual_machine_container active_vms(this->machine().vmm().virtual_machines(powered_on_power_status));
 		vm_iterator vm_end_it(active_vms.end());
-::std::cerr << "Collecting active requests: " << ::std::endl;//XXX
 		for (vm_iterator vm_it = active_vms.begin(); vm_it != vm_end_it; ++vm_it)
 		{
 			virtual_machine_pointer ptr_vm(*vm_it);
 
-::std::cerr << "Virtual Machine: " << *ptr_vm << ::std::endl;//XXX
 			request_container reqs(ptr_vm->guest_system().application().simulation_model().tier_in_service_requests(ptr_vm->guest_system().id()));
 			request_iterator req_end_it(reqs.end());
 			for (request_iterator req_it = reqs.begin(); req_it != req_end_it; ++req_it)
 			{
 				user_request_type const& req(*req_it);
-//FIXME: CPU resource category is hard-coded
+				//FIXME: CPU resource category is hard-coded
 				physical_resource_category category(cpu_resource_category);
-::std::cerr << "Request: " << req << ::std::endl;//XXX
 
 				::std::vector<utilization_profile_type> profiles;
 				profiles = req.tier_utilization_profiles(ptr_vm->guest_system().id(), category);
@@ -468,7 +465,6 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 					// The last profiles refers to the last visit (at this tier)
 					utilization_profile_type const& profile(profiles.back());
 					profile_iterator profile_end_it(profile.end());
-::std::cerr << "Profile: " << profile << ::std::endl;//XXX
 					for (profile_iterator it = profile.begin(); it != profile_end_it; ++it)
 					{
 						res_profile_map_[category](*it);
@@ -481,22 +477,19 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		real_type energy(0);
 		if (res_profile_map_.size() > 0)
 		{
-//FIXME: CPU resource category is hard-coded
+			//FIXME: CPU resource category is hard-coded
 			physical_resource_category category(cpu_resource_category);
 			utilization_profile_type const& profile(res_profile_map_.at(category));
 			profile_iterator profile_end_it(profile.end());
-::std::cerr << "Machine: " << this->machine() << " --> Profile: " << profile << ::std::endl;//XXX
 			for (profile_iterator it = profile.begin(); it != profile_end_it; ++it)
 			{
 				typename utilization_profile_type::profile_item_type const& item(*it);
 
-	//FIXME: replace boost::icl::length with a wrapper function
+				//FIXME: replace boost::icl::length with a wrapper function
 				energy += (this->machine().consumed_energy(item.second)-idle_energy)*::boost::icl::length(item.first);
-::std::cerr << "Machine: " << this->machine() << "  Profile Item: <" << ::boost::icl::length(item.first) << "," << item.second << "> - Energy: " << ((this->machine().consumed_energy(item.second)-idle_energy)*::boost::icl::length(item.first)) << " --> Tot Energy: " << energy << ::std::endl;//XXX
 			}
 		}
 		energy += idle_energy*uptime_;
-::std::cerr << "Machine: " << this->machine() << " --> Uptime: " << uptime_ << " - Energy: " << energy << ::std::endl;//XXX
 
 		// Update simulation-level stats
 		(*ptr_energy_stat_)(energy);
@@ -546,7 +539,6 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 
 		//FIXME: CPU resource category is hard-coded
 
-::std::cerr << "BEGIN Processing VM Request Service -> VM: " << *ptr_vm << " - Request: " << req << ::std::endl;//XXX
 		typedef typename utilization_profile_type::const_iterator profile_iterator;
 		::std::vector<utilization_profile_type> profiles;
 //FIXME: CPU resource category is hard-coded
@@ -557,13 +549,11 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			// The last profiles refers to the last visit (at this tier)
 			utilization_profile_type const& profile(profiles.back());
 			profile_iterator profile_end_it(profile.end());
-::std::cerr << "Profile: " << profile << ::std::endl;//XXX
 			for (profile_iterator it = profile.begin(); it != profile_end_it; ++it)
 			{
 				res_profile_map_[category](*it);
 			}
 		}
-::std::cerr << "END Processing VM Request Service -> VM: " << *ptr_vm << " - Request: " << req << ::std::endl;//XXX
 	}
 
 
