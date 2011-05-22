@@ -104,6 +104,7 @@ class resource_utilization_profile
 	public: void operator()(profile_item_type const& item)
 	{
 		profile_ += item;
+		//profile_ += ::std::make_pair(interval_type::right_open(::boost::icl::lower(item.first), ::boost::icl::upper(item.first)), item.second);
 	}
 
 

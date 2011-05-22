@@ -405,7 +405,6 @@ class qn_application_simulation_model: public base_application_simulation_model<
 
 	private: ::std::vector<user_request_type> do_tier_in_service_requests(uint_type tier_id) const
 	{
-//TODO....
 		typedef typename qn_model_type::node_type node_type;
 		typedef ::dcs::des::model::qn::service_station_node<qn_model_traits_type> service_node_type;
 		typedef ::std::vector<customer_pointer> customer_container;
@@ -689,7 +688,6 @@ DCS_DEBUG_TRACE("New scaled share: " << multiplier);///XXX
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");
 
 		num_sla_viols_ = uint_type/*zero*/();
-//::std::cerr << ">>>>>" << ::std::endl;//XXX
 
 		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");
 	}
@@ -716,7 +714,6 @@ DCS_DEBUG_TRACE("New scaled share: " << multiplier);///XXX
 		{
 			uint_type tier_id(it->first);
 //			uint_type node_id(it->second);
-//::std::cerr << "<<<<<" << ::std::endl;//XXX
 
 			(*tier_num_arrs_stats_[tier_id])(this->actual_tier_num_arrivals(tier_id));
 			(*tier_num_deps_stats_[tier_id])(this->actual_tier_num_departures(tier_id));
@@ -753,7 +750,6 @@ DCS_DEBUG_TRACE("New scaled share: " << multiplier);///XXX
 				case response_time_performance_measure:
 					{
 						real_type rt = req.departure_time()-req.arrival_time();
-//::std::cerr << rt << ::std::endl;//XXX
 						measures.push_back(rt);
 					}
 					break;
@@ -805,7 +801,7 @@ DCS_DEBUG_TRACE("New scaled share: " << multiplier);///XXX
 		typedef typename customer_utilization_profile_type::const_iterator customer_utilization_profile_iterator;
 
 		// check: safety check
-		DCS_DEBUG_ASSERT( ptr_customter );
+		DCS_DEBUG_ASSERT( ptr_customer );
 
 		user_request_type req;
 
@@ -846,15 +842,24 @@ DCS_DEBUG_TRACE("New scaled share: " << multiplier);///XXX
 			for (::std::size_t i = 0; i < np; ++i)
 			{
 				customer_utilization_profile_type const& customer_profile(profiles[i]);
+				physical_resource_category category(cpu_resource_category); //FIXME: CPU resource category is hard-coded
 
 				request_utilization_profile_type request_profile;
 				customer_utilization_profile_iterator profile_end_it(customer_profile.end());
 				for (customer_utilization_profile_iterator it = customer_profile.begin(); it != profile_end_it; ++it)
 				{
 					typename customer_utilization_profile_iterator::value_type const& item(*it);
-					request_profile(item.begin_time(), item.end_time(), item.utilization());
+					real_type share;
+					share = ::dcs::eesim::scale_resource_share(
+							this->application().reference_resource(category).capacity(),
+							this->application().reference_resource(category).utilization_threshold(),
+							this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->capacity(),
+							this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->utilization_threshold(),
+							item.utilization()
+						);
+					request_profile(item.begin_time(), item.end_time(), share);
 				}
-				req.tier_utilization_profile(tier_id, cpu_resource_category, request_profile);
+				req.tier_utilization_profile(tier_id, category, request_profile);
 			}
 		}
 

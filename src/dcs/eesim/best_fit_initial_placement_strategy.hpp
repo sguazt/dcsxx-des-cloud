@@ -31,9 +31,16 @@ struct pm_comparator
 {
 	bool operator()(::dcs::shared_ptr<PM> const& ptr_pm1, ::dcs::shared_ptr<PM> const& ptr_pm2)
 	{
-		return (ptr_pm1->resource(cpu_resource_category)->capacity()*ptr_pm1->resource(cpu_resource_category)->utilization_threshold())
-			   <
-			   (ptr_pm2->resource(cpu_resource_category)->capacity()*ptr_pm2->resource(cpu_resource_category)->utilization_threshold());
+		return (((ptr_pm1->resource(cpu_resource_category)->capacity()*ptr_pm1->resource(cpu_resource_category)->utilization_threshold())
+			     <
+			     (ptr_pm2->resource(cpu_resource_category)->capacity()*ptr_pm2->resource(cpu_resource_category)->utilization_threshold()))
+			    ||
+			    (((ptr_pm1->resource(cpu_resource_category)->capacity()*ptr_pm1->resource(cpu_resource_category)->utilization_threshold())
+				 ==
+				 (ptr_pm2->resource(cpu_resource_category)->capacity()*ptr_pm2->resource(cpu_resource_category)->utilization_threshold()))
+				 &&
+				 ptr_pm1->id() < ptr_pm2->id())
+			   );
 	}
 };
 

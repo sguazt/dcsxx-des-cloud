@@ -6,6 +6,7 @@
 //#include <limits>
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/resource_utilization_profile.hpp>
+#include <iosfwd>
 #include <map>
 #include <vector>
 
@@ -163,7 +164,7 @@ class user_request
 	}
 
 
-	public: ::std::vector<utilization_profile_type> tier_utilization_profiles(uint_type tier_id, physical_resource_category resource)
+	public: ::std::vector<utilization_profile_type> tier_utilization_profiles(uint_type tier_id, physical_resource_category resource) const
 	{
 		typedef ::std::vector<utilization_profile_type> return_type;
 
@@ -196,6 +197,21 @@ class user_request
 
 //template <typename TraitsT>
 //const typename user_request<TraitsT>::real_type user_request<TraitsT>::bad_time_ = ::std::numeric_limits<typename user_request<TraitsT>::real_type>::infinity();
+
+template <
+    typename CharT,
+    typename CharTraitsT,
+    typename TraitsT
+>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, user_request<TraitsT> const& req)
+{
+    return os << "<"
+			  <<   "ID: " << req.id()
+			  << ", Tier: " << req.current_tier()
+			  << ", Arrival Time: " << req.arrival_time()
+			  << ", Departure Time: " << req.departure_time()
+			  << ">";
+}
 
 }} // Namespace dcs::eesim
 

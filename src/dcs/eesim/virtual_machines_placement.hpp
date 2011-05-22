@@ -170,8 +170,8 @@ DCS_DEBUG_TRACE("TRUE");//XXX
 		placements_[key] = share_container(first_share, last_share);
 		while (first_share != last_share)
 		{
-			vm.resource_share(first_share->first, first_share->second);
 			vm.wanted_resource_share(first_share->first, first_share->second);
+			vm.resource_share(first_share->first, first_share->second);
 			++first_share;
 		}
 		by_vm_idx_[vm_id] = pm_id;

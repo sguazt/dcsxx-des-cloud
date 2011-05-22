@@ -40,6 +40,12 @@ class data_center_manager
 	}
 
 
+	public: virtual ~data_center_manager()
+	{
+		deregister_event_handlers();
+	}
+
+
 	public: void controlled_data_center(data_center_pointer const& ptr_dc)
 	{
 		ptr_dc_ = ptr_dc;
@@ -61,9 +67,30 @@ class data_center_manager
 
 	private: void init()
 	{
+		register_event_handlers();
+	}
+
+
+	private: void register_event_handlers()
+	{
 		registry<traits_type>& reg = registry<traits_type>::instance();
 
 		reg.des_engine_ptr()->system_initialization_event_source().connect(
+			::dcs::functional::bind(
+				&self_type::process_sys_init,
+				this,
+				::dcs::functional::placeholders::_1,
+				::dcs::functional::placeholders::_2
+			)
+		);
+	}
+
+
+	private: void deregister_event_handlers()
+	{
+		registry<traits_type>& reg = registry<traits_type>::instance();
+
+		reg.des_engine_ptr()->system_initialization_event_source().disconnect(
 			::dcs::functional::bind(
 				&self_type::process_sys_init,
 				this,

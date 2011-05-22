@@ -45,6 +45,8 @@
 #include <dcs/eesim/utility.hpp>
 #include <dcs/eesim/virtual_machine_monitor.hpp>
 #include <dcs/memory.hpp>
+#include <iomanip>
+#include <iosfwd>
 #include <map>
 #include <stdexcept>
 #include <string>
@@ -149,6 +151,14 @@ class virtual_machine
 
 		if (ptr_tier_)
 		{
+			resource_container resources(reference_resources());
+			typedef typename resource_container::const_iterator resource_iterator;
+			resource_iterator res_end_it(resources.end());
+			for (resource_iterator it = resources.begin(); it != res_end_it; ++it)
+			{
+				create_share_stats(it->category());
+			}
+
 			resource_share_container wanted_shares(ptr_tier_->resource_shares());
 			wanted_resource_shares(wanted_shares.begin(), wanted_shares.end());
 		}
@@ -327,11 +337,17 @@ class virtual_machine
 	public: template <typename ForwardIteratorT>
 		void resource_shares(ForwardIteratorT first, ForwardIteratorT last)
 	{
-		res_shares_ = resource_share_impl_container(first, last);
-
-		if (power_status_ == powered_on_power_status)
+//		res_shares_ = resource_share_impl_container(first, last);
+//
+//		if (power_status_ == powered_on_power_status)
+//		{
+//			update_share_stats(first, last);
+//		}
+		res_shares_.clear();
+		while (first != last)
 		{
-			update_share_stats(first, last);
+			resource_share(first->first, first->second);
+			++first;
 		}
 	}
 
@@ -367,9 +383,24 @@ class virtual_machine
 
 	public: void power_on()
 	{
+		DCS_DEBUG_ASSERT( guest_system_ptr() && deployed() );
+
 		power_status old_status(power_status_);
 
 		power_status_ = powered_on_power_status;
+
+		// Reassign the share to the simulation model
+		typedef typename resource_share_impl_container::const_iterator share_iterator;
+		application_tier_type& tier(guest_system());
+		share_iterator share_end_it(res_shares_.end());
+		for (share_iterator it = res_shares_.begin(); it != share_end_it; ++it)
+		{
+			tier.application().simulation_model().resource_share(
+					tier.id(),
+					it->first,
+					it->second
+				);
+		}
 
 		if (old_status != power_status_)
 		{
@@ -442,21 +473,22 @@ class virtual_machine
 	}
 
 
-	private: void update_wanted_share_stats(physical_resource_category category, real_type value)
+	private: void create_share_stats(physical_resource_category category)
 	{
 		typedef ::dcs::eesim::registry<traits_type> registry_type;
 		typedef typename registry_type::des_engine_type des_engine_type;
 
-		if (power_status_ != powered_on_power_status)
+		if (wanted_res_shares_stats_.count(category) && res_shares_stats_.count(category))
 		{
 			return;
 		}
 
 		des_engine_type& eng(registry_type::instance().des_engine());
 
-		if (!wanted_res_shares_stats_.count(category))
+		for (short i = 0; i < 2; ++i)
 		{
 			statistic_container stats;
+
 			stats.push_back(eng.make_analyzable_statistic(::dcs::des::min_estimator<real_type,uint_type>()));
 			stats.push_back(eng.make_analyzable_statistic(::dcs::des::quantile_estimator<real_type,uint_type>(0.25)));
 			stats.push_back(eng.make_analyzable_statistic(::dcs::des::quantile_estimator<real_type,uint_type>(0.50)));
@@ -464,7 +496,28 @@ class virtual_machine
 			stats.push_back(eng.make_analyzable_statistic(::dcs::des::max_estimator<real_type,uint_type>()));
 			stats.push_back(eng.make_analyzable_statistic(::dcs::des::mean_estimator<real_type,uint_type>()));
 
-			wanted_res_shares_stats_[category] = stats;
+			if (i)
+			{
+				wanted_res_shares_stats_[category] = stats;
+			}
+			else
+			{
+				res_shares_stats_[category] = stats;
+			}
+		}
+	}
+
+
+	private: void update_wanted_share_stats(physical_resource_category category, real_type value)
+	{
+		if (power_status_ != powered_on_power_status)
+		{
+			return;
+		}
+
+		if (!wanted_res_shares_stats_.count(category))
+		{
+			create_share_stats(category);
 		}
 
 		::std::for_each(
@@ -498,27 +551,14 @@ class virtual_machine
 
 	private: void update_share_stats(physical_resource_category category, real_type value)
 	{
-		typedef ::dcs::eesim::registry<traits_type> registry_type;
-		typedef typename registry_type::des_engine_type des_engine_type;
-
 		if (power_status_ != powered_on_power_status)
 		{
 			return;
 		}
 
-		des_engine_type& eng(registry_type::instance().des_engine());
-
 		if (!res_shares_stats_.count(category))
 		{
-			statistic_container stats;
-			stats.push_back(eng.make_analyzable_statistic(::dcs::des::min_estimator<real_type,uint_type>()));
-			stats.push_back(eng.make_analyzable_statistic(::dcs::des::quantile_estimator<real_type,uint_type>(0.25)));
-			stats.push_back(eng.make_analyzable_statistic(::dcs::des::quantile_estimator<real_type,uint_type>(0.50)));
-			stats.push_back(eng.make_analyzable_statistic(::dcs::des::quantile_estimator<real_type,uint_type>(0.75)));
-			stats.push_back(eng.make_analyzable_statistic(::dcs::des::max_estimator<real_type,uint_type>()));
-			stats.push_back(eng.make_analyzable_statistic(::dcs::des::mean_estimator<real_type,uint_type>()));
-
-			res_shares_stats_[category] = stats;
+			create_share_stats(category);
 		}
 
 		::std::for_each(
@@ -557,6 +597,21 @@ class virtual_machine
 	private: resource_share_stat_impl_container wanted_res_shares_stats_;
 	private: resource_share_stat_impl_container res_shares_stats_;
 };
+
+
+template <typename CharT, typename CharTraitsT, typename TraitsT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, virtual_machine<TraitsT> const& vm)
+{
+	os << "<"
+	   <<   "ID: " << vm.id()
+	   << ", Name: " << vm.name()
+	   << ", Guest: " << vm.guest_system().id()
+	   << ", Deployed: " << ::std::boolalpha << vm.deployed()
+	   << ", Power Status: " << vm.power_state()
+	   << ">";
+
+	return os;
+}
 
 }} // Namespace dcs::eesim
 
