@@ -568,7 +568,7 @@ class base_system_identificator
 			ptr_vm = dcs::make_shared<virtual_machine_type>(oss.str());
 			ptr_vm->id(vms.size());
 			ptr_vm->guest_system(app.tier(tier_id));
-			//app.simulation_model().tier_virtual_machine(ptr_vm);
+			app.simulation_model().tier_virtual_machine(ptr_vm);
 			vms.push_back(ptr_vm);
 
 			// Place the virtual machine on the reference physical machine
