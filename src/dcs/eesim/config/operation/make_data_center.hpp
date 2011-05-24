@@ -77,6 +77,7 @@
 #include <dcs/eesim/qn_application_simulation_model.hpp>
 #include <dcs/eesim/registry.hpp>
 #include <dcs/eesim/system_identification_strategy_params.hpp>
+#include <dcs/eesim/workload/timed_step.hpp>//EXP
 #include <dcs/math/constants.hpp>
 #include <dcs/math/stats/distributions.hpp>
 #include <dcs/memory.hpp>
@@ -489,9 +490,10 @@ template <typename TraitsT, typename RealT, typename UIntT>
 }
 
 
-template <typename RealT>
+template <typename TraitsT, typename RealT>
 ::dcs::math::stats::any_distribution<RealT> make_probability_distribution(probability_distribution_config<RealT> const& distr_conf)
 {
+	typedef TraitsT traits_type;
 	typedef RealT real_type;
 	typedef probability_distribution_config<RealT> distribution_config_type;
 	typedef ::dcs::math::stats::any_distribution<real_type> distribution_type;
@@ -614,6 +616,25 @@ template <typename RealT>
 									distr_conf_impl.min
 								)
 					);
+			}
+			break;
+		case timed_step_probability_distribution://EXP
+			{
+				typedef typename distribution_config_type::timed_step_distribution_config_type distribution_config_impl_type;
+				typedef typename distribution_config_impl_type::phase_container::const_iterator phase_iterator;
+				typedef ::dcs::eesim::timed_step_workload_model<traits_type,real_type> distribution_impl_type;
+
+				distribution_config_impl_type const& distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
+
+				distribution_impl_type distr_impl;
+				phase_iterator phase_end_it(distr_conf_impl.phases.end());
+				for (phase_iterator it = distr_conf_impl.phases.begin(); it != phase_end_it; ++it)
+				{
+					distribution_type phase_distr = make_probability_distribution<traits_type>(*(it->second));
+					//distr_impl.add_phase(it->first, make_probability_distribution<traits_type>(*(it->second)));
+					distr_impl.add_phase(it->first, phase_distr);
+				}
+				distr = ::dcs::math::stats::make_any_distribution(distr_impl);
 			}
 			break;
 	}
@@ -1444,7 +1465,7 @@ template <
 									//::dcs::shared_ptr<distribution_type> ptr_distr;
 									distribution_type distr;
 
-									distr = make_probability_distribution(node_conf_impl.distributions[i]);
+									distr = make_probability_distribution<traits_type>(node_conf_impl.distributions[i]);
 
 									distrs.push_back(distr);
 								}
@@ -1518,7 +1539,7 @@ template <
 												//::dcs::shared_ptr<distribution_type> ptr_distr;
 												distribution_type distr;
 
-												distr = make_probability_distribution(service_conf.distributions[i]);
+												distr = make_probability_distribution<traits_type>(service_conf.distributions[i]);
 
 												distrs.push_back(distr);
 											}
@@ -1665,7 +1686,7 @@ template <
 								customer_class_config_impl_type const& customer_class_impl_conf = ::boost::get<customer_class_config_impl_type>(class_it->category_conf);
 
 								distribution_type distr;
-								distr = make_probability_distribution(customer_class_impl_conf.distribution);
+								distr = make_probability_distribution<traits_type>(customer_class_impl_conf.distribution);
 								ptr_customer_class = ::dcs::make_shared<customer_class_impl_type>(class_it->id, class_it->name, distr);
 							}
 							break;

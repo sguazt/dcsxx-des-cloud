@@ -267,6 +267,10 @@ probability_distribution_category text_to_probability_distribution_category(::st
 	{
 		return pmpp_probability_distribution;
 	}
+	if (!istr.compare("timed-step"))
+	{
+		return timed_step_probability_distribution;
+	}
 
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_probability_distribution_category] Unknown probability distribution category.");
 }
@@ -1065,6 +1069,7 @@ template <typename RealT>
 void operator>>(::YAML::Node const& node, probability_distribution_config<RealT>& distr_conf)
 {
 	typedef probability_distribution_config<RealT> distribution_config_type;
+	typedef RealT real_type;
 
 	::std::string label;
 
@@ -1188,6 +1193,28 @@ void operator>>(::YAML::Node const& node, probability_distribution_config<RealT>
 				node["rates"] >> distr_conf_impl.rates;
 				node["shape"] >> distr_conf_impl.shape;
 				node["min"] >> distr_conf_impl.min;
+
+				distr_conf.category_conf = distr_conf_impl;
+			}
+			break;
+		case timed_step_probability_distribution:
+			{
+				typedef typename distribution_config_type::timed_step_distribution_config_type distribution_config_impl_type;
+
+				distribution_config_impl_type distr_conf_impl;
+
+				::YAML::Node const& phases_node = node["phases"];
+				for (::std::size_t i = 0; i < phases_node.size(); ++i)
+				{
+					::YAML::Node const& phase_node = phases_node[i]["phase"];
+					distribution_config_type distribution_conf;
+					real_type start_time;
+
+					phase_node["distribution"] >> distribution_conf;
+					phase_node["start-time"] >> start_time;
+
+					distr_conf_impl.phases.push_back(::std::make_pair(start_time, ::dcs::make_shared<distribution_config_type>(distribution_conf)));
+				}
 
 				distr_conf.category_conf = distr_conf_impl;
 			}

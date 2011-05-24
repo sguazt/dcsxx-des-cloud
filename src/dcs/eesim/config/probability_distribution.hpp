@@ -6,8 +6,10 @@
 #include <boost/variant.hpp>
 #include <cstddef>
 #include <dcs/eesim/config/numeric_matrix.hpp>
+#include <dcs/functional/bind.hpp>
 #include <iostream>
 #include <iterator>
+#include <utility>
 
 
 namespace dcs { namespace eesim { namespace config {
@@ -20,7 +22,8 @@ enum probability_distribution_category
 	map_probability_distribution,
 	mmpp_probability_distribution,
 	normal_probability_distribution,
-	pmpp_probability_distribution
+	pmpp_probability_distribution,
+	timed_step_probability_distribution
 };
 
 
@@ -123,6 +126,20 @@ struct pmpp_probability_distribution_config
 	real_type min;
 };
 
+template <typename RealT>
+struct probability_distribution_config;
+
+template <typename RealT>
+struct timed_step_probability_distribution_config
+{
+	typedef RealT real_type;
+	typedef probability_distribution_config<real_type> distribution_type;
+	typedef ::std::pair<real_type,dcs::shared_ptr<distribution_type> > phase_type;
+	typedef ::std::vector<phase_type> phase_container;
+
+	phase_container phases;
+};
+
 
 template <typename RealT>
 struct probability_distribution_config
@@ -135,6 +152,7 @@ struct probability_distribution_config
 	typedef mmpp_probability_distribution_config<RealT> mmpp_distribution_config_type;
 	typedef normal_probability_distribution_config<RealT> normal_distribution_config_type;
 	typedef pmpp_probability_distribution_config<RealT> pmpp_distribution_config_type;
+	typedef timed_step_probability_distribution_config<RealT> timed_step_distribution_config_type;
 
 	probability_distribution_category category;
 	::boost::variant<degenerate_distribution_config_type,
@@ -143,7 +161,8 @@ struct probability_distribution_config
 					 map_distribution_config_type,
 					 mmpp_distribution_config_type,
 					 normal_distribution_config_type,
-					 pmpp_distribution_config_type> category_conf;
+					 pmpp_distribution_config_type,
+					 timed_step_distribution_config_type> category_conf;
 };
 
 
@@ -257,6 +276,24 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 	os << ", shape: " << config.shape
 	   << ", min: " << config.min
 	   << ">";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT, typename RealT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, timed_step_probability_distribution_config<RealT> const& config)
+{
+	typedef typename timed_step_probability_distribution_config<RealT>::phase_container::const_iterator iterator;
+
+	os << "<(timed-step-distribution)"
+	   << " phases: ";
+	iterator end_it(config.phases.end());
+	for (iterator it = config.phases.begin(); it != end_it; ++it)
+	{
+		os << "{" << it->first << " -> " << *(it->second) << "}";
+	}
+	os << ">";
 
 	return os;
 }
