@@ -13,12 +13,26 @@ namespace dcs { namespace eesim { namespace config {
 
 enum statistic_category
 {
+	min_statistic,
 	mean_statistic,
+	max_statistic,
 	quantile_statistic
 };
 
 
+struct max_statistic_config
+{
+	// empty
+};
+
+
 struct mean_statistic_config
+{
+	// empty
+};
+
+
+struct min_statistic_config
 {
 	// empty
 };
@@ -37,11 +51,15 @@ template <typename RealT>
 struct statistic_config
 {
 	typedef RealT real_type;
+	typedef max_statistic_config max_statistic_config_type;
 	typedef mean_statistic_config mean_statistic_config_type;
+	typedef min_statistic_config min_statistic_config_type;
 	typedef quantile_statistic_config<real_type> quantile_statistic_config_type;
 
 	statistic_category category;
-	::boost::variant<mean_statistic_config_type,
+	::boost::variant<max_statistic_config_type,
+					 mean_statistic_config_type,
+					 min_statistic_config_type,
 					 quantile_statistic_config_type> category_conf;
 };
 
@@ -50,8 +68,12 @@ struct statistic_config
 {
 	switch (category)
 	{
+		case max_statistic:
+			return ::dcs::des::max_statistic;
 		case mean_statistic:
 			return ::dcs::des::mean_statistic;
+		case min_statistic:
+			return ::dcs::des::min_statistic;
 		case quantile_statistic:
 			return ::dcs::des::quantile_statistic;
 	}
@@ -61,11 +83,33 @@ struct statistic_config
 
 
 template <typename CharT, typename CharTraitsT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, max_statistic_config const& conf)
+{
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(conf);
+
+	os << "max";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, mean_statistic_config const& conf)
 {
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(conf);
 
 	os << "mean";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, min_statistic_config const& conf)
+{
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(conf);
+
+	os << "min";
 
 	return os;
 }

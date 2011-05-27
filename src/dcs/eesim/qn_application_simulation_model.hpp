@@ -90,6 +90,8 @@ inline
 	{
 		case busy_time_performance_measure:
 			return ::dcs::des::model::qn::busy_time_statistic_category;
+		case queue_length_performance_measure:
+			return ::dcs::des::model::qn::num_waiting_statistic_category;
 		case response_time_performance_measure:
 			return ::dcs::des::model::qn::response_time_statistic_category;
 		case throughput_performance_measure:
@@ -110,6 +112,8 @@ bool has_performance_measure(performance_measure_category category)
 	switch (category)
 	{
 		case busy_time_performance_measure:
+			return true;
+		case queue_length_performance_measure:
 			return true;
 		case response_time_performance_measure:
 			return true;
@@ -401,6 +405,18 @@ class qn_application_simulation_model: public base_application_simulation_model<
 	{
 		return model_.get_node(node_from_tier(tier_id)).busy_capacity();
 	}
+
+
+//	private: real_type do_actual_tier_queue_length(uint_type tier_id) const
+//	{
+//		return model_.get_node(node_from_tier(tier_id)).queue_length();
+//	}
+
+
+//	private: real_type do_tier_queue_length(uint_type tier_id) const
+//	{
+//		return model_.get_node(node_from_tier(tier_id)).queue_length();
+//	}
 
 
 	private: ::std::vector<user_request_type> do_tier_in_service_requests(uint_type tier_id) const
@@ -747,6 +763,8 @@ DCS_DEBUG_TRACE("New scaled share: " << multiplier);///XXX
 			{
 				case busy_time_performance_measure:
 					throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::process_request_departure] Busy time as SLO category has not been implemented yet.");//FIXME
+				case queue_length_performance_measure:
+					throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::process_request_departure] Queue length as SLO category has not been implemented yet.");//FIXME
 				case response_time_performance_measure:
 					{
 						real_type rt = req.departure_time()-req.arrival_time();

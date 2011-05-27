@@ -14,7 +14,8 @@ namespace dcs { namespace eesim { namespace config {
 
 enum sla_model_category
 {
-	step_sla_model
+	step_sla_model,
+	none_sla_model
 };
 
 template <typename RealT>
@@ -24,6 +25,13 @@ struct step_sla_model_config
 
 	real_type penalty;
 	real_type revenue;
+};
+
+
+template <typename RealT>
+struct none_sla_model_config
+{
+	typedef RealT real_type;
 };
 
 
@@ -45,10 +53,12 @@ struct application_sla_config
 	typedef RealT real_type;
 	typedef sla_metric_config<real_type> sla_metric_config_type;
 	typedef step_sla_model_config<real_type> step_sla_model_config_type;
+	typedef none_sla_model_config<real_type> none_sla_model_config_type;
 	typedef ::std::map<metric_category,sla_metric_config_type> metric_container;
 
 	sla_model_category category;
-	::boost::variant<step_sla_model_config_type> category_conf;
+	::boost::variant<step_sla_model_config_type,
+					 none_sla_model_config_type> category_conf;
 	metric_container metrics;
 };
 
@@ -60,6 +70,15 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 	   <<  " revenue: " << sla.revenue
 	   << ", penalty: " << sla.penalty
 	   << ">";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT, typename RealT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, none_sla_model_config<RealT> const& sla)
+{
+	os << "<(none-sla-model)>";
 
 	return os;
 }

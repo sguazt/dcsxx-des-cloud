@@ -465,6 +465,8 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 			{
 				case busy_time_performance_measure:
 					throw ::std::runtime_error("[dcs::eesim::application_simulation_model_adaptor::process_request_departure] Busy time as SLO category has not been implemented yet.");//FIXME
+				case queue_length_performance_measure:
+					throw ::std::runtime_error("[dcs::eesim::application_simulation_model_adaptor::process_request_departure] Queue length as SLO category has not been implemented yet.");//FIXME
 				case response_time_performance_measure:
 					{
 						real_type rt = req.departure_time()-req.arrival_time();

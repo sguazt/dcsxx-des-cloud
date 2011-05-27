@@ -27,6 +27,7 @@
 #include <dcs/eesim/config/simulation.hpp>
 #include <dcs/eesim/config/statistic.hpp>
 #include <dcs/math/constants.hpp>
+#include <dcs/math/function/round.hpp>
 #include <dcs/string/algorithm/to_lower.hpp>
 #include <fstream>
 #include <iostream>
@@ -242,6 +243,10 @@ probability_distribution_category text_to_probability_distribution_category(::st
 	if (!istr.compare("degenerate"))
 	{
 		return degenerate_probability_distribution;
+	}
+	if (!istr.compare("erlang"))
+	{
+		return erlang_probability_distribution;
 	}
 	if (!istr.compare("exponential"))
 	{
@@ -476,6 +481,10 @@ sla_model_category text_to_sla_model_category(::std::string const& str)
 	if (!istr.compare("step"))
 	{
 		return step_sla_model;
+	}
+	if (!istr.compare("none") || !istr.compare("dummy") || !istr.compare("always-satisfied"))
+	{
+		return none_sla_model;
 	}
 
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_sla_model_category Unknown SLA model category.");
@@ -1085,6 +1094,21 @@ void operator>>(::YAML::Node const& node, probability_distribution_config<RealT>
 				distribution_config_impl_type distr_conf_impl;
 
 				node["k"] >> distr_conf_impl.k;
+
+				distr_conf.category_conf = distr_conf_impl;
+			}
+			break;
+		case erlang_probability_distribution:
+			{
+				typedef typename distribution_config_type::erlang_distribution_config_type distribution_config_impl_type;
+
+				distribution_config_impl_type distr_conf_impl;
+
+				node["num-stages"] >> distr_conf_impl.num_stages;
+				node["rate"] >> distr_conf_impl.rate;
+
+				// Makes sure the number of stages is an integral value.
+				distr_conf_impl.num_stages = ::dcs::math::round(distr_conf_impl.num_stages);
 
 				distr_conf.category_conf = distr_conf_impl;
 			}
@@ -1760,6 +1784,15 @@ void operator>>(::YAML::Node const& node, application_sla_config<RealT>& sla_con
 
 					subnode["penalty"] >> model_conf_impl.penalty;
 					subnode["revenue"] >> model_conf_impl.revenue;
+
+					sla_conf.category_conf = model_conf_impl;
+				}
+				break;
+			case none_sla_model:
+				{
+					typedef none_sla_model_config<RealT> model_config_impl_type;
+
+					model_config_impl_type model_conf_impl;
 
 					sla_conf.category_conf = model_conf_impl;
 				}

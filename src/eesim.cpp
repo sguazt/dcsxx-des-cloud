@@ -137,6 +137,8 @@ inline
 	{
 		case ::dcs::eesim::busy_time_performance_measure:
 			return ::std::string("Busy Time");
+		case ::dcs::eesim::queue_length_performance_measure:
+			return ::std::string("Queue Length");
 		case ::dcs::eesim::response_time_performance_measure:
 			return ::std::string("Response Time");
 		case ::dcs::eesim::throughput_performance_measure:

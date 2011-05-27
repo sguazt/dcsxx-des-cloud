@@ -11,7 +11,9 @@
 #include <cstddef>
 #include <dcs/des/base_statistic.hpp>
 #include <dcs/des/base_analyzable_statistic.hpp>
+#include <dcs/des/max_estimator.hpp>
 #include <dcs/des/mean_estimator.hpp>
+#include <dcs/des/min_estimator.hpp>
 #include <dcs/des/quantile_estimator.hpp>
 #include <dcs/des/model/qn/base_routing_strategy.hpp>
 #include <dcs/des/model/qn/base_service_strategy.hpp>
@@ -510,6 +512,16 @@ template <typename TraitsT, typename RealT>
 				distribution_config_impl_type const& distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
 				//ptr_distr = ::dcs::make_shared<distribution_impl_type>(distr_conf.rate);
 				distr = ::dcs::math::stats::make_any_distribution(distribution_impl_type(distr_conf_impl.k));
+			}
+			break;
+		case erlang_probability_distribution:
+			{
+				typedef typename distribution_config_type::erlang_distribution_config_type distribution_config_impl_type;
+				typedef ::dcs::math::stats::erlang_distribution<real_type> distribution_impl_type;
+
+				distribution_config_impl_type const& distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
+				//ptr_distr = ::dcs::make_shared<distribution_impl_type>(distr_conf.rate);
+				distr = ::dcs::math::stats::make_any_distribution(distribution_impl_type(distr_conf_impl.num_stages, distr_conf_impl.rate));
 			}
 			break;
 		case exponential_probability_distribution:
@@ -1072,21 +1084,22 @@ template <
 	}
 	else
 	{
-		typedef ::dcs::des::replications::dummy_num_replications_detector<target_real_type,target_uint_type> num_replications_detector_type;
-		typedef ::dcs::des::replications::dummy_replication_size_detector<
-						target_real_type,
-						target_uint_type
-				> replication_size_detector_type;
-
-		ptr_stat = ::dcs::des::make_analyzable_statistic(
-				stat,
-				trans_detect,
-				replication_size_detector_type(),
-				num_replications_detector_type(),
-				*ptr_des_eng,
-				::dcs::math::constants::infinity<real_type>::value,
-				max_num_obs
-			);
+//		typedef ::dcs::des::replications::dummy_num_replications_detector<target_real_type,target_uint_type> num_replications_detector_type;
+//		typedef ::dcs::des::replications::dummy_replication_size_detector<
+//						target_real_type,
+//						target_uint_type
+//				> replication_size_detector_type;
+//
+//		ptr_stat = ::dcs::des::make_analyzable_statistic(
+//				stat,
+//				trans_detect,
+//				replication_size_detector_type(),
+//				num_replications_detector_type(),
+//				*ptr_des_eng,
+//				::dcs::math::constants::infinity<real_type>::value,
+//				max_num_obs
+//			);
+		ptr_stat = ptr_des_eng->make_analyzable_statistic(stat);
 	}
 
 	return ptr_stat;
@@ -1129,6 +1142,15 @@ template <
 
 	switch (stat_conf.category)
 	{
+		case max_statistic:
+			{
+				typedef ::dcs::des::max_estimator<target_real_type,target_uint_type> output_statistic_impl_type;
+
+				target_real_type confidence_level(simulation_conf.output_analysis.confidence_level);
+				output_statistic_impl_type stat(confidence_level);
+				ptr_stat = make_independent_replications_output_statistic(stat, simulation_conf, sim_info, primary);
+			}
+			break;
 		case mean_statistic:
 			{
 				typedef ::dcs::des::mean_estimator<target_real_type,target_uint_type> output_statistic_impl_type;
@@ -1300,6 +1322,15 @@ template <
 				ptr_stat = make_independent_replications_output_statistic(stat, simulation_conf, sim_info, primary);
 			}
 			break;
+		case min_statistic:
+			{
+				typedef ::dcs::des::min_estimator<target_real_type,target_uint_type> output_statistic_impl_type;
+
+				target_real_type confidence_level(simulation_conf.output_analysis.confidence_level);
+				output_statistic_impl_type stat(confidence_level);
+				ptr_stat = make_independent_replications_output_statistic(stat, simulation_conf, sim_info, primary);
+			}
+			break;
 		case quantile_statistic:
 			{
 				typedef ::dcs::des::quantile_estimator<target_real_type,target_uint_type> output_statistic_impl_type;
@@ -1345,6 +1376,7 @@ template <
 	typedef typename traits_type::uint_type target_uint_type;
 	typedef typename traits_type::real_type target_real_type;
 	typedef ::dcs::des::base_statistic<target_real_type,target_uint_type> output_statistic_type;
+	typedef statistic_config<real_type> statistic_config_type;
 
 	::dcs::shared_ptr<output_statistic_type> ptr_stat;
 
@@ -1364,8 +1396,27 @@ template <
 	}
 	else
 	{
+		switch (simulation_conf.output_analysis.category)
+		{
+			case independent_replications_output_analysis:
+				{
+					ptr_stat = make_independent_replications_output_statistic(stat_conf,
+																			  simulation_conf,
+																			  sim_info,
+																			  false);
+				}
+				break;
+		}
+/*
 		switch (to_des_statistic_category(stat_conf.category))
 		{
+			case ::dcs::des::max_statistic:
+				{
+					typedef ::dcs::des::max_estimator<target_real_type,target_uint_type> output_statistic_impl_type;
+
+					ptr_stat = ::dcs::make_shared<output_statistic_impl_type>(simulation_conf.output_analysis.confidence_level);
+				}
+				break;
 			case ::dcs::des::mean_statistic:
 				{
 					typedef ::dcs::des::mean_estimator<target_real_type,target_uint_type> output_statistic_impl_type;
@@ -1373,9 +1424,27 @@ template <
 					ptr_stat = ::dcs::make_shared<output_statistic_impl_type>(simulation_conf.output_analysis.confidence_level);
 				}
 				break;
+			case ::dcs::des::min_statistic:
+				{
+					typedef ::dcs::des::min_estimator<target_real_type,target_uint_type> output_statistic_impl_type;
+
+					ptr_stat = ::dcs::make_shared<output_statistic_impl_type>(simulation_conf.output_analysis.confidence_level);
+				}
+				break;
+			case ::dcs::des::quantile_statistic:
+				{
+					typedef ::dcs::des::quantile_estimator<target_real_type,target_uint_type> output_statistic_impl_type;
+					typedef typename statistic_config_type::quantile_statistic_config_type statistic_config_impl_type;
+
+					statistic_config_impl_type const& stat_conf_impl = ::boost::get<statistic_config_impl_type>(stat_conf.category_conf);
+					ptr_stat = ::dcs::make_shared<output_statistic_impl_type>(stat_conf_impl.probability,
+																			  simulation_conf.output_analysis.confidence_level);
+				}
+				break;
 			default:
 				throw ::std::runtime_error("[dcs::eesim::config::detail::make_output_statistic] Statistic type not hanlded.");
 		}
+*/
 	}
 
 	return ptr_stat;
@@ -1768,6 +1837,7 @@ template <
 			{
 				analyzable = true;
 			}
+//			bool analyzable(true);
 
 //FIXME: actually we create statistics for all possible performance metrics.
 //Since the kind of statistic (mean, quantile,...) is currently specifiable only for
@@ -1895,6 +1965,19 @@ template <typename TraitsT, typename RealT>
 						);
 				}
 
+			}
+			break;
+		case none_sla_model:
+			{
+				typedef ::dcs::perfeval::sla::always_satisfied_cost_model<
+								::dcs::eesim::performance_measure_category,
+								target_real_type,
+								target_real_type> sla_impl_type;
+				typedef typename sla_config_type::none_sla_model_config_type sla_config_impl_type;
+
+				sla_config_impl_type const& sla_conf_impl = ::boost::get<sla_config_impl_type>(sla_conf.category_conf);
+
+				sla = ::dcs::perfeval::sla::make_any_cost_model(sla_impl_type());
 			}
 			break;
 	}

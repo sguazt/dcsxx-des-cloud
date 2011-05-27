@@ -34,6 +34,7 @@ namespace dcs { namespace eesim {
 enum performance_measure_category
 {
 	busy_time_performance_measure,
+	queue_length_performance_measure,
 	response_time_performance_measure,
 	throughput_performance_measure,
 	utilization_performance_measure
@@ -47,6 +48,7 @@ inline
 	::std::vector<performance_measure_category> cats;
 
 	cats.push_back(busy_time_performance_measure);
+	cats.push_back(queue_length_performance_measure);
 	cats.push_back(response_time_performance_measure);
 	cats.push_back(throughput_performance_measure);
 	cats.push_back(utilization_performance_measure);
@@ -59,6 +61,7 @@ inline
 bool for_application(performance_measure_category category)
 {
 	return category != busy_time_performance_measure
+		   && category != queue_length_performance_measure
 		   && category != utilization_performance_measure;
 }
 

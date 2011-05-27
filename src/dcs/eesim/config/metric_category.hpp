@@ -12,6 +12,7 @@ namespace dcs { namespace eesim { namespace config {
 enum metric_category
 {
 	busy_time_metric,
+	queue_length_metric,
 	response_time_metric,
 	throughput_metric,
 	utilization_metric
@@ -23,6 +24,8 @@ enum metric_category
 	{
 		case busy_time_metric:
 			return ::dcs::eesim::busy_time_performance_measure;
+		case queue_length_metric:
+			return ::dcs::eesim::queue_length_performance_measure;
 		case response_time_metric:
 			return ::dcs::eesim::response_time_performance_measure;
 		case throughput_metric:
@@ -41,6 +44,8 @@ metric_category to_metric_category(::dcs::eesim::performance_measure_category ca
 	{
 		case ::dcs::eesim::busy_time_performance_measure:
 			return busy_time_metric;
+		case ::dcs::eesim::queue_length_performance_measure:
+			return queue_length_metric;
 		case ::dcs::eesim::response_time_performance_measure:
 			return response_time_metric;
 		case ::dcs::eesim::throughput_performance_measure:
@@ -60,6 +65,9 @@ template <typename CharT, typename CharTraitsT>
 	{
 		case busy_time_metric:
 			os << "busy-time";
+			break;
+		case queue_length_metric:
+			os << "queue-length";
 			break;
 		case response_time_metric:
 			os << "response-time";

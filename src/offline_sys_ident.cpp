@@ -52,9 +52,10 @@ enum configuration_category
 
 enum signal_category
 {
-	step_signal,
 	gaussian_white_noise_signal,
-	sinusoidal_signal
+	ramp_signal,
+	sinusoidal_signal,
+	step_signal
 };
 
 
@@ -110,7 +111,7 @@ void usage()
 				<< "  --ts <sampling-time>" << ::std::endl
 				<< "  --ns <number-of-samples>" << ::std::endl
 				<< "  --sys {'siso'|'miso'}" << ::std::endl
-				<< "  --sig {'step'|'gaussian'|'sine'}" << ::std::endl
+				<< "  --sig {'gaussian'|'ramp'|'sine'|'step'}" << ::std::endl
 				<< "  --conf <configuration-file>" << ::std::endl;
 }
 
@@ -161,17 +162,21 @@ bool get_option(ForwardIterT begin, ForwardIterT end, std::string const& option)
 
 signal_category parse_signal_category(::std::string const& str)
 {
-	if (!str.compare("step"))
-	{
-		return step_signal;
-	}
 	if (!str.compare("gaussian"))
 	{
 		return gaussian_white_noise_signal;
 	}
+	if (!str.compare("ramp"))
+	{
+		return ramp_signal;
+	}
 	if (!str.compare("sine"))
 	{
 		return sinusoidal_signal;
+	}
+	if (!str.compare("step"))
+	{
+		return step_signal;
 	}
 
 	throw ::std::invalid_argument("[detail::parse_signal_category] Cannot find a valid signal category.");
@@ -243,6 +248,12 @@ class base_signal_generator
 	}
 
 
+	public: void reset()
+	{
+		do_reset();
+	}
+
+
 	public: virtual ~base_signal_generator()
 	{
 		// empty
@@ -250,6 +261,8 @@ class base_signal_generator
 
 
 	private: virtual vector_type do_generate() = 0;
+
+	private: virtual void do_reset() = 0;
 };
 
 template <typename ValueT>
@@ -272,7 +285,47 @@ class step_signal_generator: public base_signal_generator<ValueT>
 	}
 
 
+	private: void do_reset()
+	{
+		// do nothing: the signal is constant.
+	}
+
+
 	private: vector_type u_;
+};
+
+template <typename ValueT>
+class ramp_signal_generator: public base_signal_generator<ValueT>
+{
+	private: typedef base_signal_generator<ValueT> base_type;
+	public: typedef ValueT value_type;
+	public: typedef typename base_type::vector_type vector_type;
+
+
+	public: ramp_signal_generator(vector_type const& u0, vector_type const& incr)
+	: u0_(u0),
+	  u_(u0),
+	  h_(incr)
+	{
+	}
+
+ 
+	private: vector_type do_generate()
+	{
+		u_ += h_;
+		return u_;
+	}
+
+
+	private: void do_reset()
+	{
+		u_ = u0_;
+	}
+
+
+	private: vector_type u0_;
+	private: vector_type u_;
+	private: vector_type h_;
 };
 
 template <typename ValueT>
@@ -316,10 +369,31 @@ class gaussian_signal_generator: public base_signal_generator<ValueT>
 	}
 
 
+	private: void do_reset()
+	{
+		// do nothing: the generator is reset by resetting the random number generator, which should be made elsewhere.
+	}
+
+
 	private: normal_distribution_container distrs_;
 };
 
 
+/**
+ * \brief Generate a sinusoidal wave according to the sample-based mode.
+ *
+ * Sample-based mode uses the following formula to compute the output of the sine wave:
+ * \f[
+ *   y = A\sin(2\pi(k+o)/p) + b
+ * \f]
+ * where
+ * - A is the amplitude of the sine wave.
+ * - p is the number of time samples per sine wave period.
+ * - k is a repeating integer value that ranges from 0 to p–1.
+ * - o is the offset (phase shift) of the signal.
+ * - b is the signal bias.
+ * .
+ */
 template <typename ValueT>
 class sinusoidal_signal_generator: public base_signal_generator<ValueT>
 {
@@ -334,8 +408,11 @@ class sinusoidal_signal_generator: public base_signal_generator<ValueT>
 	  p_(ublas::zero_vector<value_type>(ublasx::size(a))),
 	  d_(ublas::zero_vector<value_type>(ublasx::size(a))),
 	  w_(::dcs::math::constants::double_pi<value_type>::value*f),
-	  nx_(ublas::scalar_vector<value_type>(ublasx::size(a),100)),
-	  x_(ublas::zero_vector<value_type>(ublasx::size(a)))
+	  h_(ublas::scalar_vector<value_type>(ublasx::size(a),0.1)),
+	  x_min_(0),
+	  x_max_(1),
+	  x0_(ublas::zero_vector<value_type>(ublasx::size(a))),
+	  x_(x0_)
 	{
 		// pre: size(a) == size(f) == ...
 	}
@@ -347,8 +424,11 @@ class sinusoidal_signal_generator: public base_signal_generator<ValueT>
 	  p_(p),
 	  d_(d),
 	  w_(::dcs::math::constants::double_pi<value_type>::value*f),
-	  nx_(ublas::scalar_vector<value_type>(ublasx::size(a),100)),
-	  x_(ublas::zero_vector<value_type>(ublasx::size(a)))
+	  h_(ublas::scalar_vector<value_type>(ublasx::size(a),0.1)),
+	  x_min_(0),
+	  x_max_(1),
+	  x0_(ublas::zero_vector<value_type>(ublasx::size(a))),
+	  x_(x0_)
 	{
 		// pre: size(a) == size(f) == ...
 	}
@@ -365,16 +445,22 @@ class sinusoidal_signal_generator: public base_signal_generator<ValueT>
 			u(i) = a_(i)*::std::sin(w_(i)*x_(i)+p_(i))+d_(i);
 //::std::cerr << "x(" << i << ")=" << x_(i) << " ==> u(" << i << ")=" << u(i) << ::std::endl;//XXX
 
-			x_(i) += value_type(1)/nx_(i);
-			//if (x_(i) < 0 || x_(i) > (1.0/f_(i)))
-			if (x_(i) < 0 || x_(i) > 1.0)
+			x_(i) += h_(i);
+			if (x_(i) < x_min_ || x_(i) > x_max_)
 			{
-				x_(i) = 0;
+				x_(i) = x_min_;
 			}
 		}
 
 		return u;
 	}
+
+
+	private: void do_reset()
+	{
+		x_ = x0_;
+	}
+
 
 	/// The amplitude (the peak deviation of the function from its center position).
 	private: vector_type a_;
@@ -386,7 +472,11 @@ class sinusoidal_signal_generator: public base_signal_generator<ValueT>
 	private: vector_type d_;
 	/// The angular frequency (how many oscillations occur in a unit time interval, in radians per second).
 	private: vector_type w_;
-	private: vector_type nx_;
+	/// The increment
+	private: vector_type h_;
+	private: value_type x_min_;
+	private: value_type x_max_;
+	private: vector_type x0_;
 	private: vector_type x_;
 };
 
@@ -951,7 +1041,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 		// Output the header
-		::std::cout << "\"tid\",\"rid\",\"time\"";
+		::std::cout << "\"tid\",\"rid\",\"arrtime\",\"deptime\"";
 		typedef ::std::vector<typename application_type::reference_physical_resource_type> resource_container;
 		typedef typename resource_container::const_iterator resource_iterator;
 		resource_container resources(app.reference_resources());
@@ -959,10 +1049,12 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 		::std::size_t count(0);
 		for (resource_iterator it = resources.begin(); it != end_it; ++it)
 		{
-			::std::cout << ",\"category_" << count << "\",\"share_" << count << "\",\"delta_share_" << count << "\"";
+//			::std::cout << ",\"category_" << count << "\",\"share_" << count << "\",\"delta_share_" << count << "\"";
+			::std::cout << ",\"category_" << count << "\",\"share_" << count << "\"";
 			++count;
 		}
-		::std::cout << ",\"rt\",\"delta_rt\"" << ::std::endl;
+//		::std::cout << ",\"rt\",\"delta_rt\"" << ::std::endl;
+		::std::cout << ",\"rt\"" << ::std::endl;
 	}
 
 
@@ -1037,6 +1129,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 
 		::std::cout << tier_id
 					<< "," << req.id()
+					<< "," << req.tier_arrival_times(tier_id).back()
 					<< "," << ctx.simulated_time();
 
 //		virtual_machine_pointer ptr_vm = app.simulation_model().tier_virtual_machine(tier_id);
@@ -1064,36 +1157,40 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 		resource_share_iterator end_it(resource_shares.end());
 		for (resource_share_iterator it = resource_shares.begin(); it != end_it; ++it)
 		{
+//			::std::cout << "," << it->first
+//						<< "," << ptr_req_info->share_map[it->first]
+//						<< "," << detail::relative_deviation(it->second, app.tier(tier_id)->resource_share(it->first));
 			::std::cout << "," << it->first
-						<< "," << ptr_req_info->share_map[it->first]
-						<< "," << detail::relative_deviation(it->second, app.tier(tier_id)->resource_share(it->first));
+						<< "," << ptr_req_info->share_map[it->first];
 		}
 
 //		real_type rt(ctx.simulated_time()-ptr_sysid_state->req_info_maps[tier_id].at(req.id())->arr_time);
 		real_type rt(ctx.simulated_time()-ptr_req_info->arr_time);
 
 //FIXME: Keep M/D/1 or return back to M/M/1?
-#if 0
-		if (tier_id == 0)
-		{
-			// Treat the first tier as a M/D/1 queue
-			::std::cout << "," << rt
-						<< "," << detail::relative_deviation(rt, detail::md1_residence_time(0.15, 0.5))
-						<< ::std::endl;
-::std::cerr << "Reference residence time: " << detail::md1_residence_time(0.15, 0.5) << ::std::endl;//XXX
-		}
-		else
-		{
-			// Treat the other tiers as a M/M/1 queue
-			::std::cout << "," << rt
-						<< "," << detail::relative_deviation(rt, app.performance_model().tier_measure(tier_id, ::dcs::eesim::response_time_performance_measure))
-						<< ::std::endl;
-		}
-#else
+//#if 0
+//		if (tier_id == 0)
+//		{
+//			// Treat the first tier as a M/D/1 queue
+//			::std::cout << "," << rt
+//						<< "," << detail::relative_deviation(rt, detail::md1_residence_time(0.15, 0.5))
+//						<< ::std::endl;
+//::std::cerr << "Reference residence time: " << detail::md1_residence_time(0.15, 0.5) << ::std::endl;//XXX
+//		}
+//		else
+//		{
+//			// Treat the other tiers as a M/M/1 queue
+//			::std::cout << "," << rt
+//						<< "," << detail::relative_deviation(rt, app.performance_model().tier_measure(tier_id, ::dcs::eesim::response_time_performance_measure))
+//						<< ::std::endl;
+//		}
+//#else
+//		::std::cout << "," << rt
+//					<< "," << detail::relative_deviation(rt, app.performance_model().tier_measure(tier_id, ::dcs::eesim::response_time_performance_measure))
+//					<< ::std::endl;
+//#endif
 		::std::cout << "," << rt
-					<< "," << detail::relative_deviation(rt, app.performance_model().tier_measure(tier_id, ::dcs::eesim::response_time_performance_measure))
 					<< ::std::endl;
-#endif
 
 		ptr_sysid_state->req_info_maps[tier_id].erase(req.id());
 	}
@@ -1151,7 +1248,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 					<< "##" << ::std::endl;
 
 		// Output the header
-		::std::cout << "\"tid\",\"rid\",\"time\"";
+		::std::cout << "\"tid\",\"rid\",\"arrtime\",\"deptime\"";
 		typedef ::std::vector<typename application_type::reference_physical_resource_type> resource_container;
 		typedef typename resource_container::const_iterator resource_iterator;
 		resource_container resources(app.reference_resources());
@@ -1163,11 +1260,13 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 			::std::cout << ",\"category_" << count << "\"";
 			for (::std::size_t tier_id = 0; tier_id < num_tiers; ++tier_id)
 			{
-				::std::cout << ",\"share_" << tier_id << "_" << count << "\",\"delta_share_" << tier_id << "_" << count << "\"";
+//				::std::cout << ",\"share_" << tier_id << "_" << count << "\",\"delta_share_" << tier_id << "_" << count << "\"";
+				::std::cout << ",\"share_" << tier_id << "_" << count << "\"";
 			}
 			++count;
 		}
-		::std::cout << ",\"rt\",\"delta_rt\"" << ::std::endl;
+//		::std::cout << ",\"rt\",\"delta_rt\"" << ::std::endl;
+		::std::cout << ",\"rt\"" << ::std::endl;
 	}
 
 
@@ -1246,6 +1345,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 
 		::std::cout << tier_id
 					<< "," << req.id()
+					<< "," << req.tier_arrival_times(tier_id).back()
 					<< "," << ctx.simulated_time();
 
 //		virtual_machine_pointer ptr_vm = app.simulation_model().tier_virtual_machine(tier_id);
@@ -1287,8 +1387,9 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 					share = ptr_req_info->share_map[it->first].at(t);
 				}
 
-				::std::cout << "," << share
-							<< "," << detail::relative_deviation(share, app.tier(t)->resource_share(it->first));
+//				::std::cout << "," << share
+//							<< "," << detail::relative_deviation(share, app.tier(t)->resource_share(it->first));
+				::std::cout << "," << share;
 			}
 		}
 
@@ -1296,27 +1397,29 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		real_type rt(ctx.simulated_time()-ptr_req_info->arr_time);
 
 //FIXME: Keep M/D/1 or return back to M/M/1?
-#if 0
-		if (tier_id == 0)
-		{
-			// Treat the first tier as a M/D/1 queue
-			::std::cout << "," << rt
-						<< "," << detail::relative_deviation(rt, detail::md1_residence_time(0.15, 0.5))
-						<< ::std::endl;
-::std::cerr << "Reference residence time: " << detail::md1_residence_time(0.15, 0.5) << ::std::endl;//XXX
-		}
-		else
-		{
-			// Treat the other tiers as a M/M/1 queue
-			::std::cout << "," << rt
-						<< "," << detail::relative_deviation(rt, app.performance_model().tier_measure(tier_id, ::dcs::eesim::response_time_performance_measure))
-						<< ::std::endl;
-		}
-#else
+//#if 0
+//		if (tier_id == 0)
+//		{
+//			// Treat the first tier as a M/D/1 queue
+//			::std::cout << "," << rt
+//						<< "," << detail::relative_deviation(rt, detail::md1_residence_time(0.15, 0.5))
+//						<< ::std::endl;
+//::std::cerr << "Reference residence time: " << detail::md1_residence_time(0.15, 0.5) << ::std::endl;//XXX
+//		}
+//		else
+//		{
+//			// Treat the other tiers as a M/M/1 queue
+//			::std::cout << "," << rt
+//						<< "," << detail::relative_deviation(rt, app.performance_model().tier_measure(tier_id, ::dcs::eesim::response_time_performance_measure))
+//						<< ::std::endl;
+//		}
+//#else
+//		::std::cout << "," << rt
+//					<< "," << detail::relative_deviation(rt, app.performance_model().tier_measure(tier_id, ::dcs::eesim::response_time_performance_measure))
+//					<< ::std::endl;
+//#endif
 		::std::cout << "," << rt
-					<< "," << detail::relative_deviation(rt, app.performance_model().tier_measure(tier_id, ::dcs::eesim::response_time_performance_measure))
 					<< ::std::endl;
-#endif
 
 		ptr_sysid_state->req_info_maps[tier_id].erase(req.id());
 	}
@@ -1462,6 +1565,12 @@ int main(int argc, char* argv[])
 		{
 			case step_signal:
 				ptr_sig_gen = dcs::make_shared< detail::step_signal_generator<real_type> >(ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 0));
+				break;
+			case ramp_signal:
+				ptr_sig_gen = dcs::make_shared< detail::ramp_signal_generator<real_type> >(
+								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 0),
+								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 0.1)
+					);
 				break;
 			case gaussian_white_noise_signal:
 				ptr_sig_gen = dcs::make_shared< detail::gaussian_signal_generator<real_type> >(

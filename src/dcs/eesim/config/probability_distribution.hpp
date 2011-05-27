@@ -17,6 +17,7 @@ namespace dcs { namespace eesim { namespace config {
 enum probability_distribution_category
 {
 	degenerate_probability_distribution,
+	erlang_probability_distribution,
 	exponential_probability_distribution,
 	gamma_probability_distribution,
 	map_probability_distribution,
@@ -33,6 +34,16 @@ struct degenerate_probability_distribution_config
 	typedef RealT real_type;
 
 	real_type k;
+};
+
+
+template <typename RealT>
+struct erlang_probability_distribution_config
+{
+	typedef RealT real_type;
+
+	real_type num_stages;
+	real_type rate;
 };
 
 
@@ -146,6 +157,7 @@ struct probability_distribution_config
 {
 	typedef RealT real_type;
 	typedef degenerate_probability_distribution_config<RealT> degenerate_distribution_config_type;
+	typedef erlang_probability_distribution_config<RealT> erlang_distribution_config_type;
 	typedef exponential_probability_distribution_config<RealT> exponential_distribution_config_type;
 	typedef gamma_probability_distribution_config<RealT> gamma_distribution_config_type;
 	typedef map_probability_distribution_config<RealT> map_distribution_config_type;
@@ -156,6 +168,7 @@ struct probability_distribution_config
 
 	probability_distribution_category category;
 	::boost::variant<degenerate_distribution_config_type,
+					 erlang_distribution_config_type,
 					 exponential_distribution_config_type,
 					 gamma_distribution_config_type,
 					 map_distribution_config_type,
@@ -171,6 +184,18 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 {
 	os << "<(degenerate-distribution)"
 	   << " k: " << config.k
+	   << ">";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT, typename RealT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, erlang_probability_distribution_config<RealT> const& config)
+{
+	os << "<(erlang-distribution)"
+	   << " num-stages: " << config.num_stages
+	   << ", rate: " << config.rate
 	   << ">";
 
 	return os;
