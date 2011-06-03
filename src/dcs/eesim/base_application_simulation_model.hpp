@@ -160,12 +160,6 @@ class base_application_simulation_model: public ::dcs::des::entity
 	}
 
 
-	public: real_type tier_busy_capacity(uint_type tier_id) const
-	{
-		return do_tier_busy_capacity(tier_id);
-	}
-
-
 	public: ::std::vector<user_request_type> tier_in_service_requests(uint_type tier_id) const//EXP
 	{
 		return do_tier_in_service_requests(tier_id);
@@ -323,9 +317,6 @@ class base_application_simulation_model: public ::dcs::des::entity
 
 
 	private: virtual real_type do_actual_tier_busy_time(uint_type tier_id) const = 0;
-
-
-	private: virtual real_type do_tier_busy_capacity(uint_type tier_id) const = 0;
 
 
 	private: virtual ::std::vector<user_request_type> do_tier_in_service_requests(uint_type tier_id) const = 0;
