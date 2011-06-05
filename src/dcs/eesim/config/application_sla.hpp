@@ -5,7 +5,8 @@
 #include <boost/variant.hpp>
 #include <dcs/eesim/config/metric_category.hpp>
 #include <dcs/eesim/config/statistic.hpp>
-#include <iostream>
+#include <dcs/macro.hpp>
+#include <iosfwd>
 #include <map>
 #include <string>
 
@@ -78,6 +79,8 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 template <typename CharT, typename CharTraitsT, typename RealT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, none_sla_model_config<RealT> const& sla)
 {
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(sla);
+
 	os << "<(none-sla-model)>";
 
 	return os;

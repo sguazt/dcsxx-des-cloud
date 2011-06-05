@@ -3,7 +3,7 @@
 
 
 #include <dcs/eesim/config/physical_resource.hpp>
-#include <iostream>
+#include <iosfwd>
 #include <map>
 #include <string>
 

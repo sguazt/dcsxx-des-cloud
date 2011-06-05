@@ -28,6 +28,7 @@
 
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
+#include <dcs/macro.hpp>
 #include <dcs/perfeval/sla/base_cost_model.hpp>
 #include <map>
 #include <stdexcept>
@@ -110,12 +111,20 @@ class always_satisfied_cost_model: public base_cost_model<CategoryT,ValueT,RealT
 
 	private: bool do_satisfied(metric_category_iterator category_first, metric_category_iterator category_last, metric_iterator metric_first) const
 	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(category_first);
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(category_last);
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(metric_first);
+
 		return true;
 	}
 
 
 	private: real_type do_score(metric_category_iterator category_first, metric_category_iterator category_last, metric_iterator metric_first) const
 	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(category_first);
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(category_last);
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(metric_first);
+
 		return 0;
 	}
 

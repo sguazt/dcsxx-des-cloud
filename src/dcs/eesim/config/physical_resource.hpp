@@ -4,7 +4,7 @@
 
 #include <boost/variant.hpp>
 #include <dcs/eesim/config/energy_model.hpp>
-#include <iostream>
+#include <iosfwd>
 #include <string>
 
 

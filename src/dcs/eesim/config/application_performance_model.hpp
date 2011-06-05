@@ -7,7 +7,7 @@
 #include <dcs/eesim/config/metric_category.hpp>
 #include <dcs/eesim/config/numeric_matrix.hpp>
 #include <dcs/macro.hpp>
-#include <iostream>
+#include <iosfwd>
 #include <iterator>
 #include <map>
 #include <vector>

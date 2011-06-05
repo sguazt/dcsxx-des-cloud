@@ -7,7 +7,7 @@
 #include <dcs/eesim/config/initial_placement_strategy.hpp>
 #include <dcs/eesim/config/migration_controller.hpp>
 #include <dcs/eesim/config/physical_machine.hpp>
-#include <iostream>
+#include <iosfwd>
 #include <iterator>
 #include <vector>
 

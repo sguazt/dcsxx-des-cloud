@@ -7,7 +7,7 @@
 #include <cstddef>
 #include <dcs/eesim/config/numeric_matrix.hpp>
 #include <dcs/functional/bind.hpp>
-#include <iostream>
+#include <iosfwd>
 #include <iterator>
 #include <utility>
 

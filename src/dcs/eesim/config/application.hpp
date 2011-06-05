@@ -9,7 +9,7 @@
 #include <dcs/eesim/config/application_sla.hpp>
 #include <dcs/eesim/config/application_tier.hpp>
 #include <dcs/eesim/config/physical_resource.hpp>
-#include <iostream>
+#include <iosfwd>
 #include <iterator>
 #include <map>
 #include <string>

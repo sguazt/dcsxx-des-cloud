@@ -6,7 +6,7 @@
 #include <dcs/eesim/config/logging.hpp>
 #include <dcs/eesim/config/rng.hpp>
 #include <dcs/eesim/config/simulation.hpp>
-#include <iostream>
+#include <iosfwd>
 
 
 namespace dcs { namespace eesim { namespace config {

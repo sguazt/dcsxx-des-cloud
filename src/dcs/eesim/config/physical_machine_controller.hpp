@@ -4,7 +4,7 @@
 
 #include <boost/variant.hpp>
 #include <dcs/macro.hpp>
-#include <iostream>
+#include <iosfwd>
 
 
 namespace dcs { namespace eesim { namespace config {

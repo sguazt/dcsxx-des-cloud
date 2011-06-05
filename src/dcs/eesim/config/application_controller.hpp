@@ -6,7 +6,7 @@
 #include <dcs/eesim/config/numeric_matrix.hpp>
 #include <dcs/macro.hpp>
 #include <iomanip>
-#include <iostream>
+#include <iosfwd>
 
 
 namespace dcs { namespace eesim { namespace config {

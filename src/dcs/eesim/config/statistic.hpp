@@ -5,7 +5,7 @@
 #include <boost/variant.hpp>
 #include <dcs/des/statistic_categories.hpp>
 #include <dcs/macro.hpp>
-#include <iostream>
+#include <iosfwd>
 #include <stdexcept>
 
 

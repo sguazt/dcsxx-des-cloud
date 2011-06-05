@@ -2,6 +2,9 @@
 #define DCS_EESIM_CONFIG_RNG_HPP
 
 
+#include <iosfwd>
+
+
 namespace dcs { namespace eesim { namespace config {
 
 enum rng_engine_category

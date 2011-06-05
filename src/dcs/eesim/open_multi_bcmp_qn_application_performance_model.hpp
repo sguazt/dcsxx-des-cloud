@@ -35,6 +35,12 @@ class application_performance_model_traits<
 				return model.system_throughput();
 			case utilization_performance_measure:
 				throw ::std::runtime_error("[dcs::eesim::open_multi_bcmp_qn_application_performance_model::application_measure] Utilization measure not defined for the whole application.");
+			case queue_length_performance_measure:
+				return model.system_queue_length();
+//			case customers_number_performance_measure:
+//				return model.system_customers_number();
+//			case waiting_time_performance_measure:
+//				return model.system_waiting_time();
 //			case unknown_performance_measure:
 //				break;
 		}
@@ -55,6 +61,12 @@ class application_performance_model_traits<
 				return model.station_throughputs()(tier_id);
 			case utilization_performance_measure:
 				return model.station_utilizations()(tier_id);
+			case queue_length_performance_measure:
+				return model.station_queue_lengths()(tier_id);
+//			case customers_number_performance_measure:
+//				return model.station_customers_numbers()(tier_id);
+//			case waiting_time_performance_measure:
+//				return model.station_waiting_times()(tier_id);
 //			case unknown_performance_measure:
 //				break;
 		}

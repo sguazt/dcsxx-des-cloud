@@ -2,7 +2,7 @@
 #define DCS_EESIM_CONFIG_ENERGY_MODEL_HPP
 
 
-#include <iostream>
+#include <iosfwd>
 
 
 namespace dcs { namespace eesim { namespace config {

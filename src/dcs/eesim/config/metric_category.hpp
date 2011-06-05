@@ -3,7 +3,7 @@
 
 
 #include <dcs/eesim/performance_measure_category.hpp>
-#include <iostream>
+#include <iosfwd>
 #include <stdexcept>
 
 

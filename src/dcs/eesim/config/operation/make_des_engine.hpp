@@ -31,8 +31,8 @@ template <typename RealT, typename UIntT>
 
 				output_analysis_config_type const& analysis = ::boost::get<output_analysis_config_type>(conf.simulation().output_analysis.category_conf);
 
-				real_type min_replication_size;
-				uint_type min_num_replications;
+				real_type min_replication_size(0);
+				uint_type min_num_replications(0);
 
 				switch (analysis.num_replications_category)
 				{

@@ -3,7 +3,7 @@
 
 
 #include <boost/variant.hpp>
-#include <iostream>
+#include <iosfwd>
 
 
 namespace dcs { namespace eesim { namespace config {

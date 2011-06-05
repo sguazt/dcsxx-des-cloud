@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <dcs/assert.hpp>
-#include <iostream>
+#include <iosfwd>
 #include <iterator>
 #include <stdexcept>
 

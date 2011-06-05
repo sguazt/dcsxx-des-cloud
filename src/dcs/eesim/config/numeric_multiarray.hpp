@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <dcs/assert.hpp>
 #include <functional>
-#include <iostream>
+#include <iosfwd>
 #include <iterator>
 #include <numeric>
 #include <stdexcept>
