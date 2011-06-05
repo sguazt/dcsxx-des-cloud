@@ -8,7 +8,7 @@
 #include <dcs/eesim/config/probability_distribution.hpp>
 #include <dcs/eesim/config/statistic.hpp>
 #include <dcs/macro.hpp>
-#include <iostream>
+#include <iosfwd>
 #include <map>
 
 
@@ -38,7 +38,9 @@ enum qn_node_category
 
 enum qn_scheduling_policy_category
 {
-	qn_fcfs_scheduling_policy
+	qn_fcfs_scheduling_policy,
+	qn_lcfs_scheduling_policy,
+	qn_processor_sharing_scheduling_policy
 };
 
 
@@ -50,8 +52,9 @@ enum qn_routing_strategy_category
 
 enum qn_service_strategy_category
 {
+	qn_infinite_server_service_strategy,
 	qn_load_independent_service_strategy,
-	qn_infinite_server_service_strategy
+	qn_processor_sharing_service_strategy
 };
 
 
@@ -71,8 +74,45 @@ struct qn_probabilistic_routing_strategy_config
 };
 
 
+struct qn_fcfs_scheduling_policy_config
+{
+};
+
+
+struct qn_lcfs_scheduling_policy_config
+{
+};
+
+
+struct qn_processor_sharing_scheduling_policy_config
+{
+};
+
+
+//template <typename RealT>
+//struct qn_infinite_server_service_strategy_config
+//{
+//	typedef RealT real_type;
+//	typedef probability_distribution_config<real_type> probability_distribution_config_type;
+//	typedef ::std::vector<probability_distribution_config_type> probability_distribution_container;
+//
+//	probability_distribution_container distributions;
+//};
+
+
 template <typename RealT>
 struct qn_load_independent_service_strategy_config
+{
+	typedef RealT real_type;
+	typedef probability_distribution_config<real_type> probability_distribution_config_type;
+	typedef ::std::vector<probability_distribution_config_type> probability_distribution_container;
+
+	probability_distribution_container distributions;
+};
+
+
+template <typename RealT>
+struct qn_processor_sharing_service_strategy_config
 {
 	typedef RealT real_type;
 	typedef probability_distribution_config<real_type> probability_distribution_config_type;
@@ -102,18 +142,25 @@ struct qn_queue_node_config
 {
 	typedef RealT real_type;
 	typedef UIntT uint_type;
+	typedef qn_fcfs_scheduling_policy_config fcfs_scheduling_policy_config_type;
+	typedef qn_lcfs_scheduling_policy_config lcfs_scheduling_policy_config_type;
+	typedef qn_processor_sharing_scheduling_policy_config processor_sharing_scheduling_policy_config_type;
 	typedef qn_probabilistic_routing_strategy_config<RealT> probabilistic_routing_strategy_config_type;
 	typedef qn_load_independent_service_strategy_config<real_type> load_independent_service_strategy_config_type;
+	typedef qn_processor_sharing_service_strategy_config<real_type> processor_sharing_service_strategy_config_type;
 
 	unsigned long num_servers;
 	bool is_infinite;
 	uint_type capacity;
 	qn_scheduling_policy_category policy_category;
-//	::boost::variant<fcfs_scheduling_policy_config> policy_conf;
+	::boost::variant<fcfs_scheduling_policy_config_type,
+					 lcfs_scheduling_policy_config_type,
+					 processor_sharing_scheduling_policy_config_type> policy_conf;
 	qn_routing_strategy_category routing_category;
 	::boost::variant<probabilistic_routing_strategy_config_type> routing_conf;
 	qn_service_strategy_category service_category;
-	::boost::variant<load_independent_service_strategy_config_type> service_conf;
+	::boost::variant<load_independent_service_strategy_config_type,
+					 processor_sharing_service_strategy_config_type> service_conf;
 };
 
 
@@ -245,6 +292,39 @@ template <typename CharT, typename CharTraitsT>
 }
 
 
+template <typename CharT, typename CharTraitsT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, qn_fcfs_scheduling_policy_config const& config)
+{
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(config);
+
+	os << "<(fcfs-scheduling-routing)>";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, qn_lcfs_scheduling_policy_config const& config)
+{
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(config);
+
+	os << "<(lcfs-scheduling-routing)>";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, qn_processor_sharing_scheduling_policy_config const& config)
+{
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(config);
+
+	os << "<(processor_sharing-scheduling-routing)>";
+
+	return os;
+}
+
+
 template <typename CharT, typename CharTraitsT, typename RealT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, qn_probabilistic_routing_strategy_config<RealT> const& routing_config)
 {
@@ -276,6 +356,28 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, qn_load_independent_service_strategy_config<RealT> const& service_config)
 {
 	os << "<(load-independent-service)";
+
+	os << " distributions: [";
+	for (::std::size_t i = 0; i < service_config.distributions.size(); ++i)
+	{
+		if (i != 0)
+		{
+			os << ", ";
+		}
+		os << service_config.distributions[i];
+	}
+	os << "]";
+
+	os << ">";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT, typename RealT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, qn_processor_sharing_service_strategy_config<RealT> const& service_config)
+{
+	os << "<(processor-sharing-service)";
 
 	os << " distributions: [";
 	for (::std::size_t i = 0; i < service_config.distributions.size(); ++i)
@@ -333,13 +435,14 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 	os << "<(queue-node)";
 
 	os << " num-servers: " << node_config.num_servers;
-	os << ", ";
-	switch (node_config.policy_category)
-	{
-		case qn_fcfs_scheduling_policy:
-			os << "queue-policy: fcfs";
-			break;
-	}
+	os << ", queue-policy: " << node_config.policy_conf;
+//	os << ", ";
+//	switch (node_config.policy_category)
+//	{
+//		case qn_fcfs_scheduling_policy:
+//			os << "queue-policy: fcfs";
+//			break;
+//	}
 	os << ", queue-size: ";
 	if (node_config.is_infinite)
 	{

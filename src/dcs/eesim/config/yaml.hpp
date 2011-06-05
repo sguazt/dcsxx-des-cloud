@@ -319,7 +319,7 @@ qn_customer_class_category text_to_qn_customer_class_category(::std::string cons
 		return qn_open_customer_class;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_qn_customer_class_category Unknown queueing network customer class category.");
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_qn_customer_class_category] Unknown queueing network customer class category.");
 }
 
 
@@ -332,7 +332,28 @@ qn_routing_strategy_category text_to_qn_routing_strategy_category(::std::string 
 		return qn_probabilistic_routing_strategy;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_qn_routing_strategy_category Unknown queueing network routing strategy category.");
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_qn_routing_strategy_category] Unknown queueing network routing strategy category.");
+}
+
+
+qn_scheduling_policy_category text_to_qn_scheduling_policy_category(::std::string const& str)
+{
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("fcfs"))
+	{
+		return qn_fcfs_scheduling_policy;
+	}
+	if (!istr.compare("lcfs"))
+	{
+		return qn_lcfs_scheduling_policy;
+	}
+	if (!istr.compare("ps"))
+	{
+		return qn_processor_sharing_scheduling_policy;
+	}
+
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_qn_scheduling_policy_category] Unknown queueing network scheduling policy.");
 }
 
 
@@ -348,8 +369,12 @@ qn_service_strategy_category text_to_qn_service_strategy_category(::std::string 
 	{
 		return qn_load_independent_service_strategy;
 	}
+	if (!istr.compare("ps"))
+	{
+		return qn_processor_sharing_service_strategy;
+	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_qn_service_strategy_category Unknown queueing network service strategy category.");
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_qn_service_strategy_category] Unknown queueing network service strategy category.");
 }
 
 
@@ -370,7 +395,7 @@ initial_placement_strategy_category text_to_initial_placement_strategy_category(
 		return first_fit_scaleout_initial_placement_strategy;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_initial_placement_strategy_category Unknown init VM placement strategy category.");
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_initial_placement_strategy_category] Unknown init VM placement strategy category.");
 }
 
 
@@ -432,7 +457,7 @@ application_controller_category text_to_application_controller_category(::std::s
 		return qn_application_controller;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_application_controller_category Unknown application controller category.");
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_application_controller_category] Unknown application controller category.");
 }
 
 
@@ -453,7 +478,7 @@ physical_machine_controller_category text_to_physical_machine_controller_categor
 		return dummy_physical_machine_controller;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_physical_machine_controller_category Unknown physical machine controller category.");
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_physical_machine_controller_category] Unknown physical machine controller category.");
 }
 
 
@@ -470,7 +495,7 @@ map_probability_distribution_characterization_category text_to_map_characterizat
 		return casale2009_map_characterization;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_map_characterization_category Unknown MAP characterization category.");
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_map_characterization_category] Unknown MAP characterization category.");
 }
 
 
@@ -487,7 +512,7 @@ sla_model_category text_to_sla_model_category(::std::string const& str)
 		return none_sla_model;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_sla_model_category Unknown SLA model category.");
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_sla_model_category] Unknown SLA model category.");
 }
 
 
@@ -521,7 +546,7 @@ replication_size_detector_category text_to_replication_size_detector_category(::
 		return fixed_num_obs_replication_size_detector;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_replication_size_detector_category Unknown replication size detector category.");
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_replication_size_detector_category] Unknown replication size detector category.");
 }
 
 
@@ -550,7 +575,7 @@ system_identification_category text_to_system_identification_category(::std::str
 //		return dummy_system_identification;
 //	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_system_identification_category Unknown system identification category.");
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_system_identification_category] Unknown system identification category.");
 }
 
 
@@ -567,7 +592,7 @@ application_performance_model_category text_to_application_performance_model_cat
 		return fixed_application_performance_model;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_application_performance_model_category Unknown application performance model category.");
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_application_performance_model_category] Unknown application performance model category.");
 }
 }} // Namespace detail::<unnamed>
 
@@ -727,9 +752,27 @@ void operator>>(::YAML::Node const& node, statistic_config<RealT>& conf)
 
 	switch (conf.category)
 	{
+		case max_statistic:
+			{
+				typedef typename config_type::max_statistic_config_type config_impl_type;
+
+				config_impl_type conf_impl;
+
+				conf.category_conf = conf_impl;
+			}
+			break;
 		case mean_statistic:
 			{
 				typedef typename config_type::mean_statistic_config_type config_impl_type;
+
+				config_impl_type conf_impl;
+
+				conf.category_conf = conf_impl;
+			}
+			break;
+		case min_statistic:
+			{
+				typedef typename config_type::min_statistic_config_type config_impl_type;
 
 				config_impl_type conf_impl;
 
@@ -1353,22 +1396,6 @@ void operator>>(::YAML::Node const& node, qn_node_config<RealT,UIntT>& node_conf
 				{
 					node_impl_conf.num_servers = 1;
 				}
-				if (node.FindValue("policy"))
-				{
-					node["policy"] >> label;
-					if (!label.compare("fcfs"))
-					{
-						node_impl_conf.policy_category = qn_fcfs_scheduling_policy;
-					}
-					else
-					{
-						throw ::std::runtime_error("[dcs::eesim::config::>>] Unknown queueing network scheduling policy.");
-					}
-				}
-				else
-				{
-					node_impl_conf.policy_category = qn_fcfs_scheduling_policy;
-				}
 				if (node.FindValue("capacity"))
 				{
 					node["capacity"] >> node_impl_conf.capacity;
@@ -1379,23 +1406,30 @@ void operator>>(::YAML::Node const& node, qn_node_config<RealT,UIntT>& node_conf
 					node_impl_conf.is_infinite = true;
 					node_impl_conf.capacity = 0;
 				}
-//				::YAML::Node const& routing_node = node["routing-strategy"];
-//				routing_node["type"] >> label;
-//				if (!label.compare("probabilistic"))
-//				{
-//					typedef typename node_impl_config_type::probabilistic_routing_strategy_config_type routing_config_impl_type;
-//
-//					routing_config_impl_type routing_impl_conf;
-//
-//					routing_node["probabilities"] >> routing_impl_conf.probabilities;
-//
-//					node_impl_conf.routing_category = qn_probabilistic_routing_strategy;
-//					node_impl_conf.routing_conf = routing_impl_conf;
-//				}
-//				else
-//				{
-//					throw ::std::runtime_error("[dcs::eesim::config::>>] Unknown queueing network routing strategy.");
-//				}
+				// Read scheduling policy
+				{
+					if (node.FindValue("policy"))
+					{
+						node["policy"] >> label;
+						node_impl_conf.policy_category = detail::text_to_qn_scheduling_policy_category(label);
+					}
+					else
+					{
+						node_impl_conf.policy_category = qn_fcfs_scheduling_policy;
+					}
+					switch (node_impl_conf.policy_category)
+					{
+						case qn_fcfs_scheduling_policy:
+							node_impl_conf.policy_conf = typename node_impl_config_type::fcfs_scheduling_policy_config_type();
+							break;
+						case qn_lcfs_scheduling_policy:
+							node_impl_conf.policy_conf = typename node_impl_config_type::lcfs_scheduling_policy_config_type();
+							break;
+						case qn_processor_sharing_scheduling_policy:
+							node_impl_conf.policy_conf = typename node_impl_config_type::processor_sharing_scheduling_policy_config_type();
+							break;
+					}
+				}
 				// Read routing strategy
 				{
 					::YAML::Node const& routing_node = node["routing-strategy"];
@@ -1416,33 +1450,6 @@ void operator>>(::YAML::Node const& node, qn_node_config<RealT,UIntT>& node_conf
 							break;
 					}
 				}
-//				::YAML::Node const& service_node = node["service-strategy"];
-//				service_node["type"] >> label;
-//				if (!label.compare("load-independent"))
-//				{
-//					typedef typename node_impl_config_type::load_independent_service_strategy_config_type service_config_impl_type;
-//					typedef typename service_config_impl_type::probability_distribution_config_type distribution_config_type;
-//
-//					service_config_impl_type service_impl_conf;
-//
-//					::YAML::Node const& distributions_node = service_node["distributions"];
-//					for (::std::size_t i = 0; i < distributions_node.size(); ++i)
-//					{
-//						::YAML::Node const& distribution_node = distributions_node[i];
-//						distribution_config_type distribution_conf;
-//
-//						distribution_node["distribution"] >> distribution_conf;
-//
-//						service_impl_conf.distributions.push_back(distribution_conf);
-//					}
-//
-//					node_impl_conf.service_category = qn_load_independent_service_strategy;
-//					node_impl_conf.service_conf = service_impl_conf;
-//				}
-//				else
-//				{
-//					throw ::std::runtime_error("[dcs::eesim::config::>>] Unknown queueing network routing strategy.");
-//				}
 				// Read service strategy
 				{
 					::YAML::Node const& service_node = node["service-strategy"];
@@ -1463,6 +1470,27 @@ void operator>>(::YAML::Node const& node, qn_node_config<RealT,UIntT>& node_conf
 						case qn_load_independent_service_strategy:
 							{
 								typedef typename node_impl_config_type::load_independent_service_strategy_config_type service_config_impl_type;
+								typedef typename service_config_impl_type::probability_distribution_config_type distribution_config_type;
+
+								service_config_impl_type service_impl_conf;
+
+								::YAML::Node const& distributions_node = service_node["distributions"];
+								for (::std::size_t i = 0; i < distributions_node.size(); ++i)
+								{
+									::YAML::Node const& distribution_node = distributions_node[i];
+									distribution_config_type distribution_conf;
+
+									distribution_node["distribution"] >> distribution_conf;
+
+									service_impl_conf.distributions.push_back(distribution_conf);
+								}
+
+								node_impl_conf.service_conf = service_impl_conf;
+							}
+							break;
+						case qn_processor_sharing_service_strategy:
+							{
+								typedef typename node_impl_config_type::processor_sharing_service_strategy_config_type service_config_impl_type;
 								typedef typename service_config_impl_type::probability_distribution_config_type distribution_config_type;
 
 								service_config_impl_type service_impl_conf;
@@ -1505,23 +1533,6 @@ void operator>>(::YAML::Node const& node, qn_node_config<RealT,UIntT>& node_conf
 
 				node_impl_config_type node_impl_conf;
 
-//				::YAML::Node const& routing_node = node["routing-strategy"];
-//				routing_node["type"] >> label;
-//				if (!label.compare("probabilistic"))
-//				{
-//					typedef typename node_impl_config_type::probabilistic_routing_strategy_config_type routing_config_impl_type;
-//
-//					routing_config_impl_type routing_impl_conf;
-//
-//					routing_node["probabilities"] >> routing_impl_conf.probabilities;
-//
-//					node_impl_conf.routing_category = qn_probabilistic_routing_strategy;
-//					node_impl_conf.routing_conf = routing_impl_conf;
-//				}
-//				else
-//				{
-//					throw ::std::runtime_error("[dcs::eesim::config::>>] Unknown queueing network routing strategy.");
-//				}
 				// Read routing strategy
 				{
 					::YAML::Node const& routing_node = node["routing-strategy"];

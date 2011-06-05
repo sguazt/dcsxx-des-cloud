@@ -21,10 +21,13 @@
 #include <dcs/des/model/qn/customer_class.hpp>
 #include <dcs/des/model/qn/delay_station_node.hpp>
 #include <dcs/des/model/qn/fcfs_queueing_strategy.hpp>
+#include <dcs/des/model/qn/lcfs_queueing_strategy.hpp>
 #include <dcs/des/model/qn/load_independent_service_strategy.hpp>
 #include <dcs/des/model/qn/network_node.hpp>
 #include <dcs/des/model/qn/open_customer_class.hpp>
 #include <dcs/des/model/qn/probabilistic_routing_strategy.hpp>
+#include <dcs/des/model/qn/ps_queueing_strategy.hpp>
+#include <dcs/des/model/qn/ps_service_strategy.hpp>
 #include <dcs/des/model/qn/queueing_network.hpp>
 #include <dcs/des/model/qn/queueing_station_node.hpp>
 #include <dcs/des/model/qn/queueing_strategy.hpp>
@@ -1585,6 +1588,26 @@ template <
 
 								node_config_impl_type const& node_conf_impl = ::boost::get<node_config_impl_type>(node_it->category_conf);
 
+								// Check for conf consistency
+								if (node_conf_impl.service_category == qn_infinite_server_service_strategy)
+								{
+									throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Service strategy for a queueing station node cannot be of type 'infinite-server'.");
+								}
+								else if (node_conf_impl.service_category == qn_processor_sharing_service_strategy)
+								{
+									if (node_conf_impl.policy_category != qn_processor_sharing_scheduling_policy)
+									{
+										throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Processor-Sharing service strategy needs Processor-Sharing scheduling policy.");
+									}
+								}
+								else
+								{
+									if (node_conf_impl.policy_category == qn_processor_sharing_scheduling_policy)
+									{
+										throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Processor-Sharing scheduling policy can only be used with Processor-Sharing service strategy.");
+									}
+								}
+
 								// Service strategy
 								switch (node_conf_impl.service_category)
 								{
@@ -1606,6 +1629,30 @@ template <
 											for (::std::size_t i = 0; i < ndistrs; ++i)
 											{
 												//::dcs::shared_ptr<distribution_type> ptr_distr;
+												distribution_type distr;
+
+												distr = make_probability_distribution<traits_type>(service_conf.distributions[i]);
+
+												distrs.push_back(distr);
+											}
+											ptr_service = ::dcs::make_shared<service_strategy_impl_type>(distrs.begin(), distrs.end());
+										}
+										break;
+									case qn_processor_sharing_service_strategy:
+										{
+											typedef typename node_config_impl_type::processor_sharing_service_strategy_config_type service_config_type;
+											typedef typename service_config_type::probability_distribution_config_type distribution_config_type;
+											//typedef ::dcs::math::stats::base_distribution<real_type> distribution_type;
+											typedef ::dcs::math::stats::any_distribution<real_type> distribution_type;
+											typedef ::std::vector<distribution_type> distribution_container;
+											typedef ::dcs::des::model::qn::ps_service_strategy<model_impl_traits_type> service_strategy_impl_type;
+
+											service_config_type const& service_conf = ::boost::get<service_config_type>(node_conf_impl.service_conf);
+
+											::std::size_t ndistrs = service_conf.distributions.size();
+											distribution_container distrs;
+											for (::std::size_t i = 0; i < ndistrs; ++i)
+											{
 												distribution_type distr;
 
 												distr = make_probability_distribution<traits_type>(service_conf.distributions[i]);
@@ -1659,6 +1706,34 @@ template <
 											else
 											{
 												ptr_queueing = ::dcs::make_shared<queueing_impl_type>(node_conf_impl.capacity);
+											}
+										}
+										break;
+									case qn_lcfs_scheduling_policy:
+										{
+											typedef ::dcs::des::model::qn::lcfs_queueing_strategy<model_impl_traits_type> queueing_impl_type;
+
+											if (node_conf_impl.is_infinite)
+											{
+												ptr_queueing = ::dcs::make_shared<queueing_impl_type>();
+											}
+											else
+											{
+												ptr_queueing = ::dcs::make_shared<queueing_impl_type>(node_conf_impl.capacity);
+											}
+										}
+										break;
+									case qn_processor_sharing_scheduling_policy:
+										{
+											typedef ::dcs::des::model::qn::ps_queueing_strategy<model_impl_traits_type> queueing_impl_type;
+
+											if (node_conf_impl.is_infinite)
+											{
+												ptr_queueing = ::dcs::make_shared<queueing_impl_type>();
+											}
+											else
+											{
+												throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Finite capacity queues with Processor-Sharing policy are not handled yet.");
 											}
 										}
 										break;
@@ -1975,7 +2050,7 @@ template <typename TraitsT, typename RealT>
 								target_real_type> sla_impl_type;
 				typedef typename sla_config_type::none_sla_model_config_type sla_config_impl_type;
 
-				sla_config_impl_type const& sla_conf_impl = ::boost::get<sla_config_impl_type>(sla_conf.category_conf);
+				//sla_config_impl_type const& sla_conf_impl = ::boost::get<sla_config_impl_type>(sla_conf.category_conf);
 
 				sla = ::dcs::perfeval::sla::make_any_cost_model(sla_impl_type());
 			}
