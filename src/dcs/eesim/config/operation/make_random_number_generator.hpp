@@ -123,8 +123,8 @@ template <typename RealT, typename UIntT>
 							uint_type
 						> rng_impl_type;
 
-//				ptr_rng = ::dcs::make_shared<rng_impl_type>(seed);
-				ptr_rng = ::dcs::shared_ptr<rng_type>(new rng_impl_type(seed));
+				ptr_rng = ::dcs::make_shared<rng_impl_type>();
+//				ptr_rng = ::dcs::shared_ptr<rng_type>(new rng_impl_type());
 			}
 			break;
 		case minstd_rand1_rng_engine:
@@ -135,8 +135,8 @@ template <typename RealT, typename UIntT>
 						> rng_impl_type;
 
 
-//				ptr_rng = ::dcs::make_shared<rng_impl_type>(seed);
-				ptr_rng = ::dcs::shared_ptr<rng_type>(new rng_impl_type(seed));
+				ptr_rng = ::dcs::make_shared<rng_impl_type>();
+//				ptr_rng = ::dcs::shared_ptr<rng_type>(new rng_impl_type());
 			}
 			break;
 		case minstd_rand2_rng_engine:
@@ -147,8 +147,8 @@ template <typename RealT, typename UIntT>
 						> rng_impl_type;
 
 
-//				ptr_rng = ::dcs::make_shared<rng_impl_type>(seed);
-				ptr_rng = ::dcs::shared_ptr<rng_type>(new rng_impl_type(seed));
+				ptr_rng = ::dcs::make_shared<rng_impl_type>();
+//				ptr_rng = ::dcs::shared_ptr<rng_type>(new rng_impl_type());
 			}
 			break;
 		case rand48_rng_engine:
@@ -159,8 +159,8 @@ template <typename RealT, typename UIntT>
 						> rng_impl_type;
 
 
-//				ptr_rng = ::dcs::make_shared<rng_impl_type>(seed);
-				ptr_rng = ::dcs::shared_ptr<rng_type>(new rng_impl_type(seed));
+				ptr_rng = ::dcs::make_shared<rng_impl_type>();
+//				ptr_rng = ::dcs::shared_ptr<rng_type>(new rng_impl_type());
 			}
 			break;
 		case mt11213b_rng_engine:
@@ -170,8 +170,8 @@ template <typename RealT, typename UIntT>
 							uint_type
 						> rng_impl_type;
 
-//				ptr_rng = ::dcs::make_shared<rng_impl_type>(seed);
-				ptr_rng = ::dcs::shared_ptr<rng_type>(new rng_impl_type(seed));
+				ptr_rng = ::dcs::make_shared<rng_impl_type>();
+//				ptr_rng = ::dcs::shared_ptr<rng_type>(new rng_impl_type());
 			}
 			break;
 		case mt19937_rng_engine:
@@ -181,13 +181,15 @@ template <typename RealT, typename UIntT>
 							uint_type
 						> rng_impl_type;
 
-//				ptr_rng = ::dcs::make_shared<rng_impl_type>(seed);
-				ptr_rng = ::dcs::shared_ptr<rng_type>(new rng_impl_type(seed));
+				ptr_rng = ::dcs::make_shared<rng_impl_type>();
+//				ptr_rng = ::dcs::shared_ptr<rng_type>(new rng_impl_type());
 			}
 			break;
 		default:
 			throw ::std::runtime_error("[dcs::eesim::config::make_random_number_generator] Unhandled random number generator category.");
 	}
+
+	ptr_rng->seed(seed);
 
 	return ptr_rng;
 }
