@@ -433,7 +433,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 		// double-check: tier must be a service-station node.
 		DCS_ASSERT(
 				ptr_svc_node,
-				throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_request_tier_service_event_source] Unable to get a service station node.")
+				throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_tier_in_service_requests] Unable to get a service station node.")
 			);
 
 		::std::vector<user_request_type> requests;
