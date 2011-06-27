@@ -57,6 +57,7 @@ typedef unsigned long uint_type;
 typedef long int_type;
 typedef dcs::des::engine<real_type> des_engine_type;
 typedef dcs::math::random::base_generator<uint_type> random_generator_type;
+//typedef dcs::math::random::base_generator<uint32_t> random_generator_type;
 typedef dcs::eesim::traits<
 			des_engine_type,
 			random_generator_type,
@@ -454,6 +455,8 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<
 			   << "Uptime: " << ptr_mach->simulation_model().uptime() << ::std::endl;
 			os << indent << indent
 			   << "Consumed Energy: " << ptr_mach->simulation_model().consumed_energy() << ::std::endl;
+			os << indent << indent
+			   << "Utilization: " << ptr_mach->simulation_model().utilization() << ::std::endl;
 		}
 	}
 }
@@ -607,7 +610,8 @@ int main(int argc, char* argv[])
 	ptr_des_eng = dcs::eesim::config::make_des_engine(conf);
 	reg.des_engine(ptr_des_eng);
 	random_generator_pointer ptr_rng;
-	ptr_rng = dcs::eesim::config::make_random_number_generator(conf);
+	ptr_rng = dcs::eesim::config::make_random_number_generator(conf);//OK
+//	ptr_rng = dcs::make_shared<dcs::math::random::mt19937>(5489UL);//XXX
 	reg.uniform_random_generator(ptr_rng);
 
 //	detail::test_rng(ptr_rng);//XXX
