@@ -154,6 +154,12 @@ class base_physical_machine_simulation_model
 	}
 
 
+	public: output_statistic_type const& utilization() const
+	{
+		return do_utilization();
+	}
+
+
 	private: virtual power_status do_power_state() const = 0;
 
 
@@ -200,6 +206,9 @@ class base_physical_machine_simulation_model
 
 
 	private: virtual output_statistic_type const& do_uptime() const = 0;
+
+
+	private: virtual output_statistic_type const& do_utilization() const = 0;
 
 
 	private: physical_machine_pointer ptr_mach_;
