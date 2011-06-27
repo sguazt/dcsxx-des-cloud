@@ -100,6 +100,7 @@ class virtual_machine
 		  power_status_(powered_off_power_status),
 		  ptr_vmm_(0)
 	{
+		// empty
 	}
 
 
@@ -161,6 +162,11 @@ class virtual_machine
 
 			resource_share_container wanted_shares(ptr_tier_->resource_shares());
 			wanted_resource_shares(wanted_shares.begin(), wanted_shares.end());
+		}
+		else
+		{
+			reset_wanted_share_stats();
+			reset_share_stats();
 		}
 	}
 
@@ -485,6 +491,7 @@ class virtual_machine
 
 		des_engine_type& eng(registry_type::instance().des_engine());
 
+		// Create share stats for wanted shares (i==0) and real shares (i==1)
 		for (short i = 0; i < 2; ++i)
 		{
 			statistic_container stats;
@@ -496,7 +503,7 @@ class virtual_machine
 			stats.push_back(eng.make_analyzable_statistic(::dcs::des::max_estimator<real_type,uint_type>()));
 			stats.push_back(eng.make_analyzable_statistic(::dcs::des::mean_estimator<real_type,uint_type>()));
 
-			if (i)
+			if (i != 0)
 			{
 				wanted_res_shares_stats_[category] = stats;
 			}
@@ -520,21 +527,23 @@ class virtual_machine
 			create_share_stats(category);
 		}
 
-		::std::for_each(
-				wanted_res_shares_stats_[category].begin(),
-				wanted_res_shares_stats_[category].end(),
-				::dcs::functional::bind(
-					&statistic_type::operator(),
-					::dcs::functional::placeholders::_1,
-					value
-				)
-			);
-//		typedef typename statistic_container::iterator iterator;
-//		iterator end_it(wanted_res_shares_stats_[category].end());
-//		for (iterator it = wanted_res_shares_stats_[category].begin(); it != end_it; ++it)
-//		{
-//			(*(*it))(value);
-//		}
+//		::std::for_each(
+//				wanted_res_shares_stats_[category].begin(),
+//				wanted_res_shares_stats_[category].end(),
+//				::dcs::functional::bind(
+//					&statistic_type::operator(),
+//					::dcs::functional::placeholders::_1,
+//					value
+//				)
+//			);
+		typedef typename statistic_container::iterator iterator;
+		iterator end_it(wanted_res_shares_stats_[category].end());
+		for (iterator it = wanted_res_shares_stats_[category].begin(); it != end_it; ++it)
+		{
+			statistic_pointer ptr_stat(*it);
+
+			(*ptr_stat)(value);
+		}
 	}
 
 
@@ -544,6 +553,39 @@ class virtual_machine
 		while (first != last)
 		{
 			update_wanted_share_stats(first->first, first->second);
+			++first;
+		}
+	}
+
+
+	private: void reset_wanted_share_stats()
+	{
+		wanted_res_shares_stats_.clear();
+	}
+
+
+	private: void reset_wanted_share_stats(physical_resource_category category)
+	{
+		if (wanted_res_shares_stats_.count(category))
+		{
+			::std::for_each(
+					wanted_res_shares_stats_[category].begin(),
+					wanted_res_shares_stats_[category].end(),
+					::dcs::functional::bind(
+						&statistic_type::reset(),
+						::dcs::functional::placeholders::_1
+					)
+				);
+		}
+	}
+
+
+	private: template <typename ForwardIterT>
+		void reset_wanted_share_stats(ForwardIterT first, ForwardIterT last)
+	{
+		while (first != last)
+		{
+			update_wanted_share_stats(*first);
 			++first;
 		}
 	}
@@ -579,6 +621,39 @@ class virtual_machine
 		while (first != last)
 		{
 			update_share_stats(first->first, first->second);
+			++first;
+		}
+	}
+
+
+	private: void reset_share_stats()
+	{
+		res_shares_stats_.clear();
+	}
+
+
+	private: void reset_share_stats(physical_resource_category category)
+	{
+		if (res_shares_stats_.count(category))
+		{
+			::std::for_each(
+					res_shares_stats_[category].begin(),
+					res_shares_stats_[category].end(),
+					::dcs::functional::bind(
+						&statistic_type::reset(),
+						::dcs::functional::placeholders::_1
+					)
+				);
+		}
+	}
+
+
+	private: template <typename ForwardIterT>
+		void reset_share_stats(ForwardIterT first, ForwardIterT last)
+	{
+		while (first != last)
+		{
+			update_share_stats(*first);
 			++first;
 		}
 	}
