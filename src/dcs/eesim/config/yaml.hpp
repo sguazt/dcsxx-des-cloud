@@ -1275,12 +1275,15 @@ void operator>>(::YAML::Node const& node, probability_distribution_config<RealT>
 				{
 					::YAML::Node const& phase_node = phases_node[i]["phase"];
 					distribution_config_type distribution_conf;
-					real_type start_time;
+					//real_type start_time;
+					real_type duration;
 
 					phase_node["distribution"] >> distribution_conf;
-					phase_node["start-time"] >> start_time;
+					//phase_node["start-time"] >> start_time;
+					phase_node["duration"] >> duration;
 
-					distr_conf_impl.phases.push_back(::std::make_pair(start_time, ::dcs::make_shared<distribution_config_type>(distribution_conf)));
+					//distr_conf_impl.phases.push_back(::std::make_pair(start_time, ::dcs::make_shared<distribution_config_type>(distribution_conf)));
+					distr_conf_impl.phases.push_back(::std::make_pair(duration, ::dcs::make_shared<distribution_config_type>(distribution_conf)));
 				}
 
 				distr_conf.category_conf = distr_conf_impl;

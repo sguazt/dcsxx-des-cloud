@@ -534,7 +534,9 @@ template <typename TraitsT, typename RealT>
 
 				distribution_config_impl_type const& distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
 				//ptr_distr = ::dcs::make_shared<distribution_impl_type>(distr_conf.rate);
-				distr = ::dcs::math::stats::make_any_distribution(distribution_impl_type(distr_conf_impl.rate));
+				//distr = ::dcs::math::stats::make_any_distribution(distribution_impl_type(distr_conf_impl.rate));
+				distribution_impl_type distr_impl(distr_conf_impl.rate);
+				distr = ::dcs::math::stats::make_any_distribution(distr_impl);
 			}
 			break;
 		case gamma_probability_distribution:
