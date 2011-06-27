@@ -61,7 +61,8 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	  ptr_vm_pwron_evt_src_(new des_event_source_type(poweron_event_source_name)),
 	  ptr_vm_pwroff_evt_src_(new des_event_source_type(poweroff_event_source_name)),
 	  ptr_energy_stat_(new mean_estimator_statistic_type()), //FIXME: statistic type (mean) is hard-coded
-	  ptr_uptime_stat_(new mean_estimator_statistic_type()) //FIXME: statistic type (mean) is hard-coded
+	  ptr_uptime_stat_(new mean_estimator_statistic_type()), //FIXME: statistic type (mean) is hard-coded
+	  ptr_util_stat_(new mean_estimator_statistic_type()) //FIXME: statistic type (mean) is hard-coded
 	{
 		init();
 	}
@@ -383,6 +384,12 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		return *ptr_uptime_stat_;
 	}
 
+
+	private: output_statistic_type const& do_utilization() const
+	{
+		return *ptr_util_stat_;
+	}
+
 	//@} Interface Member Functions
 
 
@@ -398,6 +405,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		// Reset stats
 		ptr_energy_stat_->reset();
 		ptr_uptime_stat_->reset();
+		ptr_util_stat_->reset();
 
 		DCS_DEBUG_TRACE("(" << this << ") END Processing BEGIN-OF-SIMULATION (Clock: " << ctx.simulated_time() << ")");
 	}
@@ -437,7 +445,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			update_experiment_stats(ctx);
 		}
 
-		// Compute energy
+		// Compute energy & utilization
 		typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
 		typedef typename virtual_machine_container::const_iterator vm_iterator;
 		typedef ::std::vector<user_request_type> request_container;
@@ -449,6 +457,9 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		for (vm_iterator vm_it = active_vms.begin(); vm_it != vm_end_it; ++vm_it)
 		{
 			virtual_machine_pointer ptr_vm(*vm_it);
+
+			// check: valid VM pointer (paranoid)
+			DCS_DEBUG_ASSERT( ptr_vm );
 
 			request_container reqs(ptr_vm->guest_system().application().simulation_model().tier_in_service_requests(ptr_vm->guest_system().id()));
 			request_iterator req_end_it(reqs.end());
@@ -472,9 +483,12 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 				}
 			}
 		}
-		// - Compute total energy as the sum of the energy consumed during each active time interval
+		// - Compute total energy as the sum of the energy consumed during each
+		//   active time interval and machine utilization as the ratio between
+		//   busy and up time.
 		real_type idle_energy(this->machine().consumed_energy(0));
 		real_type energy(0);
+		real_type busy_time(0);
 		if (res_profile_map_.size() > 0)
 		{
 			//FIXME: CPU resource category is hard-coded
@@ -487,13 +501,25 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 
 				//FIXME: replace boost::icl::length with a wrapper function
 				energy += (this->machine().consumed_energy(item.second)-idle_energy)*::boost::icl::length(item.first);
+				busy_time += ::boost::icl::length(item.first);
 			}
 		}
 		energy += idle_energy*uptime_;
 
+		// check: machine cannot be busy more than is up (paranoid check)
+		DCS_DEBUG_ASSERT( busy_time <= uptime_ );
+
 		// Update simulation-level stats
 		(*ptr_energy_stat_)(energy);
 		(*ptr_uptime_stat_)(uptime_);
+		if (uptime_ > 0)
+		{
+			(*ptr_util_stat_)(busy_time/uptime_);
+		}
+		else
+		{
+			(*ptr_util_stat_)(0);
+		}
 
 		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-FINALIZATION (Clock: " << ctx.simulated_time() << ")");
 	}
@@ -537,11 +563,9 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 
 		user_request_type req = ptr_vm->guest_system().application().simulation_model().request_state(evt);
 
-		//FIXME: CPU resource category is hard-coded
-
 		typedef typename utilization_profile_type::const_iterator profile_iterator;
 		::std::vector<utilization_profile_type> profiles;
-//FIXME: CPU resource category is hard-coded
+		//FIXME: CPU resource category is hard-coded
 		physical_resource_category category(cpu_resource_category);
 		profiles = req.tier_utilization_profiles(ptr_vm->guest_system().id(), category);
 		if (profiles.size() > 0)
@@ -570,6 +594,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	private: des_event_source_pointer ptr_vm_pwroff_evt_src_;
 	private: output_statistic_pointer ptr_energy_stat_;
 	private: output_statistic_pointer ptr_uptime_stat_;
+	private: output_statistic_pointer ptr_util_stat_;
 	private: ::std::map<physical_resource_category,utilization_profile_type> res_profile_map_;
 };
 
