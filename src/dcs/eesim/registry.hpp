@@ -40,6 +40,7 @@
 #endif
 
 #include <boost/serialization/singleton.hpp>
+#include <dcs/memory.hpp>
 
 
 namespace dcs { namespace eesim {
