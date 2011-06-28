@@ -31,7 +31,8 @@ class timed_step_workload_model
 	public: timed_step_workload_model()
 	: phases_(),
 	  cur_phase_it_(phases_.begin()),
-	  cur_phase_duration_(0)
+	  cur_phase_duration_(0),
+	  move_up_(true)
 	{
 	}
 
@@ -40,7 +41,8 @@ class timed_step_workload_model
 		timed_step_workload_model(ForwardIterT first, ForwardIterT last)
 	: phases_(first, last),
 	  cur_phase_it_(phases_.begin()),
-	  cur_phase_duration_(0)
+	  cur_phase_duration_(0),
+	  move_up_(true)
 	{
 	}
 
@@ -48,7 +50,8 @@ class timed_step_workload_model
 	public: timed_step_workload_model(timed_step_workload_model const& that)
 	: phases_(that.phases_.begin(), that.phases_.end()),
 	  cur_phase_it_(phases_.begin()),
-	  cur_phase_duration_(0)
+	  cur_phase_duration_(0),
+	  move_up_(that.move_up_)
 	{
 	}
 
@@ -60,6 +63,7 @@ class timed_step_workload_model
 			phases_ = phase_container(rhs.phases_.begin(), rhs.phases_.end()),
 			cur_phase_it_ = ::std::advance(rhs.phases_.begin(), ::std::distance(rhs.cur_phase_it_, rhs.phases_.begin()));
 			cur_phase_duration_ = rhs.cur_phase_duration_;
+			move_up_ = rhs.move_up_;
 		}
 
 		return *this;
@@ -152,11 +156,31 @@ class timed_step_workload_model
 
 		if (cur_phase_duration_ > 0 && cur_phase_duration_ >= cur_phase_it_->first)
 		{
-			++cur_phase_it_;
-		}
-		if (cur_phase_it_ == phases_.end())
-		{
-			cur_phase_it_ = phases_.begin();
+			cur_phase_duration_ = 0;
+			if (move_up_)
+			{
+				if (::std::distance(cur_phase_it_, phases_.end()) > 1)
+				{
+					++cur_phase_it_;
+				}
+				else
+				{
+					move_up_ = false;
+					--cur_phase_it_;
+				}
+			}
+			else
+			{
+				if (::std::distance(phases_.begin(), cur_phase_it_) > 0)
+				{
+					--cur_phase_it_;
+				}
+				else
+				{
+					move_up_ = true;
+					++cur_phase_it_;
+				}
+			}
 		}
 
 		real_type iatime(0);
@@ -174,6 +198,7 @@ class timed_step_workload_model
 	private: phase_container phases_;
 	private: mutable phase_const_iterator cur_phase_it_;
 	private: mutable real_type cur_phase_duration_;
+	private: mutable bool move_up_;
 };
 
 }} // Namespace dcs::eesim
