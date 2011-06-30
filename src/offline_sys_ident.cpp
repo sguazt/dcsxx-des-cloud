@@ -1444,7 +1444,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 # elif defined(OFFSYSID_EXP_AGGREGATE_MEASURES_BY_WEIGHTED_MEAN)
 	private: typedef detail::weighted_mean_statistic<real_type> measure_statistic_type;
 # else // OFFSYSID_EXP_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
-#  error "Aggregate share type not yet implemented!"
+#  error "Aggregate measure type not yet implemented!"
 # endif // OFFSYSID_EXP_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
 	private: typedef ::std::vector<measure_statistic_type> measure_statistic_container;
 	private: typedef ::std::vector<real_type> measure_container;
@@ -1460,8 +1460,6 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 	private: typedef ::std::map<resource_category_type,share_statistic_type> share_statistic_map;
 	private: typedef ::std::vector<share_statistic_map> share_statistic_container;
 # endif // OFFSYSID_EXP_AGGREGATE_SHARES
-#else
-# error "Aggregate measure type not yet implemented!"
 #endif //OFFSYSID_EXP_AGGREGATE_MEASURES
 
 
@@ -2203,7 +2201,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 #if !defined(OFFSYSID_EXP_AGGREGATE_MEASURES)
 		::std::cout << "-1" // Fake tier-id representing the entire application
 					<< "," << req.id()
-					<< "," << req.arrival_times()
+					<< "," << req.arrival_time()
 					<< "," << ctx.simulated_time();
 #endif //OFFSYSID_EXP_AGGREGATE_MEASURES
 
@@ -2497,10 +2495,10 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 			{
 				real_type share(0);
 
-				if (ptr_req_info->share_map[it->first].count(tid))
+				if (ptr_req_info_impl->share_map[it->first].count(tid))
 				{
 # if !defined(OFFSYSID_EXP_AGGREGATE_SHARES)
-					share = ptr_req_info->share_map[it->first].at(tid);
+					share = ptr_req_info_impl->share_map[it->first].at(tid);
 # else // OFFSYSID_EXP_AGGREGATE_SHARES
                     share = ptr_req_info_impl->share_map[res_it->first].at(tid).estimate();
 # endif // OFFSYSID_EXP_AGGREGATE_SHARES
