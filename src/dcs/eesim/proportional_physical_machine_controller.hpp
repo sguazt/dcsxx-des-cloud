@@ -9,9 +9,11 @@
 #include <dcs/macro.hpp>
 #include <map>
 //[XXX]
+#include <cstdlib>
 #include <iosfwd>
 #include <fstream>
 #include <sstream>
+#include <string>
 //[/XXX]
 
 
@@ -151,9 +153,11 @@ if (nrep == 1)
 ::std::cerr << ::std::endl << "(or put it between an #ifdef-#endif block)" << ::std::endl;
 ::std::cerr << ::std::endl << "-------------------------" << ::std::endl;
 ::std::ostringstream oss;
-oss << "vmshares-" << ptr_vm->id() << ".dat";
+oss << "vmshares-" << ptr_vm->id() << "-" << ::std::string(::getenv("CONDOR_JOB_ID")) << ".dat";
 ::std::ofstream ofs(oss.str().c_str(), ::std::ios_base::app);
 ofs << ptr_vm->id() << "," << category << "," << share_it->second << "," << share << ::std::endl;
+// sim-time, vm-id, mach-id, resource-category, wanted-share, assigned-share
+ ofs << registry<traits_type>::instance().des_engine_ptr()->simulated_time() << "," << ptr_vm->id() << "," << this->machine().id() << "," << category << "," << share_it->second << "," << share << ::std::endl;
 ofs.close();
 }
 //[/XXX]
