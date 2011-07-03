@@ -835,7 +835,7 @@ class rls_ff_miso_matlab_mcr_proxy
 #elif defined(DCS_EESIM_USE_MATLAB_APP)
 
 
-#if defined(DCS_EESIM_USE_MATLAB_APP_RLS)
+# if defined(DCS_EESIM_USE_MATLAB_APP_RLS)
 
 
 /**
@@ -1839,7 +1839,7 @@ DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
 }; // rls_ff_miso_matlab_app_proxy
 
 
-#elif defined(DCS_EESIM_USE_MATLAB_APP_RPEM)
+# elif defined(DCS_EESIM_USE_MATLAB_APP_RPEM)
 
 
 /**
@@ -2912,13 +2912,13 @@ DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
 }; // rpem_ff_miso_matlab_app_proxy
 
 
-#else
+# else // DCS_EESIM_USE_MATLAB_APP_RLS
 
 
-#	error "Unable to find a suitable algorithm for recursive identification."
+#  error "Unable to find a suitable algorithm for recursive identification."
 
 
-#endif // DCS_EESIM_USE_MATLAB_APP_*
+# endif // DCS_EESIM_USE_MATLAB_APP_*
 
 
 #else // DCS_EESIM_USE_MATLAB_*
@@ -3255,7 +3255,7 @@ class rls_ff_miso_proxy: public rls_system_identification_strategy<TraitsT>
 	private: matrix_type do_P() const
 	{
 		matrix_type aux_P;
-//FIXME
+//TODO: implement me!
 		return aux_P;
 	}
 
@@ -3361,12 +3361,18 @@ class rls_ff_miso_proxy: public rls_system_identification_strategy<TraitsT>
 DCS_DEBUG_TRACE("BEGIN estimation");//XXX
 DCS_DEBUG_TRACE("y(k): " << y);//XXX
 DCS_DEBUG_TRACE("u(k): " << u);//XXX
+//::std::cerr << "BEGIN estimation" << ::std::endl;//XXX
+//::std::cerr << "y(k): " << y << ::std::endl;//XXX
+//::std::cerr << "u(k): " << u << ::std::endl;//XXX
 		vector_type y_hat(ny);
 		for (size_type i = 0; i < ny; ++i)
 		{
 DCS_DEBUG_TRACE("theta_hat["<< i << "](k): " << theta_hats_[i]);//XXX
 DCS_DEBUG_TRACE("P["<< i << "](k): " << Ps_[i]);//XXX
 DCS_DEBUG_TRACE("phi["<< i << "](k): " << phis_[i]);//XXX
+//::std::cerr << "theta_hat["<< i << "](k): " << theta_hats_[i] << ::std::endl;//XXX
+//::std::cerr << "P["<< i << "](k): " << Ps_[i] << ::std::endl;//XXX
+//::std::cerr << "phi["<< i << "](k): " << phis_[i] << ::std::endl;//XXX
 			y_hat(i) = ::dcs::sysid::rls_ff_arx_miso(y(i),
 													 u,
 													 ff_,
@@ -3381,9 +3387,16 @@ DCS_DEBUG_TRACE("New P["<< i << "](k): " << Ps_[i]);//XXX
 DCS_DEBUG_TRACE("New rcond(P["<< i << "](k)): " << ::boost::numeric::ublasx::rcond(Ps_[i]));//XXX
 DCS_DEBUG_TRACE("New phi["<< i << "](k): " << phis_[i]);//XXX
 DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y(i)-y_hat(i)));//XXX
+//::std::cerr << "New theta_hat["<< i << "](k): " << theta_hats_[i] << ::std::endl;//XXX
+//::std::cerr << "New P["<< i << "](k): " << Ps_[i] << ::std::endl;//XXX
+//::std::cerr << "New rcond(P["<< i << "](k)): " << ::boost::numeric::ublasx::rcond(Ps_[i]) << ::std::endl;//XXX
+//::std::cerr << "New phi["<< i << "](k): " << phis_[i] << ::std::endl;//XXX
+//::std::cerr << "New e["<< i << "](k): " << (y(i)-y_hat(i)) << ::std::endl;//XXX
 		}
 DCS_DEBUG_TRACE("New y_hat(k): " << y_hat);//XXX
 DCS_DEBUG_TRACE("END estimation");//XXX
+//::std::cerr << "New y_hat(k): " << y_hat << ::std::endl;//XXX
+//::std::cerr << "END estimation" << ::std::endl;//XXX
 
 		return y_hat;
 	}
@@ -3414,7 +3427,7 @@ DCS_DEBUG_TRACE("END estimation");//XXX
 		matrix_type A_k(ny, ny, real_type/*zero*/());
 		for (size_type i = 0; i < ny; ++i)
 		{
-			A_k(i,i) = theta_hats_[i](k);
+			A_k(i,i) = theta_hats_[i](k-1);
 		}
 
 		return A_k;
@@ -3576,7 +3589,7 @@ class rls_park1991_miso_proxy: public rls_system_identification_strategy<TraitsT
 	private: matrix_type do_P() const
 	{
 		matrix_type aux_P;
-//FIXME
+//TODO: implement me!!
 		return aux_P;
 	}
 
@@ -3682,12 +3695,18 @@ class rls_park1991_miso_proxy: public rls_system_identification_strategy<TraitsT
 DCS_DEBUG_TRACE("BEGIN estimation");//XXX
 DCS_DEBUG_TRACE("y(k): " << y);//XXX
 DCS_DEBUG_TRACE("u(k): " << u);//XXX
+//::std::cerr << "BEGIN estimation" << ::std::endl;//XXX
+//::std::cerr << "y(k): " << y << ::std::endl;//XXX
+//::std::cerr << "u(k): " << u << ::std::endl;//XXX
 		vector_type y_hat(ny);
 		for (size_type i = 0; i < ny; ++i)
 		{
 DCS_DEBUG_TRACE("theta_hat["<< i << "](k): " << theta_hats_[i]);//XXX
 DCS_DEBUG_TRACE("P["<< i << "](k): " << Ps_[i]);//XXX
 DCS_DEBUG_TRACE("phi["<< i << "](k): " << phis_[i]);//XXX
+//::std::cerr << "theta_hat["<< i << "](k): " << theta_hats_[i] << ::std::endl;//XXX
+//::std::cerr << "P["<< i << "](k): " << Ps_[i] << ::std::endl;//XXX
+//::std::cerr << "phi["<< i << "](k): " << phis_[i] << ::std::endl;//XXX
 			y_hat(i) = ::dcs::sysid::rls_park1991_arx_miso(y(i),
 													 u,
 													 ff_,
@@ -3703,9 +3722,16 @@ DCS_DEBUG_TRACE("New P["<< i << "](k): " << Ps_[i]);//XXX
 DCS_DEBUG_TRACE("New rcond(P["<< i << "](k)): " << ::boost::numeric::ublasx::rcond(Ps_[i]));//XXX
 DCS_DEBUG_TRACE("New phi["<< i << "](k): " << phis_[i]);//XXX
 DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y(i)-y_hat(i)));//XXX
+//::std::cerr << "New theta_hat["<< i << "](k): " << theta_hats_[i] << ::std::endl;//XXX
+//::std::cerr << "New P["<< i << "](k): " << Ps_[i] << ::std::endl;//XXX
+//::std::cerr << "New rcond(P["<< i << "](k)): " << ::boost::numeric::ublasx::rcond(Ps_[i]) << ::std::endl;//XXX
+//::std::cerr << "New phi["<< i << "](k): " << phis_[i] << ::std::endl;//XXX
+//::std::cerr << "New e["<< i << "](k): " << (y(i)-y_hat(i)) << ::std::endl;//XXX
 		}
 DCS_DEBUG_TRACE("New y_hat(k): " << y_hat);//XXX
 DCS_DEBUG_TRACE("END estimation");//XXX
+//::std::cerr << "New y_hat(k): " << y_hat << ::std::endl;//XXX
+//::std::cerr << "END estimation" << ::std::endl;//XXX
 
 		return y_hat;
 	}
@@ -3736,7 +3762,7 @@ DCS_DEBUG_TRACE("END estimation");//XXX
 		matrix_type A_k(ny, ny, real_type/*zero*/());
 		for (size_type i = 0; i < ny; ++i)
 		{
-			A_k(i,i) = theta_hats_[i](k);
+			A_k(i,i) = theta_hats_[i](k-1);
 		}
 
 		return A_k;
@@ -3874,7 +3900,7 @@ class rls_kulhavy1984_miso_proxy: public rls_system_identification_strategy<Trai
 	private: matrix_type do_P() const
 	{
 		matrix_type aux_P;
-//FIXME
+//TODO: implement me!!
 		return aux_P;
 	}
 
@@ -4033,7 +4059,7 @@ DCS_DEBUG_TRACE("END estimation");//XXX
 		matrix_type A_k(ny, ny, real_type/*zero*/());
 		for (size_type i = 0; i < ny; ++i)
 		{
-			A_k(i,i) = theta_hats_[i](k);
+			A_k(i,i) = theta_hats_[i](k-1);
 		}
 
 		return A_k;
@@ -4178,7 +4204,7 @@ class rls_bittanti1990_miso_proxy: public rls_system_identification_strategy<Tra
 	private: matrix_type do_P() const
 	{
 		matrix_type aux_P;
-//FIXME
+//TODO: implement me!!
 		return aux_P;
 	}
 
@@ -4338,7 +4364,7 @@ DCS_DEBUG_TRACE("END estimation");//XXX
 		matrix_type A_k(ny, ny, real_type/*zero*/());
 		for (size_type i = 0; i < ny; ++i)
 		{
-			A_k(i,i) = theta_hats_[i](k);
+			A_k(i,i) = theta_hats_[i](k-1);
 		}
 
 		return A_k;
