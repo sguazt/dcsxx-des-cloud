@@ -868,7 +868,7 @@ struct sysid_siso_request_info: public sysid_base_request_info<TraitsT>
 #  error "Aggregate share type not yet implemented!"
 # endif // OFFSYSID_EXP_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
 #endif // OFFSYSID_EXP_AGGREGATE_SHARES
-};
+}; // sysid_siso_request_info
 
 
 template <typename TraitsT>
@@ -886,6 +886,7 @@ struct sysid_miso_request_info: public sysid_base_request_info<TraitsT>
 	typedef detail::mean_statistic<real_type> share_statistic_type;
 # elif defined(OFFSYSID_EXP_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 	typedef detail::weighted_mean_statistic<real_type> share_statistic_type;
+# else // OFFSYSID_EXP_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 #  error "Aggregate share type not yet implemented!"
 # endif // OFFSYSID_EXP_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 	typedef ::std::map<resource_category_type, ::std::map<uint_type,share_statistic_type> > resource_share_stat_map;
@@ -904,7 +905,7 @@ struct sysid_miso_request_info: public sysid_base_request_info<TraitsT>
 #  error "Aggregate share type not yet implemented!"
 # endif // OFFSYSID_EXP_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
 #endif // OFFSYSID_EXP_AGGREGATE_SHARES
-};
+}; // sysid_miso_request_info
 
 
 template <typename TraitsT>
@@ -2281,6 +2282,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
         }
 #  endif // OFFSYSID_EXP_AGGREGATE_SHARES
 # elif defined(OFFSYSID_EXP_AGGREGATE_MEASURES_BY_WEIGHTED_MEAN)
+		real_type w(1);
         real_type excite_start_time(ctx.simulated_time()-this->sampling_time());
         if (req.arrival_time() < excite_start_time)
         {
@@ -2466,13 +2468,15 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 
 		resource_share_container resource_shares(ptr_vm->resource_shares());
 		resource_share_iterator res_end_it(resource_shares.end());
+#if !defined(OFFSYSID_EXP_AGGREGATE_MEASURES) || defined(OFFSYSID_EXP_AGGREGATE_SHARES)
+		uint_type num_tiers(app.num_tiers());
+#endif // OFFSYSID_EXP_AGGREGATE_MEASURES
 #if defined(OFFSYSID_EXP_AGGREGATE_SHARES)
 # if defined(OFFSYSID_EXP_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
         real_type w(ctx.simulated_time()-ptr_req_info_impl->last_share_change_time);
 # endif // OFFSYSID_EXP_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
 #endif // OFFSYSID_EXP_AGGREGATE_SHARES
-		uint_type num_tiers(app.num_tiers());
-		for (resource_share_iterator it = resource_shares.begin(); it != res_end_it; ++it)
+		for (resource_share_iterator res_it = resource_shares.begin(); res_it != res_end_it; ++res_it)
 		{
 #if defined(OFFSYSID_EXP_AGGREGATE_SHARES)
 # if defined(OFFSYSID_EXP_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
@@ -2490,15 +2494,15 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 # endif // OFFSYSID_EXP_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
 #endif // OFFSYSID_EXP_AGGREGATE_SHARES
 #if !defined(OFFSYSID_EXP_AGGREGATE_MEASURES)
-			::std::cout << "," << it->first;
+			::std::cout << "," << res_it->first;
 			for (uint_type tid = 0; tid < num_tiers; ++tid)
 			{
 				real_type share(0);
 
-				if (ptr_req_info_impl->share_map[it->first].count(tid))
+				if (ptr_req_info_impl->share_map[res_it->first].count(tid))
 				{
 # if !defined(OFFSYSID_EXP_AGGREGATE_SHARES)
-					share = ptr_req_info_impl->share_map[it->first].at(tid);
+					share = ptr_req_info_impl->share_map[res_it->first].at(tid);
 # else // OFFSYSID_EXP_AGGREGATE_SHARES
                     share = ptr_req_info_impl->share_map[res_it->first].at(tid).estimate();
 # endif // OFFSYSID_EXP_AGGREGATE_SHARES
@@ -2598,6 +2602,10 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sig_gen );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
+#if defined(OFFSYSID_EXP_AGGREGATE_SHARES) || defined(OFFSYSID_EXP_AGGREGATE_MEASURES)
+		uint_type num_tiers(app.num_tiers());
+#endif // OFFSYSID_EXP_AGGREGATE_SHARES
+
 #if defined(OFFSYSID_EXP_AGGREGATE_SHARES)
 		// For each tier, for each in-service request, for each resource category, update the mean share
 
@@ -2612,7 +2620,6 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		typedef resource_share_container::const_iterator resource_share_iterator;
 
 		// Iterate over all tiers
-		uint_type num_tiers(app.num_tiers());
 		for (uint_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 		{
 			virtual_machine_pointer ptr_vm = app.simulation_model().tier_virtual_machine(tier_id);
