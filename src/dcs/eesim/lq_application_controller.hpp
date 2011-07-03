@@ -137,6 +137,7 @@ void make_ss(SysIdentStrategyT const& sys_ident_strategy,
 	//    .	. . ... .
 	// 	  0	0 0 ... I;
 	// 	  -A_{n_a} -A_{n_a-1} -A_{n_a-2}... -A_1]
+	if (n_x > 0)
 	{
 		size_type broffs(n_x-rls_n_y); // The bottom row offset
 //		size_type troffs((n_x < n_u) ? (n_u-n_x) : 0); // The topmost row offset
@@ -170,6 +171,10 @@ void make_ss(SysIdentStrategyT const& sys_ident_strategy,
 			ublas::subrange(A(), broffs, n_x, c1, c2) = -sys_ident_strategy.A(i+1);
 		}
 	}
+	else
+	{
+		A().resize(0, 0, false);
+	}
 //DCS_DEBUG_TRACE("A="<<A);//XXX
 
 	// Create the input matrix B
@@ -179,6 +184,7 @@ void make_ss(SysIdentStrategyT const& sys_ident_strategy,
 	//    .	... .
 	//    0 ... 0;
 	//    B_{n_b} ... B_1]
+	if (n_x > 0)
 	{
 		size_type broffs(n_x-rls_n_u); // The bottom row offset
 
@@ -203,9 +209,14 @@ void make_ss(SysIdentStrategyT const& sys_ident_strategy,
 			ublas::subrange(B(), broffs, n_x, c1, c2) = sys_ident_strategy.B(i+1);
 		}
 	}
+	else
+	{
+		B().resize(0, 0, false);
+	}
 //DCS_DEBUG_TRACE("B="<<B);//XXX
 
 	// Create the output matrix C
+	if (n_x > 0)
 	{
 		size_type rcoffs(n_x-rls_n_y); // The right most column offset
 
@@ -213,6 +224,10 @@ void make_ss(SysIdentStrategyT const& sys_ident_strategy,
 
 		ublas::subrange(C(), 0, n_y, 0, rcoffs) = ublas::zero_matrix<value_type>(n_y,rcoffs);
 		ublas::subrange(C(), 0, n_y, rcoffs, n_x) = ublas::scalar_matrix<value_type>(n_y, rls_n_y, 1);
+	}
+	else
+	{
+		C().resize(0, 0, false);
 	}
 //DCS_DEBUG_TRACE("C="<<C);//XXX
 
@@ -478,17 +493,15 @@ class lq_application_controller: public base_application_controller<TraitsT>
 
 	private: void init_measures()
 	{
-		typedef ::dcs::des::mean_estimator<real_type,uint_type> statistic_impl_type;
-
 		if (this->application_ptr())
 		{
 			//FIXME: statistic category (e.g., mean) is hard-coded
+			typedef ::dcs::des::mean_estimator<real_type,uint_type> statistic_impl_type;
+			typedef typename perf_category_container::const_iterator category_iterator;
 
 			uint_type num_tiers(this->application().num_tiers());
 
 			tier_measures_.resize(num_tiers);
-
-			typedef typename perf_category_container::const_iterator category_iterator;
 
 			perf_category_container categories(this->application().sla_cost_model().slo_categories());
 			category_iterator end_it = categories.end();
@@ -512,8 +525,8 @@ class lq_application_controller: public base_application_controller<TraitsT>
 			n_x_ = n_p_*n_a_;
 			n_u_ = n_s_*n_b_;
 			n_y_ = uint_type(1);
-			x_offset_ = n_x_-n_p_;
-			u_offset_ = n_u_-n_s_;
+			x_offset_ = (n_x_ > 0) ? (n_x_-n_p_) : 0;
+			u_offset_ = (n_u_ > 0) ? (n_u_-n_s_) : 0;
 		}
 	}
 
@@ -525,7 +538,6 @@ class lq_application_controller: public base_application_controller<TraitsT>
 		// - too few observation in the last control period
 		// - not so much representative observations in the last control period.
 		// Actually, the history is stored according to a EWMA filter.
-
 
 //FIXME: try to use this below to reset stats
 //		::std::for_each(
@@ -712,26 +724,13 @@ class lq_application_controller: public base_application_controller<TraitsT>
 
 		user_request_type req = app.simulation_model().request_state(evt);
 
-		real_type app_rt(0);
+//		real_type app_rt(0);
 
 		size_type num_tiers(tier_measures_.size());
 
 		for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 		{
 			virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
-//			physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
-//			physical_resource_category res_category(cpu_resource_category);//FIXME
-
-			// Actual-to-reference scaling factor
-//			real_type scale_factor(1);
-//			scale_factor = ::dcs::eesim::resource_scaling_factor(
-//					// Actual resource capacity and threshold
-//					actual_pm.resource(res_category)->capacity(),
-//					actual_pm.resource(res_category)->utilization_threshold(),
-//					// Reference resource capacity and threshold
-//					app.reference_resource(res_category).capacity(),
-//					app.reference_resource(res_category).utilization_threshold()
-//				);
 
 			measure_iterator end_it = tier_measures_[tier_id].end();
 			for (measure_iterator it = tier_measures_[tier_id].begin(); it != end_it; ++it)
@@ -761,13 +760,14 @@ class lq_application_controller: public base_application_controller<TraitsT>
 								}
 //								rt *= scale_factor;
 DCS_DEBUG_TRACE("HERE!!!!! tier: " << tier_id << " ==> rt: " << rt << " (aggregated: " << ptr_stat->estimate() << ")");//XXX
+//::std::cerr << "HERE!!!!! tier: " << tier_id << " ==> rt: " << rt << " (aggregated: " << ptr_stat->estimate() << ")" << ::std::endl;//XXX
 								(*ptr_stat)(rt);
-								app_rt += rt;
+//								app_rt += rt;
 							}
 						}
 						break;
 					default:
-						throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::process_request_departure] LQ application controller currently handles only the response-time category.");
+						throw ::std::runtime_error("[dcs::eesim::lq_application_controller::process_request_departure] LQ application controller currently handles only the response-time category.");
 				}
 			}
 		}
@@ -790,15 +790,15 @@ DCS_DEBUG_TRACE("HERE!!!!! tier: " << tier_id << " ==> rt: " << rt << " (aggrega
             {
                 case response_time_performance_measure:
 					{
-						//real_type rt(req.departure_time()-req.arrival_time());
-						//rt *= scale_factor;
-						//(*ptr_stat)(rt);
-						(*ptr_stat)(app_rt);
-DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << app_rt << " (aggregated: " << ptr_stat->estimate() << ")");//XXX
+						real_type rt(req.departure_time()-req.arrival_time());
+						(*ptr_stat)(rt);
+//						(*ptr_stat)(app_rt);
+DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << rt << " (aggregated: " << ptr_stat->estimate() << ")");//XXX
+//::std::cerr << "HERE!!!!! app ==> rt: " << rt << " (aggregated: " << ptr_stat->estimate() << ")" << ::std::endl;//XXX
 					}
 					break;
 				default:
-					throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::process_request_departure] LQ application controller currently handles only the response-time category.");
+					throw ::std::runtime_error("[dcs::eesim::lq_application_controller::process_request_departure] LQ application controller currently handles only the response-time category.");
 			}
 		}
 
@@ -884,7 +884,7 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << app_rt << " (aggregated: " << ptr_st
 //		typedef typename category_statistic_container_container::const_iterator tier_iterator;
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")");
-//::std::cerr << "APP: " << this->application().id() << " - Process CONTROL event -- Actual Output: " << measures_.at(response_time_performance_measure)->estimate() << " (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")" << ::std::endl;//XXX
+//::std::cerr << "APP: " << this->application().id() << " - BEGIN Process CONTROL event -- Actual Output: " << measures_.at(response_time_performance_measure)->estimate() << " (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")" << ::std::endl;//XXX
 
 		application_type const& app(this->application());
 		application_simulation_model_type const& app_sim_model(app.simulation_model());
@@ -909,10 +909,16 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << app_rt << " (aggregated: " << ptr_st
 		{
 			// throw away old observations from x and make space for new ones.
 			//detail::rotate(x_, n_a_, n_p_);
-			ublas::subrange(x_, 0, (n_a_-1)*n_p_) = ublas::subrange(x_, n_p_, n_x_);
+			if (n_x_ > 0)
+			{
+				ublas::subrange(x_, 0, (n_a_-1)*n_p_) = ublas::subrange(x_, n_p_, n_x_);
+			}
 			// throw away old observations from u and make space for new ones.
 			//detail::rotate(u_, n_b_, n_s_);
-			ublas::subrange(u_, 0, (n_b_-1)*n_s_) = ublas::subrange(u_, n_s_, n_u_);
+			if (n_u_ > 0)
+			{
+				ublas::subrange(u_, 0, (n_b_-1)*n_s_) = ublas::subrange(u_, n_s_, n_u_);
+			}
 		}
 
 
@@ -947,6 +953,7 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << app_rt << " (aggregated: " << ptr_st
 			real_type ref_measure;
 			real_type actual_measure;
 
+			// Get the actual application-level output measure
 			//ref_measure = app.sla_cost_model().slo_value(category);
 			////ref_measure = static_cast<real_type>(.5)*app.sla_cost_model().slo_value(category);//EXP
 			ref_measure = app_perf_model.application_measure(category);
@@ -976,33 +983,37 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - OBSERVATION: ref: " << ref_measure << 
 
 			y(0) = actual_measure/ref_measure - real_type(1);
 
-			for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+			// Get the actual tier-level output measures
+			if (n_x_ > 0)
 			{
-				switch (category)
+				for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 				{
-					case response_time_performance_measure:
-							{
-								ptr_stat = tier_measures_[tier_id].at(category);
+					switch (category)
+					{
+						case response_time_performance_measure:
+								{
+									ptr_stat = tier_measures_[tier_id].at(category);
 
-								ref_measure = app_perf_model.tier_measure(tier_id, category);
-								//ref_measure = static_cast<real_type>(.5)*app_perf_model.tier_measure(tier_id, category);//EXP
-								if (ptr_stat->num_observations() > 0)
-								{
-									actual_measure = ptr_stat->estimate();
-								}
-								else
-								{
-									// No observation -> Assume perfect behavior
-									actual_measure = ref_measure;
-								}
+									ref_measure = app_perf_model.tier_measure(tier_id, category);
+									//ref_measure = static_cast<real_type>(.5)*app_perf_model.tier_measure(tier_id, category);//EXP
+									if (ptr_stat->num_observations() > 0)
+									{
+										actual_measure = ptr_stat->estimate();
+									}
+									else
+									{
+										// No observation -> Assume perfect behavior
+										actual_measure = ref_measure;
+									}
 DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure);//XXX
 //::std::cerr << "APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure << ::std::endl;//XXX
-								x_(x_offset_+tier_id) = p(tier_id)
-													  = actual_measure/ref_measure - 1;
-							}
-							break;
-					default:
-						throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::do_process_control] LQ application controller currently handles only the response-time category.");
+									x_(x_offset_+tier_id) = p(tier_id)
+														  = actual_measure/ref_measure - 1;
+								}
+								break;
+						default:
+							throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::do_process_control] LQ application controller currently handles only the response-time category.");
+					}
 				}
 			}
 		}
@@ -1010,30 +1021,33 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 //FIXME: resource category is actually hard-coded to CPU
 		// Collect new input observations:
 		// u_j(k) = (<actual-resource-share-at-tier-j>-<ref-resource-share-at-tier-j>)/<ref-resource-share-at-tier-j>
-		for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+		if (n_u_ > 0)
 		{
-			virtual_machine_pointer ptr_vm = app_sim_model.tier_virtual_machine(tier_id);
-			physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
-			physical_resource_category res_category(cpu_resource_category);//FIXME
+			for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+			{
+				virtual_machine_pointer ptr_vm = app_sim_model.tier_virtual_machine(tier_id);
+				physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
+				physical_resource_category res_category(cpu_resource_category);//FIXME
 
-			// Get the reference resource share for the tier from the application specs
-//			//real_type ref_share(ptr_vm->wanted_resource_share(ptr_vm->vmm().hosting_machine(), category));
-//			//real_type ref_share(ptr_vm->wanted_resource_share(res_category));
-			real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
+				// Get the reference resource share for the tier from the application specs
+	//			//real_type ref_share(ptr_vm->wanted_resource_share(ptr_vm->vmm().hosting_machine(), category));
+	//			//real_type ref_share(ptr_vm->wanted_resource_share(res_category));
+				real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
 
-			// Get the actual resource share from the VM and scale w.r.t. the reference machine
-			real_type actual_share;
-			actual_share = ::dcs::eesim::scale_resource_share(actual_pm.resource(res_category)->capacity(),
-															  actual_pm.resource(res_category)->utilization_threshold(),
-															  app.reference_resource(res_category).capacity(),
-															  app.reference_resource(res_category).utilization_threshold(),
-															  ptr_vm->resource_share(res_category));
+				// Get the actual resource share from the VM and scale w.r.t. the reference machine
+				real_type actual_share;
+				actual_share = ::dcs::eesim::scale_resource_share(actual_pm.resource(res_category)->capacity(),
+																  actual_pm.resource(res_category)->utilization_threshold(),
+																  app.reference_resource(res_category).capacity(),
+																  app.reference_resource(res_category).utilization_threshold(),
+																  ptr_vm->resource_share(res_category));
 
-			//FIXME: should u contain relative errore w.r.t. resource share given from performance model?
+				//FIXME: should u contain relative errore w.r.t. resource share given from performance model?
 DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " SHARE: ref: " << ref_share << " - actual: " << ptr_vm->resource_share(res_category) << " - actual-scaled: " << actual_share);//XXX
 //::std::cerr << "APP " << app.id() << " - TIER " << tier_id << " SHARE: ref: " << ref_share << " - actual: " << ptr_vm->resource_share(res_category) << " - actual-scaled: " << actual_share << ::std::endl;//XXX
-			u_(u_offset_+tier_id) = s(tier_id)
-								  = actual_share/ref_share - 1;
+				u_(u_offset_+tier_id) = s(tier_id)
+									  = actual_share/ref_share - 1;
+			}
 		}
 
 		if (!triggers_.actual_value_sla_ko() || !sla_ok)
@@ -1077,7 +1091,8 @@ DCS_DEBUG_TRACE("phi=" << ptr_ident_strategy_->phi());//XXX
 			// If not, then no control is performed.
 //			if (count_ >= ::std::max(n_a_,n_b_))
 //			if (count_ > ::std::min(n_a_,n_b_))
-			if (ok && ptr_ident_strategy_->count() > ::std::min(n_a_,n_b_))
+//			if (ok && ptr_ident_strategy_->count() > ::std::min(n_a_,n_b_))
+			if (ok && ptr_ident_strategy_->count() > ::std::max(n_a_,n_b_))
 			{
 				// Create the state-space representation of the system model:
 				//  x(k+1) = Ax(k)+Bu(k)
@@ -1343,6 +1358,7 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 		DCS_DEBUG_TRACE("APP: " << app.id() << " - Control stats: Count: " << count_ << " - Identification Failure Count: " << ident_fail_count_ << " - Control Failures Count: " << ctrl_fail_count_);
 //::std::cerr << "APP: " << app.id() << " - Control stats: Count: " << count_ << " - Identification Failure Count: " << ident_fail_count_ << " - Control Failures Count: " << ctrl_fail_count_ << ::std::endl;
 
+//::std::cerr << "APP: " << this->application().id() << " - END Process CONTROL event -- Actual Output: " << measures_.at(response_time_performance_measure)->estimate() << " (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")" << ::std::endl;//XXX
 		DCS_DEBUG_TRACE("(" << this << ") END Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")");
 	}
 
@@ -1855,6 +1871,9 @@ class lqry_application_controller: public detail::lq_application_controller<Trai
 		vector_type opt_u;
 
 		controller_.solve(A, B, C, D);
+//::std::cerr << "[eesim::lqry_controller] K: " << controller_.gain() << ::std::endl;//XXX
+//::std::cerr << "[eesim::lqry_controller] S: " << controller_.are_solution() << ::std::endl;//XXX
+//::std::cerr << "[eesim::lqry_controller] e: " << controller_.eigenvalues() << ::std::endl;//XXX
 		opt_u = ::boost::numeric::ublas::real(controller_.control(x));
 
 		return opt_u;
