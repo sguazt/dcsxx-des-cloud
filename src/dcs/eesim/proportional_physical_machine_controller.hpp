@@ -143,8 +143,7 @@ class proportional_physical_machine_controller: public base_physical_machine_con
 						ptr_vm->resource_share(category, share);
 
 						DCS_DEBUG_TRACE("APP: " << ptr_vm->guest_system().application().id() << ", MACH: " << this->machine().id() << " - Assigned new share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << category << " - Threshold: " << threshold << " - Share Sum: " << share_sum << " ==> Wanted: " << share_it->second << " - Got: " << share);//XXX
-//::std::cerr << "APP: " << ptr_vm->guest_system().application().id() << ", MACH: " << this->machine().id() << " - Assigned new share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << category << " - Threshold: " << threshold << " - Share Sum: " << share_sum << " ==> Wanted: " << share_it->second << " - Got: " << share << ::std::endl;//XXX
-//::std::cerr << "APP: " << ptr_vm->guest_system().application().id() << ", MACH: " << this->machine().id() << ", VM: " << ptr_vm->id() << ", WantedShare: " << share_it->second << ", GotShare: " << share << ::std::endl;//XXX
+::std::cerr << "[proportional_machine_controller] APP: " << ptr_vm->guest_system().application().id() << ", MACH: " << this->machine().id() << " - Assigned new share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << category << " - Threshold: " << threshold << " - Share Sum: " << share_sum << " ==> Wanted: " << share_it->second << " - Got: " << share << ::std::endl;//XXX
 
 //[XXX]
 #ifdef DCS_EESIM_EXP_OUTPUT_VM_SHARES
@@ -152,10 +151,10 @@ class proportional_physical_machine_controller: public base_physical_machine_con
 						uint_type nrep = dynamic_cast< ::dcs::des::replications::engine<real_type,uint_type>* >(registry<traits_type>::instance().des_engine_ptr().get())->num_replications();
 						if (nrep == 1)
 						{
-							::std::cerr << ::std::endl << ">>>>>> IMPORTANT <<<<<<<" << ::std::endl;
-							::std::cerr << ::std::endl << "REMOVE THE CODE WHICH OUTPUT VM SHARES TO A FILE!!" << ::std::endl;
-							::std::cerr << ::std::endl << "(or put it between an #ifdef-#endif block)" << ::std::endl;
-							::std::cerr << ::std::endl << "-------------------------" << ::std::endl;
+//							::std::cerr << ::std::endl << ">>>>>> IMPORTANT <<<<<<<" << ::std::endl;
+//							::std::cerr << ::std::endl << "REMOVE THE CODE WHICH OUTPUT VM SHARES TO A FILE!!" << ::std::endl;
+//							::std::cerr << ::std::endl << "(or put it between an #ifdef-#endif block)" << ::std::endl;
+//							::std::cerr << ::std::endl << "-------------------------" << ::std::endl;
 							::std::ostringstream oss;
 							oss << "vmshares-" << ptr_vm->id() << "-" << ::std::string(::getenv("CONDOR_JOB_ID")) << ".dat";
 							::std::ofstream ofs(oss.str().c_str(), ::std::ios_base::app);
