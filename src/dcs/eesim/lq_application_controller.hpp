@@ -46,6 +46,7 @@
 #include <boost/numeric/ublasx/operation/size.hpp>
 #include <cstddef>
 #include <dcs/control/analysis/controllability.hpp>
+#include <dcs/control/analysis/observability.hpp>
 #include <dcs/control/design/dlqi.hpp>
 //#include <dcs/control/design/dlqiy.hpp>
 #include <dcs/control/design/dlqr.hpp>
@@ -75,6 +76,9 @@
 #include <stdexcept>
 #include <vector>
 
+
+#include <cstdio> //XXX DELETE-ME
+#include <fstream> //XXX DELETE-ME
 
 //TODO:
 // - Currently the code in this class assumes the single resource (CPU) case.
@@ -126,33 +130,19 @@ void make_ss(SysIdentStrategyT const& sys_ident_strategy,
 	const size_type n_y(1);
 
 	// Create the state matrix A
-	// A=[0	0 0 ... 0;
-	//    .	. . ... .
-	//    .	. . ... .
-	//    .	. . ... .
-	//    0	0 0 ... 0;
-	//    0	I 0 ... 0;
-	// 	  0	0 I ... 0;
-	//    .	. . ... .
-	//    .	. . ... .
-	//    .	. . ... .
-	// 	  0	0 0 ... I;
-	// 	  -A_{n_a} -A_{n_a-1} -A_{n_a-2}... -A_1]
+	// A=[ 0        I          0         ...  0  ;
+	//     0        0          I         ...  0  ;
+	//     .        .          .         ...  .
+	//     .        .          .         ...  .
+	//     .        .          .         ...  .
+	// 	   0        0          0         ...  I  ;
+	// 	  -A_{n_a} -A_{n_a-1} -A_{n_a-2} ... -A_1]
 	if (n_x > 0)
 	{
 		size_type broffs(n_x-rls_n_y); // The bottom row offset
-//		size_type troffs((n_x < n_u) ? (n_u-n_x) : 0); // The topmost row offset
 
 		A().resize(n_x, n_x, false);
 
-//		// The upper part of A is set to [0_{k1,n}; 0_{k2,rls_n_y} I_{k2,k2}],
-//		// where: k1=n-((n_u > n_x)?(n_u-n_x):0), and k2=n-rls_n_y.
-//		if (troffs > 0)
-//		{
-//			ublas::subrange(A(), 0, troffs, 0, n) = ublas::zero_matrix<value_type>(troffs,n);
-//		}
-//		ublas::subrange(A(), troffs, broffs, 0, rls_n_y) = ublas::zero_matrix<value_type>(broffs,rls_n_y);
-//		ublas::subrange(A(), troffs, broffs, rls_n_y, n) = ublas::identity_matrix<value_type>(broffs,broffs);
 		// The upper part of A is set to [0_{k,rls_n_y} I_{k,k}],
 		// where: k=n_x-rls_n_y.
 		ublas::subrange(A(), 0, broffs, 0, rls_n_y) = ublas::zero_matrix<value_type>(broffs,rls_n_y);
@@ -1024,7 +1014,6 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 			}
 		}
 
-//FIXME: resource category is actually hard-coded to CPU
 		// Collect new input observations:
 		// u_j(k) = (<actual-resource-share-at-tier-j>-<ref-resource-share-at-tier-j>)/<ref-resource-share-at-tier-j>
 		if (n_u_ > 0)
@@ -1033,7 +1022,8 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 			{
 				virtual_machine_pointer ptr_vm = app_sim_model.tier_virtual_machine(tier_id);
 				physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
-				physical_resource_category res_category(cpu_resource_category);//FIXME
+				//FIXME: resource category is actually hard-coded to CPU
+				physical_resource_category res_category(cpu_resource_category);
 
 				// Get the reference resource share for the tier from the application specs
 	//			//real_type ref_share(ptr_vm->wanted_resource_share(ptr_vm->vmm().hosting_machine(), category));
@@ -1097,6 +1087,29 @@ DCS_DEBUG_TRACE("phi=" << ptr_ident_strategy_->phi());//XXX
 
 				ok = false;
 			}
+::std::remove("rlsdata.csv");//XXX DELETE ME
+::std::ofstream ofs("rlsdata.csv", ::std::ios_base::app);//XXX DELETE-ME
+for (size_type i=0; i < n_s_; ++i)//XXX DELETE-ME
+{//XXX DELETE-ME
+virtual_machine_pointer ptr_vm = app_sim_model.tier_virtual_machine(i);
+physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
+real_type ref_share(ptr_vm->guest_system().resource_share(cpu_resource_category));
+ofs << ref_share*(1.0+s(i)) << ",";//XXX DELETE-ME
+}//XXX DELETE-ME
+for (size_type i=0; i < n_p_; ++i)//XXX DELETE-ME
+{//XXX DELETE-ME
+real_type ref_measure(app_perf_model.tier_measure(i, response_time_performance_measure));
+ofs << ref_measure*(1.0+p(i)) << ",";//XXX DELETE-ME
+}//XXX DELETE-ME
+for (size_type i=0; i < n_p_; ++i)//XXX DELETE-ME
+{//XXX DELETE-ME
+if (i > 0)//XXX DELETE-ME
+{//XXX DELETE-ME
+ofs << ",";//XXX DELETE-ME
+}//XXX DELETE-ME
+real_type ref_measure(app_perf_model.tier_measure(i, response_time_performance_measure));
+ofs << ref_measure*(1.0+p_hat(i));//XXX DELETE-ME
+}//XXX DELETE-ME
 
 			// Check if RLS (and LQR) can be applied.
 			// If not, then no control is performed.
@@ -1174,6 +1187,13 @@ DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: "
 DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)));//XXX
 ::std::cerr << "APP: " << app.id() << " Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)) << ::std::endl;//XXX
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
+for (size_type i=0; i < n_p_; ++i)//XXX DELETE-ME
+{//XXX DELETE-ME
+virtual_machine_pointer ptr_vm = app_sim_model.tier_virtual_machine(i);
+physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
+real_type ref_share(ptr_vm->guest_system().resource_share(cpu_resource_category));
+ofs << "," << ref_share*(1.0+opt_u(i));//XXX DELETE-ME
+}//XXX DELETE-ME
 
 DCS_DEBUG_TRACE("Applying optimal control");//XXX
 					if (triggers_.predicted_value_sla_ko())
@@ -1386,6 +1406,8 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 				++ident_fail_count_;
 				::std::clog << "[Warning] Control not applied for Application '" << app.id() << "': failed to solve the identification problem." << ::std::endl;
 			}
+ofs << ::std::endl;///XXX DELETE-ME
+ofs.close();//XXX  DELETE-ME
 		}
 		else
 		{
@@ -1827,10 +1849,20 @@ class lqr_application_controller: public detail::lq_application_controller<Trait
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( C );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( D );
 
+		// Check: if (A,B) is controllable ...
 		if (!::dcs::control::is_controllable(A, B))
 		{
 			throw ::std::runtime_error("System (A,B) is not state-controllable");
 		}
+		// Check: if (Q, A) observable and (A, B) controllable, then closed-loop
+		// system
+		//   x(k+1) = Ax(k) + Bu(k) = (A + BK)x(k)
+		// is stable (K is the LQR-optimal state feedback gain)
+		if (!::dcs::control::is_observable(A, controller_.Q()))
+		{
+			throw ::std::runtime_error("System (A,Q) is not observable (closed-loop system will not be stable).");
+		}
+
 
 		vector_type opt_u;
 
