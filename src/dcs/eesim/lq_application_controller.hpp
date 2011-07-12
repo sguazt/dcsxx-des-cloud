@@ -1503,7 +1503,7 @@ const typename lq_application_controller<TraitsT>::size_type lq_application_cont
 //const typename lq_application_controller<TraitsT>::uint_type lq_application_controller<TraitsT>::default_ss_output_size_ = 1;
 
 template <typename TraitsT>
-const typename lq_application_controller<TraitsT>::real_type lq_application_controller<TraitsT>::default_min_share_ = 0.01;
+const typename lq_application_controller<TraitsT>::real_type lq_application_controller<TraitsT>::default_min_share_ = 0.20;
 
 
 //template <typename TraitsT>
