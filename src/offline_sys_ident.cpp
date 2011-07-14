@@ -157,6 +157,15 @@ void usage()
 				<< "    The type of identification that is to be performed." << ::std::endl
 				<< "  --sig {'gaussian'|'ramp'|'sine'|'step'|'unif'}" << ::std::endl
 				<< "    The shape of the input signal used to excite the target system." << ::std::endl
+				<< "  --sig-sine-amplitutde <value>" << ::std::endl
+				<< "    The amplitude of the sine wave (i.e., the peak deviation of the sine" << ::std::endl
+				<< "    wave from its center position)." << ::std::endl
+				<< "  --sig-sine-frequency <value>" << ::std::endl
+				<< "    The number of time samples per sine wave period." << ::std::endl
+				<< "  --sig-sine-phase <value>" << ::std::endl
+				<< "    The phase shift (i.e., the offset of the signal in number of sample times." << ::std::endl
+				<< "  --sig-sine-bias <value>" << ::std::endl
+				<< "    The signal bias (i.e., the constant value added to the sine to produce the output)." << ::std::endl
 				<< "  --ts <sampling-time>" << ::std::endl
 				<< "    The sampling time used to vary the input signal." << ::std::endl
 				<< "  --help" << ::std::endl
@@ -552,7 +561,7 @@ class sinusoidal_signal_generator: public base_signal_generator<ValueT>
 	public: sinusoidal_signal_generator(vector_type const& a, size_vector_type const& p)
 	: a_(a),
 	  p_(p),
-	  o_(ublas::zero_vector<value_type>(ublasx::size(a))),
+	  o_(ublas::zero_vector<size_type>(ublasx::size(a))),
 	  b_(ublas::zero_vector<value_type>(ublasx::size(a))),
 	  k_(ublas::zero_vector<size_type>(ublasx::size(a)))
 	{
@@ -564,7 +573,7 @@ class sinusoidal_signal_generator: public base_signal_generator<ValueT>
 	}
 
 
-	public: sinusoidal_signal_generator(vector_type const& a, size_vector_type const& p, vector_type const& o, vector_type const& b)
+	public: sinusoidal_signal_generator(vector_type const& a, size_vector_type const& p, size_vector_type const& o, vector_type const& b)
 	: a_(a),
 	  p_(p),
 	  o_(o),
@@ -589,7 +598,7 @@ class sinusoidal_signal_generator: public base_signal_generator<ValueT>
 	}
 
 
-	public: void offset(vector_type o)
+	public: void offset(size_vector_type o)
 	{
 		// pre: size(o) == size(a_)
 		DCS_ASSERT(
@@ -640,7 +649,7 @@ class sinusoidal_signal_generator: public base_signal_generator<ValueT>
 	private: vector_type a_;
 	private: size_vector_type p_;
 	/// The phase (specifies where in its cycle the oscillation begins at t = 0).
-	private: vector_type o_;
+	private: size_vector_type o_;
 	/// The DC offset (a non-zero center amplitude).
 	private: vector_type b_;
 	private: vector_type k_;
@@ -1283,38 +1292,20 @@ class base_system_identificator
 	}
 
 
-//	public: void output_filter(filter_pointer const& ptr_filter)
-//	{
-//		ptr_out_filters_ = ptr_filter;
-//	}
-//
-//
-//	public: filter_type& output_filter()
-//	{
-//		return *ptr_out_filter_;
-//	}
-//
-//
-//	public: filter_type const& output_filter() const
-//	{
-//		return *ptr_out_filter_;
-//	}
-//
-//
-//	protected: filter_pointer output_filter_ptr()
-//	{
-//		return ptr_out_filter_;
-//	}
-
-
 	public: real_type sampling_time() const
 	{
 		return excite_ts_;
 	}
 
 
-	public: void identify(application_type& app, signal_generator_pointer const& ptr_sig_gen, uint_type max_num_deps, detail::filter_info<real_type> const& out_filter_info)
+	public: void identify(application_type& app, signal_generator_pointer const& ptr_sig_gen, uint_type max_num_deps, detail::filter_info<real_type> const& out_filter_info, ::std::vector<real_type> const& init_shares)
 	{
+		// pre: size(init_shares) == number of shares
+		DCS_ASSERT(
+				init_shares.size() == app.num_tiers(),
+				throw ::std::invalid_argument("[base_system_identificator::identify] Wrong size for the initial shares vector.")
+			);
+
 		sysid_state_pointer ptr_sysid_state;
 
 		::std::vector<physical_machine_pointer> pms;
@@ -1420,10 +1411,12 @@ class base_system_identificator
 			{
 				physical_resource_category_type category((*res_it)->category());
 
-				real_type share(app.tier(tier_id)->resource_share(category));
+//				real_type share(app.tier(tier_id)->resource_share(category));
+//
+//				share = ::std::min(share, (*res_it)->utilization_threshold());
+//				share *= 0.5; // initial share is set to middle-capacity
 
-				share = ::std::min(share, (*res_it)->utilization_threshold());
-				share *= 0.5; // initial share is set to middle-capacity
+				real_type share(::std::min(init_shares[tier_id], (*res_it)->utilization_threshold()));
 
 				ptr_vm->wanted_resource_share(category, share);
 				ptr_vm->resource_share(category, share);
@@ -1737,6 +1730,7 @@ class base_system_identificator
 
 				ptr_vm->wanted_resource_share(category, new_share);
 				ptr_vm->resource_share(category, new_share);
+::std::cerr << "Share Change: TIER '" << tier_id << " --> Old Share '" << last_tier_share_map_[category][tier_id] << "' - New Share '" << new_share << "'" << ::std::endl;//XXX
 			}
 		}
 
@@ -2958,6 +2952,7 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 		real_type rt(ctx.simulated_time()-req.arrival_time());
 
 		(avg_rt_[num_tiers])(rt);
+::std::cerr << "APP '" << app.id() << " - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[num_tiers].estimate() << ")" << ::std::endl;//XXX
 
 		// - Clean-up memory (this request info)
 
@@ -3036,6 +3031,7 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 		real_type rt(ctx.simulated_time()-ptr_req_info_impl->arr_time);
 
 		(avg_rt_[tier_id])(rt);
+::std::cerr << "APP '" << app.id() << " - TIER '" << tier_id << "' - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[tier_id].estimate() << ")" << ::std::endl;//XXX
 	}
 
 
@@ -3126,13 +3122,18 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 			::std::cout << "," << smooth_avg_rt_[num_tiers]
 						<< ::std::endl;
 		}
-
-		avg_rt_ = measure_statistic_container(app.num_tiers()+1);
 */
+
+::std::cerr << "Erasing..." << ::std::endl;//XXX
+::std::cerr << "APP '" << app.id() << " - TIER '" << 0 << "' --> " << avg_rt_[0].estimate() << ::std::endl;//XXX
+::std::cerr << "APP '" << app.id() << " - TIER '" << 1 << "' --> " << avg_rt_[1].estimate() << ::std::endl;//XXX
+::std::cerr << "APP '" << app.id() << " - TIER '" << 2 << "' --> " << avg_rt_[2].estimate() << ::std::endl;//XXX
+::std::cerr << "APP '" << app.id() << " --> " << avg_rt_[3].estimate() << ::std::endl;//XXX
+		avg_rt_ = measure_statistic_container(app.num_tiers()+1);
 	}
 
 
-	private: void print_data(des_engine_context_type& ctx, application_type const& app)
+	private: void print_data(des_engine_context_type const& ctx, application_type const& app)
 	{
 		//typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
 		typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
@@ -4025,7 +4026,10 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 	private: typedef ::dcs::shared_ptr<sysid_request_info_impl_type> sysid_request_info_impl_pointer;
 	private: typedef detail::mean_statistic<real_type> measure_statistic_type;
 	private: typedef ::std::vector<measure_statistic_type> measure_statistic_container;
-	private: typedef ::std::vector<real_type> measure_container;
+	private: typedef typename base_type::filter_type filter_type;
+	private: typedef typename base_type::filter_pointer filter_pointer;
+	//private: typedef ::std::vector<real_type> measure_container;
+	private: typedef ::std::vector<filter_pointer> filter_container;
 
 
 	private: static const aggregation_category share_aggregation_category = none_aggregation_category;
@@ -4045,10 +4049,12 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
+		uint_type num_tiers(app.num_tiers());
+
 		// Output the preamble
 		::std::cout << "##" << ::std::endl
 					<< "## Application: " << app.name() << ::std::endl
-					<< "## Nr. Tiers: " << app.num_tiers() << ::std::endl
+					<< "## Nr. Tiers: " << num_tiers << ::std::endl
 					<< "##" << ::std::endl;
 
 		// Output the header
@@ -4058,7 +4064,6 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 		resource_container resources(app.reference_resources());
 		resource_iterator end_it(resources.end());
 		uint_type count(0);
-		uint_type num_tiers(app.num_tiers());
 		for (resource_iterator it = resources.begin(); it != end_it; ++it)
 		{
 			::std::cout << ",\"category_" << count << "\"";
@@ -4073,18 +4078,23 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 		::std::cout << ",\"rt\"" << ::std::endl;
 
         avg_rt_ = measure_statistic_container(app.num_tiers()+1);
-        smooth_avg_rt_ = measure_container(app.num_tiers()+1, 0);
+        //smooth_avg_rt_ = measure_container(app.num_tiers()+1, 0);
+		filter_avg_rt_ = filter_container(num_tiers+1);
+		for (uint_type tid = 0; tid <= num_tiers; ++tid)
+		{
+			filter_avg_rt_[tid] = detail::make_filter<real_type,real_type>(ptr_sysid_state->out_filter_info);
+		}
 	}
 
 
 	private: void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		//DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+		//DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
-		// empty
+		print_data(ctx, app);
 	}
 
 
@@ -4112,6 +4122,8 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 		real_type rt(ctx.simulated_time()-req.arrival_time());
 
 		(avg_rt_[num_tiers])(rt);
+::std::cerr << "APP '" << app.id() << " - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[num_tiers].estimate() << ")" << ::std::endl;//XXX
+
 
 		// - Clean-up memory (this request info)
 
@@ -4190,16 +4202,19 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 		real_type rt(ctx.simulated_time()-ptr_req_info_impl->arr_time);
 
 		(avg_rt_[tier_id])(rt);
+::std::cerr << "APP '" << app.id() << " - TIER '" << tier_id << "' - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[tier_id].estimate() << ")" << ::std::endl;//XXX
 	}
 
 
 	private: void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_type& app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+//		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sig_gen );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
+		print_data(ctx, app);
+/*
 		typedef ::std::map< ::dcs::eesim::physical_resource_category, ::std::vector<real_type> > resource_share_map;
 
 		//TODO: make-me a class member parameterizable by the user.
@@ -4297,13 +4312,76 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 			::std::cout << "," << smooth_avg_rt_[tier_id]
 						<< ::std::endl;
 		}
+*/
 
+::std::cerr << "Erasing..." << ::std::endl;//XXX
+::std::cerr << "APP '" << app.id() << " - TIER '" << 0 << "' --> " << avg_rt_[0].estimate() << ::std::endl;//XXX
+::std::cerr << "APP '" << app.id() << " - TIER '" << 1 << "' --> " << avg_rt_[1].estimate() << ::std::endl;//XXX
+::std::cerr << "APP '" << app.id() << " - TIER '" << 2 << "' --> " << avg_rt_[2].estimate() << ::std::endl;//XXX
+::std::cerr << "APP '" << app.id() << " --> " << avg_rt_[3].estimate() << ::std::endl;//XXX
 		avg_rt_ = measure_statistic_container(app.num_tiers()+1);
 	}
 
 
+    private: void print_data(des_engine_context_type const& ctx, application_type const& app)
+    {
+		uint_type num_tiers(app.num_tiers());
+
+		for (uint_type tier_id = 0; tier_id <= num_tiers; ++tier_id)
+		{
+			if (avg_rt_[tier_id].size() == 0)
+			{
+				if (tier_id < num_tiers)
+				{
+					::std::clog << "[Warning] No observation for tier '" << tier_id << "' at excitement interval [" << (ctx.simulated_time()-this->sampling_time()) << "," << ctx.simulated_time() << ")." << ::std::endl;
+				}
+				else
+				{
+					::std::clog << "[Warning] No observation for application at excitement interval [" << (ctx.simulated_time()-this->sampling_time()) << "," << ctx.simulated_time() << ")." << ::std::endl;
+				}
+
+				//continue;
+				(avg_rt_[tier_id])(::std::numeric_limits<real_type>::infinity());
+			}
+
+			// Prevent the implicit cast: (uint_type)-1
+			if (tier_id < num_tiers)
+			{
+				::std::cout << tier_id;
+			}
+			else
+			{
+				::std::cout << -1; // Fake Tier ID
+			}
+
+			::std::cout	 << "," << -1 // Fake Request ID
+						 << "," << -1 // Fake Arrival Time
+						 << "," << -1; // Fake Departure Time
+
+			typedef typename base_type::resource_tier_share_map resource_tier_share_map;
+			typedef typename resource_tier_share_map::const_iterator resource_tier_share_iterator;
+
+			resource_tier_share_map const& last_share_map(this->last_tier_share_map());
+			resource_tier_share_iterator res_end_it(last_share_map.end());
+			for (resource_tier_share_iterator res_it = last_share_map.begin(); res_it != res_end_it; ++res_it)
+			{
+				::std::cout << "," << res_it->first;
+
+				for (uint_type tid = 0; tid < num_tiers; ++tid)
+				{
+					::std::cout << "," << res_it->second[tid];
+
+				}
+			}
+
+			(*filter_avg_rt_[tier_id])(avg_rt_[tier_id].estimate());
+
+			::std::cout << "," << filter_avg_rt_[tier_id]->value() << ::std::endl;
+		}
+	}
+
 	private: measure_statistic_container avg_rt_;
-	private: measure_container smooth_avg_rt_;
+	private: filter_container filter_avg_rt_;
 }; // agg_mean_measure_noagg_share_siso_system_identificator
 
 
@@ -5697,6 +5775,10 @@ int main(int argc, char* argv[])
 	real_type excite_sampling_time;
 	uint_type num_samples;
 	signal_category sig_category;
+	real_type sig_sine_ampl;
+	uint_type sig_sine_freq;
+	uint_type sig_sine_phase;
+	real_type sig_sine_bias;
 	system_identification_category sysid_category;
 	aggregation_category in_aggr_category;
 	aggregation_category out_aggr_category;
@@ -5710,6 +5792,10 @@ int main(int argc, char* argv[])
 		num_samples = detail::get_option<uint_type>(argv, argv+argc, "--ns");
 		sysid_category = detail::parse_system_identification_category(detail::get_option<std::string>(argv, argv+argc, "--sys"));
 		sig_category = detail::parse_signal_category(detail::get_option<std::string>(argv, argv+argc, "--sig"));
+		sig_sine_ampl =  detail::get_option<real_type>(argv, argv+argc, "--sig-sine-amplitude", 0.5);
+		sig_sine_freq =  detail::get_option<uint_type>(argv, argv+argc, "--sig-sine-frequency", 8);
+		sig_sine_phase =  detail::get_option<uint_type>(argv, argv+argc, "--sig-sine-phase", sig_sine_freq/4);
+		sig_sine_bias =  detail::get_option<real_type>(argv, argv+argc, "--sig-sine-bias", 0.5);
 		in_aggr_category = detail::parse_input_aggregation_category(detail::get_option<std::string>(argv, argv+argc, "--inaggr"));
 		out_aggr_category = detail::parse_output_aggregation_category(detail::get_option<std::string>(argv, argv+argc, "--outaggr", "none"));
 //		in_filter_category = detail::parse_input_filter_category(detail::get_option<std::string>(argv, argv+argc, "--infilt"));
@@ -5822,8 +5908,14 @@ int main(int argc, char* argv[])
 				break;
 			case sinusoidal_signal:
 				ptr_sig_gen = dcs::make_shared< detail::sinusoidal_signal_generator<real_type> >(
-								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 1),
-								ublas::scalar_vector<uint_type>(ptr_app->num_tiers(), 15)
+//								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 0.3), // amplitude
+//								ublas::scalar_vector<uint_type>(ptr_app->num_tiers(), 8), // # of samples per cycle
+//								ublas::scalar_vector<uint_type>(ptr_app->num_tiers(), 2), // phase-shift (offset in # of samples)
+//								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 0.5) // bias
+								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), sig_sine_ampl), // amplitude
+								ublas::scalar_vector<uint_type>(ptr_app->num_tiers(), sig_sine_freq), // # of samples per cycle
+								ublas::scalar_vector<uint_type>(ptr_app->num_tiers(), sig_sine_phase), // phase-shift (offset in # of samples)
+								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), sig_sine_bias) // bias
 					);
 				break;
 			case step_signal:
@@ -5967,9 +6059,11 @@ int main(int argc, char* argv[])
 				break;
 		}
 
+		::std::vector<real_type> init_shares(ptr_app->num_tiers(), 1);
+
 //		sysid->des_engine(ptr_des_eng);
 //		sysid->uniform_random_generator(ptr_rng);
-		ptr_sysid->identify(*ptr_app, ptr_sig_gen, num_samples, out_filter_info);
+		ptr_sysid->identify(*ptr_app, ptr_sig_gen, num_samples, out_filter_info, init_shares);
 
 		//// Report statistics
 		//detail::report_stats(::std::cout, ptr_dc);
