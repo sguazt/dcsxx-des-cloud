@@ -31,6 +31,8 @@
 #include <dcs/des/model/qn/queueing_network.hpp>
 #include <dcs/des/model/qn/queueing_station_node.hpp>
 #include <dcs/des/model/qn/queueing_strategy.hpp>
+#include <dcs/des/model/qn/rr_queueing_strategy.hpp>
+#include <dcs/des/model/qn/rr_service_strategy.hpp>
 #include <dcs/des/model/qn/sink_node.hpp>
 #include <dcs/des/model/qn/source_node.hpp>
 #include <dcs/des/null_transient_detector.hpp>
@@ -1595,19 +1597,17 @@ template <
 								{
 									throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Service strategy for a queueing station node cannot be of type 'infinite-server'.");
 								}
-								else if (node_conf_impl.service_category == qn_processor_sharing_service_strategy)
+								if (node_conf_impl.service_category != qn_processor_sharing_service_strategy
+									&&
+									node_conf_impl.policy_category == qn_processor_sharing_scheduling_policy)
 								{
-									if (node_conf_impl.policy_category != qn_processor_sharing_scheduling_policy)
-									{
-										throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Processor-Sharing service strategy needs Processor-Sharing scheduling policy.");
-									}
+									throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Processor-Sharing scheduling policy can only be used with Processor-Sharing service strategy.");
 								}
-								else
+								if (node_conf_impl.service_category != qn_round_robin_service_strategy
+									&&
+									node_conf_impl.policy_category == qn_round_robin_scheduling_policy)
 								{
-									if (node_conf_impl.policy_category == qn_processor_sharing_scheduling_policy)
-									{
-										throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Processor-Sharing scheduling policy can only be used with Processor-Sharing service strategy.");
-									}
+										throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Round-Robin scheduling policy can only be used with Round-Robin service strategy.");
 								}
 
 								// Service strategy
@@ -1649,6 +1649,11 @@ template <
 											typedef ::std::vector<distribution_type> distribution_container;
 											typedef ::dcs::des::model::qn::ps_service_strategy<model_impl_traits_type> service_strategy_impl_type;
 
+											if (node_conf_impl.policy_category != qn_processor_sharing_scheduling_policy)
+											{
+												throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Processor-Sharing service strategy needs Processor-Sharing scheduling policy.");
+											}
+
 											service_config_type const& service_conf = ::boost::get<service_config_type>(node_conf_impl.service_conf);
 
 											::std::size_t ndistrs = service_conf.distributions.size();
@@ -1662,6 +1667,37 @@ template <
 												distrs.push_back(distr);
 											}
 											ptr_service = ::dcs::make_shared<service_strategy_impl_type>(distrs.begin(), distrs.end());
+										}
+										break;
+									case qn_round_robin_service_strategy:
+										{
+											typedef typename node_config_impl_type::round_robin_service_strategy_config_type service_config_type;
+											typedef typename service_config_type::probability_distribution_config_type distribution_config_type;
+											//typedef ::dcs::math::stats::base_distribution<real_type> distribution_type;
+											typedef ::dcs::math::stats::any_distribution<real_type> distribution_type;
+											typedef ::std::vector<distribution_type> distribution_container;
+											typedef ::dcs::des::model::qn::rr_service_strategy<model_impl_traits_type> service_strategy_impl_type;
+
+											if (node_conf_impl.policy_category != qn_round_robin_scheduling_policy)
+											{
+												throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Round-Robin service strategy needs Round-Robin scheduling policy.");
+											}
+
+											service_config_type const& service_conf = ::boost::get<service_config_type>(node_conf_impl.service_conf);
+
+											::std::size_t ndistrs = service_conf.distributions.size();
+											distribution_container distrs;
+											for (::std::size_t i = 0; i < ndistrs; ++i)
+											{
+												distribution_type distr;
+
+												distr = make_probability_distribution<traits_type>(service_conf.distributions[i]);
+
+												distrs.push_back(distr);
+											}
+											ptr_service = ::dcs::make_shared<service_strategy_impl_type>(service_conf.quantum,
+																										 distrs.begin(),
+																										 distrs.end());
 										}
 										break;
 								}
@@ -1736,6 +1772,20 @@ template <
 											else
 											{
 												throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Finite capacity queues with Processor-Sharing policy are not handled yet.");
+											}
+										}
+										break;
+									case qn_round_robin_scheduling_policy:
+										{
+											typedef ::dcs::des::model::qn::rr_queueing_strategy<model_impl_traits_type> queueing_impl_type;
+
+											if (node_conf_impl.is_infinite)
+											{
+												ptr_queueing = ::dcs::make_shared<queueing_impl_type>();
+											}
+											else
+											{
+												throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Finite capacity queues with Round-Robin policy are not handled yet.");
 											}
 										}
 										break;

@@ -348,9 +348,13 @@ qn_scheduling_policy_category text_to_qn_scheduling_policy_category(::std::strin
 	{
 		return qn_lcfs_scheduling_policy;
 	}
-	if (!istr.compare("ps"))
+	if (!istr.compare("ps") || !istr.compare("processor-sharing"))
 	{
 		return qn_processor_sharing_scheduling_policy;
+	}
+	if (!istr.compare("rr") || !istr.compare("round-robin"))
+	{
+		return qn_round_robin_scheduling_policy;
 	}
 
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_qn_scheduling_policy_category] Unknown queueing network scheduling policy.");
@@ -369,9 +373,13 @@ qn_service_strategy_category text_to_qn_service_strategy_category(::std::string 
 	{
 		return qn_load_independent_service_strategy;
 	}
-	if (!istr.compare("ps"))
+	if (!istr.compare("ps") || !istr.compare("processor-sharing"))
 	{
 		return qn_processor_sharing_service_strategy;
+	}
+	if (!istr.compare("rr") || !istr.compare("round-robin"))
+	{
+		return qn_round_robin_service_strategy;
 	}
 
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_qn_service_strategy_category] Unknown queueing network service strategy category.");
@@ -1431,6 +1439,9 @@ void operator>>(::YAML::Node const& node, qn_node_config<RealT,UIntT>& node_conf
 						case qn_processor_sharing_scheduling_policy:
 							node_impl_conf.policy_conf = typename node_impl_config_type::processor_sharing_scheduling_policy_config_type();
 							break;
+						case qn_round_robin_scheduling_policy:
+							node_impl_conf.policy_conf = typename node_impl_config_type::round_robin_scheduling_policy_config_type();
+							break;
 					}
 				}
 				// Read routing strategy
@@ -1497,6 +1508,29 @@ void operator>>(::YAML::Node const& node, qn_node_config<RealT,UIntT>& node_conf
 								typedef typename service_config_impl_type::probability_distribution_config_type distribution_config_type;
 
 								service_config_impl_type service_impl_conf;
+
+								::YAML::Node const& distributions_node = service_node["distributions"];
+								for (::std::size_t i = 0; i < distributions_node.size(); ++i)
+								{
+									::YAML::Node const& distribution_node = distributions_node[i];
+									distribution_config_type distribution_conf;
+
+									distribution_node["distribution"] >> distribution_conf;
+
+									service_impl_conf.distributions.push_back(distribution_conf);
+								}
+
+								node_impl_conf.service_conf = service_impl_conf;
+							}
+							break;
+						case qn_round_robin_service_strategy:
+							{
+								typedef typename node_impl_config_type::round_robin_service_strategy_config_type service_config_impl_type;
+								typedef typename service_config_impl_type::probability_distribution_config_type distribution_config_type;
+
+								service_config_impl_type service_impl_conf;
+
+								service_node["quantum"] >> service_impl_conf.quantum;
 
 								::YAML::Node const& distributions_node = service_node["distributions"];
 								for (::std::size_t i = 0; i < distributions_node.size(); ++i)

@@ -40,7 +40,8 @@ enum qn_scheduling_policy_category
 {
 	qn_fcfs_scheduling_policy,
 	qn_lcfs_scheduling_policy,
-	qn_processor_sharing_scheduling_policy
+	qn_processor_sharing_scheduling_policy,
+	qn_round_robin_scheduling_policy
 };
 
 
@@ -54,7 +55,8 @@ enum qn_service_strategy_category
 {
 	qn_infinite_server_service_strategy,
 	qn_load_independent_service_strategy,
-	qn_processor_sharing_service_strategy
+	qn_processor_sharing_service_strategy,
+	qn_round_robin_service_strategy
 };
 
 
@@ -85,6 +87,11 @@ struct qn_lcfs_scheduling_policy_config
 
 
 struct qn_processor_sharing_scheduling_policy_config
+{
+};
+
+
+struct qn_round_robin_scheduling_policy_config
 {
 };
 
@@ -122,6 +129,18 @@ struct qn_processor_sharing_service_strategy_config
 };
 
 
+template <typename RealT>
+struct qn_round_robin_service_strategy_config
+{
+	typedef RealT real_type;
+	typedef probability_distribution_config<real_type> probability_distribution_config_type;
+	typedef ::std::vector<probability_distribution_config_type> probability_distribution_container;
+
+	probability_distribution_container distributions;
+	real_type quantum;
+};
+
+
 template <typename RealT, typename UIntT>
 struct qn_delay_node_config
 {
@@ -145,9 +164,11 @@ struct qn_queue_node_config
 	typedef qn_fcfs_scheduling_policy_config fcfs_scheduling_policy_config_type;
 	typedef qn_lcfs_scheduling_policy_config lcfs_scheduling_policy_config_type;
 	typedef qn_processor_sharing_scheduling_policy_config processor_sharing_scheduling_policy_config_type;
+	typedef qn_round_robin_scheduling_policy_config round_robin_scheduling_policy_config_type;
 	typedef qn_probabilistic_routing_strategy_config<RealT> probabilistic_routing_strategy_config_type;
 	typedef qn_load_independent_service_strategy_config<real_type> load_independent_service_strategy_config_type;
 	typedef qn_processor_sharing_service_strategy_config<real_type> processor_sharing_service_strategy_config_type;
+	typedef qn_round_robin_service_strategy_config<real_type> round_robin_service_strategy_config_type;
 
 	unsigned long num_servers;
 	bool is_infinite;
@@ -155,12 +176,14 @@ struct qn_queue_node_config
 	qn_scheduling_policy_category policy_category;
 	::boost::variant<fcfs_scheduling_policy_config_type,
 					 lcfs_scheduling_policy_config_type,
-					 processor_sharing_scheduling_policy_config_type> policy_conf;
+					 processor_sharing_scheduling_policy_config_type,
+					 round_robin_scheduling_policy_config_type> policy_conf;
 	qn_routing_strategy_category routing_category;
 	::boost::variant<probabilistic_routing_strategy_config_type> routing_conf;
 	qn_service_strategy_category service_category;
 	::boost::variant<load_independent_service_strategy_config_type,
-					 processor_sharing_service_strategy_config_type> service_conf;
+					 processor_sharing_service_strategy_config_type,
+					 round_robin_service_strategy_config_type> service_conf;
 };
 
 
@@ -319,7 +342,18 @@ template <typename CharT, typename CharTraitsT>
 {
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(config);
 
-	os << "<(processor_sharing-scheduling-routing)>";
+	os << "<(processor-sharing-scheduling-routing)>";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, qn_round_robin_scheduling_policy_config const& config)
+{
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(config);
+
+	os << "<(round-robin-scheduling-routing)>";
 
 	return os;
 }
@@ -380,6 +414,29 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 	os << "<(processor-sharing-service)";
 
 	os << " distributions: [";
+	for (::std::size_t i = 0; i < service_config.distributions.size(); ++i)
+	{
+		if (i != 0)
+		{
+			os << ", ";
+		}
+		os << service_config.distributions[i];
+	}
+	os << "]";
+
+	os << ">";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT, typename RealT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, qn_round_robin_service_strategy_config<RealT> const& service_config)
+{
+	os << "<(round-robin-service)";
+
+	os << " quantum: " << service_config.quantum;
+	os << ", distributions: [";
 	for (::std::size_t i = 0; i < service_config.distributions.size(); ++i)
 	{
 		if (i != 0)
