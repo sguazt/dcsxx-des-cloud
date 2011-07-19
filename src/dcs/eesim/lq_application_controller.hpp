@@ -1852,7 +1852,8 @@ class lqr_application_controller: public detail::lq_application_controller<Trait
 		// Check: if (A,B) is controllable ...
 		if (!::dcs::control::is_controllable(A, B))
 		{
-			throw ::std::runtime_error("System (A,B) is not state-controllable");
+			//throw ::std::runtime_error("System (A,B) is not state-controllable");
+			::std::clog << "System (A,B) is not state-controllable" << ::std::endl;
 		}
 		// Check: if (Q, A) observable and (A, B) controllable, then closed-loop
 		// system
@@ -1860,7 +1861,8 @@ class lqr_application_controller: public detail::lq_application_controller<Trait
 		// is stable (K is the LQR-optimal state feedback gain)
 		if (!::dcs::control::is_observable(A, controller_.Q()))
 		{
-			throw ::std::runtime_error("System (A,Q) is not observable (closed-loop system will not be stable).");
+			//throw ::std::runtime_error("System (A,Q) is not observable (closed-loop system will not be stable).");
+			::std::clog << "System (A,Q) is not observable (closed-loop system will not be stable)." << ::std::endl;
 		}
 
 
