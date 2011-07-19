@@ -10,11 +10,11 @@
 #include <map>
 //[XXX]
 #ifdef DCS_EESIM_EXP_OUTPUT_VM_SHARES
-#include <cstdlib>
-#include <iosfwd>
-#include <fstream>
-#include <sstream>
-#include <string>
+# include <cstdlib>
+# include <iosfwd>
+# include <fstream>
+# include <sstream>
+# include <string>
 #endif // DCS_EESIM_EXP_OUTPUT_VM_SHARES
 //[/XXX]
 
@@ -156,9 +156,10 @@ class proportional_physical_machine_controller: public base_physical_machine_con
 //							::std::cerr << ::std::endl << "(or put it between an #ifdef-#endif block)" << ::std::endl;
 //							::std::cerr << ::std::endl << "-------------------------" << ::std::endl;
 							::std::ostringstream oss;
-							oss << "vmshares-" << ptr_vm->id() << "-" << ::std::string(::getenv("CONDOR_JOB_ID")) << ".dat";
+							oss << "vm_shares-" << ::std::string(::getenv("CONDOR_JOB_ID")) << ".dat";
 							::std::ofstream ofs(oss.str().c_str(), ::std::ios_base::app);
-							ofs << ptr_vm->id() << "," << category << "," << share_it->second << "," << share << ::std::endl;
+							ofs << ::std::setprecision(15);
+							//ofs << ptr_vm->id() << "," << category << "," << share_it->second << "," << share << ::std::endl;
 							// sim-time, vm-id, mach-id, resource-category, wanted-share, assigned-share
 							 ofs << registry<traits_type>::instance().des_engine_ptr()->simulated_time() << "," << ptr_vm->id() << "," << this->machine().id() << "," << category << "," << share_it->second << "," << share << ::std::endl;
 							ofs.close();

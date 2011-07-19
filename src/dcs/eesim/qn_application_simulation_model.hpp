@@ -24,6 +24,16 @@
 #include <stdexcept>
 #include <vector>
 
+//[XXX]
+#ifdef DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+# include <cstdlib>
+# include <iosfwd>
+# include <fstream>
+# include <sstream>
+# include <string>
+#endif // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+//[/XXX]
+
 
 //TODO:
 // - Output statistic category is currently fixed to mean_estimator, but
@@ -127,6 +137,56 @@ bool has_performance_measure(performance_measure_category category)
 
 	return false;
 }
+
+
+//[XXX]
+#ifdef DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+
+template <typename TraitsT>
+inline
+void dump_app_measure(performance_measure_category category, typename TraitsT::real_type measure, typename TraitsT::real_type target_value)
+{
+	typedef TraitsT traits_type;
+	typedef typename traits_type::uint_type uint_type;
+	typedef typename traits_type::real_type real_type;
+
+	uint_type nrep = dynamic_cast< ::dcs::des::replications::engine<real_type,uint_type>* >(registry<traits_type>::instance().des_engine_ptr().get())->num_replications();
+
+	if (nrep == 1)
+	{
+		::std::ostringstream oss;
+		oss << "vm_measures-" << ::std::string(::getenv("CONDOR_JOB_ID")) << ".dat";
+		::std::ofstream ofs(oss.str().c_str(), ::std::ios_base::app);
+		ofs << ::std::setprecision(16);
+		ofs << registry<traits_type>::instance().des_engine_ptr()->simulated_time() << "," << -1 << "," << category << "," << measure << "," << target_value << ::std::endl;
+		ofs.close();
+	}
+}
+
+
+template <typename TraitsT>
+inline
+void dump_tier_measure(typename TraitsT::uint_type tier_id, performance_measure_category category, typename TraitsT::real_type measure, typename TraitsT::real_type target_value)
+{
+	typedef TraitsT traits_type;
+	typedef typename traits_type::uint_type uint_type;
+	typedef typename traits_type::real_type real_type;
+
+	uint_type nrep = dynamic_cast< ::dcs::des::replications::engine<real_type,uint_type>* >(registry<traits_type>::instance().des_engine_ptr().get())->num_replications();
+
+	if (nrep == 1)
+	{
+		::std::ostringstream oss;
+		oss << "vm_measures-" << ::std::string(::getenv("CONDOR_JOB_ID")) << ".dat";
+		::std::ofstream ofs(oss.str().c_str(), ::std::ios_base::app);
+		ofs << ::std::setprecision(15);
+		ofs << registry<traits_type>::instance().des_engine_ptr()->simulated_time() << "," << tier_id << "," << category << "," << measure << "," << target_value << ::std::endl;
+		ofs.close();
+	}
+}
+
+#endif // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+//[/XXX]
 
 }} // Namespace detail::<unnamed>
 
@@ -699,6 +759,23 @@ DCS_DEBUG_TRACE("New scaled share: " << multiplier);///XXX
 
 		num_sla_viols_ = uint_type/*zero*/();
 
+//[XXX]
+#ifdef DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+		for (uint_type tid = 0; tid < this->application().num_tiers(); ++tid)
+		{
+			this->request_tier_departure_event_source(tid).connect(
+				::dcs::functional::bind(
+					&self_type::process_request_tier_departure,
+					this,
+					::dcs::functional::placeholders::_1,
+					::dcs::functional::placeholders::_2,
+					tid
+				)
+			);
+		}
+#endif // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+//[/XXX]
+
 		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");
 	}
 
@@ -728,6 +805,23 @@ DCS_DEBUG_TRACE("New scaled share: " << multiplier);///XXX
 			(*tier_num_arrs_stats_[tier_id])(this->actual_tier_num_arrivals(tier_id));
 			(*tier_num_deps_stats_[tier_id])(this->actual_tier_num_departures(tier_id));
 		}
+
+//[XXX]
+#ifdef DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+		for (uint_type tid = 0; tid < this->application().num_tiers(); ++tid)
+		{
+			this->request_tier_departure_event_source(tid).disconnect(
+				::dcs::functional::bind(
+					&self_type::process_request_tier_departure,
+					this,
+					::dcs::functional::placeholders::_1,
+					::dcs::functional::placeholders::_2,
+					tid
+				)
+			);
+		}
+#endif // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+//[/XXX]
 
 		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-FINALIZATION (Clock: " << ctx.simulated_time() << ")");
 	}
@@ -773,6 +867,13 @@ DCS_DEBUG_TRACE("New scaled share: " << multiplier);///XXX
 				case utilization_performance_measure:
 					throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::process_request_departure] Utilization as SLO category has not been implemented yet.");//FIXME
 			}
+//[XXX]
+#ifdef DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+			detail::dump_app_measure<traits_type>(category,
+										  measures.back(),
+										  this->application().sla_cost_model().slo_value(category));
+#endif // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+//[/XXX]
 		}
 
 		if (!this->application().sla_cost_model().satisfied(categories.begin(), categories.end(), measures.begin()))
@@ -785,6 +886,67 @@ DCS_DEBUG_TRACE("New scaled share: " << multiplier);///XXX
 
 		DCS_DEBUG_TRACE("(" << this << ") END Processing REQUEST-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
 	}
+
+
+//[XXX]
+#ifdef DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+	private: void process_request_tier_departure(des_event_type const& evt, des_engine_context_type& ctx, uint_type tid)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing REQUEST-TIER-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
+
+		typedef ::std::vector<performance_measure_category> category_container;
+		typedef typename category_container::const_iterator category_iterator;
+		typedef ::std::vector<real_type> measure_container;
+
+		user_request_type req = make_request(evt);
+
+		// check: make sure this request is at this tier
+		if (tid != req.current_tier())
+		{
+			return;
+		}
+
+		category_container categories(this->application().sla_cost_model().slo_categories());
+
+		measure_container measures;
+		category_iterator end_it = categories.end();
+		for (category_iterator it = categories.begin(); it != end_it; ++it)
+		{
+			performance_measure_category category(*it);
+
+			switch (category)
+			{
+				case busy_time_performance_measure:
+					throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::process_request_departure] Busy time as SLO category has not been implemented yet.");//FIXME
+				case queue_length_performance_measure:
+					throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::process_request_departure] Queue length as SLO category has not been implemented yet.");//FIXME
+				case response_time_performance_measure:
+					{
+						real_type rt = req.tier_departure_times(req.current_tier()).back()-req.tier_arrival_times(req.current_tier()).back();
+						measures.push_back(rt);
+					}
+					break;
+				case throughput_performance_measure:
+					// Nothing to do since throughput is already an aggregate metric
+					////real_type tp = (num_arrivals_-num_departies)/simulated_time;
+					////measures.push_back(tp);
+					break;
+				case utilization_performance_measure:
+					throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::process_request_departure] Utilization as SLO category has not been implemented yet.");//FIXME
+			}
+
+			detail::dump_tier_measure<traits_type>(req.current_tier(),
+												   category,
+												   measures.back(),
+												   this->application().performance_model().tier_measure(req.current_tier(), category));
+		}
+
+		DCS_DEBUG_TRACE("(" << this << ") END Processing REQUEST-TIER-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
+	}
+#endif // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+//[/XXX]
 
 	//@} Event Handlers
 
