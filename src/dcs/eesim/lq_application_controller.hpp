@@ -46,7 +46,9 @@
 #include <boost/numeric/ublasx/operation/size.hpp>
 #include <cstddef>
 #include <dcs/control/analysis/controllability.hpp>
+#include <dcs/control/analysis/detectability.hpp>
 #include <dcs/control/analysis/observability.hpp>
+#include <dcs/control/analysis/stabilizability.hpp>
 #include <dcs/control/design/dlqi.hpp>
 //#include <dcs/control/design/dlqiy.hpp>
 #include <dcs/control/design/dlqr.hpp>
@@ -751,7 +753,7 @@ class lq_application_controller: public base_application_controller<TraitsT>
 								}
 //								rt *= scale_factor;
 DCS_DEBUG_TRACE("HERE!!!!! tier: " << tier_id << " ==> rt: " << rt << " (aggregated: " << ptr_stat->estimate() << ")");//XXX
-::std::cerr << "HERE!!!!! tier: " << tier_id << " ==> rt: " << rt << " (aggregated: " << ptr_stat->estimate() << ")" << ::std::endl;//XXX
+//::std::cerr << "HERE!!!!! tier: " << tier_id << " ==> rt: " << rt << " (aggregated: " << ptr_stat->estimate() << ")" << ::std::endl;//XXX
 								(*ptr_stat)(rt);
 //								app_rt += rt;
 							}
@@ -785,7 +787,7 @@ DCS_DEBUG_TRACE("HERE!!!!! tier: " << tier_id << " ==> rt: " << rt << " (aggrega
 						(*ptr_stat)(rt);
 //						(*ptr_stat)(app_rt);
 DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << rt << " (aggregated: " << ptr_stat->estimate() << ")");//XXX
-::std::cerr << "HERE!!!!! app ==> rt: " << rt << " (aggregated: " << ptr_stat->estimate() << ")" << ::std::endl;//XXX
+//::std::cerr << "HERE!!!!! app ==> rt: " << rt << " (aggregated: " << ptr_stat->estimate() << ")" << ::std::endl;//XXX
 					}
 					break;
 				default:
@@ -958,7 +960,7 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << rt << " (aggregated: " << ptr_stat->
 				actual_measure = ref_measure;
 			}
 DCS_DEBUG_TRACE("APP " << app.id() << " - OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure);//XXX
-::std::cerr << "APP " << app.id() << " - OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure << ::std::endl;//XXX
+//::std::cerr << "APP " << app.id() << " - OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure << ::std::endl;//XXX
 
 			if (triggers_.actual_value_sla_ko())
 			{
@@ -997,7 +999,7 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - OBSERVATION: ref: " << ref_measure << 
 										actual_measure = ref_measure;
 									}
 DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure);//XXX
-::std::cerr << "APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure << ::std::endl;//XXX
+//::std::cerr << "APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure << ::std::endl;//XXX
 #if !defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION)
 									x_(x_offset_+tier_id) = p(tier_id)
 														  = actual_measure/ref_measure - 1;
@@ -1040,7 +1042,7 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 
 				//FIXME: should u contain relative errore w.r.t. resource share given from performance model?
 DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " SHARE: ref: " << ref_share << " - actual: " << ptr_vm->resource_share(res_category) << " - actual-scaled: " << actual_share);//XXX
-::std::cerr << "APP " << app.id() << " - TIER " << tier_id << " SHARE: ref: " << ref_share << " - actual: " << ptr_vm->resource_share(res_category) << " - actual-scaled: " << actual_share << ::std::endl;//XXX
+//::std::cerr << "APP " << app.id() << " - TIER " << tier_id << " SHARE: ref: " << ref_share << " - actual: " << ptr_vm->resource_share(res_category) << " - actual-scaled: " << actual_share << ::std::endl;//XXX
 #if !defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION)
 				u_(u_offset_+tier_id) = s(tier_id)
 									  = actual_share/ref_share - 1;
@@ -1066,10 +1068,10 @@ DCS_DEBUG_TRACE("p_hat=" << p_hat);//XXX
 DCS_DEBUG_TRACE("Theta_hat=" << ptr_ident_strategy_->Theta_hat());//XXX
 DCS_DEBUG_TRACE("P=" << ptr_ident_strategy_->P());//XXX
 DCS_DEBUG_TRACE("phi=" << ptr_ident_strategy_->phi());//XXX
-::std::cerr << "APP: " << app.id() << " - RLS estimation:" << ::std::endl;//XXX
-::std::cerr << "p=" << p << ::std::endl;//XXX
-::std::cerr << "s=" << s << ::std::endl;//XXX
-::std::cerr << "p_hat=" << p_hat << ::std::endl;//XXX
+//::std::cerr << "APP: " << app.id() << " - RLS estimation:" << ::std::endl;//XXX
+//::std::cerr << "p=" << p << ::std::endl;//XXX
+//::std::cerr << "s=" << s << ::std::endl;//XXX
+//::std::cerr << "p_hat=" << p_hat << ::std::endl;//XXX
 //::std::cerr << "Theta_hat=" << ptr_ident_strategy_->Theta_hat() << ::std::endl;//XXX
 //::std::cerr << "P=" << ptr_ident_strategy_->P() << ::std::endl;//XXX
 //::std::cerr << "phi=" << ptr_ident_strategy_->phi() << ::std::endl;//XXX
@@ -1144,14 +1146,14 @@ DCS_DEBUG_TRACE("D=" << D);//XXX
 DCS_DEBUG_TRACE("y= " << y);//XXX
 DCS_DEBUG_TRACE("x= " << x_);//XXX
 DCS_DEBUG_TRACE("u= " << u_);//XXX
-::std::cerr << "APP: " << app.id() << " - Solving LQ with" << ::std::endl;//XXX
-::std::cerr << "A=" << A << ::std::endl;//XXX
-::std::cerr << "B=" << B << ::std::endl;//XXX
-::std::cerr << "C=" << C << ::std::endl;//XXX
-::std::cerr << "D=" << D << ::std::endl;//XXX
-::std::cerr << "y= " << y << ::std::endl;//XXX
-::std::cerr << "x= " << x_ << ::std::endl;//XXX
-::std::cerr << "u= " << u_ << ::std::endl;//XXX
+//::std::cerr << "APP: " << app.id() << " - Solving LQ with" << ::std::endl;//XXX
+//::std::cerr << "A=" << A << ::std::endl;//XXX
+//::std::cerr << "B=" << B << ::std::endl;//XXX
+//::std::cerr << "C=" << C << ::std::endl;//XXX
+//::std::cerr << "D=" << D << ::std::endl;//XXX
+//::std::cerr << "y= " << y << ::std::endl;//XXX
+//::std::cerr << "x= " << x_ << ::std::endl;//XXX
+//::std::cerr << "u= " << u_ << ::std::endl;//XXX
 				vector_type opt_u;
 				try
 				{
@@ -1179,13 +1181,13 @@ DCS_DEBUG_TRACE("u= " << u_);//XXX
 				{
 DCS_DEBUG_TRACE("APP: " << app.id() << " - Solved!");//XXX
 DCS_DEBUG_TRACE("APP: " << app.id() << " - Optimal Control u*=> " << opt_u);//XXX
-::std:: cerr << "APP: " << app.id() << " - Optimal Control u*=> " << opt_u << ::std::endl;//XXX
+//::std:: cerr << "APP: " << app.id() << " - Optimal Control u*=> " << opt_u << ::std::endl;//XXX
 #if !defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION)
 DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)*(1+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0))));//XXX
-::std::cerr << "APP: " << app.id() << " Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)*(1+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0))) << ::std::endl;//XXX
+//::std::cerr << "APP: " << app.id() << " Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)*(1+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0))) << ::std::endl;//XXX
 #else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
 DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)));//XXX
-::std::cerr << "APP: " << app.id() << " Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)) << ::std::endl;//XXX
+//::std::cerr << "APP: " << app.id() << " Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)) << ::std::endl;//XXX
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
 for (size_type i=0; i < n_p_; ++i)//XXX DELETE-ME
 {//XXX DELETE-ME
@@ -1222,7 +1224,7 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 							real_type new_share(ref_share+opt_u(u_offset_+tier_id));
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
 DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unscaled share: " << new_share);//XXX
-::std::cerr << "APP : " << app.id() << " - Tier " << tier_id << " --> New Unscaled share: " << new_share << ::std::endl;//XXX
+//::std::cerr << "APP : " << app.id() << " - Tier " << tier_id << " --> New Unscaled share: " << new_share << ::std::endl;//XXX
 							new_share = ::dcs::eesim::scale_resource_share(
 											// Reference resource capacity and threshold
 											app.reference_resource(res_category).capacity(),
@@ -1244,7 +1246,7 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 							}
 
 //							DCS_DEBUG_TRACE("APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share);
-::std::cerr << "APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share << ::std::endl;//XXX
+//::std::cerr << "APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share << ::std::endl;//XXX
 
 							new_share = ::dcs::eesim::scale_resource_share(
 											// Actual resource capacity and threshold
@@ -1275,8 +1277,8 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 						real_type pred_measure = app_perf_model.application_measure(response_time_performance_measure)
 												 + (ublas::prod(C, ublas::prod(A,x_)+ ublas::prod(B,opt_u))+ublas::prod(D,adj_opt_u))(0);
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
-::std::cerr << "APP: " << app.id() << " - Adjusted Optimal Control u*=> " << adj_opt_u << ::std::endl;//XXX
-::std::cerr << "APP: " << app.id() << " - Expected application response time after adjustment: " << pred_measure << ::std::endl;//XXX
+//::std::cerr << "APP: " << app.id() << " - Adjusted Optimal Control u*=> " << adj_opt_u << ::std::endl;//XXX
+//::std::cerr << "APP: " << app.id() << " - Expected application response time after adjustment: " << pred_measure << ::std::endl;//XXX
 
 						::std::vector<performance_measure_category> cats(1);
 						cats[0] = response_time_performance_measure;
@@ -1309,7 +1311,7 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 									);
 
 								DCS_DEBUG_TRACE("APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " - Category: " << res_category << " - Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (REF: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share);
-::std::cerr << "APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (REF: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << ::std::endl;//XXX
+//::std::cerr << "APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (REF: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << ::std::endl;//XXX
 								ptr_vm->wanted_resource_share(res_category, new_share);
 							}
 						}
@@ -1345,7 +1347,7 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 							real_type new_share(ref_share+opt_u(u_offset_+tier_id));
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
 DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unscaled share: " << new_share);//XXX
-::std::cerr << "APP : " << app.id() << " - Tier " << tier_id << " --> New Unscaled share: " << new_share << ::std::endl;//XXX
+//::std::cerr << "APP : " << app.id() << " - Tier " << tier_id << " --> New Unscaled share: " << new_share << ::std::endl;//XXX
 							new_share = ::dcs::eesim::scale_resource_share(
 											// Reference resource capacity and threshold
 											app.reference_resource(res_category).capacity(),
@@ -1367,7 +1369,7 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 							}
 
 							DCS_DEBUG_TRACE("APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " - Category: " << res_category << " - Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (REF: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share);
-::std::cerr << "APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (REF: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << ::std::endl;//XXX
+//::std::cerr << "APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (REF: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << ::std::endl;//XXX
 
 							ptr_vm->wanted_resource_share(res_category, new_share);
 						}
@@ -1647,10 +1649,10 @@ class lqi_application_controller: public detail::lq_application_controller<Trait
 		ublas::subrange(z, 0, ublasx::num_rows(A)) = x;
 		ublas::subrange(z, ublasx::num_rows(A), ublasx::num_rows(A)+ublasx::num_rows(C)) = xi_;
 
-::std::cerr << "[eesim::lqi_controller] z: " << z << ::std::endl;//XXX
-::std::cerr << "[eesim::lqi_controller] K: " << controller_.gain() << ::std::endl;//XXX
-::std::cerr << "[eesim::lqi_controller] S: " << controller_.are_solution() << ::std::endl;//XXX
-::std::cerr << "[eesim::lqi_controller] e: " << controller_.eigenvalues() << ::std::endl;//XXX
+//::std::cerr << "[eesim::lqi_controller] z: " << z << ::std::endl;//XXX
+//::std::cerr << "[eesim::lqi_controller] K: " << controller_.gain() << ::std::endl;//XXX
+//::std::cerr << "[eesim::lqi_controller] S: " << controller_.are_solution() << ::std::endl;//XXX
+//::std::cerr << "[eesim::lqi_controller] e: " << controller_.eigenvalues() << ::std::endl;//XXX
 		opt_u = ublas::real(controller_.control(z));
 
 		return opt_u;
@@ -1849,20 +1851,43 @@ class lqr_application_controller: public detail::lq_application_controller<Trait
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( C );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( D );
 
-		// Check: if (A,B) is controllable ...
-		if (!::dcs::control::is_controllable(A, B))
+//		// Check: if (A,B) is controllable, then the associated DARE has a
+//		//        positive semidefinite solution.
+//		//        (sufficient but not necessary condition)
+//		if (!::dcs::control::is_controllable(A, B))
+//		{
+//			//throw ::std::runtime_error("System (A,B) is not state-controllable");
+//			::std::clog << "[Warning] System (A,B) is not state-controllable [with A=" << A << " and B=" << B << "]." << ::std::endl;
+//		}
+		// Check: if (A,B) is stabilizable, then the assoicated DARE has a
+		//        positive semidefinite solution.
+		//        (sufficient and necessary condition)
+		if (!::dcs::control::is_stabilizable(A, B, true))
 		{
-			//throw ::std::runtime_error("System (A,B) is not state-controllable");
-			::std::clog << "System (A,B) is not state-controllable" << ::std::endl;
+			//throw ::std::runtime_error("System (A,B) is not stabilizable (DARE cannot have a positive semidefinite solution).");
+			::std::clog << "[Warning] System (A,B) is not stabilizable (the associated DARE cannot have a positive semidefinite solution) [with A=" << A << " and B=" << B << "]." << ::std::endl;
 		}
-		// Check: if (Q, A) observable and (A, B) controllable, then closed-loop
-		// system
-		//   x(k+1) = Ax(k) + Bu(k) = (A + BK)x(k)
-		// is stable (K is the LQR-optimal state feedback gain)
-		if (!::dcs::control::is_observable(A, controller_.Q()))
+//		// Check: if (A,B) controllable and (Q,A) observable, then the
+//		//        associated DARE has a unique and stabilizing solution such
+//		//        that the closed-loop system:
+//		//          x(k+1) = Ax(k) + Bu(k) = (A + BK)x(k)
+//		//        is stable (K is the LQR-optimal state feedback gain).
+//		//        (sufficient but not necessary condition)
+//		if (!::dcs::control::is_observable(A, controller_.Q()))
+//		{
+//			//throw ::std::runtime_error("System (A,Q) is not observable (closed-loop system will not be stable).");
+//			::std::clog << "[Warning] System (Q,A) is not observable (closed-loop system will not be stable) [with " << A << " and B=" << B << "]." << ::std::endl;
+//		}
+		// Check: if (A,B) stabilizable and (Q,A) detectable, then the
+		//        associated DARE has a unique and stabilizing solution such
+		//        that the closed-loop system:
+		//          x(k+1) = Ax(k) + Bu(k) = (A + BK)x(k)
+		//        is stable (K is the LQR-optimal state feedback gain).
+		//        (sufficient and necessary condition)
+		if (!::dcs::control::is_detectable(A, controller_.Q(), true))
 		{
-			//throw ::std::runtime_error("System (A,Q) is not observable (closed-loop system will not be stable).");
-			::std::clog << "System (A,Q) is not observable (closed-loop system will not be stable)." << ::std::endl;
+			//throw ::std::runtime_error("System (Q,A) is not detectable (closed-loop system will not be stable).");
+			::std::clog << "[Warning] System (Q,A) is not detectable (closed-loop system will not be stable) [with " << A << " and B=" << B << "]." << ::std::endl;
 		}
 
 
