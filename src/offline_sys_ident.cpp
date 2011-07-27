@@ -1700,6 +1700,8 @@ class base_system_identificator
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Process EXCITE-SYSTEM-EVENT (Clock: " << ctx.simulated_time() << ")");
+
 		size_type num_tiers(app.num_tiers());
 
 		ublas::vector<real_type> u((*ptr_sig_gen)());
@@ -1728,9 +1730,10 @@ class base_system_identificator
 
 				last_tier_share_map_[category][tier_id] = ptr_vm->resource_share(category);
 
+				DCS_DEBUG_TRACE_L(3, "Share Change for Tier '" << tier_id << " and Category: " << category << " --> Old Share: '" << last_tier_share_map_[category][tier_id] << "' - New Share: '" << new_share << "'");
+
 				ptr_vm->wanted_resource_share(category, new_share);
 				ptr_vm->resource_share(category, new_share);
-::std::cerr << "Share Change: TIER '" << tier_id << " --> Old Share '" << last_tier_share_map_[category][tier_id] << "' - New Share '" << new_share << "'" << ::std::endl;//XXX
 			}
 		}
 
@@ -1738,6 +1741,8 @@ class base_system_identificator
 
 		// Reschedule this event
 		schedule_excite_system_event();
+
+		DCS_DEBUG_TRACE("(" << this << ") END Process EXCITE-SYSTEM-EVENT (Clock: " << ctx.simulated_time() << ")");
 	}
 
 
@@ -2952,7 +2957,7 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 		real_type rt(ctx.simulated_time()-req.arrival_time());
 
 		(avg_rt_[num_tiers])(rt);
-::std::cerr << "APP '" << app.id() << " - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[num_tiers].estimate() << ")" << ::std::endl;//XXX
+::std::cerr << "[offline_sysid] APP '" << app.id() << " - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[num_tiers].estimate() << ")" << ::std::endl;//XXX
 
 		// - Clean-up memory (this request info)
 
@@ -3031,7 +3036,7 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 		real_type rt(ctx.simulated_time()-ptr_req_info_impl->arr_time);
 
 		(avg_rt_[tier_id])(rt);
-::std::cerr << "APP '" << app.id() << " - TIER '" << tier_id << "' - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[tier_id].estimate() << ")" << ::std::endl;//XXX
+::std::cerr << "[offline_sysid] APP '" << app.id() << " - TIER '" << tier_id << "' - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[tier_id].estimate() << ")" << ::std::endl;//XXX
 	}
 
 
@@ -3124,11 +3129,6 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 		}
 */
 
-::std::cerr << "Erasing..." << ::std::endl;//XXX
-::std::cerr << "APP '" << app.id() << " - TIER '" << 0 << "' --> " << avg_rt_[0].estimate() << ::std::endl;//XXX
-::std::cerr << "APP '" << app.id() << " - TIER '" << 1 << "' --> " << avg_rt_[1].estimate() << ::std::endl;//XXX
-::std::cerr << "APP '" << app.id() << " - TIER '" << 2 << "' --> " << avg_rt_[2].estimate() << ::std::endl;//XXX
-::std::cerr << "APP '" << app.id() << " --> " << avg_rt_[3].estimate() << ::std::endl;//XXX
 		avg_rt_ = measure_statistic_container(app.num_tiers()+1);
 	}
 
@@ -4122,7 +4122,7 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 		real_type rt(ctx.simulated_time()-req.arrival_time());
 
 		(avg_rt_[num_tiers])(rt);
-::std::cerr << "APP '" << app.id() << " - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[num_tiers].estimate() << ")" << ::std::endl;//XXX
+::std::cerr << "[offline_sysid] APP '" << app.id() << " - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[num_tiers].estimate() << ")" << ::std::endl;//XXX
 
 
 		// - Clean-up memory (this request info)
@@ -4202,7 +4202,7 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 		real_type rt(ctx.simulated_time()-ptr_req_info_impl->arr_time);
 
 		(avg_rt_[tier_id])(rt);
-::std::cerr << "APP '" << app.id() << " - TIER '" << tier_id << "' - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[tier_id].estimate() << ")" << ::std::endl;//XXX
+::std::cerr << "[offline_sysid] APP '" << app.id() << " - TIER '" << tier_id << "' - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[tier_id].estimate() << ")" << ::std::endl;//XXX
 	}
 
 
@@ -4314,11 +4314,11 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 		}
 */
 
-::std::cerr << "Erasing..." << ::std::endl;//XXX
-::std::cerr << "APP '" << app.id() << " - TIER '" << 0 << "' --> " << avg_rt_[0].estimate() << ::std::endl;//XXX
-::std::cerr << "APP '" << app.id() << " - TIER '" << 1 << "' --> " << avg_rt_[1].estimate() << ::std::endl;//XXX
-::std::cerr << "APP '" << app.id() << " - TIER '" << 2 << "' --> " << avg_rt_[2].estimate() << ::std::endl;//XXX
-::std::cerr << "APP '" << app.id() << " --> " << avg_rt_[3].estimate() << ::std::endl;//XXX
+//::std::cerr << "[offline_sysid] Erasing..." << ::std::endl;//XXX
+//::std::cerr << "[offline_sysid] APP '" << app.id() << " - TIER '" << 0 << "' --> " << avg_rt_[0].estimate() << ::std::endl;//XXX
+//::std::cerr << "[offline_sysid] APP '" << app.id() << " - TIER '" << 1 << "' --> " << avg_rt_[1].estimate() << ::std::endl;//XXX
+//::std::cerr << "[offline_sysid] APP '" << app.id() << " - TIER '" << 2 << "' --> " << avg_rt_[2].estimate() << ::std::endl;//XXX
+//::std::cerr << "[offline_sysid] APP '" << app.id() << " --> " << avg_rt_[3].estimate() << ::std::endl;//XXX
 		avg_rt_ = measure_statistic_container(app.num_tiers()+1);
 	}
 
@@ -5194,7 +5194,6 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 			for (tier_share_iterator share_it = res_it.second.begin(); share_it != share_end_it; ++share_it)
 			{
 #   if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
-::std::cerr << "CAZZO.1" << ::std::endl;//XXX
             	(avg_shares_[num_tiers][res_it->first][share_it->first])(share_it->second);
 #   elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
             	(avg_shares_[num_tiers][res_it->first][share_it->first])(share_it->second, 1);
@@ -5252,7 +5251,6 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 //			for (uint_type tid = 0; tid < num_tiers; ++tid)
 //			{
 //#   if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
-//::std::cerr << "CAZZO.1" << ::std::endl;//XXX
 //				(avg_shares_[num_tiers][it->first][tid])(ptr_req_info_impl->share_map[it->first].at(tid).estimate());
 //#   elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 //				(avg_shares_[num_tiers][it->first][tid])(ptr_req_info_impl->share_map[it->first].at(tid).estimate(), 1);
@@ -5524,7 +5522,6 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 			for (uint_type tid = 0; tid < num_tiers; ++tid)
 			{
 #   if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
-::std::cerr << "CAZZO.2" << ::std::endl;//XXX
             	(avg_shares_[tier_id][res_it->first][tid])(ptr_req_info_impl->share_map[res_it->first].at(tid).estimate());
 #   elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
             	(avg_shares_[tier_id][res_it->first][tid])(ptr_req_info_impl->share_map[res_it->first].at(tid).estimate(), 1);
@@ -5690,10 +5687,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 # if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
 					::std::cout << "," << it->second;
 # else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-::std::cerr << "CAZZO.3" << ::std::endl;//XXX
-::std::cerr << "TIER: " << tier_id << " - TID: " << tid << ::std::endl;//XXX
 					::std::cout << "," << avg_shares_[tier_id].at(it->first).at(tid).estimate(); // FIXME: ok!
-::std::cerr << "OK: " << tier_id << ::std::endl;//XXX
 # endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
 				}
 			}
