@@ -712,7 +712,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 			);
 
 DCS_DEBUG_TRACE("New resource share for tier: " << tier_id);//XXX
-DCS_DEBUG_TRACE("Current share: " << share);//XXX
+DCS_DEBUG_TRACE("New share: " << share);//XXX
 DCS_DEBUG_TRACE("Actual machine capacity: " << this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->capacity());//XXX
 DCS_DEBUG_TRACE("Actual machine threshold: " << this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->utilization_threshold());//XXX
 		real_type multiplier;
@@ -722,11 +722,13 @@ DCS_DEBUG_TRACE("Actual machine threshold: " << this->tier_virtual_machine(tier_
 				this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->capacity(),
 				this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->utilization_threshold()
 			);
-DCS_DEBUG_TRACE("Multiplier: " << multiplier);///XXX
+DCS_DEBUG_TRACE("Reference to Actual Machine Scaling Factor: " << multiplier);///XXX
 		multiplier *= share;
 DCS_DEBUG_TRACE("New scaled share: " << multiplier);///XXX
+DCS_DEBUG_TRACE("Old capacity multiplier: " << ptr_svc_node->capacity_multiplier());///XXX
 		//ptr_svc_node->service_strategy().capacity_multiplier(multiplier);
 		ptr_svc_node->capacity_multiplier(multiplier);//[sguazt] EXP
+DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier());///XXX
 	}
 
 	//@} Interface Member Functions
