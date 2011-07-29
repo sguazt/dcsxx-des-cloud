@@ -157,8 +157,12 @@ void usage()
 				<< "    The type of identification that is to be performed." << ::std::endl
 				<< "  --sig {'gaussian'|'ramp'|'sine'|'step'|'unif'}" << ::std::endl
 				<< "    The shape of the input signal used to excite the target system." << ::std::endl
+				<< "  --sig-gaussian-mean <value>" << ::std::endl
+				<< "    The value of the mean for the Gaussian white noise." << ::std::endl
+				<< "  --sig-gaussian-sd <value>" << ::std::endl
+				<< "    The standard deviation value for the value of the mean for the Gaussian white noise." << ::std::endl
 				<< "  --sig-sine-amplitutde <value>" << ::std::endl
-				<< "    The amplitude of the sine wave (i.e., the peak deviation of the sine" << ::std::endl
+				<< "    The amplitude of the sine wave (i.e., the peak deviation of the sine)." << ::std::endl
 				<< "    wave from its center position)." << ::std::endl
 				<< "  --sig-sine-frequency <value>" << ::std::endl
 				<< "    The number of time samples per sine wave period." << ::std::endl
@@ -166,6 +170,10 @@ void usage()
 				<< "    The phase shift (i.e., the offset of the signal in number of sample times." << ::std::endl
 				<< "  --sig-sine-bias <value>" << ::std::endl
 				<< "    The signal bias (i.e., the constant value added to the sine to produce the output)." << ::std::endl
+				<< "  --sig-uniform-min <value>" << ::std::endl
+				<< "    The minimum value for the uniform signal." << ::std::endl
+				<< "  --sig-uniform-max <value>" << ::std::endl
+				<< "    The maximum value for the uniform signal." << ::std::endl
 				<< "  --ts <sampling-time>" << ::std::endl
 				<< "    The sampling time used to vary the input signal." << ::std::endl
 				<< "  --help" << ::std::endl
@@ -5773,6 +5781,10 @@ int main(int argc, char* argv[])
 	uint_type sig_sine_freq;
 	uint_type sig_sine_phase;
 	real_type sig_sine_bias;
+	real_type sig_unif_min;
+	real_type sig_unif_max;
+	real_type sig_gauss_mean;
+	real_type sig_gauss_sd;
 	system_identification_category sysid_category;
 	aggregation_category in_aggr_category;
 	aggregation_category out_aggr_category;
@@ -5790,6 +5802,10 @@ int main(int argc, char* argv[])
 		sig_sine_freq =  detail::get_option<uint_type>(argv, argv+argc, "--sig-sine-frequency", 8);
 		sig_sine_phase =  detail::get_option<uint_type>(argv, argv+argc, "--sig-sine-phase", sig_sine_freq/4);
 		sig_sine_bias =  detail::get_option<real_type>(argv, argv+argc, "--sig-sine-bias", 0.5);
+		sig_unif_min =  detail::get_option<real_type>(argv, argv+argc, "--sig-uniform-min", 0.0);
+		sig_unif_max =  detail::get_option<real_type>(argv, argv+argc, "--sig-uniform-max", 1.0);
+		sig_gauss_mean =  detail::get_option<real_type>(argv, argv+argc, "--sig-gaussian-mean", 0.0);
+		sig_gauss_sd =  detail::get_option<real_type>(argv, argv+argc, "--sig-gaussian-sd", 1.0);
 		in_aggr_category = detail::parse_input_aggregation_category(detail::get_option<std::string>(argv, argv+argc, "--inaggr"));
 		out_aggr_category = detail::parse_output_aggregation_category(detail::get_option<std::string>(argv, argv+argc, "--outaggr", "none"));
 //		in_filter_category = detail::parse_input_filter_category(detail::get_option<std::string>(argv, argv+argc, "--infilt"));
@@ -5884,8 +5900,8 @@ int main(int argc, char* argv[])
 		{
 			case gaussian_white_noise_signal:
 				ptr_sig_gen = dcs::make_shared< detail::gaussian_signal_generator<real_type> >(
-								ublas::zero_vector<real_type>(ptr_app->num_tiers()),
-								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 1)
+								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), sig_gauss_mean),
+								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), sig_gauss_sd)
 					);
 				break;
 //			case triangular_signal:
@@ -5917,8 +5933,8 @@ int main(int argc, char* argv[])
 				break;
 			case uniform_signal:
 				ptr_sig_gen = dcs::make_shared< detail::uniform_signal_generator<real_type> >(
-								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 0.2), // min
-								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 0.9) // max
+								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), sig_unif_min), // min
+								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), sig_unif_max) // max
 					);
 				break;
 		}
