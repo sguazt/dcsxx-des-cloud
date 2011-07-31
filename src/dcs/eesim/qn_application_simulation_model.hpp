@@ -144,7 +144,7 @@ bool has_performance_measure(performance_measure_category category)
 
 template <typename TraitsT>
 inline
-void dump_app_measure(performance_measure_category category, typename TraitsT::real_type measure, typename TraitsT::real_type target_value)
+void dump_app_measure(typename TraitsT::uint_type app_id, performance_measure_category category, typename TraitsT::real_type measure, typename TraitsT::real_type target_value)
 {
 	typedef TraitsT traits_type;
 	typedef typename traits_type::uint_type uint_type;
@@ -158,7 +158,7 @@ void dump_app_measure(performance_measure_category category, typename TraitsT::r
 		oss << "vm_measures-" << ::std::string(::getenv("CONDOR_JOB_ID")) << ".dat";
 		::std::ofstream ofs(oss.str().c_str(), ::std::ios_base::app);
 		ofs << ::std::setprecision(16);
-		ofs << registry<traits_type>::instance().des_engine_ptr()->simulated_time() << "," << -1 << "," << category << "," << measure << "," << target_value << ::std::endl;
+		ofs << registry<traits_type>::instance().des_engine_ptr()->simulated_time() << "," << app_id << "," << -1 << "," << category << "," << measure << "," << target_value << ::std::endl;
 		ofs.close();
 	}
 }
@@ -166,11 +166,13 @@ void dump_app_measure(performance_measure_category category, typename TraitsT::r
 
 template <typename TraitsT>
 inline
-void dump_tier_measure(typename TraitsT::uint_type tier_id, performance_measure_category category, typename TraitsT::real_type measure, typename TraitsT::real_type target_value)
+void dump_tier_measure(typename TraitsT::uint_type app_id, typename TraitsT::uint_type tier_id, performance_measure_category category, typename TraitsT::real_type measure, typename TraitsT::real_type target_value)
 {
 	typedef TraitsT traits_type;
 	typedef typename traits_type::uint_type uint_type;
 	typedef typename traits_type::real_type real_type;
+
+//	static bool first_call(true);
 
 	uint_type nrep = dynamic_cast< ::dcs::des::replications::engine<real_type,uint_type>* >(registry<traits_type>::instance().des_engine_ptr().get())->num_replications();
 
@@ -179,8 +181,14 @@ void dump_tier_measure(typename TraitsT::uint_type tier_id, performance_measure_
 		::std::ostringstream oss;
 		oss << "vm_measures-" << ::std::string(::getenv("CONDOR_JOB_ID")) << ".dat";
 		::std::ofstream ofs(oss.str().c_str(), ::std::ios_base::app);
-		ofs << ::std::setprecision(15);
-		ofs << registry<traits_type>::instance().des_engine_ptr()->simulated_time() << "," << tier_id << "," << category << "," << measure << "," << target_value << ::std::endl;
+		ofs << ::std::setprecision(16);
+//		if (first_call)
+//		{
+//			// Dump header: "clock","aid","tid","category","measure","target"
+//			ofs << "\"clock\",\"aid\",\"tid\",\"category\",\"measure\",\"target\"" << ::std::endl;
+//			first_call = false;
+//		}
+		ofs << registry<traits_type>::instance().des_engine_ptr()->simulated_time() << "," << app_id << "," << tier_id << "," << category << "," << measure << "," << target_value << ::std::endl;
 		ofs.close();
 	}
 }
@@ -871,9 +879,10 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 			}
 //[XXX]
 #ifdef DCS_EESIM_EXP_OUTPUT_VM_MEASURES
-			detail::dump_app_measure<traits_type>(category,
-										  measures.back(),
-										  this->application().sla_cost_model().slo_value(category));
+			detail::dump_app_measure<traits_type>(this->application().id(),
+												  category,
+												  measures.back(),
+												  this->application().sla_cost_model().slo_value(category));
 #endif // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
 //[/XXX]
 		}
@@ -939,7 +948,8 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 					throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::process_request_departure] Utilization as SLO category has not been implemented yet.");//FIXME
 			}
 
-			detail::dump_tier_measure<traits_type>(req.current_tier(),
+			detail::dump_tier_measure<traits_type>(this->application().id(),
+												   req.current_tier(),
 												   category,
 												   measures.back(),
 												   this->application().performance_model().tier_measure(req.current_tier(), category));
