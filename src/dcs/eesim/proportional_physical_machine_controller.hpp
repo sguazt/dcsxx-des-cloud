@@ -8,7 +8,6 @@
 #include <dcs/eesim/base_physical_machine_controller.hpp>
 #include <dcs/macro.hpp>
 #include <map>
-//[XXX]
 #ifdef DCS_EESIM_EXP_OUTPUT_VM_SHARES
 # include <cstdlib>
 # include <iosfwd>
@@ -16,10 +15,47 @@
 # include <sstream>
 # include <string>
 #endif // DCS_EESIM_EXP_OUTPUT_VM_SHARES
-//[/XXX]
 
 
 namespace dcs { namespace eesim {
+
+namespace detail { namespace /*<unnamed>*/ {
+
+#ifdef DCS_EESIM_EXP_OUTPUT_VM_SHARES
+
+template <typename TraitsT>
+inline
+void dump_vm_share(typename TraitsT::uint_type vm_id, typename TraitsT::uint_type app_id, typename TraitsT::uint_type tier_id, typename TraitsT::uint_type mach_id, physical_resource_category category, typename TraitsT::real_type want_share, typename TraitsT::real_type got_share)
+{
+	typedef TraitsT traits_type;
+	typedef typename traits_type::uint_type uint_type;
+	typedef typename traits_type::real_type real_type;
+
+	uint_type nrep = dynamic_cast< ::dcs::des::replications::engine<real_type,uint_type>* >(registry<traits_type>::instance().des_engine_ptr().get())->num_replications();
+	if (nrep == 1)
+	{
+		::std::ostringstream oss;
+		oss << "vm_shares-" << ::std::string(::getenv("CONDOR_JOB_ID")) << ".dat";
+		::std::ofstream ofs(oss.str().c_str(), ::std::ios_base::app);
+		ofs << ::std::setprecision(16);
+		// sim-time, vm-id, app-id, tier-id, mach-id, resource-category, wanted-share, assigned-share
+		ofs  << registry<traits_type>::instance().des_engine_ptr()->simulated_time()
+			 << "," << vm_id
+			 << "," << app_id
+			 << "," << tier_id
+			 << "," << mach_id
+			 << "," << category
+			 << "," << want_share
+			 << "," << got_share
+			 << ::std::endl;
+		ofs.close();
+	}
+}
+
+#endif // DCS_EESIM_EXP_OUTPUT_VM_SHARES
+
+}} // Namespace detail::<unnamed>
+
 
 /**
  * \brief Proportional physical machine controller.
@@ -145,27 +181,15 @@ class proportional_physical_machine_controller: public base_physical_machine_con
 						DCS_DEBUG_TRACE("APP: " << ptr_vm->guest_system().application().id() << ", MACH: " << this->machine().id() << " - Assigned new share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << category << " - Threshold: " << threshold << " - Share Sum: " << share_sum << " ==> Wanted: " << share_it->second << " - Got: " << share);//XXX
 //::std::cerr << "[proportional_machine_controller] APP: " << ptr_vm->guest_system().application().id() << ", MACH: " << this->machine().id() << " - Assigned new share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << category << " - Threshold: " << threshold << " - Share Sum: " << share_sum << " ==> Wanted: " << share_it->second << " - Got: " << share << ::std::endl;//XXX
 
-//[XXX]
 #ifdef DCS_EESIM_EXP_OUTPUT_VM_SHARES
-						typedef typename traits_type::uint_type uint_type;
-						uint_type nrep = dynamic_cast< ::dcs::des::replications::engine<real_type,uint_type>* >(registry<traits_type>::instance().des_engine_ptr().get())->num_replications();
-						if (nrep == 1)
-						{
-//							::std::cerr << ::std::endl << ">>>>>> IMPORTANT <<<<<<<" << ::std::endl;
-//							::std::cerr << ::std::endl << "REMOVE THE CODE WHICH OUTPUT VM SHARES TO A FILE!!" << ::std::endl;
-//							::std::cerr << ::std::endl << "(or put it between an #ifdef-#endif block)" << ::std::endl;
-//							::std::cerr << ::std::endl << "-------------------------" << ::std::endl;
-							::std::ostringstream oss;
-							oss << "vm_shares-" << ::std::string(::getenv("CONDOR_JOB_ID")) << ".dat";
-							::std::ofstream ofs(oss.str().c_str(), ::std::ios_base::app);
-							ofs << ::std::setprecision(15);
-							//ofs << ptr_vm->id() << "," << category << "," << share_it->second << "," << share << ::std::endl;
-							// sim-time, vm-id, mach-id, resource-category, wanted-share, assigned-share
-							 ofs << registry<traits_type>::instance().des_engine_ptr()->simulated_time() << "," << ptr_vm->id() << "," << this->machine().id() << "," << category << "," << share_it->second << "," << share << ::std::endl;
-							ofs.close();
-						}
+						detail::dump_vm_share<traits_type>(ptr_vm->id(),
+														   ptr_vm->guest_system().application().id(),
+														   ptr_vm->guest_system().id(),
+														   this->machine().id(),
+														   category,
+														   share_it->second,
+														   share);
 #endif // DCS_EESIM_EXP_OUTPUT_VM_SHARES
-//[/XXX]
 					}
 				}
 			}
