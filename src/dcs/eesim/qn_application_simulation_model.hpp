@@ -139,7 +139,6 @@ bool has_performance_measure(performance_measure_category category)
 }
 
 
-//[XXX]
 #ifdef DCS_EESIM_EXP_OUTPUT_VM_MEASURES
 
 template <typename TraitsT>
@@ -194,7 +193,6 @@ void dump_tier_measure(typename TraitsT::uint_type app_id, typename TraitsT::uin
 }
 
 #endif // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
-//[/XXX]
 
 }} // Namespace detail::<unnamed>
 
@@ -877,14 +875,12 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 				case utilization_performance_measure:
 					throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::process_request_departure] Utilization as SLO category has not been implemented yet.");//FIXME
 			}
-//[XXX]
 #ifdef DCS_EESIM_EXP_OUTPUT_VM_MEASURES
 			detail::dump_app_measure<traits_type>(this->application().id(),
 												  category,
 												  measures.back(),
 												  this->application().sla_cost_model().slo_value(category));
 #endif // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
-//[/XXX]
 		}
 
 		if (!this->application().sla_cost_model().satisfied(categories.begin(), categories.end(), measures.begin()))
@@ -899,7 +895,6 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 	}
 
 
-//[XXX]
 #ifdef DCS_EESIM_EXP_OUTPUT_VM_MEASURES
 	private: void process_request_tier_departure(des_event_type const& evt, des_engine_context_type& ctx, uint_type tid)
 	{
@@ -958,7 +953,6 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 		DCS_DEBUG_TRACE("(" << this << ") END Processing REQUEST-TIER-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
 	}
 #endif // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
-//[/XXX]
 
 	//@} Event Handlers
 
