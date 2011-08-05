@@ -1094,7 +1094,7 @@ DCS_DEBUG_TRACE("phi=" << ptr_ident_strategy_->phi());//XXX
 for (size_type i=0; i < n_s_; ++i)//XXX DELETE-ME
 {//XXX DELETE-ME
 virtual_machine_pointer ptr_vm = app_sim_model.tier_virtual_machine(i);
-physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
+//physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
 real_type ref_share(ptr_vm->guest_system().resource_share(cpu_resource_category));
 ofs << ref_share*(1.0+s(i)) << ",";//XXX DELETE-ME
 }//XXX DELETE-ME
@@ -1192,7 +1192,7 @@ DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: "
 for (size_type i=0; i < n_p_; ++i)//XXX DELETE-ME
 {//XXX DELETE-ME
 virtual_machine_pointer ptr_vm = app_sim_model.tier_virtual_machine(i);
-physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
+//physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
 real_type ref_share(ptr_vm->guest_system().resource_share(cpu_resource_category));
 ofs << "," << ref_share*(1.0+opt_u(i));//XXX DELETE-ME
 }//XXX DELETE-ME
@@ -1621,28 +1621,31 @@ class lqi_application_controller: public detail::lq_application_controller<Trait
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( u );
 
 		vector_type opt_u;
+		//FIXME: since we are using a discrete-time system, should we really use the real sampling time or simply 1?.
+		//real_type ts(this->sampling_time());
+		real_type ts(1);
 
-		controller_.solve(A, B, C, D, this->sampling_time());
+		controller_.solve(A, B, C, D, ts);
 
 		// Form the augmented state-vector
 		//
 		//  z(k+1) = [x(k+1); xi(k+1)]
 		//         = [ A      0][x(k) ]+[ B     ]u(k)+[0]
-		//           [-C|t_s| I][xi(k)]+[-D|t_s|]    +[r]
+		//           [-C|t_s| I][xi(k)]+[-D|t_s|]    +[r]|t_s|
 		//  y(k+1) = [C 0]z(k)+Du(k)
 		//
 		// where r is the reference value to be tracked and xi is the current
 		// integrated control error:
 		//  xi(k) = xi(k-1) + e(k-1)
 		//        = xi(k-1) + (r-y(k-1))
-		//        = xi(k-1) + (r-Cx(k-1)-Du(k-1))
+		//        = xi(k-1) + (r-Cx(k-1)-Du(k-1))|t_s|
 		//
 
 		// Update the integrated control error.
 		// NOTE: In our case the reference value r is zero
 		//xi_ = xi_- ublas::subrange(x, ublasx::num_rows(A)-ublasx::num_rows(C), ublasx::num_rows(A));
 		//xi_ = xi_- y;
-		xi_ = xi_- this->sampling_time()*y;
+		xi_ = xi_- ts*y;
 		//xi_ = xi_+ublas::scalar_vector<real_type>(1,1)- ublas::subrange(x, ublasx::num_rows(A)-ublasx::num_rows(C), ublasx::num_rows(A));
 
 		vector_type z(ublasx::num_rows(A)+ublasx::num_rows(C));
@@ -1900,126 +1903,126 @@ class lqr_application_controller: public detail::lq_application_controller<Trait
 	}
 
 
-	private: template <typename SysIdentStrategyT>
-		void do_make_ss(SysIdentStrategyT const& sys_ident_strategy,
-						matrix_type& A,
-						matrix_type& B,
-						matrix_type& C,
-						matrix_type& D)
-	{
-		namespace ublas = ::boost::numeric::ublas;
-
-		typedef real_type value_type;
-		typedef ::std::size_t size_type; //FIXME: use type-promotion?
-
-		const size_type rls_n_a(sys_ident_strategy.output_order());
-		const size_type rls_n_b(sys_ident_strategy.input_order());
-	//	const size_type rls_d(sys_ident_strategy.input_delay());
-		const size_type rls_n_y(sys_ident_strategy.num_outputs());
-		const size_type rls_n_u(sys_ident_strategy.num_inputs());
-		const size_type n_x(rls_n_a*rls_n_y);
-		const size_type n_u(rls_n_b*rls_n_u);
-	//	const size_type n(::std::max(n_x,n_u));
-		const size_type n_y(1);
-
-		// Create the state matrix A
-		// A=[-A_1 -A_2 ... -A_{n_a-1} -A_{n_a};
-		//     I    0   ...  0          0      ;
-		//     0    I   ...  0          0      ;
-		//     .    .   ...  .          .      ;
-		//     .    .   ...  .          .      ;
-		//     .    .   ...  .          .      ;
-		// 	   0    0   ...  I          0      ]
-		if (n_x > 0)
-		{
-			
-			size_type rcoffs(n_x-rls_n_y); // The rightmost column offset
-
-			A().resize(n_x, n_x, false);
-
-			// The upper part of A is filled with A_1, ..., A_{n_a}
-			for (size_type i = 0; i < rls_n_a; ++i)
-			{
-				// Copy matrix -A_i from \hat{\Theta} into A.
-				// In A the matrix A_i has to go in (rls_n_a*i)-th position:
-				//   A(0:rls_n_y,rls_n_y*i:rls_n_y*(i+1)) <- -A_i
-
-				size_type c1(rls_n_y*i);
-				size_type c2(c1+rls_n_y);
-
-				ublas::subrange(A(), 0, rls_n_y, c1, c2) = -sys_ident_strategy.A(i+1);
-			}
-
-			// The lower part of A is set to [I_{k,k} 0_{rls_n_y,rls_n_y}],
-			// where: k=n_x-rls_n_y.
-			ublas::subrange(A(), rls_n_y, n_x, 0, rcoffs) = ublas::identity_matrix<value_type>(rcoffs,rcoffs);
-			ublas::subrange(A(), rls_n_y, n_x, rcoffs, n_x) = ublas::zero_matrix<value_type>(rls_n_y,rls_n_y);
-		}
-		else
-		{
-			A().resize(0, 0, false);
-		}
-
-		// Create the input matrix B
-		// B=[B_1 ... B_{n_b};
-		//    0   ... 0      ;
-		//    .	  ... .
-		//    .	  ... .
-		//    .	  ... .
-		//    0   ... 0      ;
-		if (n_x > 0)
-		{
-			B().resize(n_x, n_u, false);
-
-			// Fill B with B_1, ..., B_{n_b}
-			for (size_type i = 0; i < rls_n_b; ++i)
-			{
-				// Copy matrix B_i from \hat{\Theta} into B.
-				// In \hat{\Theta} the matrix B_i stays at:
-				//   B_i <- (\hat{\Theta}(((n_a*n_y)+i):n_b:n_u,:))^T
-				// but in B the matrix B_i has to go in (n_b-i)-th position:
-				//   B(k:(k+n_x),((n_b-i-1)*n_u):((n_a-i)*n_u)) <- B_i
-
-				size_type c1(rls_n_u*i);
-				size_type c2(c1+rls_n_u);
-
-				ublas::subrange(B(), 0, rls_n_u, c1, c2) = sys_ident_strategy.B(i+1);
-			}
-
-			// The lower part of B is set to 0_{k,n_u}
-			// where: k=n_x-rls_n_u.
-			ublas::subrange(B(), rls_n_u, n_x, 0, n_u) = ublas::zero_matrix<value_type>(n_x-rls_n_u,n_u);
-
-		}
-		else
-		{
-			B().resize(0, 0, false);
-		}
-	//DCS_DEBUG_TRACE("B="<<B);//XXX
-
-		// Create the output matrix C
-		if (n_x > 0)
-		{
-			size_type rcoffs(n_x-rls_n_y); // The right most column offset
-
-			C().resize(n_y, n_x, false);
-
-			ublas::subrange(C(), 0, n_y, 0, rcoffs) = ublas::zero_matrix<value_type>(n_y,rcoffs);
-			ublas::subrange(C(), 0, n_y, rcoffs, n_x) = ublas::scalar_matrix<value_type>(n_y, rls_n_y, 1);
-		}
-		else
-		{
-			C().resize(0, 0, false);
-		}
-	//DCS_DEBUG_TRACE("C="<<C);//XXX
-
-		// Create the transmission matrix D
-		{
-			D().resize(n_y, n_u, false);
-
-			D() = ublas::zero_matrix<value_type>(n_y, n_u);
-		}
-	}
+//	private: template <typename SysIdentStrategyT>
+//		void do_make_ss(SysIdentStrategyT const& sys_ident_strategy,
+//						matrix_type& A,
+//						matrix_type& B,
+//						matrix_type& C,
+//						matrix_type& D)
+//	{
+//		namespace ublas = ::boost::numeric::ublas;
+//
+//		typedef real_type value_type;
+//		typedef ::std::size_t size_type; //FIXME: use type-promotion?
+//
+//		const size_type rls_n_a(sys_ident_strategy.output_order());
+//		const size_type rls_n_b(sys_ident_strategy.input_order());
+//	//	const size_type rls_d(sys_ident_strategy.input_delay());
+//		const size_type rls_n_y(sys_ident_strategy.num_outputs());
+//		const size_type rls_n_u(sys_ident_strategy.num_inputs());
+//		const size_type n_x(rls_n_a*rls_n_y);
+//		const size_type n_u(rls_n_b*rls_n_u);
+//	//	const size_type n(::std::max(n_x,n_u));
+//		const size_type n_y(1);
+//
+//		// Create the state matrix A
+//		// A=[-A_1 -A_2 ... -A_{n_a-1} -A_{n_a};
+//		//     I    0   ...  0          0      ;
+//		//     0    I   ...  0          0      ;
+//		//     .    .   ...  .          .      ;
+//		//     .    .   ...  .          .      ;
+//		//     .    .   ...  .          .      ;
+//		// 	   0    0   ...  I          0      ]
+//		if (n_x > 0)
+//		{
+//			
+//			size_type rcoffs(n_x-rls_n_y); // The rightmost column offset
+//
+//			A().resize(n_x, n_x, false);
+//
+//			// The upper part of A is filled with A_1, ..., A_{n_a}
+//			for (size_type i = 0; i < rls_n_a; ++i)
+//			{
+//				// Copy matrix -A_i from \hat{\Theta} into A.
+//				// In A the matrix A_i has to go in (rls_n_a*i)-th position:
+//				//   A(0:rls_n_y,rls_n_y*i:rls_n_y*(i+1)) <- -A_i
+//
+//				size_type c1(rls_n_y*i);
+//				size_type c2(c1+rls_n_y);
+//
+//				ublas::subrange(A(), 0, rls_n_y, c1, c2) = -sys_ident_strategy.A(i+1);
+//			}
+//
+//			// The lower part of A is set to [I_{k,k} 0_{rls_n_y,rls_n_y}],
+//			// where: k=n_x-rls_n_y.
+//			ublas::subrange(A(), rls_n_y, n_x, 0, rcoffs) = ublas::identity_matrix<value_type>(rcoffs,rcoffs);
+//			ublas::subrange(A(), rls_n_y, n_x, rcoffs, n_x) = ublas::zero_matrix<value_type>(rls_n_y,rls_n_y);
+//		}
+//		else
+//		{
+//			A().resize(0, 0, false);
+//		}
+//
+//		// Create the input matrix B
+//		// B=[B_1 ... B_{n_b};
+//		//    0   ... 0      ;
+//		//    .	  ... .
+//		//    .	  ... .
+//		//    .	  ... .
+//		//    0   ... 0      ;
+//		if (n_x > 0)
+//		{
+//			B().resize(n_x, n_u, false);
+//
+//			// Fill B with B_1, ..., B_{n_b}
+//			for (size_type i = 0; i < rls_n_b; ++i)
+//			{
+//				// Copy matrix B_i from \hat{\Theta} into B.
+//				// In \hat{\Theta} the matrix B_i stays at:
+//				//   B_i <- (\hat{\Theta}(((n_a*n_y)+i):n_b:n_u,:))^T
+//				// but in B the matrix B_i has to go in (n_b-i)-th position:
+//				//   B(k:(k+n_x),((n_b-i-1)*n_u):((n_a-i)*n_u)) <- B_i
+//
+//				size_type c1(rls_n_u*i);
+//				size_type c2(c1+rls_n_u);
+//
+//				ublas::subrange(B(), 0, rls_n_u, c1, c2) = sys_ident_strategy.B(i+1);
+//			}
+//
+//			// The lower part of B is set to 0_{k,n_u}
+//			// where: k=n_x-rls_n_u.
+//			ublas::subrange(B(), rls_n_u, n_x, 0, n_u) = ublas::zero_matrix<value_type>(n_x-rls_n_u,n_u);
+//
+//		}
+//		else
+//		{
+//			B().resize(0, 0, false);
+//		}
+//	//DCS_DEBUG_TRACE("B="<<B);//XXX
+//
+//		// Create the output matrix C
+//		if (n_x > 0)
+//		{
+//			size_type rcoffs(n_x-rls_n_y); // The right most column offset
+//
+//			C().resize(n_y, n_x, false);
+//
+//			ublas::subrange(C(), 0, n_y, 0, rcoffs) = ublas::zero_matrix<value_type>(n_y,rcoffs);
+//			ublas::subrange(C(), 0, n_y, rcoffs, n_x) = ublas::scalar_matrix<value_type>(n_y, rls_n_y, 1);
+//		}
+//		else
+//		{
+//			C().resize(0, 0, false);
+//		}
+//	//DCS_DEBUG_TRACE("C="<<C);//XXX
+//
+//		// Create the transmission matrix D
+//		{
+//			D().resize(n_y, n_u, false);
+//
+//			D() = ublas::zero_matrix<value_type>(n_y, n_u);
+//		}
+//	}
 
 
 	/// The LQ (regulator) controller
