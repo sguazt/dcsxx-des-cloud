@@ -3361,9 +3361,9 @@ class rls_ff_miso_proxy: public rls_system_identification_strategy<TraitsT>
 DCS_DEBUG_TRACE("BEGIN estimation");//XXX
 DCS_DEBUG_TRACE("y(k): " << y);//XXX
 DCS_DEBUG_TRACE("u(k): " << u);//XXX
-::std::cerr << "BEGIN estimation" << ::std::endl;//XXX
-::std::cerr << "y(k): " << y << ::std::endl;//XXX
-::std::cerr << "u(k): " << u << ::std::endl;//XXX
+//::std::cerr << "BEGIN estimation" << ::std::endl;//XXX
+//::std::cerr << "y(k): " << y << ::std::endl;//XXX
+//::std::cerr << "u(k): " << u << ::std::endl;//XXX
 		vector_type y_hat(ny);
 		for (size_type i = 0; i < ny; ++i)
 		{
@@ -3387,16 +3387,16 @@ DCS_DEBUG_TRACE("New P["<< i << "](k): " << Ps_[i]);//XXX
 DCS_DEBUG_TRACE("New rcond(P["<< i << "](k)): " << ::boost::numeric::ublasx::rcond(Ps_[i]));//XXX
 DCS_DEBUG_TRACE("New phi["<< i << "](k): " << phis_[i]);//XXX
 DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y(i)-y_hat(i)));//XXX
-::std::cerr << "New theta_hat["<< i << "](k): " << theta_hats_[i] << ::std::endl;//XXX
+//::std::cerr << "New theta_hat["<< i << "](k): " << theta_hats_[i] << ::std::endl;//XXX
 //::std::cerr << "New P["<< i << "](k): " << Ps_[i] << ::std::endl;//XXX
 //::std::cerr << "New rcond(P["<< i << "](k)): " << ::boost::numeric::ublasx::rcond(Ps_[i]) << ::std::endl;//XXX
-::std::cerr << "New phi["<< i << "](k): " << phis_[i] << ::std::endl;//XXX
+//::std::cerr << "New phi["<< i << "](k): " << phis_[i] << ::std::endl;//XXX
 //::std::cerr << "New e["<< i << "](k): " << (y(i)-y_hat(i)) << ::std::endl;//XXX
 		}
 DCS_DEBUG_TRACE("New y_hat(k): " << y_hat);//XXX
 DCS_DEBUG_TRACE("END estimation");//XXX
-::std::cerr << "New y_hat(k): " << y_hat << ::std::endl;//XXX
-::std::cerr << "END estimation" << ::std::endl;//XXX
+//::std::cerr << "New y_hat(k): " << y_hat << ::std::endl;//XXX
+//::std::cerr << "END estimation" << ::std::endl;//XXX
 
 		return y_hat;
 	}
