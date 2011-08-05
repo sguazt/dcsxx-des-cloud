@@ -77,10 +77,11 @@
 #include <map>
 #include <stdexcept>
 #include <vector>
+#ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
+# include <cstdio> 
+# include <fstream>
+#endif // DDCS_EESIM_EXP_OUTPUT_RLS_DATA
 
-
-#include <cstdio> //XXX DELETE-ME
-#include <fstream> //XXX DELETE-ME
 
 //TODO:
 // - Currently the code in this class assumes the single resource (CPU) case.
@@ -1089,29 +1090,32 @@ DCS_DEBUG_TRACE("phi=" << ptr_ident_strategy_->phi());//XXX
 
 				ok = false;
 			}
-::std::remove("rlsdata.csv");//XXX DELETE ME
-::std::ofstream ofs("rlsdata.csv", ::std::ios_base::app);//XXX DELETE-ME
-for (size_type i=0; i < n_s_; ++i)//XXX DELETE-ME
-{//XXX DELETE-ME
-virtual_machine_pointer ptr_vm = app_sim_model.tier_virtual_machine(i);
-//physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
-real_type ref_share(ptr_vm->guest_system().resource_share(cpu_resource_category));
-ofs << ref_share*(1.0+s(i)) << ",";//XXX DELETE-ME
-}//XXX DELETE-ME
-for (size_type i=0; i < n_p_; ++i)//XXX DELETE-ME
-{//XXX DELETE-ME
-real_type ref_measure(app_perf_model.tier_measure(i, response_time_performance_measure));
-ofs << ref_measure*(1.0+p(i)) << ",";//XXX DELETE-ME
-}//XXX DELETE-ME
-for (size_type i=0; i < n_p_; ++i)//XXX DELETE-ME
-{//XXX DELETE-ME
-if (i > 0)//XXX DELETE-ME
-{//XXX DELETE-ME
-ofs << ",";//XXX DELETE-ME
-}//XXX DELETE-ME
-real_type ref_measure(app_perf_model.tier_measure(i, response_time_performance_measure));
-ofs << ref_measure*(1.0+p_hat(i));//XXX DELETE-ME
-}//XXX DELETE-ME
+
+#ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
+			::std::remove("rlsdata.csv");/
+			::std::ofstream ofs("rlsdata.csv", ::std::ios_base::app);
+			for (size_type i=0; i < n_s_; ++i)
+			{
+				virtual_machine_pointer ptr_vm = app_sim_model.tier_virtual_machine(i);
+				//physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
+				real_type ref_share(ptr_vm->guest_system().resource_share(cpu_resource_category));
+				ofs << ref_share*(1.0+s(i)) << ",";
+			}
+			for (size_type i=0; i < n_p_; ++i)
+			{
+				real_type ref_measure(app_perf_model.tier_measure(i, response_time_performance_measure));
+				ofs << ref_measure*(1.0+p(i)) << ",";
+			}
+			for (size_type i=0; i < n_p_; ++i)
+			{
+				if (i > 0)
+				{
+					ofs << ",";
+				}
+				real_type ref_measure(app_perf_model.tier_measure(i, response_time_performance_measure));
+				ofs << ref_measure*(1.0+p_hat(i));
+			}
+#endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
 
 			// Check if RLS (and LQR) can be applied.
 			// If not, then no control is performed.
@@ -1189,13 +1193,15 @@ DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: "
 DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)));//XXX
 //::std::cerr << "APP: " << app.id() << " Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)) << ::std::endl;//XXX
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
-for (size_type i=0; i < n_p_; ++i)//XXX DELETE-ME
-{//XXX DELETE-ME
-virtual_machine_pointer ptr_vm = app_sim_model.tier_virtual_machine(i);
-//physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
-real_type ref_share(ptr_vm->guest_system().resource_share(cpu_resource_category));
-ofs << "," << ref_share*(1.0+opt_u(i));//XXX DELETE-ME
-}//XXX DELETE-ME
+#ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
+	for (size_type i=0; i < n_p_; ++i)
+	{
+		virtual_machine_pointer ptr_vm = app_sim_model.tier_virtual_machine(i);
+		//physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
+		real_type ref_share(ptr_vm->guest_system().resource_share(cpu_resource_category));
+		ofs << "," << ref_share*(1.0+opt_u(i));
+	}
+#endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
 
 DCS_DEBUG_TRACE("Applying optimal control");//XXX
 					if (triggers_.predicted_value_sla_ko())
@@ -1408,8 +1414,10 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 				++ident_fail_count_;
 				::std::clog << "[Warning] Control not applied for Application '" << app.id() << "': failed to solve the identification problem." << ::std::endl;
 			}
-ofs << ::std::endl;///XXX DELETE-ME
-ofs.close();//XXX  DELETE-ME
+#ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
+			ofs << ::std::endl;
+			ofs.close();
+#endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
 		}
 		else
 		{
