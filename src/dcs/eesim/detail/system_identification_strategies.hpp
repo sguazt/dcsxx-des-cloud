@@ -4431,7 +4431,6 @@ template <typename TraitsT>
 
 	strategy_pointer ptr_strategy;
 
-DCS_DEBUG_TRACE("HERE.1 --> " << params.category());//XXX
 	switch (params.category())
 	{
 		case rls_bittanti1990_system_identification_strategy:
@@ -4507,19 +4506,15 @@ DCS_DEBUG_TRACE("HERE.1 --> " << params.category());//XXX
 			break;
 		case rls_park1991_system_identification_strategy:
 			{
-DCS_DEBUG_TRACE("HERE.2");//XXX
 				typedef rls_park1991_system_identification_strategy_params<traits_type> const* strategy_params_impl_pointer;
 
-DCS_DEBUG_TRACE("HERE.3");//XXX
 				strategy_params_impl_pointer ptr_params_impl = dynamic_cast<strategy_params_impl_pointer>(&params);
 				if (!ptr_params_impl)
 				{
-DCS_DEBUG_TRACE("HERE.4");//XXX
 					throw ::std::runtime_error("[dcs::eesim::detail::make_system_identification_strategy] Failed to retrieve RLS FF strategy parameters.");
 				}
 				if (ptr_params_impl->mimo_as_miso())
 				{
-DCS_DEBUG_TRACE("HERE.5");//XXX
 					typedef rls_park1991_miso_proxy<traits_type> strategy_impl_type;
 
 					ptr_strategy = ::dcs::make_shared<strategy_impl_type>(*ptr_params_impl);
@@ -4531,12 +4526,10 @@ DCS_DEBUG_TRACE("HERE.5");//XXX
 //
 //					ptr_strategy = ::dcs::make_shared<strategy_impl_type>(*ptr_params_impl);
 				}
-DCS_DEBUG_TRACE("HERE.6");//XXX
 			}
 			break;
 	}
 
-DCS_DEBUG_TRACE("HERE.7 --> " << ptr_strategy);//XXX
 	return ptr_strategy;
 }
 
