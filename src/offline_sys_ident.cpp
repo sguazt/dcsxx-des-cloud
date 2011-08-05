@@ -36,6 +36,7 @@
 #include <dcs/macro.hpp>
 #include <dcs/math/constants.hpp>
 #include <dcs/math/stats/distribution/continuous_uniform.hpp>
+#include <dcs/math/stats/distribution/discrete_uniform.hpp>
 #include <dcs/math/stats/distribution/normal.hpp>
 //#include <dcs/math/random/any_generator.hpp>
 #include <dcs/math/random.hpp>
@@ -66,10 +67,11 @@ enum configuration_category
 
 enum signal_category
 {
+	constant_signal,
 	gaussian_white_noise_signal,
-	ramp_signal,
+	sawtooth_signal,
 	sinusoidal_signal,
-	step_signal,
+	square_signal,
 	uniform_signal
 };
 
@@ -145,7 +147,7 @@ void usage()
 //				<< "  --infilt {'none'|'mean'}" << ::std::endl
 //				<< "    The type of filter to be applied on input data." << ::std::endl
 				<< "  --ns <number-of-samples>" << ::std::endl
-				<< "    The number of samples to collect." << ::std::endl
+				<< "    The number of observations to collect (i.e., the sample size)." << ::std::endl
 				<< "  --outaggr {'none'|'mean'|'wmean'}" << ::std::endl
 				<< "    The type of aggregation to be applied to output data." << ::std::endl
 				<< "  --outfilt {'none'|'ewma'}" << ::std::endl
@@ -155,7 +157,7 @@ void usage()
 				<< "    The smoothing factor to be used with the EWMA output filter." << ::std::endl
 				<< "  --sys {'siso'|'miso'}" << ::std::endl
 				<< "    The type of identification that is to be performed." << ::std::endl
-				<< "  --sig {'gaussian'|'ramp'|'sine'|'step'|'unif'}" << ::std::endl
+				<< "  --sig {'constant'|'gaussian'|'sawtooth'|'square'|'sine'|'unif'}" << ::std::endl
 				<< "    The shape of the input signal used to excite the target system." << ::std::endl
 				<< "  --sig-gaussian-mean <value>" << ::std::endl
 				<< "    The value of the mean for the Gaussian white noise." << ::std::endl
@@ -167,9 +169,13 @@ void usage()
 				<< "  --sig-sine-frequency <value>" << ::std::endl
 				<< "    The number of time samples per sine wave period." << ::std::endl
 				<< "  --sig-sine-phase <value>" << ::std::endl
-				<< "    The phase shift (i.e., the offset of the signal in number of sample times." << ::std::endl
+				<< "    The minimum phase shift (i.e., the offset of the signal in number of sample times." << ::std::endl
 				<< "  --sig-sine-bias <value>" << ::std::endl
 				<< "    The signal bias (i.e., the constant value added to the sine to produce the output)." << ::std::endl
+				<< "  --sig-square-low <value>" << ::std::endl
+				<< "    The 'low-state' value for the square signal." << ::std::endl
+				<< "  --sig-square-high <value>" << ::std::endl
+				<< "    The 'high-state' value for the square signal." << ::std::endl
 				<< "  --sig-uniform-min <value>" << ::std::endl
 				<< "    The minimum value for the uniform signal." << ::std::endl
 				<< "  --sig-uniform-max <value>" << ::std::endl
@@ -244,21 +250,25 @@ bool get_option(ForwardIterT begin, ForwardIterT end, std::string const& option)
 
 signal_category parse_signal_category(::std::string const& str)
 {
+	if (!str.compare("constant"))
+	{
+		return constant_signal;
+	}
 	if (!str.compare("gaussian"))
 	{
 		return gaussian_white_noise_signal;
 	}
-	if (!str.compare("ramp"))
+	if (!str.compare("sawtooth"))
 	{
-		return ramp_signal;
+		return sawtooth_signal;
 	}
 	if (!str.compare("sine"))
 	{
 		return sinusoidal_signal;
 	}
-	if (!str.compare("step"))
+	if (!str.compare("square"))
 	{
-		return step_signal;
+		return square_signal;
 	}
 	if (!str.compare("uniform"))
 	{
@@ -424,14 +434,14 @@ class base_signal_generator
 };
 
 template <typename ValueT>
-class step_signal_generator: public base_signal_generator<ValueT>
+class constant_signal_generator: public base_signal_generator<ValueT>
 {
 	private: typedef base_signal_generator<ValueT> base_type;
 	public: typedef ValueT value_type;
 	public: typedef typename base_type::vector_type vector_type;
 
 
-	public: step_signal_generator(vector_type const& u0)
+	public: constant_signal_generator(vector_type const& u0)
 	: u_(u0)
 	{
 	}
@@ -450,40 +460,6 @@ class step_signal_generator: public base_signal_generator<ValueT>
 
 
 	private: vector_type u_;
-};
-
-template <typename ValueT>
-class ramp_signal_generator: public base_signal_generator<ValueT>
-{
-	private: typedef base_signal_generator<ValueT> base_type;
-	public: typedef ValueT value_type;
-	public: typedef typename base_type::vector_type vector_type;
-
-
-	public: ramp_signal_generator(vector_type const& u0, vector_type const& incr)
-	: u0_(u0),
-	  u_(u0),
-	  h_(incr)
-	{
-	}
-
- 
-	private: vector_type do_generate()
-	{
-		u_ += h_;
-		return u_;
-	}
-
-
-	private: void do_reset()
-	{
-		u_ = u0_;
-	}
-
-
-	private: vector_type u0_;
-	private: vector_type u_;
-	private: vector_type h_;
 };
 
 template <typename ValueT>
@@ -536,6 +512,53 @@ class gaussian_signal_generator: public base_signal_generator<ValueT>
 	private: normal_distribution_container distrs_;
 };
 
+
+template <typename ValueT>
+class sawtooth_signal_generator: public base_signal_generator<ValueT>
+{
+	private: typedef base_signal_generator<ValueT> base_type;
+	public: typedef ValueT value_type;
+	public: typedef typename base_type::vector_type vector_type;
+
+
+	public: sawtooth_signal_generator(vector_type const& ul, vector_type const& uh, vector_type const& incr)
+	: ul_(ul),
+	  uh_(uh),
+	  u_(ul),
+	  h_(incr)
+	{
+	}
+
+ 
+	private: vector_type do_generate()
+	{
+		uint_type n(ublasx::size(u_));
+		for (uint_type i = 0; i < n; ++i)
+		{
+			u_(i) += h_(i);
+			if (u_(i) > uh_(i))
+			{
+				u_(i) = ul_(i);
+			}
+		}
+
+		return u_;
+	}
+
+
+	private: void do_reset()
+	{
+		u_ = ul_;
+	}
+
+
+	/// Lower bounds.
+	private: vector_type ul_;
+	/// Upper bounds.
+	private: vector_type uh_;
+	private: vector_type u_;
+	private: vector_type h_;
+};
 
 /**
  * \brief Generate a sinusoidal wave according to the sample-based mode.
@@ -662,6 +685,48 @@ class sinusoidal_signal_generator: public base_signal_generator<ValueT>
 	private: vector_type b_;
 	private: vector_type k_;
 }; // sinusoidal_signal_generator
+
+template <typename ValueT>
+class square_signal_generator: public base_signal_generator<ValueT>
+{
+	private: typedef base_signal_generator<ValueT> base_type;
+	public: typedef ValueT value_type;
+	public: typedef typename base_type::vector_type vector_type;
+
+
+	public: square_signal_generator(vector_type const& ul, vector_type const& uh)
+	: ul_(uh),
+	  uh_(ul),
+	  low_(false)
+	{
+	}
+
+ 
+	private: vector_type do_generate()
+	{
+		low_ = !low_;
+
+		if (!low_)
+		{
+			return ul_;
+		}
+
+		return uh_;
+	}
+
+
+	private: void do_reset()
+	{
+		low_ = false;
+	}
+
+
+	/// Low-state values.
+	private: vector_type ul_;
+	/// High-state values.
+	private: vector_type uh_;
+	private: bool low_;
+};
 
 template <typename ValueT>
 class uniform_signal_generator: public base_signal_generator<ValueT>
@@ -1236,7 +1301,9 @@ struct sysid_state
 
 	uint_type num_arrs;
 	uint_type num_deps;
-	uint_type max_num_deps;
+	uint_type num_obs;
+//	uint_type max_num_deps;
+	uint_type max_num_obs;
 	request_info_map_container req_info_maps; // [tier_id][req_id => request_info*]
 	filter_info<real_type> out_filter_info;
 };
@@ -1306,7 +1373,7 @@ class base_system_identificator
 	}
 
 
-	public: void identify(application_type& app, signal_generator_pointer const& ptr_sig_gen, uint_type max_num_deps, detail::filter_info<real_type> const& out_filter_info, ::std::vector<real_type> const& init_shares)
+	public: void identify(application_type& app, signal_generator_pointer const& ptr_sig_gen, uint_type max_num_obs, detail::filter_info<real_type> const& out_filter_info, ::std::vector<real_type> const& init_shares)
 	{
 		// pre: size(init_shares) == number of shares
 		DCS_ASSERT(
@@ -1324,8 +1391,10 @@ class base_system_identificator
 		ptr_sysid_state = ::dcs::make_shared<sysid_state_type>();
 		ptr_sysid_state->num_arrs = uint_type/*zero*/();
 		ptr_sysid_state->num_deps = uint_type/*zero*/();
+		ptr_sysid_state->num_obs = uint_type/*zero*/();
 		ptr_sysid_state->req_info_maps.resize(num_tiers+1); // num_tiers position for each tier + 1 position for the whole app
-		ptr_sysid_state->max_num_deps = max_num_deps;
+//		ptr_sysid_state->max_num_deps = max_num_deps;
+		ptr_sysid_state->max_num_obs = max_num_obs;
 		ptr_sysid_state->out_filter_info = out_filter_info;
 
 		des_engine_pointer ptr_des_eng(::dcs::eesim::registry<traits_type>::instance().des_engine_ptr());
@@ -1663,10 +1732,10 @@ class base_system_identificator
 
 		do_process_request_departure_event(evt, ctx, app, ptr_sysid_state);
 
-		if (ptr_sysid_state->num_deps == ptr_sysid_state->max_num_deps)
-		{
-			::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
-		}
+//		if (ptr_sysid_state->num_deps == ptr_sysid_state->max_num_deps)
+//		{
+//			::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
+//		}
 
 		DCS_DEBUG_TRACE("END Process REQUEST-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
 	}
@@ -1739,6 +1808,7 @@ class base_system_identificator
 				last_tier_share_map_[category][tier_id] = ptr_vm->resource_share(category);
 
 				DCS_DEBUG_TRACE_L(3, "Share Change for Tier '" << tier_id << " and Category: " << category << " --> Old Share: '" << last_tier_share_map_[category][tier_id] << "' - New Share: '" << new_share << "'");
+//::std::cerr <<"Share Change for TIER '" << tier_id << " and Category: " << category << " --> Old Share: '" << last_tier_share_map_[category][tier_id] << "' - New Share: '" << new_share << "'" << ::std::endl;//XXX
 
 				ptr_vm->wanted_resource_share(category, new_share);
 				ptr_vm->resource_share(category, new_share);
@@ -1983,6 +2053,15 @@ class noagg_measure_noagg_share_siso_system_identificator: public base_system_id
 			}
 
 			ptr_sysid_state->req_info_maps[tier_id].erase(req.id());
+		}
+
+		// Update termination sentinel and check for termination condition
+
+		ptr_sysid_state->num_obs += 1;
+
+		if (ptr_sysid_state->num_obs == ptr_sysid_state->max_num_obs)
+		{
+			::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
 		}
 	}
 
@@ -2284,6 +2363,15 @@ class noagg_measure_agg_mean_share_siso_system_identificator: public base_system
 			}
 
 			ptr_sysid_state->req_info_maps[tier_id].erase(req.id());
+		}
+
+		// Update termination sentinel and check for termination condition
+
+		ptr_sysid_state->num_obs += 1;
+
+		if (ptr_sysid_state->num_obs == ptr_sysid_state->max_num_obs)
+		{
+			::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
 		}
 	}
 
@@ -2648,6 +2736,15 @@ class noagg_measure_agg_wmean_share_siso_system_identificator: public base_syste
 
 			ptr_sysid_state->req_info_maps[tier_id].erase(req.id());
 		}
+
+		// Update termination sentinel and check for termination condition
+
+		ptr_sysid_state->num_obs += 1;
+
+		if (ptr_sysid_state->num_obs == ptr_sysid_state->max_num_obs)
+		{
+			::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
+		}
 	}
 
 
@@ -2965,7 +3062,7 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 		real_type rt(ctx.simulated_time()-req.arrival_time());
 
 		(avg_rt_[num_tiers])(rt);
-::std::cerr << "[offline_sysid] APP '" << app.id() << " - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[num_tiers].estimate() << ")" << ::std::endl;//XXX
+//::std::cerr << "[offline_sysid] APP '" << app.id() << " - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[num_tiers].estimate() << ")" << ::std::endl;//XXX
 
 		// - Clean-up memory (this request info)
 
@@ -3044,7 +3141,7 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 		real_type rt(ctx.simulated_time()-ptr_req_info_impl->arr_time);
 
 		(avg_rt_[tier_id])(rt);
-::std::cerr << "[offline_sysid] APP '" << app.id() << " - TIER '" << tier_id << "' - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[tier_id].estimate() << ")" << ::std::endl;//XXX
+//::std::cerr << "[offline_sysid] APP '" << app.id() << " - TIER '" << tier_id << "' - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[tier_id].estimate() << ")" << ::std::endl;//XXX
 	}
 
 
@@ -3055,6 +3152,7 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sig_gen );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
+//::std::cerr << "[offline_sysid] EXCITE SIGNAL [Clock: " << ctx.simulated_time() << "]" << ::std::endl;//XXX
 		print_data(ctx, app);
 /*
 
@@ -3138,6 +3236,15 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 */
 
 		avg_rt_ = measure_statistic_container(app.num_tiers()+1);
+
+		// Update termination sentinel and check for termination condition
+
+		ptr_sysid_state->num_obs += 1;
+
+		if (ptr_sysid_state->num_obs == ptr_sysid_state->max_num_obs)
+		{
+			::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
+		}
 	}
 
 
@@ -3563,6 +3670,15 @@ class agg_mean_measure_agg_mean_share_siso_system_identificator: public base_sys
 
 		avg_rt_ = measure_statistic_container(num_tiers+1);
 		avg_shares_ = share_statistic_container(num_tiers+1);
+
+		// Update termination sentinel and check for termination condition
+
+		ptr_sysid_state->num_obs += 1;
+
+		if (ptr_sysid_state->num_obs == ptr_sysid_state->max_num_obs)
+		{
+			::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
+		}
 	}
 
 
@@ -3992,6 +4108,15 @@ class agg_mean_measure_agg_wmean_share_siso_system_identificator: public base_sy
 
 		avg_rt_ = measure_statistic_container(num_tiers+1);
 		avg_shares_ = share_statistic_container(num_tiers+1);
+
+		// Update termination sentinel and check for termination condition
+
+		ptr_sysid_state->num_obs += 1;
+
+		if (ptr_sysid_state->num_obs == ptr_sysid_state->max_num_obs)
+		{
+			::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
+		}
 	}
 
 
@@ -4130,7 +4255,7 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 		real_type rt(ctx.simulated_time()-req.arrival_time());
 
 		(avg_rt_[num_tiers])(rt);
-::std::cerr << "[offline_sysid] APP '" << app.id() << " - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[num_tiers].estimate() << ")" << ::std::endl;//XXX
+//::std::cerr << "[offline_sysid] APP '" << app.id() << " - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[num_tiers].estimate() << ")" << ::std::endl;//XXX
 
 
 		// - Clean-up memory (this request info)
@@ -4210,7 +4335,7 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 		real_type rt(ctx.simulated_time()-ptr_req_info_impl->arr_time);
 
 		(avg_rt_[tier_id])(rt);
-::std::cerr << "[offline_sysid] APP '" << app.id() << " - TIER '" << tier_id << "' - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[tier_id].estimate() << ")" << ::std::endl;//XXX
+//::std::cerr << "[offline_sysid] APP '" << app.id() << " - TIER '" << tier_id << "' - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[tier_id].estimate() << ")" << ::std::endl;//XXX
 	}
 
 
@@ -4328,6 +4453,15 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 //::std::cerr << "[offline_sysid] APP '" << app.id() << " - TIER '" << 2 << "' --> " << avg_rt_[2].estimate() << ::std::endl;//XXX
 //::std::cerr << "[offline_sysid] APP '" << app.id() << " --> " << avg_rt_[3].estimate() << ::std::endl;//XXX
 		avg_rt_ = measure_statistic_container(app.num_tiers()+1);
+
+		// Update termination sentinel and check for termination condition
+
+		ptr_sysid_state->num_obs += 1;
+
+		if (ptr_sysid_state->num_obs == ptr_sysid_state->max_num_obs)
+		{
+			::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
+		}
 	}
 
 
@@ -5775,12 +5909,14 @@ int main(int argc, char* argv[])
 	// Parse command line arguments
 
 	real_type excite_sampling_time;
-	uint_type num_samples;
+	uint_type num_obs;
 	signal_category sig_category;
 	real_type sig_sine_ampl;
 	uint_type sig_sine_freq;
 	uint_type sig_sine_phase;
 	real_type sig_sine_bias;
+	real_type sig_square_low;
+	real_type sig_square_high;
 	real_type sig_unif_min;
 	real_type sig_unif_max;
 	real_type sig_gauss_mean;
@@ -5795,13 +5931,15 @@ int main(int argc, char* argv[])
 	try
 	{
 		excite_sampling_time = detail::get_option<real_type>(argv, argv+argc, "--ts");
-		num_samples = detail::get_option<uint_type>(argv, argv+argc, "--ns");
+		num_obs = detail::get_option<uint_type>(argv, argv+argc, "--ns");
 		sysid_category = detail::parse_system_identification_category(detail::get_option<std::string>(argv, argv+argc, "--sys"));
 		sig_category = detail::parse_signal_category(detail::get_option<std::string>(argv, argv+argc, "--sig"));
 		sig_sine_ampl =  detail::get_option<real_type>(argv, argv+argc, "--sig-sine-amplitude", 0.5);
 		sig_sine_freq =  detail::get_option<uint_type>(argv, argv+argc, "--sig-sine-frequency", 8);
 		sig_sine_phase =  detail::get_option<uint_type>(argv, argv+argc, "--sig-sine-phase", sig_sine_freq/4);
 		sig_sine_bias =  detail::get_option<real_type>(argv, argv+argc, "--sig-sine-bias", 0.5);
+		sig_square_low =  detail::get_option<real_type>(argv, argv+argc, "--sig-square-low", 0.0);
+		sig_square_high =  detail::get_option<real_type>(argv, argv+argc, "--sig-square-high", 1.0);
 		sig_unif_min =  detail::get_option<real_type>(argv, argv+argc, "--sig-uniform-min", 0.0);
 		sig_unif_max =  detail::get_option<real_type>(argv, argv+argc, "--sig-uniform-max", 1.0);
 		sig_gauss_mean =  detail::get_option<real_type>(argv, argv+argc, "--sig-gaussian-mean", 0.0);
@@ -5866,7 +6004,7 @@ int main(int argc, char* argv[])
 //	ptr_dc_mngr = dcs::eesim::config::make_data_center_manager<traits_type>(conf, ptr_dc);
 
 //	excite_sampling_time = 5;
-//	//sig_category = step_signal;
+//	//sig_category = constant_signal;
 //	//sig_category = gaussian_white_noise_signal;
 //	sig_category = sinusoidal_signal;
 //	sysid_category = siso_system_identification;
@@ -5898,6 +6036,9 @@ int main(int argc, char* argv[])
 		// Build the signal generator
 		switch (sig_category)
 		{
+			case constant_signal:
+				ptr_sig_gen = dcs::make_shared< detail::constant_signal_generator<real_type> >(ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 0));
+				break;
 			case gaussian_white_noise_signal:
 				ptr_sig_gen = dcs::make_shared< detail::gaussian_signal_generator<real_type> >(
 								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), sig_gauss_mean),
@@ -5907,29 +6048,51 @@ int main(int argc, char* argv[])
 //			case triangular_signal:
 //				//TODO
 //				break;
-//			case parabolic_signal: // p(t)=0.5*t^2*u(t), where u(t) is the unit step function
+//			case parabolic_signal: // p(t)=0.5*t^2*u(t), where u(t) is the unit constant function
 //				//TODO
 //				break;
-			case ramp_signal:
-				ptr_sig_gen = dcs::make_shared< detail::ramp_signal_generator<real_type> >(
-								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 0),
-								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 0.1)
+			case sawtooth_signal:
+				ptr_sig_gen = dcs::make_shared< detail::sawtooth_signal_generator<real_type> >(
+								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 0), // Lower bounds
+								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 1), // Higher bounds
+								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 0.1) // Increments
 					);
 				break;
 			case sinusoidal_signal:
-				ptr_sig_gen = dcs::make_shared< detail::sinusoidal_signal_generator<real_type> >(
-//								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 0.3), // amplitude
-//								ublas::scalar_vector<uint_type>(ptr_app->num_tiers(), 8), // # of samples per cycle
-//								ublas::scalar_vector<uint_type>(ptr_app->num_tiers(), 2), // phase-shift (offset in # of samples)
-//								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 0.5) // bias
-								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), sig_sine_ampl), // amplitude
-								ublas::scalar_vector<uint_type>(ptr_app->num_tiers(), sig_sine_freq), // # of samples per cycle
-								ublas::scalar_vector<uint_type>(ptr_app->num_tiers(), sig_sine_phase), // phase-shift (offset in # of samples)
-								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), sig_sine_bias) // bias
-					);
+				{
+					ublas::vector<uint_type> sig_sine_phases(ptr_app->num_tiers(), sig_sine_phase);
+					dcs::math::stats::discrete_uniform_distribution<uint_type,real_type> dunif(sig_sine_phase, sig_sine_freq-1);
+					for (uint_type tid = 1; tid < ptr_app->num_tiers(); ++tid)
+					{
+						sig_sine_phases(tid) = dcs::math::stats::rand(dunif, *ptr_rng);
+					}
+					ptr_sig_gen = dcs::make_shared< detail::sinusoidal_signal_generator<real_type> >(
+//									ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 0.3), // amplitude
+//									ublas::scalar_vector<uint_type>(ptr_app->num_tiers(), 8), // # of samples per cycle
+//									ublas::scalar_vector<uint_type>(ptr_app->num_tiers(), 2), // phase-shift (offset in # of samples)
+//									ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 0.5) // bias
+									ublas::scalar_vector<real_type>(ptr_app->num_tiers(), sig_sine_ampl), // amplitude
+									ublas::scalar_vector<uint_type>(ptr_app->num_tiers(), sig_sine_freq), // # of samples per cycle
+									//ublas::scalar_vector<uint_type>(ptr_app->num_tiers(), sig_sine_phase), // phase-shift (offset in # of samples)
+									sig_sine_phases, // phase-shift (offset in # of samples)
+									ublas::scalar_vector<real_type>(ptr_app->num_tiers(), sig_sine_bias) // bias
+						);
+				}
 				break;
-			case step_signal:
-				ptr_sig_gen = dcs::make_shared< detail::step_signal_generator<real_type> >(ublas::scalar_vector<real_type>(ptr_app->num_tiers(), 0));
+			case square_signal:
+				{
+				ublas::vector<real_type> ul(ptr_app->num_tiers(), sig_square_low);
+				ublas::vector<real_type> uh(ptr_app->num_tiers(), sig_square_high);
+//				ul(0) = sig_square_high;
+//				ul(1) = sig_square_high;
+//				uh(0) = sig_square_high;
+//				uh(1) = sig_square_high;
+				ptr_sig_gen = dcs::make_shared< detail::square_signal_generator<real_type> >(
+								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), sig_square_low), // Lower bounds
+								ublas::scalar_vector<real_type>(ptr_app->num_tiers(), sig_square_high) // Higher bounds
+								//ul,uh//XXX
+					);
+				}
 				break;
 			case uniform_signal:
 				ptr_sig_gen = dcs::make_shared< detail::uniform_signal_generator<real_type> >(
@@ -6073,7 +6236,7 @@ int main(int argc, char* argv[])
 
 //		sysid->des_engine(ptr_des_eng);
 //		sysid->uniform_random_generator(ptr_rng);
-		ptr_sysid->identify(*ptr_app, ptr_sig_gen, num_samples, out_filter_info, init_shares);
+		ptr_sysid->identify(*ptr_app, ptr_sig_gen, num_obs, out_filter_info, init_shares);
 
 		//// Report statistics
 		//detail::report_stats(::std::cout, ptr_dc);
