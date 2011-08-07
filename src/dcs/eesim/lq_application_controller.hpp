@@ -975,7 +975,19 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - OBSERVATION: ref: " << ref_measure << 
 				}
 			}
 
-			y(0) = actual_measure/ref_measure - real_type(1);
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION)
+# if defined(DDCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
+			y(0) = actual_measure/ref_measure - 1;
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
+			y(0) = actual_measure - ref_measure;
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+# if defined(DDCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
+			y(0) = actual_measure/ref_measure;
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
+			y(0) = actual_measure;
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
 
 			// Get the actual tier-level output measures
 			if (n_x_ > 0)
@@ -1001,13 +1013,23 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - OBSERVATION: ref: " << ref_measure << 
 									}
 DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure);//XXX
 //::std::cerr << "APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure << ::std::endl;//XXX
-#if !defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION)
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION)
+# if defined(DDCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
 									x_(x_offset_+tier_id) = p(tier_id)
 														  = actual_measure/ref_measure - 1;
-#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
 									x_(x_offset_+tier_id) = p(tier_id)
 														  = actual_measure - ref_measure;
-#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
+#else // DDCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+# if defined(DDCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
+									x_(x_offset_+tier_id) = p(tier_id)
+														  = actual_measure/ref_measure;
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
+									x_(x_offset_+tier_id) = p(tier_id)
+														  = actual_measure;
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
+#endif // DDCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
 								}
 								break;
 						default:
@@ -1044,13 +1066,23 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 				//FIXME: should u contain relative errore w.r.t. resource share given from performance model?
 DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " SHARE: ref: " << ref_share << " - actual: " << ptr_vm->resource_share(res_category) << " - actual-scaled: " << actual_share);//XXX
 //::std::cerr << "APP " << app.id() << " - TIER " << tier_id << " SHARE: ref: " << ref_share << " - actual: " << ptr_vm->resource_share(res_category) << " - actual-scaled: " << actual_share << ::std::endl;//XXX
-#if !defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION)
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION)
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
 				u_(u_offset_+tier_id) = s(tier_id)
 									  = actual_share/ref_share - 1;
-#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 				u_(u_offset_+tier_id) = s(tier_id)
 									  = actual_share - ref_share;
-#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+				u_(u_offset_+tier_id) = s(tier_id)
+									  = actual_share/ref_share;
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+				u_(u_offset_+tier_id) = s(tier_id)
+									  = actual_share;
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 			}
 		}
 
@@ -1092,19 +1124,43 @@ DCS_DEBUG_TRACE("phi=" << ptr_ident_strategy_->phi());//XXX
 			}
 
 #ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
-			::std::remove("rlsdata.csv");/
+			::std::remove("rlsdata.csv");
 			::std::ofstream ofs("rlsdata.csv", ::std::ios_base::app);
 			for (size_type i=0; i < n_s_; ++i)
 			{
 				virtual_machine_pointer ptr_vm = app_sim_model.tier_virtual_machine(i);
 				//physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
 				real_type ref_share(ptr_vm->guest_system().resource_share(cpu_resource_category));
-				ofs << ref_share*(1.0+s(i)) << ",";
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+				ofs << ref_share*(1+s(i)) << ",";
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+				ofs << (ref_share+s(i)) << ",";
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+				ofs << ref_share*s(i) << ",";
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+				ofs << s(i) << ",";
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 			}
 			for (size_type i=0; i < n_p_; ++i)
 			{
 				real_type ref_measure(app_perf_model.tier_measure(i, response_time_performance_measure));
-				ofs << ref_measure*(1.0+p(i)) << ",";
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
+				ofs << ref_measure*(1+p(i)) << ",";
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+				ofs << (ref_measure+p(i)) << ",";
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
+				ofs << ref_measure*p(i) << ",";
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+				ofs << p(i) << ",";
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
 			}
 			for (size_type i=0; i < n_p_; ++i)
 			{
@@ -1113,7 +1169,19 @@ DCS_DEBUG_TRACE("phi=" << ptr_ident_strategy_->phi());//XXX
 					ofs << ",";
 				}
 				real_type ref_measure(app_perf_model.tier_measure(i, response_time_performance_measure));
-				ofs << ref_measure*(1.0+p_hat(i));
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
+				ofs << ref_measure*(1.0+p_hat(i)) << ",";
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+				ofs << (ref_measure+p_hat(i)) << ",";
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
+				ofs << ref_measure*p_hat(i) << ",";
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+				ofs << p_hat(i) << ",";
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
 			}
 #endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
 
@@ -1186,20 +1254,42 @@ DCS_DEBUG_TRACE("u= " << u_);//XXX
 DCS_DEBUG_TRACE("APP: " << app.id() << " - Solved!");//XXX
 DCS_DEBUG_TRACE("APP: " << app.id() << " - Optimal Control u*=> " << opt_u);//XXX
 //::std:: cerr << "APP: " << app.id() << " - Optimal Control u*=> " << opt_u << ::std::endl;//XXX
-#if !defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION)
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION)
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
 DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)*(1+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0))));//XXX
 //::std::cerr << "APP: " << app.id() << " Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)*(1+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0))) << ::std::endl;//XXX
-#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)));//XXX
+//::std::cerr << "APP: " << app.id() << " - Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)) << ::std::endl;//XXX
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
 DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)));//XXX
 //::std::cerr << "APP: " << app.id() << " Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)) << ::std::endl;//XXX
-#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: " << (ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0));//XXX
+//::std::cerr << "APP: " << app.id() << " - Expected application response time: " << (ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0) << ::std::endl;//XXX
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
 #ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
-	for (size_type i=0; i < n_p_; ++i)
+	for (size_type i=0; i < n_s_; ++i)
 	{
 		virtual_machine_pointer ptr_vm = app_sim_model.tier_virtual_machine(i);
 		//physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
 		real_type ref_share(ptr_vm->guest_system().resource_share(cpu_resource_category));
-		ofs << "," << ref_share*(1.0+opt_u(i));
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+		ofs << "," << ref_share*(1+opt_u(i));
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+		ofs << "," << (ref_share+opt_u(i));
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+		ofs << "," << ref_share*opt_u(i);
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+		ofs << "," << opt_u(i);
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 	}
 #endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
 
@@ -1224,11 +1314,19 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 	//
 	//
 	//DCS_DEBUG_TRACE("Tier " << tier_id << " --> Actual share: " << actual_share);//XXX
-#if !defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION)
-							real_type new_share(ref_share*(opt_u(u_offset_+tier_id) + static_cast<real_type>(1)));
-#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION)
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+							real_type new_share(ref_share*(opt_u(u_offset_+tier_id)+1));
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 							real_type new_share(ref_share+opt_u(u_offset_+tier_id));
-#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+							real_type new_share(ref_share*opt_u(u_offset_+tier_id));
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+							real_type new_share(opt_u(u_offset_+tier_id));
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unscaled share: " << new_share);//XXX
 //::std::cerr << "APP : " << app.id() << " - Tier " << tier_id << " --> New Unscaled share: " << new_share << ::std::endl;//XXX
 							new_share = ::dcs::eesim::scale_resource_share(
@@ -1244,10 +1342,23 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 
 							if (new_share >= 0)
 							{
+#ifdef DCS_DEBUG
+								if (new_share < default_min_share)
+								{
+									::std::clog << "[Warning] Optimal share too small; adjusted to " << default_min_share_ << "." << ::std::endl;
+								}
+								if (new_share > 1)
+								{
+									::std::clog << "[Warning] Optimal share too bug; adjusted to 1." << ::std::endl;
+								}
+#endif // DCS_DEBUG
 								new_share = ::std::min(::std::max(new_share, default_min_share_), static_cast<real_type>(1));
 							}
 							else
 							{
+#ifdef DCS_DEBUG
+								::std::clog << "[Warning] Optimal share is negative; adjusted to " << ::std::max(ptr_vm->resource_share(res_category), default_min_share_); << "." << ::std::endl;
+#endif // DCS_DEBUG
 								new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
 							}
 
@@ -1264,25 +1375,42 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 											// Scaled share: reference resource share "+" computed deviation
 											new_share
 								);
-#if !defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION)
-							adj_opt_u(u_offset_+tier_id) = new_share/ref_share - static_cast<real_type>(1);
-#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION)
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+							adj_opt_u(u_offset_+tier_id) = new_share/ref_share - 1;
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 							adj_opt_u(u_offset_+tier_id) = new_share - ref_share;
-#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+							adj_opt_u(u_offset_+tier_id) = new_share/ref_share;
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+							adj_opt_u(u_offset_+tier_id) = new_share;
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 						}
 
 						//FIXME: performance metric 'response_time' is hard-coded
 //						real_type pred_measure = app.sla_cost_model().slo_value(response_time_performance_measure)
 //						//real_type pred_measure = static_cast<real_type>(.5)*app.sla_cost_model().slo_value(response_time_performance_measure)//EXP
 //												 + (ublas::prod(C, ublas::prod(A,x_)+ ublas::prod(B,opt_u))+ublas::prod(D,adj_opt_u))(0);
-#if !defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION)
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION)
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
 						real_type pred_measure = app_perf_model.application_measure(response_time_performance_measure)
 						//real_type pred_measure = static_cast<real_type>(.5)*app_perf_model.application_measure(response_time_performance_measure)//EXP
-												 *(1 + (ublas::prod(C, ublas::prod(A,x_)+ ublas::prod(B,opt_u))+ublas::prod(D,adj_opt_u))(0));
-#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
+												 * (1 + (ublas::prod(C, ublas::prod(A,x_)+ ublas::prod(B,opt_u))+ublas::prod(D,adj_opt_u))(0));
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
 						real_type pred_measure = app_perf_model.application_measure(response_time_performance_measure)
 												 + (ublas::prod(C, ublas::prod(A,x_)+ ublas::prod(B,opt_u))+ublas::prod(D,adj_opt_u))(0);
-#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
+						real_type pred_measure = app_perf_model.application_measure(response_time_performance_measure)
+												 * (ublas::prod(C, ublas::prod(A,x_)+ ublas::prod(B,opt_u))+ublas::prod(D,adj_opt_u))(0);
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+						real_type pred_measure = (ublas::prod(C, ublas::prod(A,x_)+ ublas::prod(B,opt_u))+ublas::prod(D,adj_opt_u))(0);
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
 //::std::cerr << "APP: " << app.id() << " - Adjusted Optimal Control u*=> " << adj_opt_u << ::std::endl;//XXX
 //::std::cerr << "APP: " << app.id() << " - Expected application response time after adjustment: " << pred_measure << ::std::endl;//XXX
 
@@ -1300,11 +1428,19 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 								physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
 								real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
 
-#if !defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION)
-								real_type new_share(ref_share*(adj_opt_u(u_offset_+tier_id)+static_cast<real_type>(1)));
-#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION)
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+								real_type new_share(ref_share*(adj_opt_u(u_offset_+tier_id)+1));
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 								real_type new_share(ref_share+adj_opt_u(u_offset_+tier_id));
-#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+								real_type new_share(ref_share*adj_opt_u(u_offset_+tier_id));
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+								real_type new_share(adj_opt_u(u_offset_+tier_id));
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 								new_share = ::dcs::eesim::scale_resource_share(
 												// Reference resource capacity and threshold
 												app.reference_resource(res_category).capacity(),
@@ -1347,11 +1483,19 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 	//
 	//DCS_DEBUG_TRACE("Tier " << tier_id << " --> Actual share: " << actual_share);//XXX
 	DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Unscaled share: " << (ref_share*(opt_u(u_offset_+tier_id)+real_type(1))));//XXX
-#if !defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION)
-							real_type new_share(ref_share*(opt_u(u_offset_+tier_id) + static_cast<real_type>(1)));
-#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION)
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+							real_type new_share(ref_share*(opt_u(u_offset_+tier_id) + 1));
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 							real_type new_share(ref_share+opt_u(u_offset_+tier_id));
-#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ABSOLUTE_DEVIATION
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+							real_type new_share(ref_share*opt_u(u_offset_+tier_id));
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+							real_type new_share(opt_u(u_offset_+tier_id));
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unscaled share: " << new_share);//XXX
 //::std::cerr << "APP : " << app.id() << " - Tier " << tier_id << " --> New Unscaled share: " << new_share << ::std::endl;//XXX
 							new_share = ::dcs::eesim::scale_resource_share(
@@ -1367,10 +1511,23 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 
 							if (new_share >= 0)
 							{
+#ifdef DCS_DEBUG
+								if (new_share < default_min_share)
+								{
+									::std::clog << "[Warning] Optimal share too small; adjusted to " << default_min_share_ << "." << ::std::endl;
+								}
+								if (new_share > 1)
+								{
+									::std::clog << "[Warning] Optimal share too bug; adjusted to 1." << ::std::endl;
+								}
+#endif // DCS_DEBUG
 								new_share = ::std::min(::std::max(new_share, default_min_share_), static_cast<real_type>(1));
 							}
 							else
 							{
+#ifdef DCS_DEBUG
+								::std::clog << "[Warning] Optimal share is negative; adjusted to " << ::std::max(ptr_vm->resource_share(res_category), default_min_share_); << "." << ::std::endl;
+#endif // DCS_DEBUG
 								new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
 							}
 
