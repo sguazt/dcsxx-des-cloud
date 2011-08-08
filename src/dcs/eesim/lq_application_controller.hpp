@@ -267,24 +267,13 @@ class lq_application_controller: public base_application_controller<TraitsT>
 //	private: typedef ::std::vector<real_type> measure_container;
 	private: typedef ::std::map<performance_measure_category,real_type> category_measure_container;
 	private: typedef ::dcs::des::base_statistic<real_type,uint_type> statistic_type;
+	private: typedef ::dcs::des::mean_estimator<real_type,uint_type> statistic_impl_type; //FIXME: statistic category (e.g., mean) is hard-coded
 	private: typedef ::dcs::shared_ptr<statistic_type> statistic_pointer;
 	private: typedef ::std::map<performance_measure_category,statistic_pointer> category_statistic_container;
 	private: typedef ::std::vector<category_statistic_container> category_statistic_container_container;
 	private: typedef ::std::map<performance_measure_category,real_type> category_value_container;
 	private: typedef ::std::vector<category_value_container> category_value_container_container;
 	private: typedef physical_machine<traits_type> physical_machine_type;
-//#if defined(DCS_EESIM_USE_MATLAB_MCR)
-//	private: typedef detail::rls_ff_miso_matlab_mcr_proxy<traits_type> rls_proxy_type;
-//#elif defined(DCS_EESIM_USE_MATLAB_APP)
-//# if defined(DCS_EESIM_USE_MATLAB_APP_RLS)
-//	private: typedef detail::rls_ff_miso_matlab_app_proxy<traits_type> rls_proxy_type;
-//# elif defined(DCS_EESIM_USE_MATLAB_APP_RPEM)
-//	private: typedef detail::rpem_ff_miso_matlab_app_proxy<traits_type> rls_proxy_type;
-//#endif // DCS_EESIM_USE_MATLAB_APP_*
-//#else
-////	private: typedef detail::rls_ff_mimo_proxy<traits_type> rls_proxy_type;
-//	private: typedef detail::rls_ff_miso_proxy<traits_type> rls_proxy_type;
-//#endif // DCS_EESIM_USE_MATLAB_*
 	private: typedef base_system_identification_strategy<traits_type> system_identification_strategy_type;
 	private: typedef ::dcs::shared_ptr<system_identification_strategy_type> system_identification_strategy_pointer;
 	public: typedef base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
@@ -295,20 +284,12 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	private: static const size_type default_input_order_;
 	private: static const size_type default_output_order_;
 	private: static const size_type default_input_delay_;
-//	private: static const uint_type default_ss_state_size_;
-//	private: static const uint_type default_ss_input_size_;
-//	private: static const uint_type default_ss_output_size_;
 	private: static const real_type default_min_share_;
-//	public: static const real_type default_rls_forgetting_factor;
 	public: static const real_type default_ewma_smoothing_factor;
 
 
 	public: lq_application_controller()
 	: base_type(),
-//	  controller_(),
-//	  Theta_hat_(),
-//	  P_(),
-//	  phi_()
 	  n_a_(default_output_order_),
 	  n_b_(default_input_order_),
 	  d_(default_input_delay_),
@@ -317,23 +298,20 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	  n_x_(0),
 	  n_y_(0),
 	  n_u_(0),
-//	  rls_ff_(default_rls_forgetting_factor),
 	  ewma_smooth_(default_ewma_smoothing_factor),
 	  x_offset_(0),
 	  u_offset_(0),
 	  count_(0),
 	  ident_fail_count_(0),
-	  ctrl_fail_count_(0)
-//	  actual_val_ko_sla_trigger_(false),
-//	  predicted_val_ko_sla_trigger_(true)
+	  ctrl_fail_count_(0),
+	  ready_(false)
 	{
 		init();
 	}
 
 
-	public: lq_application_controller(application_pointer const& ptr_app, real_type ts/*, system_identification_strategy_params_pointer const& ptr_ident_strategy_params*/)
+	public: lq_application_controller(application_pointer const& ptr_app, real_type ts)
 	: base_type(ptr_app, ts),
-//	  controller_(),
 	  n_a_(default_output_order_),
 	  n_b_(default_input_order_),
 	  d_(default_input_delay_),
@@ -342,16 +320,13 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	  n_x_(0),
 	  n_y_(0),
 	  n_u_(0),
-//	  rls_ff_(default_rls_forgetting_factor),
-//	  ptr_ident_strategy_params_(ptr_ident_strategy_params),
 	  ewma_smooth_(default_ewma_smoothing_factor),
 	  x_offset_(0),
 	  u_offset_(0),
 	  count_(0),
 	  ident_fail_count_(0),
-	  ctrl_fail_count_(0)
-//	  actual_val_ko_sla_trigger_(false),
-//	  predicted_val_ko_sla_trigger_(true)
+	  ctrl_fail_count_(0),
+	  ready_(false)
 	{
 		init();
 	}
@@ -361,16 +336,12 @@ class lq_application_controller: public base_application_controller<TraitsT>
 		lq_application_controller(uint_type n_a,
 								  uint_type n_b,
 								  uint_type d,
-//								  ::boost::numeric::ublas::matrix_expression<QMatrixExprT> const& Q,
-//								  ::boost::numeric::ublas::matrix_expression<RMatrixExprT> const& R,
 								  application_pointer const& ptr_app,
 								  real_type ts,
-//								  real_type rls_forgetting_factor/* = default_rls_forgetting_factor*/,
 								  system_identification_strategy_params_pointer const& ptr_ident_strategy_params,
 								  triggers_type const& triggers,
 								  real_type ewma_smoothing_factor/* = default_ewma_smoothing_factor*/)
 	: base_type(ptr_app, ts),
-//	  controller_(Q, R),
 	  n_a_(n_a),
 	  n_b_(n_b),
 	  d_(d),
@@ -379,7 +350,6 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	  n_x_(0),
 	  n_y_(0),
 	  n_u_(0),
-//	  rls_ff_(rls_forgetting_factor),
 	  ptr_ident_strategy_params_(ptr_ident_strategy_params),
 	  ewma_smooth_(ewma_smoothing_factor),
 	  x_offset_(0),
@@ -387,9 +357,8 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	  count_(0),
 	  ident_fail_count_(0),
 	  ctrl_fail_count_(0),
+	  ready_(false),
 	  triggers_(triggers)
-//	  actual_val_ko_sla_trigger_(false),
-//	  predicted_val_ko_sla_trigger_(true)
 	{
 		init();
 	}
@@ -489,8 +458,6 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	{
 		if (this->application_ptr())
 		{
-			//FIXME: statistic category (e.g., mean) is hard-coded
-			typedef ::dcs::des::mean_estimator<real_type,uint_type> statistic_impl_type;
 			typedef typename perf_category_container::const_iterator category_iterator;
 
 			uint_type num_tiers(this->application().num_tiers());
@@ -552,13 +519,16 @@ class lq_application_controller: public base_application_controller<TraitsT>
 
 			// Apply the EWMA filter to previously observed measurements
 			//real_type ewma_old_s(ewma_s_.at(category));
-			if (count_ > 1)
+			if (ptr_stat->num_observations() > 0)
 			{
-				ewma_s_[category] = ewma_smooth_*ptr_stat->estimate() + (1-ewma_smooth_)*ewma_s_.at(category);
-			}
-			else
-			{
-				ewma_s_[category] = ptr_stat->estimate();
+				if (count_ > 1)
+				{
+					ewma_s_[category] = ewma_smooth_*ptr_stat->estimate() + (1-ewma_smooth_)*ewma_s_.at(category);
+				}
+				else
+				{
+					ewma_s_[category] = ptr_stat->estimate();
+				}
 			}
 
 			// Reset stat and set as the first observation a memory of the past
@@ -577,13 +547,16 @@ class lq_application_controller: public base_application_controller<TraitsT>
 
 				// Apply the EWMA filter to previously observed measurements
 				//real_type ewma_old_s(ewma_tier_s_[tier_id].at(category));
-				if (count_ > 1)
+				if (ptr_stat->num_observations() > 0)
 				{
-					ewma_tier_s_[tier_id][category] = ewma_smooth_*ptr_stat->estimate() + (1-ewma_smooth_)*ewma_tier_s_[tier_id].at(category);
-				}
-				else
-				{
-					ewma_tier_s_[tier_id][category] = ptr_stat->estimate();
+					if (count_ > 1)
+					{
+						ewma_tier_s_[tier_id][category] = ewma_smooth_*ptr_stat->estimate() + (1-ewma_smooth_)*ewma_tier_s_[tier_id].at(category);
+					}
+					else
+					{
+						ewma_tier_s_[tier_id][category] = ptr_stat->estimate();
+					}
 				}
 
 				// Reset stat and set as the first observation a memory of the past
@@ -628,6 +601,7 @@ class lq_application_controller: public base_application_controller<TraitsT>
 		count_ = ident_fail_count_
 			   = ctrl_fail_count_
 			   = size_type/*zero*/();
+		ready_ = false;
 		x_ = vector_type(n_x_, 0);
 		u_ = vector_type(n_u_, 0);
 	}
@@ -796,6 +770,8 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << rt << " (aggregated: " << ptr_stat->
 			}
 		}
 
+		ready_ = true;
+
 		DCS_DEBUG_TRACE("(" << this << ") END Processing REQUEST-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
 	}
 
@@ -879,6 +855,12 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << rt << " (aggregated: " << ptr_stat->
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")");
 ::std::cerr << "APP: " << this->application().id() << " - BEGIN Process CONTROL event -- Actual Output: " << measures_.at(response_time_performance_measure)->estimate() << " (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")" << ::std::endl;//XXX
+
+		if (!ready_)
+		{
+			DCS_DEBUG_TRACE("(" << this << ") END Do Process CONTROL event: controller NOT READY (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")");
+			return;
+		}
 
 		application_type const& app(this->application());
 		application_simulation_model_type const& app_sim_model(app.simulation_model());
@@ -1632,6 +1614,8 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 	private: size_type count_;
 	private: size_type ident_fail_count_;
 	private: size_type ctrl_fail_count_;
+	/// Flag indicating if the controller can be activated.
+	private: bool ready_;
 	private: vector_type x_;
 	private: vector_type u_;
 	/// System-level measures collected during the last control interval.
