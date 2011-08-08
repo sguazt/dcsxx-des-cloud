@@ -79,7 +79,10 @@
 #include <vector>
 #ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
 # include <cstdio> 
+# include <iosfwd>
 # include <fstream>
+# include <sstream>
+# include <string>
 #endif // DDCS_EESIM_EXP_OUTPUT_RLS_DATA
 
 
@@ -862,6 +865,25 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << rt << " (aggregated: " << ptr_stat->
 			return;
 		}
 
+#ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
+		// Dump a row on the RLS data file. Each row contains:
+		//  <application-id>,
+		//  <clock>,
+		//  <performance-category>,<response_time>,<response_time-for-rls>
+		//  <resource-category>,<share-tier0>,<share-tier0-for-rls>...,<share-tierN>,<share-tierN-for-rls>,
+		//  <performance-category>,<residence_time-tier0>,<residence_time-tier0-for-rls>,...,<residence_time-tierN>,<residence_time-tierN-for-rls>,
+		//  <performance-category>,<predicted-residence_time-tier0>,<predicted-residence_time-tier0-for-rls>,...,<predicted-residence_time-tierN>,<predicted-residence_time-tierN-for-rls>,
+		//  <resource-category>,<optimal-share-tier0>,<optimal-share-tier0-for-rls>...,<optimal-share-tierN>,<optimal-share-tierN-for-rls>,
+
+		char const* cjid(::getenv("CONDOR_JOB_ID"));
+		::std::ostringstream oss;
+		oss << "rls_data-" << ::std::string(cjid ? cjid : "unknown") << ".dat";
+		::std::ofstream ofs(oss.str().c_str(), ::std::ios_base::app);
+
+		// Dump the value of the simulator clock
+		ofs << this->application().id() << "," << ctx.simulated_time();
+#endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
+
 		application_type const& app(this->application());
 		application_simulation_model_type const& app_sim_model(app.simulation_model());
 		application_performance_model_type const& app_perf_model(app.performance_model());
@@ -926,6 +948,11 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << rt << " (aggregated: " << ptr_stat->
 			performance_measure_category category(*it);
 			statistic_pointer ptr_stat(measures_.at(category));
 
+#ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
+			// Dump performance measure category
+			ofs << "," << category;
+#endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
+
 			real_type ref_measure;
 			real_type actual_measure;
 
@@ -971,6 +998,11 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - OBSERVATION: ref: " << ref_measure << 
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
 
+#ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
+			// Dump actual application response time
+			ofs << "," << actual_measure << "," << y(0);
+#endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
+
 			// Get the actual tier-level output measures
 			if (n_x_ > 0)
 			{
@@ -1012,6 +1044,11 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 														  = actual_measure;
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
 #endif // DDCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+
+#ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
+			// Dump actual tier residence time
+			ofs << "," << actual_measure << "," << p(tier_id);
+#endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
 								}
 								break;
 						default:
@@ -1019,6 +1056,16 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 					}
 				}
 			}
+#ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
+			else
+			{
+				// Dump actual tier residence time
+				for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+				{
+					ofs << ",,";
+				}
+			}
+#endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
 		}
 
 		// Collect new input observations:
@@ -1065,8 +1112,26 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " SHARE: ref: " <
 									  = actual_share;
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
+
+#ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
+			// Dump actual tier resource share
+			ofs << "," << res_category << "," << actual_share << "," << s(tier_id);
+#endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
 			}
 		}
+#ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
+		else
+		{
+			// Dump actual tier resource share
+			for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+			{
+				//FIXME: resource category is actually hard-coded to CPU
+				physical_resource_category res_category(cpu_resource_category);
+
+				ofs << "," << res_category << ",,";
+			}
+		}
+#endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
 
 		if (!triggers_.actual_value_sla_ko() || !sla_ok)
 		{
@@ -1106,64 +1171,30 @@ DCS_DEBUG_TRACE("phi=" << ptr_ident_strategy_->phi());//XXX
 			}
 
 #ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
-			::std::remove("rlsdata.csv");
-			::std::ofstream ofs("rlsdata.csv", ::std::ios_base::app);
-			for (size_type i=0; i < n_s_; ++i)
-			{
-				virtual_machine_pointer ptr_vm = app_sim_model.tier_virtual_machine(i);
-				//physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
-				real_type ref_share(ptr_vm->guest_system().resource_share(cpu_resource_category));
-# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION)
-#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
-				ofs << ref_share*(1+s(i)) << ",";
-#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
-				ofs << (ref_share+s(i)) << ",";
-#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
-# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
-#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
-				ofs << ref_share*s(i) << ",";
-#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
-				ofs << s(i) << ",";
-#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
-# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
-			}
+			// Dump predicted residence times
 			for (size_type i=0; i < n_p_; ++i)
 			{
+				//FIXME: resource category is actually hard-coded to CPU
+				physical_resource_category res_category(cpu_resource_category);
 				real_type ref_measure(app_perf_model.tier_measure(i, response_time_performance_measure));
+
+				ofs << "," << res_category << ",";
+
 # if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION)
 #  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
-				ofs << ref_measure*(1+p(i)) << ",";
+				ofs << ref_measure*(1.0+p_hat(i));
 #  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
-				ofs << (ref_measure+p(i)) << ",";
+				ofs << (ref_measure+p_hat(i));
 #  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
 #  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
-				ofs << ref_measure*p(i) << ",";
+				ofs << ref_measure*p_hat(i);
 #  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
-				ofs << p(i) << ",";
+				ofs << p_hat(i);
 #  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
-			}
-			for (size_type i=0; i < n_p_; ++i)
-			{
-				if (i > 0)
-				{
-					ofs << ",";
-				}
-				real_type ref_measure(app_perf_model.tier_measure(i, response_time_performance_measure));
-# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION)
-#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
-				ofs << ref_measure*(1.0+p_hat(i)) << ",";
-#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
-				ofs << (ref_measure+p_hat(i)) << ",";
-#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
-# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
-#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
-				ofs << ref_measure*p_hat(i) << ",";
-#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
-				ofs << p_hat(i) << ",";
-#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
-# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+
+				ofs << "," << p_hat(i);
 			}
 #endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
 
@@ -1253,26 +1284,34 @@ DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: "
 //::std::cerr << "APP: " << app.id() << " - Expected application response time: " << (ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0) << ::std::endl;//XXX
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+
 #ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
-	for (size_type i=0; i < n_s_; ++i)
-	{
-		virtual_machine_pointer ptr_vm = app_sim_model.tier_virtual_machine(i);
-		//physical_machine_type const& actual_pm(ptr_vm->vmm().hosting_machine());
-		real_type ref_share(ptr_vm->guest_system().resource_share(cpu_resource_category));
+					// Dump predicted tier resource share
+					for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+					{
+						//FIXME: resource category is actually hard-coded to CPU
+						physical_resource_category res_category(cpu_resource_category);
+						virtual_machine_pointer ptr_vm(app_sim_model.tier_virtual_machine(tier_id));
+						real_type ref_share(ptr_vm->guest_system().resource_share(cpu_resource_category));
+
+						ofs << "," << res_category << ",";
+
 # if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION)
 #  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
-		ofs << "," << ref_share*(1+opt_u(i));
+						ofs << ref_share*(1+opt_u(u_offset_+tier_id));
 #  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
-		ofs << "," << (ref_share+opt_u(i));
+						ofs << (ref_share+opt_u(u_offset_+tier_id));
 #  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 #  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
-		ofs << "," << ref_share*opt_u(i);
+						ofs << ref_share*opt_u(u_offset_+tier_id);
 #  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
-		ofs << "," << opt_u(i);
+						ofs << opt_u(u_offset_+tier_id);
 #  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
-	}
+
+						ofs << "," << opt_u(u_offset_+tier_id);
+					}
 #endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
 
 DCS_DEBUG_TRACE("Applying optimal control");//XXX
@@ -1544,6 +1583,17 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 				{
 					++ctrl_fail_count_;
 					::std::clog << "[Warning] Control not applied for Application '" << app.id() << "': failed to solve the control problem." << ::std::endl;
+
+#ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
+					// Dump (fake) predicted tier resource share
+					for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+					{
+						//FIXME: resource category is actually hard-coded to CPU
+						physical_resource_category res_category(cpu_resource_category);
+
+						ofs << "," << res_category << ",,";
+					}
+#endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
 				}
 			}
 			else if (!ok)
@@ -1553,15 +1603,43 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 				++ident_fail_count_;
 				::std::clog << "[Warning] Control not applied for Application '" << app.id() << "': failed to solve the identification problem." << ::std::endl;
 			}
-#ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
-			ofs << ::std::endl;
-			ofs.close();
-#endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
 		}
 		else
 		{
 			::std::clog << "[Info] Control not applied for Application '" << app.id() << "': SLA preserved." << ::std::endl;
+
+#ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
+			//FIXME: resource category is actually hard-coded to CPU
+			physical_resource_category res_category(cpu_resource_category);
+
+			ofs << ",,,," << res_category;
+			// Dump (fake) actual tier resource shares
+			for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+			{
+				ofs << ",,";
+			}
+			// Dump (fake) actual tier residence times
+			for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+			{
+				ofs << ",,";
+			}
+			// Dump (fake) predicted tier residence times
+			for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+			{
+				ofs << ",,";
+			}
+			// Dump (fake) predicted tier resource shares
+			for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+			{
+				ofs << ",,";
+			}
+#endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
 		}
+
+#ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
+			ofs << ::std::endl;
+			ofs.close();
+#endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
 
 		// Reset previously collected system measure in order to collect a new ones.
 		reset_measures();
