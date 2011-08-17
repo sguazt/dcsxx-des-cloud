@@ -84,7 +84,8 @@
 #include <dcs/eesim/qn_application_simulation_model.hpp>
 #include <dcs/eesim/registry.hpp>
 #include <dcs/eesim/system_identification_strategy_params.hpp>
-#include <dcs/eesim/workload/timed_step.hpp>//EXP
+#include <dcs/eesim/workload/mmpp.hpp>
+#include <dcs/eesim/workload/timed_step.hpp>
 #include <dcs/math/constants.hpp>
 #include <dcs/math/stats/distributions.hpp>
 #include <dcs/memory.hpp>
@@ -587,22 +588,39 @@ template <typename TraitsT, typename RealT>
 			break;
 		case mmpp_probability_distribution:
 			{
+//				typedef typename distribution_config_type::mmpp_distribution_config_type distribution_config_impl_type;
+//				typedef ::dcs::math::stats::mmpp_distribution<real_type> distribution_impl_type;
+//
+//				distribution_config_impl_type const& distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
+//				//ptr_distr = ::dcs::make_shared<distribution_impl_type>(distr_conf_impl.mean, distr_conf_impl.sd);
+//
+//				typedef ::boost::numeric::ublas::matrix<real_type> matrix_type;
+//				typedef ::boost::numeric::ublas::vector<real_type> vector_type;
+//
+//				matrix_type Q;
+//				vector_type lambda;
+//
+//				Q = make_ublas_matrix(distr_conf_impl.Q);
+//				lambda = make_ublas_vector(distr_conf_impl.rates);
+//
+//				distr = ::dcs::math::stats::make_any_distribution(distribution_impl_type(lambda, Q));
 				typedef typename distribution_config_type::mmpp_distribution_config_type distribution_config_impl_type;
-				typedef ::dcs::math::stats::mmpp_distribution<real_type> distribution_impl_type;
+				typedef ::dcs::eesim::mmpp_interarrivals_workload_model<traits_type,real_type> distribution_impl_type;
 
 				distribution_config_impl_type const& distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
-				//ptr_distr = ::dcs::make_shared<distribution_impl_type>(distr_conf_impl.mean, distr_conf_impl.sd);
 
 				typedef ::boost::numeric::ublas::matrix<real_type> matrix_type;
 				typedef ::boost::numeric::ublas::vector<real_type> vector_type;
 
 				matrix_type Q;
 				vector_type lambda;
+				vector_type p0;
 
 				Q = make_ublas_matrix(distr_conf_impl.Q);
 				lambda = make_ublas_vector(distr_conf_impl.rates);
+				p0 = make_ublas_vector(distr_conf_impl.p0);
 
-				distr = ::dcs::math::stats::make_any_distribution(distribution_impl_type(lambda, Q));
+				distr = ::dcs::math::stats::make_any_distribution(distribution_impl_type(lambda, Q, p0));
 			}
 			break;
 		case normal_probability_distribution:

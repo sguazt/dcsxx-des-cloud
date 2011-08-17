@@ -1243,6 +1243,7 @@ void operator>>(::YAML::Node const& node, probability_distribution_config<RealT>
 
 				node["Q"] >> distr_conf_impl.Q;
 				node["rates"] >> distr_conf_impl.rates;
+				node["p0"] >> distr_conf_impl.p0;
 
 				distr_conf.category_conf = distr_conf_impl;
 			}

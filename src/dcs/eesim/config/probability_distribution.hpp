@@ -111,8 +111,12 @@ struct mmpp_probability_distribution_config
 {
 	typedef RealT real_type;
 
+	/// Generator
 	numeric_matrix<real_type> Q;
+	/// Arrival rates
 	::std::vector<real_type> rates;
+	/// Initial state probability vector
+	::std::vector<real_type> p0;
 };
 
 
