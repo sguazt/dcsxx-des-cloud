@@ -1364,7 +1364,7 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 							if (new_share >= 0)
 							{
 #ifdef DCS_DEBUG
-								if (new_share < default_min_share)
+								if (new_share < default_min_share_)
 								{
 									::std::clog << "[Warning] Optimal share too small; adjusted to " << default_min_share_ << "." << ::std::endl;
 								}
@@ -1533,7 +1533,7 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 							if (new_share >= 0)
 							{
 #ifdef DCS_DEBUG
-								if (new_share < default_min_share)
+								if (new_share < default_min_share_)
 								{
 									::std::clog << "[Warning] Optimal share too small; adjusted to " << default_min_share_ << "." << ::std::endl;
 								}
