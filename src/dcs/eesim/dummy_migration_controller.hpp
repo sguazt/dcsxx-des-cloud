@@ -27,6 +27,8 @@
 
 
 #include <dcs/debug.hpp>
+#include <dcs/macro.hpp>
+#include <dcs/des/engine_traits.hpp>
 #include <dcs/eesim/base_migration_controller.hpp>
 
 
@@ -39,11 +41,30 @@ class dummy_migration_controller: public base_migration_controller<TraitsT>
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::real_type real_type;
 	public: typedef typename traits_type::uint_type uint_type;
+	public: typedef typename base_type::data_center_pointer data_center_pointer;
+	private: typedef typename traits_type::des_engine_type des_engine_type;
+	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
+	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
 
 
 	public: dummy_migration_controller()
 	: base_type()
 	{
+	}
+
+
+	public: dummy_migration_controller(data_center_pointer const& ptr_dc, real_type ts)
+	: base_type(ptr_dc, ts)
+	{
+	}
+
+
+	private: void do_process_control(des_event_type const& evt, des_engine_context_type& ctx)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(evt);
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(ctx);
+
+		// empty
 	}
 };
 

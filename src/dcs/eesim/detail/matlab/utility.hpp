@@ -2,9 +2,10 @@
 #define DCS_EESIM_DETAIL_MATLAB_UTILITY_HPP
 
 
-#if _POSIX_C_SOURCE < 1 && !_XOPEN_SOURCE && !_POSIX_SOURCE
-#	error "Unable to find a POSIX compliant system."
-#endif // _POSIX_C_SOURCE
+//FIXME: It seems this is not the best way to check for a POSIX-compliant system
+//#if _POSIX_C_SOURCE < 1 && !_XOPEN_SOURCE && !_POSIX_SOURCE
+//#	error "Unable to find a POSIX compliant system."
+//#endif // _POSIX_C_SOURCE
 
 
 #include <boost/numeric/ublas/expression_types.hpp>
@@ -20,6 +21,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <dcs/debug.hpp>
 #include <fcntl.h>
 #include <iostream>
 #include <sstream>
@@ -147,7 +149,7 @@ bool run_matlab_command(::std::string const& cmd,
 	{
 		char const* err_str = ::strerror(errno);
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::matlab::run_matlab] pipe(2) failed: "
+		oss << "[dcs::eesim::detail::matlab::run_matlab_command] pipe(2) failed: "
 			<< ::std::string(err_str);
 		throw ::std::runtime_error(oss.str());
 	}
@@ -176,7 +178,7 @@ bool run_matlab_command(::std::string const& cmd,
 	{
 		char const* err_str = ::strerror(errno);
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::matlab::run_matlab] fork(2) failed: "
+		oss << "[dcs::eesim::detail::matlab::run_matlab_command] fork(2) failed: "
 			<< ::std::string(err_str);
 		throw ::std::runtime_error(oss.str());
 	}
@@ -203,7 +205,7 @@ bool run_matlab_command(::std::string const& cmd,
 			{
 				char const* err_str = ::strerror(errno);
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::matlab::run_matlab] getrlimit(2) failed: "
+				oss << "[dcs::eesim::detail::matlab::run_matlab_command] getrlimit(2) failed: "
 					<< ::std::string(err_str);
 				throw ::std::runtime_error(oss.str());
 			}
@@ -219,7 +221,7 @@ bool run_matlab_command(::std::string const& cmd,
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::matlab::run_matlab] getrlimit(2) failed: "
+			oss << "[dcs::eesim::detail::matlab::run_matlab_command] getrlimit(2) failed: "
 				<< ::std::string(err_str);
 			throw ::std::runtime_error(oss.str());
 		}
@@ -241,7 +243,7 @@ bool run_matlab_command(::std::string const& cmd,
 			{
 				char const* err_str = ::strerror(errno);
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::matlab::run_matlab] dup2(2) failed: "
+				oss << "[dcs::eesim::detail::matlab::run_matlab_command] dup2(2) failed: "
 					<< ::std::string(err_str);
 				throw ::std::runtime_error(oss.str());
 			}
@@ -329,7 +331,7 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::matlab::run_matlab] dup2(2) failed: "
+			oss << "[dcs::eesim::detail::matlab::run_matlab_command] dup2(2) failed: "
 				<< ::std::string(err_str);
 			throw ::std::runtime_error(oss.str());
 		}
@@ -360,7 +362,7 @@ DCS_DEBUG_TRACE("IS state: " << is.good() << " - " << is.eof() << " - " << is.fa
 	{
 		char const* err_str = ::strerror(errno);
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::matlab::run_matlab] waitpid(2) failed: "
+		oss << "[dcs::eesim::detail::matlab::run_matlab_command] waitpid(2) failed: "
 			<< ::std::string(err_str);
 		throw ::std::runtime_error(oss.str());
 	}

@@ -152,16 +152,16 @@ class physical_resource: public physical_resource_view<TraitsT>
 	}
 
 
-//	public: energy_model_type& energy_model()
-//	{
-//		return energy_;
-//	}
+	public: energy_model_type& energy_model()
+	{
+		return *ptr_energy_;
+	}
 
 
-//	public: energy_model_type const& energy_model() const
-//	{
-//		return energy_;
-//	}
+	public: energy_model_type const& energy_model() const
+	{
+		return *ptr_energy_;
+	}
 
 
 	private: ::std::string name_;

@@ -134,6 +134,10 @@ metric_category text_to_metric_category(::std::string str)
 	{
 		return throughput_metric;
 	}
+	if (!istr.compare("utilization"))
+	{
+		return utilization_metric;
+	}
 
 	throw ::std::runtime_error("[dcs::eesim::config::metric_category] Unknown metric category.");
 }
@@ -411,9 +415,9 @@ migration_controller_category text_to_migration_controller_category(::std::strin
 {
 	::std::string istr = ::dcs::string::to_lower_copy(str);
 
-	if (!istr.compare("lp"))
+	if (!istr.compare("minlp"))
 	{
-		return lp_migration_controller;
+		return minlp_migration_controller;
 	}
 	if (!istr.compare("none") || !istr.compare("dummy"))
 	{
@@ -1108,7 +1112,13 @@ void operator>>(::YAML::Node const& node, application_performance_model_config<R
 					key_node >> label;
 					category = detail::text_to_metric_category(label);
 
-					value_node["overall"] >> overall_value;
+					//NOTE: some performance metric (like utilization) is only
+					//      defined at tier-level. In this case the 'overall'
+					//      property is not present.
+					if (value_node.FindValue("overall"))
+					{
+						value_node["overall"] >> overall_value;
+					}
 					value_node["tiers"] >> tier_values;
 					
 					conf_impl.app_measures[category] = overall_value;
@@ -2615,9 +2625,9 @@ void operator>>(::YAML::Node const& node, migration_controller_config<RealT>& co
 
 	switch (controller_conf.category)
 	{
-		case lp_migration_controller:
+		case minlp_migration_controller:
 			{
-				typedef typename controller_config_type::lp_migration_controller_config_type controller_config_impl_type;
+				typedef typename controller_config_type::minlp_migration_controller_config_type controller_config_impl_type;
 
 				controller_config_impl_type controller_conf_impl;
 

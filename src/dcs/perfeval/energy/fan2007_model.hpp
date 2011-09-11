@@ -28,6 +28,7 @@
 
 
 #include <cmath>
+#include <cstddef>
 #include <dcs/perfeval/energy/base_model.hpp>
 
 
@@ -90,6 +91,33 @@ class fan2007_model: public base_model<RealT>
 		p1_ = p1;
 		p2_ = p2;
 		r_ = r;
+	}
+
+
+	public: real_type coefficient(::std::size_t n) const
+	{
+		// pre: 0 <= n <= 3
+		DCS_ASSERT(
+				n <= 3,
+				throw ::std::runtime_error("[dcs::perfeval::energy::fan2007_model] Bad coefficient number")
+			);
+
+		switch (n)
+		{
+			case 0:
+				return p0_;
+			case 1:
+				return p1_;
+			case 2:
+				return p2_;
+			case 3:
+				return r_;
+			default:
+				break;
+		}
+
+		// this statement should never be performed
+		throw ::std::runtime_error("[dcs::perfeval::energy::fan2007_model] Unknown error.");
 	}
 
 

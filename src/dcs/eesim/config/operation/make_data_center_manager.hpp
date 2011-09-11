@@ -12,7 +12,7 @@
 #include <dcs/eesim/data_center.hpp>
 #include <dcs/eesim/data_center_manager.hpp>
 #include <dcs/eesim/first_fit_initial_placement_strategy.hpp>
-#include <dcs/eesim/lp_migration_controller.hpp>
+#include <dcs/eesim/minlp_migration_controller.hpp>
 #include <dcs/eesim/first_fit_scaleout_initial_placement_strategy.hpp>
 #include <dcs/memory.hpp>
 #include <stdexcept>
@@ -78,38 +78,40 @@ template <typename TraitsT, typename RealT>
 
 
 template <typename TraitsT, typename RealT>
-::dcs::shared_ptr< ::dcs::eesim::base_migration_controller<TraitsT> > make_migration_controller(migration_controller_config<RealT> const& controller_conf)
+::dcs::shared_ptr< ::dcs::eesim::base_migration_controller<TraitsT> > make_migration_controller(migration_controller_config<RealT> const& controller_conf, ::dcs::shared_ptr< ::dcs::eesim::data_center<TraitsT> > const& ptr_dc)
 {
 	typedef TraitsT traits_type;
 	typedef ::dcs::eesim::base_migration_controller<traits_type> controller_type;
 	typedef migration_controller_config<RealT> controller_config_type;
+	typedef ::dcs::eesim::data_center<TraitsT> data_center_type;
+	typedef ::dcs::shared_ptr<data_center_type> data_center_pointer;
 
 	::dcs::shared_ptr<controller_type> ptr_controller;
 
 	switch (controller_conf.category)
 	{
-		case lp_migration_controller:
+		case minlp_migration_controller:
 			{
-				//typedef typename controller_config_type::lp_migration_controller_config_type controller_config_impl_type;
-				typedef ::dcs::eesim::lp_migration_controller<traits_type> controller_impl_type;
+				//typedef typename controller_config_type::minlp_migration_controller_config_type controller_config_impl_type;
+				typedef ::dcs::eesim::minlp_migration_controller<traits_type> controller_impl_type;
 
 				//controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
 
 				// Note: there is nothing to configure
 
-				ptr_controller = ::dcs::make_shared<controller_impl_type>();
+				ptr_controller = ::dcs::make_shared<controller_impl_type>(ptr_dc, controller_conf.sampling_time);
 			}
 			break;
 		case dummy_migration_controller:
 			{
-				//typedef typename controller_config_type::lp_migration_controller_config_type controller_config_impl_type;
+				//typedef typename controller_config_type::minlp_migration_controller_config_type controller_config_impl_type;
 				typedef ::dcs::eesim::dummy_migration_controller<traits_type> controller_impl_type;
 
 				//controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
 
 				// Note: there is nothing to configure
 
-				ptr_controller = ::dcs::make_shared<controller_impl_type>();
+				ptr_controller = ::dcs::make_shared<controller_impl_type>(ptr_dc, controller_conf.sampling_time);
 			}
 			break;
 	}
@@ -158,7 +160,8 @@ template <
 		::dcs::shared_ptr< ::dcs::eesim::base_migration_controller<traits_type> > ptr_controller;
 
 		ptr_controller = detail::make_migration_controller<traits_type>(
-							conf.data_center().migration_controller()
+							conf.data_center().migration_controller(),
+							ptr_dc
 			);
 
 		ptr_dc_mngr->migration_controller(ptr_controller);
