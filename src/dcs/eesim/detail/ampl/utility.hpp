@@ -384,23 +384,26 @@ void parse_str(::std::string const& text, T& x)
 	::std::istringstream iss(text);
 	while (iss.good())
 	{
-		char ch(iss.peek());
+		// look ahead next character
 
-		if (::std::isspace(ch))
-		{
-			// Skip space
-			iss.get();
-		}
-		else if (::std::isdigit(ch) || ch == '+' || ch == '-' || ch == '.')
+		char ch(iss.peek());
+		if (::std::isdigit(ch) || ch == '+' || ch == '-' || ch == '.')
 		{
 			// Found the beginning of a number
+			break;
+		}
 
-			iss >> x;
-		}
-		else
-		{
-			throw ::std::runtime_error("[dcs::eesim::detail::ampl::parse_str] Unable to parse a AMPL number");
-		}
+		// Skip non-numerical chars (e.g., space, letters, ...)
+		iss.get();
+	}
+
+	if (iss.good())
+	{
+		iss >> x;
+	}
+	else
+	{
+		throw ::std::runtime_error("[dcs::eesim::detail::ampl::parse_str] Unable to parse a AMPL number");
 	}
 }
 
@@ -423,13 +426,29 @@ void parse_str(::std::string const& text, ::std::string& x)
 		{
 			++lpos;
 		}
+		// Look for terminating ';'
+		if ((rpos = text.rfind(';', rpos)) == ::std::string::npos)
+		{
+			rpos = sz-1;
+		}
+		else if (rpos > 0)
+		{
+			--rpos;
+		}
 		// trim right
-		while (rpos >= 0 && ::std::isspace(text[rpos]))
+		while (rpos > 0 && ::std::isspace(text[rpos]))
 		{
 			--rpos;
 		}
 
-		x = text.substr(lpos, rpos-lpos+1);
+		if (rpos >= lpos)
+		{
+			x = text.substr(lpos, rpos-lpos+1);
+		}
+		else
+		{
+			throw ::std::runtime_error("[dcs::eesim::detail::ampl::parse_str] Unable to parse a AMPL string");
+		}
 	}
 }
 

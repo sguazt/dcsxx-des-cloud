@@ -182,8 +182,8 @@ DCS_DEBUG_TRACE("TRUE");//XXX
 
 
 	public: template <typename ForwardIterT>
-		void place(virtual_machine_type const& vm,
-				   physical_machine_type const& pm,
+		void place(virtual_machine_type& vm,
+				   physical_machine_type& pm,
 				   ForwardIterT first_share, // <category,share> pair
 				   ForwardIterT last_share) // <category,share> pair
 	{
@@ -217,9 +217,15 @@ DCS_DEBUG_TRACE("TRUE");//XXX
 	}
 
 
-	public: bool placed(virtual_machine_identifier_type vm_id)
+	public: bool placed(virtual_machine_identifier_type vm_id) const
 	{
 		return by_vm_idx_.count(vm_id) != 0;
+	}
+
+
+	public: bool placed(virtual_machine_type const& vm) const
+	{
+		return placed(vm.id());
 	}
 
 

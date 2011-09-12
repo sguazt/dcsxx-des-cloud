@@ -29,8 +29,12 @@
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublasx/operation/num_columns.hpp>
+#include <boost/numeric/ublasx/operation/num_rows.hpp>
 #include <dcs/debug.hpp>
+#include <dcs/des/base_statistic.hpp>
 #include <dcs/des/engine_traits.hpp>
+#include <dcs/des/mean_estimator.hpp>
 #include <dcs/eesim/base_migration_controller.hpp>
 #include <dcs/eesim/detail/ampl/utility.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
@@ -41,8 +45,10 @@
 #include <iosfwd>
 #include <iostream>
 #include <limits>
+#include <map>
 #include <sstream>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 
@@ -60,6 +66,16 @@ namespace detail { namespace /*<unnamed>*/ {
 //			   ptr_mach->virtual_machine_monitor().virtual_machines(powered_on_power_status).size() > 0;
 //	}
 //};
+
+
+template <typename PhysicalMachinePtrT>
+struct physical_machine_comparator
+{
+	bool operator()(PhysicalMachinePtrT const& lhs, PhysicalMachinePtrT const& rhs)
+	{
+		return lhs->id() < rhs->id();
+	}
+};
 
 
 enum ampl_solver_results
@@ -168,7 +184,6 @@ class ampl_minlp_output_consumer
 			::std::getline(is, line);
 
 			::std::size_t pos(0);
-::std::cerr << "Read from AMPL>> " << line << ::std::endl;//XXX
 
 			switch (state)
 			{
@@ -179,158 +194,64 @@ class ampl_minlp_output_consumer
 					}
 					break;
 				case out_analysis_state:
-					if ((pos = line.find("solve_exitcode")) != ::std::string::npos)
+					if ((pos = line.find("solve_exitcode=")) != ::std::string::npos)
 					{
-						while ((pos = line.find('=', pos)) != ::std::string::npos)
-						{
-							;
-						}
+						::dcs::eesim::detail::ampl::parse_str(line.substr(pos+15), solver_exit_code_);
 
-						if (pos != ::std::string::npos)
+						if (solver_exit_code_ != 0)
 						{
-							::dcs::eesim::detail::ampl::parse_str(line.substr(pos+1), solver_exit_code_);
-
-							if (solver_exit_code_ == 0)
-							{
-//								state = out_analysis_state;
-							}
-							else
-							{
-								// Problem in calling the solver
-								state = end_state;
-								ok = false;
-							}
-						}
-						else
-						{
+							// Problem in calling the solver
 							state = end_state;
 							ok = false;
 						}
 					}
-					else if ((pos = line.find("solve_result")) != ::std::string::npos)
+					else if ((pos = line.find("solve_result=")) != ::std::string::npos)
 					{
-						while ((pos = line.find('=', pos)) != ::std::string::npos)
-						{
-							;
-						}
+						::std::string res;
+						::dcs::eesim::detail::ampl::parse_str(line.substr(pos+13), res);
 
-						if (pos != ::std::string::npos)
-						{
-							::std::string res;
-							::dcs::eesim::detail::ampl::parse_str(line.substr(pos+1), res);
-
-							solver_result_ = from_string(res);
-
-//							state = out_analysis_state;
-						}
-						else
-						{
-							state = end_state;
-							ok = false;
-						}
+						solver_result_ = from_string(res);
 					}
-					else if ((pos = line.find("solve_result_num")) != ::std::string::npos)
+					else if ((pos = line.find("solve_result_num=")) != ::std::string::npos)
 					{
-						while ((pos = line.find('=', pos)) != ::std::string::npos)
-						{
-							;
-						}
-
-						if (pos != ::std::string::npos)
-						{
-							::dcs::eesim::detail::ampl::parse_str(line.substr(pos+1), solver_result_code_);
-
-							if (solver_result_ == ampl_solved_result && solver_result_code_ >= 0 && solver_result_code_ < 100)
-							{
-//								state = results_state;
-							}
-							else
-							{
-								state = end_state;
-								ok = false;
-							}
-						}
-						else
-						{
-							state = end_state;
-							ok = false;
-						}
+						::dcs::eesim::detail::ampl::parse_str(line.substr(pos+17), solver_result_code_);
 					}
 
 					if (ok)
 					{
-						state = (num_solver_info < 3) ? out_analysis_state : results_state;
-						++num_solver_info;
+
+						if (num_solver_info < 3)
+						{
+							state = out_analysis_state;
+							++num_solver_info;
+						}
+						else if (solver_result_ == ampl_solved_result && solver_result_code_ >= 0 && solver_result_code_ < 100)
+						{
+							state = results_state;
+						}
+						else
+						{
+							state = end_state;
+							ok = false;
+						}
 					}
 					break;
 				case results_state:
-					if (line.find("cost") != ::std::string::npos)
+					if (line.find("cost=") != ::std::string::npos)
 					{
-						while ((pos = line.find('=', pos)) != ::std::string::npos)
-						{
-							;
-						}
-
-						if (pos != ::std::string::npos)
-						{
-							::dcs::eesim::detail::ampl::parse_str(line.substr(pos+1), cost_);
-						}
-						else
-						{
-							state = end_state;
-							ok = false;
-						}
+						::dcs::eesim::detail::ampl::parse_str(line.substr(pos+5), cost_);
 					}
-					else if (line.find("x") != ::std::string::npos)
+					else if (line.find("x=") != ::std::string::npos)
 					{
-						while ((pos = line.find('=', pos)) != ::std::string::npos)
-						{
-							;
-						}
-
-						if (pos != ::std::string::npos)
-						{
-							::dcs::eesim::detail::ampl::parse_str(line.substr(pos+1), x_);
-						}
-						else
-						{
-							state = end_state;
-							ok = false;
-						}
+						::dcs::eesim::detail::ampl::parse_str(line.substr(pos+2), x_);
 					}
-					else if (line.find("y") != ::std::string::npos)
+					else if (line.find("y=") != ::std::string::npos)
 					{
-						while ((pos = line.find('=', pos)) != ::std::string::npos)
-						{
-							;
-						}
-
-						if (pos != ::std::string::npos)
-						{
-							::dcs::eesim::detail::ampl::parse_str(line.substr(pos+1), y_);
-						}
-						else
-						{
-							state = end_state;
-							ok = false;
-						}
+						::dcs::eesim::detail::ampl::parse_str(line.substr(pos+2), y_);
 					}
-					else if (line.find("s") != ::std::string::npos)
+					else if (line.find("s=") != ::std::string::npos)
 					{
-						while ((pos = line.find('=', pos)) != ::std::string::npos)
-						{
-							;
-						}
-
-						if (pos != ::std::string::npos)
-						{
-							::dcs::eesim::detail::ampl::parse_str(line.substr(pos+1), s_);
-						}
-						else
-						{
-							state = end_state;
-							ok = false;
-						}
+						::dcs::eesim::detail::ampl::parse_str(line.substr(pos+2), s_);
 					}
 					else if (line.find("-- [/RESULT] --") != ::std::string::npos)
 					{
@@ -403,6 +324,11 @@ class ampl_minlp_solver_impl
 	public: typedef typename traits_type::real_type real_type;
 	public: typedef typename traits_type::uint_type uint_type;
 	public: typedef data_center<traits_type> data_center_type;
+	public: typedef typename traits_type::physical_machine_identifier_type physical_machine_identifier_type;
+	public: typedef typename traits_type::virtual_machine_identifier_type virtual_machine_identifier_type;
+	public: typedef ::std::pair<physical_machine_identifier_type,virtual_machine_identifier_type> physical_virtual_machine_pair_type;
+	public: typedef ::std::vector< ::std::pair<physical_resource_category,real_type> > resource_share_container;
+	public: typedef ::std::map<physical_virtual_machine_pair_type,resource_share_container> physical_virtual_machine_map;
 	private: typedef typename traits_type::des_engine_type des_engine_type;
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
@@ -412,23 +338,37 @@ class ampl_minlp_solver_impl
 	private: typedef virtual_machine<traits_type> virtual_machine_type;
 	private: typedef ::dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
 	private: typedef typename virtual_machine_type::application_tier_type application_tier_type;
+	private: typedef ::std::vector<physical_machine_identifier_type> physical_machine_identifier_container;
+	private: typedef ::std::vector<virtual_machine_identifier_type> virtual_machine_identifier_container;
 
 
 	public: ampl_minlp_solver_impl()
+	: pm_ids_(),
+	  vm_ids_(),
+	  solved_(0),
+	  cost_(0),
+	  placement_()
 	{
 	}
 
 
 	public: void solve(data_center_type const& dc, real_type wp, real_type wm, real_type ws)
 	{
-		::std::string problem;
+		// Reset previous solution
+		pm_ids_.clear();
+		vm_ids_.clear();
+		solved_ = false;
+		cost_ = 0;
+		placement_.clear();
 
+		// Create a new problem
+		::std::string problem;
 		problem = make_problem(dc, wp, wm, ws);
 
+::std::cerr << "Create problem: " << problem << ::std::endl;//XXX
+		// Solve the new problem
 		ampl_minlp_input_producer producer(problem);
 		ampl_minlp_output_consumer consumer;
-
-::std::cerr << "Create problem: " << problem << ::std::endl;//XXX
 		::dcs::eesim::detail::ampl::run_ampl_command(
 				::dcs::eesim::detail::ampl::find_ampl_command(),
 				::std::vector< ::std::string >(),
@@ -437,6 +377,7 @@ class ampl_minlp_solver_impl
 			);
 
 ::std::cerr << "AMPL terminated" << ::std::endl;//XXX
+		// Build the new solution
 		if (consumer.solver_result() == detail::ampl_solved_result)
 		{
 ::std::cerr << "AMPL has solved" << ::std::endl;//XXX
@@ -444,7 +385,76 @@ class ampl_minlp_solver_impl
 ::std::cerr << "Optimum x: " << consumer.physical_machine_selection() << ::std::endl;//XXX
 ::std::cerr << "Optimum y: " << consumer.virtual_machine_placement() << ::std::endl;//XXX
 ::std::cerr << "Optimum s: " << consumer.virtual_machine_shares() << ::std::endl;//XXX
+			solved_ = true;
+			cost_ = consumer.cost();
+
+			typename ampl_minlp_output_consumer::smallint_matrix_type placement_flags(consumer.virtual_machine_placement());
+			typename ampl_minlp_output_consumer::real_matrix_type placement_shares(consumer.virtual_machine_shares());
+
+			::std::size_t npm(::boost::numeric::ublasx::num_rows(placement_flags));
+			::std::size_t nvm(::boost::numeric::ublasx::num_columns(placement_flags));
+
+			for (::std::size_t i = 0; i < npm; ++i)
+			{
+				physical_machine_identifier_type pm_id(pm_ids_[i]);
+
+				for (::std::size_t j = 0; j < nvm; ++j)
+				{
+					if (placement_flags(i,j))
+					{
+						virtual_machine_identifier_type vm_id(vm_ids_[j]);
+
+						//FIXME: CPU resource category is hard-coded.
+#error FIXME: check if shares have to be expressed in term of real physical machine
+						resource_share_container shares(1, ::std::make_pair(cpu_resource_category, placement_shares(i,j)));
+
+						placement_[::std::make_pair(pm_id, vm_id)] = shares;
+					}
+				}
+			}
 		}
+	}
+
+
+	public: bool solved() const
+	{
+		return solved_;
+	}
+
+
+	public: real_type cost() const
+	{
+		return cost_;
+	}
+
+
+	public: physical_virtual_machine_map const& placement() const
+	{
+		return placement_;
+	}
+
+
+	private: physical_machine_identifier_type physical_machine_id(::std::size_t idx) const
+	{
+		// pre: 0 < idx <= size(pm_ids_)
+		DCS_ASSERT(
+				idx > 0 && idx < pm_ids_.size(),
+				throw ::std::invalid_argument("[dcs::eesim::detail::ampl_minlp_solver_impl::physical_machine_id] Bad index.")
+			);
+
+		return pm_ids_[idx-1];
+	}
+
+
+	private: virtual_machine_identifier_type virtual_machine_id(::std::size_t idx) const
+	{
+		// pre: 0 < idx <= size(vm_ids_)
+		DCS_ASSERT(
+				idx > 0 && idx < vm_ids_.size(),
+				throw ::std::invalid_argument("[dcs::eesim::detail::ampl_minlp_solver_impl::virtual_machine_id] Bad index.")
+			);
+
+		return vm_ids_[idx-1];
 	}
 
 
@@ -504,6 +514,8 @@ class ampl_minlp_solver_impl
 		{
 			physical_machine_pointer ptr_pm(pms[i]);
 
+			pm_ids_[i] = ptr_pm->id();
+
 			//FIXME: CPU resource category is hard-coded
 			resource_pointer ptr_resource(ptr_pm->resource(::dcs::eesim::cpu_resource_category));
 			energy_model_type const& energy_model(ptr_resource->energy_model());
@@ -555,6 +567,8 @@ class ampl_minlp_solver_impl
 		{
 			virtual_machine_pointer ptr_vm(active_vms[j]);
 
+			vm_ids_[j] = ptr_vm->id();
+
 			application_type const& app(ptr_vm->guest_system().application());
 
 			//FIXME: CPU resource category is hard-coded
@@ -585,19 +599,19 @@ class ampl_minlp_solver_impl
 			<< "option print_precision 0;"
 			<< "solve;"
 			<< "print '-- [RESULT] --';"
-			<< "print 'solve_exitcode = ', solve_exitcode, ';';"
-			<< "print 'solve_result = ', solve_result, ';';"
-			<< "print 'solver_result_num = ', solve_result_num, ';';"
-			<< "print 'cost = ', cost, ';';"
-//			<< "print 'x = (', card({I}), ')[', ({i in I} (i, x[i])), '];';"
-//			<< "print 'x = [', ({i in I} (i, x[i])), '];';"
-			<< "print 'x = [', {i in I} x[i], '];';"
-//			<< "print 'y = (', card({I}), ',', card({J}), ')[', ({i in I} (i, ({j in J} (j, y[i,j])), ';')), '];';"
-//			<< "print 'y = [', ({i in I} (i, ({j in J} (j, y[i,j])), ';')), '];';"
-			<< "print 'y = [', {i in I} (({j in J} y[i,j]), ';'), '];';"
-//			<< "print 's = (', card({I}), ',', card({J}), ')[', ({i in I} (i, ({j in J} (j, s[i,j])), ';')), '];';"
-//			<< "print 's = [', ({i in I} (i, ({j in J} (j, s[i,j])), ';')), '];';"
-			<< "print 's = [', {i in I} (({j in J} s[i,j]), ';'), '];';"
+			<< "print 'solve_exitcode=', solve_exitcode, ';';"
+			<< "print 'solve_result=', solve_result, ';';"
+			<< "print 'solve_result_num=', solve_result_num, ';';"
+			<< "print 'cost=', cost, ';';"
+//			<< "print 'x=(', card({I}), ')[', ({i in I} (i, x[i])), '];';"
+//			<< "print 'x=[', ({i in I} (i, x[i])), '];';"
+			<< "print 'x=[', {i in I} x[i], '];';"
+//			<< "print 'y=(', card({I}), ',', card({J}), ')[', ({i in I} (i, ({j in J} (j, y[i,j])), ';')), '];';"
+//			<< "print 'y=[', ({i in I} (i, ({j in J} (j, y[i,j])), ';')), '];';"
+			<< "print 'y=[', {i in I} (({j in J} y[i,j]), ';'), '];';"
+//			<< "print 's=(', card({I}), ',', card({J}), ')[', ({i in I} (i, ({j in J} (j, s[i,j])), ';')), '];';"
+//			<< "print 's=[', ({i in I} (i, ({j in J} (j, s[i,j])), ';')), '];';"
+			<< "print 's=[', {i in I} (({j in J} s[i,j]), ';'), '];';"
 			<< "print '-- [/RESULT] --';" << ::std::endl
 			<< "end;"
 			<< ::std::endl;
@@ -650,12 +664,17 @@ class ampl_minlp_solver_impl
 	}
 
 
-	/// Weight for power consumption.
-	private: real_type wp_;
-	/// Weight for VM migration.
-	private: real_type wm_;
-	/// Weight for SLA satisfaction.
-	private: real_type ws_;
+//	/// Weight for power consumption.
+//	private: real_type wp_;
+//	/// Weight for VM migration.
+//	private: real_type wm_;
+//	/// Weight for SLA satisfaction.
+//	private: real_type ws_;
+	private: physical_machine_identifier_container pm_ids_;
+	private: virtual_machine_identifier_container vm_ids_;
+	private: bool solved_;
+	private: real_type cost_;
+	private: physical_virtual_machine_map placement_;
 }; // ampl_minlp_solver_impl
 
 }} // Namespace detail::<unnamed>
@@ -673,12 +692,18 @@ class minlp_migration_controller: public base_migration_controller<TraitsT>
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_source_type des_event_source_type;
+	private: typedef typename base_type::data_center_type data_center_type;
+	private: typedef typename data_center_type::virtual_machines_placement_type virtual_machines_placement_type;
 	private: typedef physical_machine<traits_type> physical_machine_type;
 	private: typedef ::dcs::shared_ptr<physical_machine_type> physical_machine_pointer;
 	private: typedef virtual_machine<traits_type> virtual_machine_type;
 	private: typedef ::dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
 	private: typedef typename virtual_machine_type::application_tier_type application_tier_type;
 	private: typedef detail::ampl_minlp_solver_impl<traits_type> minlp_solver_type;
+	private: typedef ::dcs::des::base_statistic<real_type,uint_type> statistic_type;
+	private: typedef ::dcs::des::mean_estimator<real_type,uint_type> statistic_impl_type;
+	private: typedef ::dcs::shared_ptr<statistic_type> statistic_pointer;
+	private: typedef typename traits_type::physical_machine_identifier_type physical_machine_identifier_type;
 
 
 	public: minlp_migration_controller()
@@ -731,9 +756,67 @@ class minlp_migration_controller: public base_migration_controller<TraitsT>
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process CONTROL event (Clock: " << ctx.simulated_time() << ")");
 
+		typedef typename minlp_solver_type::physical_virtual_machine_map physical_virtual_machine_map;
+		typedef typename physical_virtual_machine_map::const_iterator physical_virtual_machine_iterator;
+		typedef typename minlp_solver_type::resource_share_container resource_share_container;
+		typedef ::std::vector<physical_machine_pointer> physical_machine_container;
+		typedef typename physical_machine_container::const_iterator physical_machine_iterator;
+		typedef ::std::map<physical_machine_identifier_type,physical_machine_pointer> physical_machine_id_map;
+		typedef typename physical_machine_id_map::iterator physical_machine_id_iterator;
+
+
+		data_center_type& dc(this->controlled_data_center());
+
 		minlp_solver_type solver;
 
-		solver.solve(this->controlled_data_center(), wp_, wm_, ws_);
+		solver.solve(dc, wp_, wm_, ws_);
+
+		if (solver.solved())
+		{
+			(*ptr_cost_)(solver.cost());
+
+			physical_machine_id_map inactive_pms;
+
+			// Populate the inactive PMs container with all powered-on machines
+			physical_machine_container active_pms(dc.physical_machines(powered_on_power_status));
+			physical_machine_iterator pm_end_it(active_pms.end());
+			for (physical_machine_iterator pm_it = active_pms.begin(); pm_it != pm_end_it; ++pm_it)
+			{
+				physical_machine_pointer ptr_pm(*pm_it);
+
+				inactive_pms[ptr_pm->id()] = ptr_pm;
+			}
+
+			// Migrate VMs
+			physical_virtual_machine_map pm_vm_map(solver.placement());
+			physical_virtual_machine_iterator pm_vm_end_it(pm_vm_map.end());
+			for (physical_virtual_machine_iterator pm_vm_it = pm_vm_map.begin(); pm_vm_it != pm_vm_end_it; ++pm_vm_it)
+			{
+				physical_machine_pointer ptr_pm(dc.physical_machine_ptr(pm_vm_it->first.first));
+				virtual_machine_pointer ptr_vm(dc.virtual_machine_ptr(pm_vm_it->first.second));
+				resource_share_container shares(pm_vm_it->second);
+
+				dc.migrate_virtual_machine(ptr_vm, ptr_pm, shares.begin(), shares.end());
+
+				if (inactive_pms.count(ptr_pm->id()) > 0)
+				{
+					inactive_pms.erase(ptr_pm->id());
+				}
+			}
+
+			// Turn off unused PMs
+			physical_machine_id_iterator pm_id_end_it(inactive_pms.end());
+			for (physical_machine_id_iterator pm_id_it = inactive_pms.begin(); pm_id_it != pm_id_end_it; ++pm_id_it)
+			{
+				physical_machine_pointer ptr_pm(pm_id_it->second);
+
+				ptr_pm->power_off();
+			}
+		}
+		else
+		{
+			::std::clog << "[Warning] Control not application: failed to solve optimization problem." << ::std::endl;
+		}
 
 		DCS_DEBUG_TRACE("(" << this << ") END Do Process CONTROL event (Clock: " << ctx.simulated_time() << ")");
 	}
@@ -745,6 +828,7 @@ class minlp_migration_controller: public base_migration_controller<TraitsT>
 	private: real_type wp_;
 	private: real_type wm_;
 	private: real_type ws_;
+	private: statistic_pointer ptr_cost_;
 };
 
 }} // Namespace dcs::eesim

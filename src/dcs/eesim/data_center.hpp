@@ -337,14 +337,14 @@ class data_center
 			virtual_machine_pointer ptr_vm = this->virtual_machine_ptr(it->first.first);
 			physical_machine_pointer ptr_pm = this->physical_machine_ptr(it->first.second);
 
-			// Check if the VM is currently running
-			if (ptr_vm->power_state() != powered_off_power_status)
-			{
-				// Power off this VM and remove from the related PM
-
-				//ptr_vm->power_off();
-				displace_virtual_machine(ptr_vm);
-			}
+//			// Check if the VM is currently running
+//			if (ptr_vm->power_state() != powered_off_power_status)
+//			{
+//				// Power off this VM and remove from the related PM
+//
+//				//ptr_vm->power_off();
+//				displace_virtual_machine(ptr_vm);
+//			}
 
 			// Place the VM on the new PM
 			place_virtual_machine(
@@ -356,7 +356,7 @@ class data_center
 			);
 		}
 
-		placement_ = placement;
+//		placement_ = placement;
 	}
 
 
@@ -367,17 +367,34 @@ class data_center
 								   ForwardIterT last_share,
 								   bool power_on = false)
 	{
+		place_virtual_machine(ptr_vm,
+							  ptr_pm,
+							  first_share,
+							  last_share,
+							  power_on,
+							  true);
+	}
+
+
+	public: template <typename ForwardIterT>
+		void migrate_virtual_machine(virtual_machine_pointer const& ptr_vm,
+								     physical_machine_pointer const& ptr_pm,
+								     ForwardIterT first_share,
+								     ForwardIterT last_share)
+	{
+		// Power-on target physical machine (if needed)
 		if (ptr_pm->power_state() != powered_on_power_status)
 		{
 			ptr_pm->power_on();
 		}
-		ptr_vm->resource_shares(first_share, last_share);
-		ptr_pm->vmm().create_domain(ptr_vm);
-
-		if (power_on)
-		{
-			ptr_pm->vmm().power_on(ptr_vm);
-		}
+		// Peform migration
+		ptr_pm->vmm().migrate(ptr_vm, *ptr_pm);
+		// Update placement
+		place_virtual_machine(ptr_vm,
+							  ptr_pm,
+							  first_share,
+							  last_share,
+							  false);
 	}
 
 
@@ -666,6 +683,37 @@ class data_center
 		}
 
 		return false;
+	}
+
+
+	private: template <typename ForwardIterT>
+		void place_virtual_machine(virtual_machine_pointer const& ptr_vm,
+								   physical_machine_pointer const& ptr_pm,
+								   ForwardIterT first_share,
+								   ForwardIterT last_share,
+								   bool power_on,
+								   bool update_placement)
+	{
+		if (ptr_pm->power_state() != powered_on_power_status)
+		{
+			ptr_pm->power_on();
+		}
+		ptr_vm->resource_shares(first_share, last_share);
+		ptr_pm->vmm().create_domain(ptr_vm);
+
+		if (power_on)
+		{
+			ptr_pm->vmm().power_on(ptr_vm);
+		}
+
+		if (update_placement)
+		{
+			if (placement_.placed(*ptr_vm))
+			{
+				placement_.displace(*ptr_vm);
+			}
+			placement_.place(*ptr_vm, *ptr_pm, first_share, last_share);
+		}
 	}
 
 

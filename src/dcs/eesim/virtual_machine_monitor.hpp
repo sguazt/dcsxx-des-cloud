@@ -29,6 +29,7 @@
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/eesim/physical_machine.hpp>
+#include <dcs/eesim/power_status.hpp>
 #include <dcs/eesim/virtual_machine.hpp>
 #include <dcs/memory.hpp>
 //#include <map>
@@ -236,6 +237,36 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 //FIXME: uncomment this below
 //		ptr_pm_->simulation_model().vm_resume(ptr_vm);
 		throw ::std::runtime_error("To Be Implemented.");
+	}
+
+
+	public: void migrate(virtual_machine_pointer ptr_vm,
+						 physical_machine_type& pm)
+	{
+		// pre: target virtual machine must be set.
+		DCS_ASSERT(
+			ptr_vm,
+			throw ::std::logic_error("[dcs::eesim::virtual_machine_monitor::migrate] target Virtual Machine not set.")
+		);
+		// pre: target physical machine must be set.
+		DCS_ASSERT(
+			pm.power_state() == powered_on_power_status,
+			throw ::std::logic_error("[dcs::eesim::virtual_machine_monitor::migrate] target Physical Machine not powered on.")
+		);
+
+		pm.vmm().create_domain(ptr_vm);
+		destroy_domain(ptr_vm);
+	}
+
+
+	public: template <typename ForwardIterT>
+		void migrate(virtual_machine_pointer ptr_vm,
+					 physical_machine_type& pm,
+					 ForwardIterT first_share,
+					 ForwardIterT last_share)
+	{
+		migrate(ptr_vm, pm);
+		ptr_vm->resource_shares(first_share, last_share);
 	}
 
 

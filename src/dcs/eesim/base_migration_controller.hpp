@@ -131,7 +131,7 @@ class base_migration_controller
 	}
 
 
-	public: data_center_type const& controlled_data_center()
+	public: data_center_type& controlled_data_center()
 	{
 		// pre: data center must have been set
 		DCS_DEBUG_ASSERT( ptr_dc_ );

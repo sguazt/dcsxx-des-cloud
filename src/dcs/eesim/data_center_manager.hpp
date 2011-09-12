@@ -76,13 +76,21 @@ class data_center_manager
 		registry<traits_type>& reg = registry<traits_type>::instance();
 
 		reg.des_engine_ptr()->system_initialization_event_source().connect(
-			::dcs::functional::bind(
-				&self_type::process_sys_init,
-				this,
-				::dcs::functional::placeholders::_1,
-				::dcs::functional::placeholders::_2
-			)
-		);
+				::dcs::functional::bind(
+					&self_type::process_sys_init,
+					this,
+					::dcs::functional::placeholders::_1,
+					::dcs::functional::placeholders::_2
+				)
+			);
+		reg.des_engine_ptr()->system_finalization_event_source().connect(
+				::dcs::functional::bind(
+					&self_type::process_sys_finit,
+					this,
+					::dcs::functional::placeholders::_1,
+					::dcs::functional::placeholders::_2
+				)
+			);
 	}
 
 
@@ -90,14 +98,22 @@ class data_center_manager
 	{
 		registry<traits_type>& reg = registry<traits_type>::instance();
 
+		reg.des_engine_ptr()->system_finalization_event_source().disconnect(
+				::dcs::functional::bind(
+					&self_type::process_sys_finit,
+					this,
+					::dcs::functional::placeholders::_1,
+					::dcs::functional::placeholders::_2
+				)
+			);
 		reg.des_engine_ptr()->system_initialization_event_source().disconnect(
-			::dcs::functional::bind(
-				&self_type::process_sys_init,
-				this,
-				::dcs::functional::placeholders::_1,
-				::dcs::functional::placeholders::_2
-			)
-		);
+				::dcs::functional::bind(
+					&self_type::process_sys_init,
+					this,
+					::dcs::functional::placeholders::_1,
+					::dcs::functional::placeholders::_2
+				)
+			);
 	}
 
 
@@ -131,6 +147,34 @@ class data_center_manager
 		}
 
 		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");//XXX
+	}
+
+
+	private: void process_sys_finit(des_event_type const& evt, des_engine_context_type& ctx)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing SYSTEM-FINALIZATION (Clock: " << ctx.simulated_time() << ")");//XXX
+
+		// precondition: pointer to vm initial placer must be a valid pointer
+		DCS_DEBUG_ASSERT( ptr_dc_ );
+
+		// Remove all placed VMs
+		ptr_dc_->displace_virtual_machines();
+
+		typename traits_type::uint_type stopped_apps;
+
+		stopped_apps = ptr_dc_->stop_applications();
+
+		if (!stopped_apps)
+		{
+			registry<traits_type>::instance().des_engine_ptr()->stop_now();
+
+			::std::clog << "[Warning] Unable to stop any application." << ::std::endl;
+		}
+
+		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-FINALIZATION (Clock: " << ctx.simulated_time() << ")");//XXX
 	}
 
 
