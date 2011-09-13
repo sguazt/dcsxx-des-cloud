@@ -160,6 +160,12 @@ class base_application_simulation_model: public ::dcs::des::entity
 	}
 
 
+	public: real_type actual_tier_utilization(uint_type tier_id) const
+	{
+		return actual_tier_busy_time(tier_id)/registry<traits_type>::instance().des_engine_ptr()->simulated_time();
+	}
+
+
 	public: ::std::vector<user_request_type> tier_in_service_requests(uint_type tier_id) const//EXP
 	{
 		return do_tier_in_service_requests(tier_id);

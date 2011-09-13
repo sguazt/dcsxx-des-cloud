@@ -398,7 +398,7 @@ class data_center
 	}
 
 
-	public: void displace_virtual_machine(virtual_machine_pointer const& ptr_vm)
+	public: void displace_virtual_machine(virtual_machine_pointer const& ptr_vm, bool power_off = true)
 	{
 		typedef typename virtual_machines_placement_type::const_iterator iterator;
 		iterator it = placement_.find(*ptr_vm);
@@ -408,30 +408,36 @@ class data_center
 			//               the one of the retrieved VM.
 			DCS_DEBUG_ASSERT( ptr_vm->id() == it->first.first );
 
-			physical_machine_identifier_type pm_id(it->first.second);
-			physical_machine_pointer ptr_pm(pms_[pm_id]);
+			if (power_off)
+			{
+				physical_machine_identifier_type pm_id(it->first.second);
+				physical_machine_pointer ptr_pm(pms_[pm_id]);
 
-			ptr_pm->vmm().power_off(ptr_vm);
-			ptr_pm->vmm().destroy_domain(ptr_vm);
+				ptr_pm->vmm().power_off(ptr_vm);
+				ptr_pm->vmm().destroy_domain(ptr_vm);
+			}
 			placement_.displace(*ptr_vm);
 		}
 	}
 
 
-	public: void displace_virtual_machines()
+	public: void displace_virtual_machines(bool power_off = true)
 	{
 		typedef typename virtual_machines_placement_type::const_iterator iterator;
-		iterator end_it = placement_.end();
-		for (iterator it = placement_.begin(); it != end_it; ++it)
+		if (power_off)
 		{
-			virtual_machine_identifier_type vm_id(placement_.vm_id(it));
-			physical_machine_identifier_type pm_id(placement_.pm_id(it));
-			physical_machine_pointer ptr_pm(pms_[pm_id]);
-			virtual_machine_pointer ptr_vm(vms_[vm_id]);
+			iterator end_it = placement_.end();
+			for (iterator it = placement_.begin(); it != end_it; ++it)
+			{
+				virtual_machine_identifier_type vm_id(placement_.vm_id(it));
+				physical_machine_identifier_type pm_id(placement_.pm_id(it));
+				physical_machine_pointer ptr_pm(pms_[pm_id]);
+				virtual_machine_pointer ptr_vm(vms_[vm_id]);
 
-			pms_[pm_id]->vmm().power_off(ptr_vm);
-			pms_[pm_id]->vmm().destroy_domain(ptr_vm);
-//			placement_.displace(*ptr_vm);
+				pms_[pm_id]->vmm().power_off(ptr_vm);
+				pms_[pm_id]->vmm().destroy_domain(ptr_vm);
+//				placement_.displace(*ptr_vm);
+			}
 		}
 		placement_.displace_all();
 	}

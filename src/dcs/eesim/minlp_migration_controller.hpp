@@ -35,6 +35,7 @@
 #include <dcs/des/base_statistic.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/mean_estimator.hpp>
+#include <dcs/des/statistic_categories.hpp>
 #include <dcs/eesim/base_migration_controller.hpp>
 #include <dcs/eesim/detail/ampl/utility.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
@@ -144,7 +145,7 @@ class ampl_minlp_input_producer
 class ampl_minlp_output_consumer
 {
 	public: typedef int int_type;
-	public: typedef char smallint_type;
+	public: typedef short smallint_type; // don't use char since it may fails on some tests
 	public: typedef double real_type;
 	public: typedef ::boost::numeric::ublas::vector<smallint_type> smallint_vector_type;
 	public: typedef ::boost::numeric::ublas::matrix<smallint_type> smallint_matrix_type;
@@ -185,6 +186,7 @@ class ampl_minlp_output_consumer
 
 			::std::size_t pos(0);
 
+::std::cerr << "Read-AMPL>> " << line << " (old state: " << state << ")" <<::std::endl;//XXX
 			switch (state)
 			{
 				case skip_state:
@@ -240,18 +242,22 @@ class ampl_minlp_output_consumer
 					if (line.find("cost=") != ::std::string::npos)
 					{
 						::dcs::eesim::detail::ampl::parse_str(line.substr(pos+5), cost_);
+::std::cerr << "Read-AMPL>> COST: " << cost_ << ::std::endl;//XXX
 					}
 					else if (line.find("x=") != ::std::string::npos)
 					{
 						::dcs::eesim::detail::ampl::parse_str(line.substr(pos+2), x_);
+::std::cerr << "Read-AMPL>> X: " << x_ << ::std::endl;//XXX
 					}
 					else if (line.find("y=") != ::std::string::npos)
 					{
 						::dcs::eesim::detail::ampl::parse_str(line.substr(pos+2), y_);
+::std::cerr << "Read-AMPL>> Y: " << y_ << ::std::endl;//XXX
 					}
 					else if (line.find("s=") != ::std::string::npos)
 					{
 						::dcs::eesim::detail::ampl::parse_str(line.substr(pos+2), s_);
+::std::cerr << "Read-AMPL>> S: " << s_ << ::std::endl;//XXX
 					}
 					else if (line.find("-- [/RESULT] --") != ::std::string::npos)
 					{
@@ -261,6 +267,7 @@ class ampl_minlp_output_consumer
 				case end_state:
 					break;
 			}
+::std::cerr << "Read-AMPL>> " << line << " (new state: " << state << ")" <<::std::endl;//XXX
 		}
 	}
 
@@ -329,6 +336,7 @@ class ampl_minlp_solver_impl
 	public: typedef ::std::pair<physical_machine_identifier_type,virtual_machine_identifier_type> physical_virtual_machine_pair_type;
 	public: typedef ::std::vector< ::std::pair<physical_resource_category,real_type> > resource_share_container;
 	public: typedef ::std::map<physical_virtual_machine_pair_type,resource_share_container> physical_virtual_machine_map;
+	public: typedef ::std::map<virtual_machine_identifier_type,real_type> virtual_machine_utilization_map;
 	private: typedef typename traits_type::des_engine_type des_engine_type;
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
@@ -352,7 +360,7 @@ class ampl_minlp_solver_impl
 	}
 
 
-	public: void solve(data_center_type const& dc, real_type wp, real_type wm, real_type ws)
+	public: void solve(data_center_type const& dc, real_type wp, real_type wm, real_type ws, virtual_machine_utilization_map const& vm_util_map)
 	{
 		// Reset previous solution
 		pm_ids_.clear();
@@ -363,7 +371,7 @@ class ampl_minlp_solver_impl
 
 		// Create a new problem
 		::std::string problem;
-		problem = make_problem(dc, wp, wm, ws);
+		problem = make_problem(dc, wp, wm, ws, vm_util_map);
 
 ::std::cerr << "Create problem: " << problem << ::std::endl;//XXX
 		// Solve the new problem
@@ -400,18 +408,24 @@ class ampl_minlp_solver_impl
 
 				for (::std::size_t j = 0; j < nvm; ++j)
 				{
+::std::cerr << "Is VM #" << j << " (ID: " << vm_ids_[j] << ") placed on PM #" << i << " (ID: " << pm_ids_[i] << ")? " << placement_flags(i,j) << ::std::endl;//XXX
 					if (placement_flags(i,j))
 					{
+::std::cerr << "INSERTED"<< ::std::endl;//XXX
 						virtual_machine_identifier_type vm_id(vm_ids_[j]);
 
 						//FIXME: CPU resource category is hard-coded.
-#error FIXME: check if shares have to be expressed in term of real physical machine
 						resource_share_container shares(1, ::std::make_pair(cpu_resource_category, placement_shares(i,j)));
 
 						placement_[::std::make_pair(pm_id, vm_id)] = shares;
 					}
 				}
 			}
+::std::cerr << "SOLVER PLACEMENT" << ::std::endl;//XXX
+for (typename physical_virtual_machine_map::const_iterator it = placement_.begin(); it != placement_.end(); ++it)
+{
+::std::cerr << "VM ID: " << (it->first.second) << " placed on PM ID: " << (it->first.first) << " with SHARE: " << ((it->second)[0].second) << ::std::endl;//XXX
+}
 		}
 	}
 
@@ -458,7 +472,7 @@ class ampl_minlp_solver_impl
 	}
 
 
-	private: ::std::string make_problem(data_center_type const& dc, real_type wp, real_type wm, real_type ws)
+	private: ::std::string make_problem(data_center_type const& dc, real_type wp, real_type wm, real_type ws, virtual_machine_utilization_map const& vm_util_map)
 	{
 		typedef ::std::vector<physical_machine_pointer> machine_container;
 		typedef typename machine_container::const_iterator machine_iterator;
@@ -504,6 +518,9 @@ class ampl_minlp_solver_impl
 		}
 
 		::std::size_t n_vms(active_vms.size());
+
+		pm_ids_ = physical_machine_identifier_container(n_pms);
+		vm_ids_ = virtual_machine_identifier_container(n_vms);
 
 		// # of VMs
 		oss << "param nj := " << n_vms << ";" << ::std::endl;
@@ -576,7 +593,8 @@ class ampl_minlp_solver_impl
 
 			oss << " " << (j+1)
 				<< " " << (ref_resource.capacity()*ref_resource.utilization_threshold())
-				<< " " << app.performance_model().tier_measure(ptr_vm->guest_system().id(), ::dcs::eesim::utilization_performance_measure)
+//				<< " " << app.performance_model().tier_measure(ptr_vm->guest_system().id(), ::dcs::eesim::utilization_performance_measure)
+				<< " " << vm_util_map.at(ptr_vm->id())
 				<< " " << 0.2 //FIXME: Minimum share is hard-coded
 				<< ::std::endl;
 		}
@@ -586,7 +604,7 @@ class ampl_minlp_solver_impl
 		oss << "param wm := " << wm << ";" << ::std::endl;
 		oss << "param ws := " << ws << ";" << ::std::endl;
 
-		//FIXME: solver is hard-coded
+		//FIXME: solver 'couenne' is hard-coded
 		oss << "option solver couenne;"
 			<< "option solution_precision 0;"
 			<< "option solver_msg 0;"
@@ -605,13 +623,13 @@ class ampl_minlp_solver_impl
 			<< "print 'cost=', cost, ';';"
 //			<< "print 'x=(', card({I}), ')[', ({i in I} (i, x[i])), '];';"
 //			<< "print 'x=[', ({i in I} (i, x[i])), '];';"
-			<< "print 'x=[', {i in I} x[i], '];';"
+			<< "print 'x=[', {i in I} round(x[i]), '];';"
 //			<< "print 'y=(', card({I}), ',', card({J}), ')[', ({i in I} (i, ({j in J} (j, y[i,j])), ';')), '];';"
 //			<< "print 'y=[', ({i in I} (i, ({j in J} (j, y[i,j])), ';')), '];';"
-			<< "print 'y=[', {i in I} (({j in J} y[i,j]), ';'), '];';"
+			<< "print 'y=[', {i in I} (({j in J} round(y[i,j])), ';'), '];';"
 //			<< "print 's=(', card({I}), ',', card({J}), ')[', ({i in I} (i, ({j in J} (j, s[i,j])), ';')), '];';"
 //			<< "print 's=[', ({i in I} (i, ({j in J} (j, s[i,j])), ';')), '];';"
-			<< "print 's=[', {i in I} (({j in J} s[i,j]), ';'), '];';"
+			<< "print 's=[', {i in I} (({j in J} round(s[i,j], 5)), ';'), '];';"
 			<< "print '-- [/RESULT] --';" << ::std::endl
 			<< "end;"
 			<< ::std::endl;
@@ -704,13 +722,24 @@ class minlp_migration_controller: public base_migration_controller<TraitsT>
 	private: typedef ::dcs::des::mean_estimator<real_type,uint_type> statistic_impl_type;
 	private: typedef ::dcs::shared_ptr<statistic_type> statistic_pointer;
 	private: typedef typename traits_type::physical_machine_identifier_type physical_machine_identifier_type;
+	private: typedef typename traits_type::virtual_machine_identifier_type virtual_machine_identifier_type;
+	private: typedef ::std::map<virtual_machine_identifier_type,real_type> virtual_machine_utilization_map;
+
+
+	private: static const ::dcs::des::statistic_category utilization_statistic_category = ::dcs::des::mean_statistic;
+	private: static const real_type default_power_cost_weight;
+	private: static const real_type default_migration_cost_weight;
+	private: static const real_type default_share_cost_weight;
+	private: static const real_type default_ewma_smoothing_factor;
 
 
 	public: minlp_migration_controller()
 	: base_type(),
-	  wp_(1),
-	  wm_(1),
-	  ws_(1)
+	  wp_(default_power_cost_weight),
+	  wm_(default_migration_cost_weight),
+	  ws_(default_share_cost_weight),
+	  ewma_smooth_(default_ewma_smoothing_factor),
+	  ptr_cost_(new statistic_impl_type())
 	{
 //		init();
 	}
@@ -718,9 +747,11 @@ class minlp_migration_controller: public base_migration_controller<TraitsT>
 
 	public: minlp_migration_controller(data_center_pointer const& ptr_dc, real_type ts)
 	: base_type(ptr_dc, ts),
-	  wp_(1),
-	  wm_(1),
-	  ws_(1)
+	  wp_(default_power_cost_weight),
+	  wm_(default_migration_cost_weight),
+	  ws_(default_share_cost_weight),
+	  ewma_smooth_(default_ewma_smoothing_factor),
+	  ptr_cost_(new statistic_impl_type())
 	{
 //		init();
 	}
@@ -738,15 +769,19 @@ class minlp_migration_controller: public base_migration_controller<TraitsT>
 //	}
 
 
-//	protected: void do_process_sys_init(des_event_type const& evt, des_engine_context_type& ctx)
-//	{
-//		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
-//		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-//
-//		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process SYSTEM-INITIALIZATION event (Clock: " << ctx.simulated_time() << ")");
-//
-//		DCS_DEBUG_TRACE("(" << this << ") END Do Process SYSTEM-INITIALIZATION event (Clock: " << ctx.simulated_time() << ")");
-//	}
+	protected: void do_process_sys_init(des_event_type const& evt, des_engine_context_type& ctx)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process SYSTEM-INITIALIZATION event (Clock: " << ctx.simulated_time() << ")");
+
+		count_ = fail_count_ = 0;
+		ptr_cost_->reset();
+		vm_util_map_.clear();
+
+		DCS_DEBUG_TRACE("(" << this << ") END Do Process SYSTEM-INITIALIZATION event (Clock: " << ctx.simulated_time() << ")");
+	}
 
 
 	private: void do_process_control(des_event_type const& evt, des_engine_context_type& ctx)
@@ -754,7 +789,7 @@ class minlp_migration_controller: public base_migration_controller<TraitsT>
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
-		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process CONTROL event (Clock: " << ctx.simulated_time() << ")");
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")");
 
 		typedef typename minlp_solver_type::physical_virtual_machine_map physical_virtual_machine_map;
 		typedef typename physical_virtual_machine_map::const_iterator physical_virtual_machine_iterator;
@@ -764,12 +799,70 @@ class minlp_migration_controller: public base_migration_controller<TraitsT>
 		typedef ::std::map<physical_machine_identifier_type,physical_machine_pointer> physical_machine_id_map;
 		typedef typename physical_machine_id_map::iterator physical_machine_id_iterator;
 
+		++count_;
 
 		data_center_type& dc(this->controlled_data_center());
 
+		// Update VMs utilization stats
+		{
+			typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
+			typedef typename virtual_machine_container::const_iterator virtual_machine_iterator;
+			typedef ::std::vector<statistic_pointer> statistic_container;
+			typedef typename statistic_container::const_iterator statistic_iterator;
+
+			virtual_machine_container vms(dc.virtual_machines());
+			virtual_machine_iterator vm_end_it(vms.end());
+			for (virtual_machine_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
+			{
+				virtual_machine_pointer ptr_vm(*vm_it);
+
+//				statistic_container ustats;
+//				ustats = ptr_vm->guest_system().application().simulation_model().tier_statistic(
+//							ptr_vm->guest_system().id(),
+//							utilization_performance_measure
+//					);
+//				bool found(false);
+				real_type new_value(0);
+//				statistic_iterator stat_end_it(ustats.end());
+//				for (statistic_iterator stat_it = ustats.begin(); stat_it != stat_end_it && !found; ++stat_it)
+//				{
+//					statistic_pointer ptr_stat(*stat_it);
+//					if (ptr_stat->category() == utilization_statistic_category)
+//					{
+//						new_value = ptr_stat->estimate();
+//						found = true;
+//					}
+//				}
+//				if (!found)
+//				{
+//					// Fall back to the reference resource utilization
+//					new_value = ptr_vm->guest_system().application().performance_model().tier_measure(
+//									ptr_vm->guest_system().id(),
+//									::dcs::eesim::utilization_performance_measure
+//						);
+//				}
+				new_value =  ptr_vm->guest_system().application().simulation_model().actual_tier_utilization(
+								ptr_vm->guest_system().id()
+					);
+				if (count_ > 1)
+				{
+					vm_util_map_[ptr_vm->id()] = ewma_smooth_*new_value + (1-ewma_smooth_)*vm_util_map_.at(ptr_vm->id());
+				}
+				else
+				{
+					vm_util_map_[ptr_vm->id()] = new_value;
+				}
+::std::cerr << "MIGRATION CONTROLLER >> VM: " << ptr_vm->id() << " - Utilization: " << new_value << " - Smoothed value: " << vm_util_map_[ptr_vm->id()] << ::std::endl;//XXX
+			}
+		}
+
+		// Solve the optimization problem
+
 		minlp_solver_type solver;
 
-		solver.solve(dc, wp_, wm_, ws_);
+		solver.solve(dc, wp_, wm_, ws_, vm_util_map_);
+
+		// Check solution and act accordingly
 
 		if (solver.solved())
 		{
@@ -778,47 +871,62 @@ class minlp_migration_controller: public base_migration_controller<TraitsT>
 			physical_machine_id_map inactive_pms;
 
 			// Populate the inactive PMs container with all powered-on machines
-			physical_machine_container active_pms(dc.physical_machines(powered_on_power_status));
-			physical_machine_iterator pm_end_it(active_pms.end());
-			for (physical_machine_iterator pm_it = active_pms.begin(); pm_it != pm_end_it; ++pm_it)
 			{
-				physical_machine_pointer ptr_pm(*pm_it);
+				physical_machine_container active_pms(dc.physical_machines(powered_on_power_status));
+				physical_machine_iterator pm_end_it(active_pms.end());
+				for (physical_machine_iterator pm_it = active_pms.begin(); pm_it != pm_end_it; ++pm_it)
+				{
+					physical_machine_pointer ptr_pm(*pm_it);
 
-				inactive_pms[ptr_pm->id()] = ptr_pm;
+					inactive_pms[ptr_pm->id()] = ptr_pm;
+				}
 			}
 
 			// Migrate VMs
-			physical_virtual_machine_map pm_vm_map(solver.placement());
-			physical_virtual_machine_iterator pm_vm_end_it(pm_vm_map.end());
-			for (physical_virtual_machine_iterator pm_vm_it = pm_vm_map.begin(); pm_vm_it != pm_vm_end_it; ++pm_vm_it)
 			{
-				physical_machine_pointer ptr_pm(dc.physical_machine_ptr(pm_vm_it->first.first));
-				virtual_machine_pointer ptr_vm(dc.virtual_machine_ptr(pm_vm_it->first.second));
-				resource_share_container shares(pm_vm_it->second);
+				dc.displace_virtual_machines(false);
 
-				dc.migrate_virtual_machine(ptr_vm, ptr_pm, shares.begin(), shares.end());
-
-				if (inactive_pms.count(ptr_pm->id()) > 0)
+				physical_virtual_machine_map pm_vm_map(solver.placement());
+::std::cerr << "CHECK SOLVER PLACEMENT" << ::std::endl;//XXX
+for (typename physical_virtual_machine_map::const_iterator it = solver.placement().begin(); it != solver.placement().end(); ++it)
+{
+::std::cerr << "VM ID: " << (it->first.second) << " placed on PM ID: " << (it->first.first) << " with SHARE: " << ((it->second)[0].second) << ::std::endl;//XXX
+}
+				physical_virtual_machine_iterator pm_vm_end_it(pm_vm_map.end());
+				for (physical_virtual_machine_iterator pm_vm_it = pm_vm_map.begin(); pm_vm_it != pm_vm_end_it; ++pm_vm_it)
 				{
-					inactive_pms.erase(ptr_pm->id());
+					physical_machine_pointer ptr_pm(dc.physical_machine_ptr(pm_vm_it->first.first));
+					virtual_machine_pointer ptr_vm(dc.virtual_machine_ptr(pm_vm_it->first.second));
+					resource_share_container shares(pm_vm_it->second);
+
+::std::cerr << "Going to migrate VM (" << pm_vm_it->first.second << "): " << *ptr_vm << " into PM (" << pm_vm_it->first.first << "): " << *ptr_pm << ::std::endl; //XXX
+					dc.migrate_virtual_machine(ptr_vm, ptr_pm, shares.begin(), shares.end());
+
+					if (inactive_pms.count(ptr_pm->id()) > 0)
+					{
+						inactive_pms.erase(ptr_pm->id());
+					}
 				}
 			}
 
 			// Turn off unused PMs
-			physical_machine_id_iterator pm_id_end_it(inactive_pms.end());
-			for (physical_machine_id_iterator pm_id_it = inactive_pms.begin(); pm_id_it != pm_id_end_it; ++pm_id_it)
 			{
-				physical_machine_pointer ptr_pm(pm_id_it->second);
+				physical_machine_id_iterator pm_id_end_it(inactive_pms.end());
+				for (physical_machine_id_iterator pm_id_it = inactive_pms.begin(); pm_id_it != pm_id_end_it; ++pm_id_it)
+				{
+					physical_machine_pointer ptr_pm(pm_id_it->second);
 
-				ptr_pm->power_off();
+					ptr_pm->power_off();
+				}
 			}
 		}
 		else
 		{
 			::std::clog << "[Warning] Control not application: failed to solve optimization problem." << ::std::endl;
+			++fail_count_;
 		}
 
-		DCS_DEBUG_TRACE("(" << this << ") END Do Process CONTROL event (Clock: " << ctx.simulated_time() << ")");
+		DCS_DEBUG_TRACE("(" << this << ") END Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")");
 	}
 
 	//@} Interface Member Functions
@@ -828,8 +936,24 @@ class minlp_migration_controller: public base_migration_controller<TraitsT>
 	private: real_type wp_;
 	private: real_type wm_;
 	private: real_type ws_;
+	private: real_type ewma_smooth_;
+	private: uint_type count_;
+	private: uint_type fail_count_;
 	private: statistic_pointer ptr_cost_;
-};
+	private: virtual_machine_utilization_map vm_util_map_;
+}; // minlp_migration_controller
+
+template <typename TraitsT>
+const typename minlp_migration_controller<TraitsT>::real_type minlp_migration_controller<TraitsT>::default_power_cost_weight(1);
+
+template <typename TraitsT>
+const typename minlp_migration_controller<TraitsT>::real_type minlp_migration_controller<TraitsT>::default_migration_cost_weight(1);
+
+template <typename TraitsT>
+const typename minlp_migration_controller<TraitsT>::real_type minlp_migration_controller<TraitsT>::default_share_cost_weight(1);
+
+template <typename TraitsT>
+const typename minlp_migration_controller<TraitsT>::real_type minlp_migration_controller<TraitsT>::default_ewma_smoothing_factor(0.70);
 
 }} // Namespace dcs::eesim
 

@@ -3,6 +3,7 @@
 
 
 #include <cstddef>
+#include <dcs/math/traits/float.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
 # include <iostream>
 #include <map>
@@ -76,11 +77,16 @@ class virtual_machines_placement
 		virtual_machine_identifier_type vm_id = vm.id();
 
 DCS_DEBUG_TRACE("Is VM " << vm_id << " placeable into PM " << pm_id << "?");//XXX
+::std::cerr << "Is VM " << vm_id << " placeable into PM " << pm_id << "?" << ::std::endl;//XXX
 DCS_DEBUG_TRACE("Wanted space");//XXX
+::std::cerr << "Wanted space" << ::std::endl;//XXX
+#if defined(DCS_DEBUG) && defined(DCS_DEBUG_LEVEL) && DCS_DEBUG_LEVEL > 0
 for (ForwardIterT share_it = first_share; share_it != last_share; ++share_it)//XXX
 {//XXX
 	DCS_DEBUG_TRACE("Wanted space for resource " << share_it->first << ": " << share_it->second);//XXX
+	::std::cerr << "Wanted space for resource " << share_it->first << ": " << share_it->second << ::std::endl;//XXX
 }//XXX
+#endif // DCS_DEBUG
 //		share_container wanted_shares(first_share, last_share);
 		share_container free_shares;
 		share_container wanted_shares;
@@ -92,10 +98,12 @@ for (ForwardIterT share_it = first_share; share_it != last_share; ++share_it)//X
 			physical_resource_category category = first_share->first;
 			real_type max_share = pm.resource(category)->utilization_threshold();
 			real_type wanted_share = first_share->second;
-			if (wanted_share > max_share)
+			if (::dcs::math::float_traits<real_type>::definitely_greater(wanted_share, max_share))
 			{
 DCS_DEBUG_TRACE("Lack of Free space for resource " << category << " -> Max Available: " << max_share << " - Requested: " << wanted_share);//XXX
+::std::cerr << "Lack of Free space for resource " << category << " -> Max Available: " << max_share << " - Requested: " << wanted_share << ::std::endl;//XXX
 DCS_DEBUG_TRACE("FALSE");//XXX
+::std::cerr << "FALSE" << ::std::endl;//XXX
 				return false;
 			}
 //
@@ -134,7 +142,9 @@ DCS_DEBUG_TRACE("FALSE");//XXX
 					if ((wanted_shares.count(category) > 0 && free_shares[category] < wanted_shares[category]) || free_shares[category] <= 0)
 					{
 DCS_DEBUG_TRACE("Lack of Free space for resource " << category << " -> Available: " << free_shares[category] << " - Requested: " << wanted_shares[category]);//XXX
+::std::cerr << "Lack of Free space for resource " << category << " -> Available: " << free_shares[category] << " - Requested: " << wanted_shares[category] << ::std::endl;//XXX
 DCS_DEBUG_TRACE("FALSE");//XXX
+::std::cerr << "FALSE" << ::std::endl;//XXX
 						return false;
 					}
 				}
@@ -142,11 +152,16 @@ DCS_DEBUG_TRACE("FALSE");//XXX
 		}
 
 DCS_DEBUG_TRACE("Free space");//XXX
+::std::cerr << "Free space" << ::std::endl;//XXX
+#if defined(DCS_DEBUG) && defined(DCS_DEBUG_LEVEL) && DCS_DEBUG_LEVEL > 0
 for (share_iterator share_it = free_shares.begin(); share_it != free_shares.end(); ++share_it)//XXX
 {//XXX
 	DCS_DEBUG_TRACE("Free space for resource " << share_it->first << "-> Before: " << share_it->second << " - After: " << (share_it->second-wanted_shares[share_it->first]));//XXX
+	::std::cerr << "Free space for resource " << share_it->first << "-> Before: " << share_it->second << " - After: " << (share_it->second-wanted_shares[share_it->first]) << ::std::endl;//XXX
 }//XXX
 DCS_DEBUG_TRACE("TRUE");//XXX
+::std::cerr << "TRUE" << ::std::endl;//XXX
+#endif // DCS_DEBUG
 		return true;
 	}
 

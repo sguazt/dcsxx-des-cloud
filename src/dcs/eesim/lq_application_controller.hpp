@@ -1378,7 +1378,7 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 							else
 							{
 #ifdef DCS_DEBUG
-								::std::clog << "[Warning] Optimal share is negative; adjusted to " << ::std::max(ptr_vm->resource_share(res_category), default_min_share_); << "." << ::std::endl;
+								::std::clog << "[Warning] Optimal share is negative; adjusted to " << ::std::max(ptr_vm->resource_share(res_category), default_min_share_) << "." << ::std::endl;
 #endif // DCS_DEBUG
 								new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
 							}
@@ -1547,7 +1547,7 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 							else
 							{
 #ifdef DCS_DEBUG
-								::std::clog << "[Warning] Optimal share is negative; adjusted to " << ::std::max(ptr_vm->resource_share(res_category), default_min_share_); << "." << ::std::endl;
+								::std::clog << "[Warning] Optimal share is negative; adjusted to " << ::std::max(ptr_vm->resource_share(res_category), default_min_share_) << "." << ::std::endl;
 #endif // DCS_DEBUG
 								new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
 							}
