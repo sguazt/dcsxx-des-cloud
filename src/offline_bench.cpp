@@ -587,6 +587,16 @@ class benchmark
 						);
 					tier_stat_map_[ptr_app->id()][tier_id].push_back(ptr_stat);
 				}
+				// Utilization - Mean estimator
+				ptr_stat = make_analyzable_statistic(
+						::dcs::des::mean_estimator<real_type,uint_type>(conf_level),
+						*dynamic_cast< ::dcs::des::replications::engine<real_type,uint_type>* >(ptr_des_eng.get())
+					);
+				ptr_app->simulation_model().tier_statistic(
+						tier_id,
+						::dcs::eesim::utilization_performance_measure,
+						ptr_stat
+					);
 			}
 
 //			// Register some DES event hooks
