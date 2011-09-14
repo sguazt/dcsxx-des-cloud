@@ -94,6 +94,12 @@ class base_physical_machine_simulation_model
 	}
 
 
+	public: void vm_migrate(virtual_machine_pointer const& ptr_vm, physical_machine_type& pm, bool pm_is_source)
+	{
+		do_vm_migrate(ptr_vm, pm, pm_is_source);
+	}
+
+
 	public: des_event_source_type& power_on_event_source()
 	{
 		return do_power_on_event_source();
@@ -142,6 +148,12 @@ class base_physical_machine_simulation_model
 	}
 
 
+	public: des_event_source_type const& vm_migrate_event_source() const
+	{
+		return do_vm_migrate_event_source();
+	}
+
+
 	public: output_statistic_type const& consumed_energy() const
 	{
 		return do_consumed_energy();
@@ -178,6 +190,9 @@ class base_physical_machine_simulation_model
 	private: virtual void do_vm_power_off(virtual_machine_pointer const& ptr_vm) = 0;
 
 
+	private: virtual void do_vm_migrate(virtual_machine_pointer const& ptr_vm, physical_machine_type& pm, bool pm_is_source) = 0;
+
+
 	private: virtual des_event_source_type& do_power_on_event_source() = 0;
 
 
@@ -200,6 +215,12 @@ class base_physical_machine_simulation_model
 
 
 	private: virtual des_event_source_type const& do_vm_power_off_event_source() const = 0;
+
+
+	private: virtual des_event_source_type& do_vm_migrate_event_source() = 0;
+
+
+	private: virtual des_event_source_type const& do_vm_migrate_event_source() const = 0;
 
 
 	private: virtual output_statistic_type const& do_consumed_energy() const = 0;

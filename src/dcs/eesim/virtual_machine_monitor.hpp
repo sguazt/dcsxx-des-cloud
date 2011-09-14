@@ -254,6 +254,8 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 			throw ::std::logic_error("[dcs::eesim::virtual_machine_monitor::migrate] target Physical Machine not powered on.")
 		);
 
+		ptr_pm_->simulation_model().vm_migrate(ptr_vm, pm, false);
+		pm.simulation_model().vm_migrate(ptr_vm, *ptr_pm_, true);
 		pm.vmm().create_domain(ptr_vm);
 		destroy_domain(ptr_vm);
 	}

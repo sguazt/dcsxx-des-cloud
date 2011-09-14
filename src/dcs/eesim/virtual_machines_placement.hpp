@@ -139,7 +139,14 @@ DCS_DEBUG_TRACE("FALSE");//XXX
 //						free_shares[category] = pm.resource(category)->utilization_threshold() - share;
 //					}
 
-					if ((wanted_shares.count(category) > 0 && free_shares[category] < wanted_shares[category]) || free_shares[category] <= 0)
+					if (
+							(
+								wanted_shares.count(category) > 0
+								&&
+								::dcs::math::float_traits<real_type>::definitely_less(free_shares[category], wanted_shares[category])
+							)
+							||
+							free_shares[category] <= 0)
 					{
 DCS_DEBUG_TRACE("Lack of Free space for resource " << category << " -> Available: " << free_shares[category] << " - Requested: " << wanted_shares[category]);//XXX
 ::std::cerr << "Lack of Free space for resource " << category << " -> Available: " << free_shares[category] << " - Requested: " << wanted_shares[category] << ::std::endl;//XXX

@@ -60,6 +60,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	  ptr_pwroff_evt_src_(new des_event_source_type(poweroff_event_source_name)),
 	  ptr_vm_pwron_evt_src_(new des_event_source_type(poweron_event_source_name)),
 	  ptr_vm_pwroff_evt_src_(new des_event_source_type(poweroff_event_source_name)),
+	  ptr_vm_migr_evt_src_(new des_event_source_type(poweroff_event_source_name)),
 	  ptr_energy_stat_(new mean_estimator_statistic_type()), //FIXME: statistic type (mean) is hard-coded
 	  ptr_uptime_stat_(new mean_estimator_statistic_type()), //FIXME: statistic type (mean) is hard-coded
 	  ptr_util_stat_(new mean_estimator_statistic_type()) //FIXME: statistic type (mean) is hard-coded
@@ -325,6 +326,46 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	}
 
 
+	private: void do_vm_migrate(virtual_machine_pointer const& ptr_vm, physical_machine_type& pm, bool pm_is_source)
+	{
+		DCS_DEBUG_ASSERT( ptr_vm );
+
+		registry_type& ref_reg = registry_type::instance();
+
+		ref_reg.des_engine_ptr()->schedule_event(
+				ptr_vm_migr_evt_src_,
+				ref_reg.des_engine_ptr()->simulated_time(),
+				ptr_vm//,FIXME
+//				dst_pm
+			);
+
+		if (pm_is_source)
+		{
+			ptr_vm->guest_system().application().simulation_model().request_tier_service_event_source(ptr_vm->guest_system().id()).disconnect(
+					::dcs::functional::bind(
+							&self_type::process_vm_request_service,
+							this,
+							::dcs::functional::placeholders::_1,
+							::dcs::functional::placeholders::_2,
+							ptr_vm
+						)
+				);
+		}
+		else
+		{
+			ptr_vm->guest_system().application().simulation_model().request_tier_service_event_source(ptr_vm->guest_system().id()).connect(
+					::dcs::functional::bind(
+							&self_type::process_vm_request_service,
+							this,
+							::dcs::functional::placeholders::_1,
+							::dcs::functional::placeholders::_2,
+							ptr_vm
+						)
+				);
+		}
+	}
+
+
 	private: des_event_source_type& do_power_on_event_source()
 	{
 		return *ptr_pwron_evt_src_;
@@ -370,6 +411,18 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	private: des_event_source_type const& do_vm_power_off_event_source() const
 	{
 		return *ptr_vm_pwroff_evt_src_;
+	}
+
+
+	private: des_event_source_type& do_vm_migrate_event_source()
+	{
+		return *ptr_vm_migr_evt_src_;
+	}
+
+
+	private: des_event_source_type const& do_vm_migrate_event_source() const
+	{
+		return *ptr_vm_migr_evt_src_;
 	}
 
 
@@ -592,6 +645,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	private: des_event_source_pointer ptr_pwroff_evt_src_;
 	private: des_event_source_pointer ptr_vm_pwron_evt_src_;
 	private: des_event_source_pointer ptr_vm_pwroff_evt_src_;
+	private: des_event_source_pointer ptr_vm_migr_evt_src_;
 	private: output_statistic_pointer ptr_energy_stat_;
 	private: output_statistic_pointer ptr_uptime_stat_;
 	private: output_statistic_pointer ptr_util_stat_;

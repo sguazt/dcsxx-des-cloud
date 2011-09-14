@@ -387,8 +387,12 @@ class data_center
 		{
 			ptr_pm->power_on();
 		}
+::std::cerr << "DATA CENTER MIGRATING VM: " << *ptr_vm << " FROM PM ID: " << ptr_vm->vmm().hosting_machine().id() << " TO PM ID: " << ptr_pm->id() << ::std::endl;
 		// Peform migration
-		ptr_pm->vmm().migrate(ptr_vm, *ptr_pm);
+		if (ptr_vm->vmm().hosting_machine().id() != ptr_pm->id())
+		{
+			ptr_vm->vmm().migrate(ptr_vm, *ptr_pm);
+		}
 		// Update placement
 		place_virtual_machine(ptr_vm,
 							  ptr_pm,
@@ -704,6 +708,8 @@ class data_center
 		{
 			ptr_pm->power_on();
 		}
+
+		//ptr_vm->wanted_resource_shares(...);//FIXME
 		ptr_vm->resource_shares(first_share, last_share);
 		ptr_pm->vmm().create_domain(ptr_vm);
 

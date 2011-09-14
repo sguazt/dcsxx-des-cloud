@@ -26,6 +26,7 @@
 #define DCS_EESIM_MINLP_MIGRATION_CONTROLLER_HPP
 
 
+#include <ctime>//XXX
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>
@@ -186,7 +187,7 @@ class ampl_minlp_output_consumer
 
 			::std::size_t pos(0);
 
-::std::cerr << "Read-AMPL>> " << line << " (old state: " << state << ")" <<::std::endl;//XXX
+//::std::cerr << "Read-AMPL>> " << line << " (old state: " << state << ")" <<::std::endl;//XXX
 			switch (state)
 			{
 				case skip_state:
@@ -242,22 +243,22 @@ class ampl_minlp_output_consumer
 					if (line.find("cost=") != ::std::string::npos)
 					{
 						::dcs::eesim::detail::ampl::parse_str(line.substr(pos+5), cost_);
-::std::cerr << "Read-AMPL>> COST: " << cost_ << ::std::endl;//XXX
+//::std::cerr << "Read-AMPL>> COST: " << cost_ << ::std::endl;//XXX
 					}
 					else if (line.find("x=") != ::std::string::npos)
 					{
 						::dcs::eesim::detail::ampl::parse_str(line.substr(pos+2), x_);
-::std::cerr << "Read-AMPL>> X: " << x_ << ::std::endl;//XXX
+//::std::cerr << "Read-AMPL>> X: " << x_ << ::std::endl;//XXX
 					}
 					else if (line.find("y=") != ::std::string::npos)
 					{
 						::dcs::eesim::detail::ampl::parse_str(line.substr(pos+2), y_);
-::std::cerr << "Read-AMPL>> Y: " << y_ << ::std::endl;//XXX
+//::std::cerr << "Read-AMPL>> Y: " << y_ << ::std::endl;//XXX
 					}
 					else if (line.find("s=") != ::std::string::npos)
 					{
 						::dcs::eesim::detail::ampl::parse_str(line.substr(pos+2), s_);
-::std::cerr << "Read-AMPL>> S: " << s_ << ::std::endl;//XXX
+//::std::cerr << "Read-AMPL>> S: " << s_ << ::std::endl;//XXX
 					}
 					else if (line.find("-- [/RESULT] --") != ::std::string::npos)
 					{
@@ -267,7 +268,7 @@ class ampl_minlp_output_consumer
 				case end_state:
 					break;
 			}
-::std::cerr << "Read-AMPL>> " << line << " (new state: " << state << ")" <<::std::endl;//XXX
+//::std::cerr << "Read-AMPL>> " << line << " (new state: " << state << ")" <<::std::endl;//XXX
 		}
 	}
 
@@ -373,7 +374,7 @@ class ampl_minlp_solver_impl
 		::std::string problem;
 		problem = make_problem(dc, wp, wm, ws, vm_util_map);
 
-::std::cerr << "Create problem: " << problem << ::std::endl;//XXX
+//::std::cerr << "Create problem: " << problem << ::std::endl;//XXX
 		// Solve the new problem
 		ampl_minlp_input_producer producer(problem);
 		ampl_minlp_output_consumer consumer;
@@ -384,15 +385,15 @@ class ampl_minlp_solver_impl
 				consumer
 			);
 
-::std::cerr << "AMPL terminated" << ::std::endl;//XXX
+//::std::cerr << "AMPL terminated" << ::std::endl;//XXX
 		// Build the new solution
 		if (consumer.solver_result() == detail::ampl_solved_result)
 		{
-::std::cerr << "AMPL has solved" << ::std::endl;//XXX
-::std::cerr << "Optimum cost: " << consumer.cost() << ::std::endl;//XXX
-::std::cerr << "Optimum x: " << consumer.physical_machine_selection() << ::std::endl;//XXX
-::std::cerr << "Optimum y: " << consumer.virtual_machine_placement() << ::std::endl;//XXX
-::std::cerr << "Optimum s: " << consumer.virtual_machine_shares() << ::std::endl;//XXX
+//::std::cerr << "AMPL has solved" << ::std::endl;//XXX
+//::std::cerr << "Optimum cost: " << consumer.cost() << ::std::endl;//XXX
+//::std::cerr << "Optimum x: " << consumer.physical_machine_selection() << ::std::endl;//XXX
+//::std::cerr << "Optimum y: " << consumer.virtual_machine_placement() << ::std::endl;//XXX
+//::std::cerr << "Optimum s: " << consumer.virtual_machine_shares() << ::std::endl;//XXX
 			solved_ = true;
 			cost_ = consumer.cost();
 
@@ -408,10 +409,10 @@ class ampl_minlp_solver_impl
 
 				for (::std::size_t j = 0; j < nvm; ++j)
 				{
-::std::cerr << "Is VM #" << j << " (ID: " << vm_ids_[j] << ") placed on PM #" << i << " (ID: " << pm_ids_[i] << ")? " << placement_flags(i,j) << ::std::endl;//XXX
+//::std::cerr << "Is VM #" << j << " (ID: " << vm_ids_[j] << ") placed on PM #" << i << " (ID: " << pm_ids_[i] << ")? " << placement_flags(i,j) << ::std::endl;//XXX
 					if (placement_flags(i,j))
 					{
-::std::cerr << "INSERTED"<< ::std::endl;//XXX
+//::std::cerr << "INSERTED"<< ::std::endl;//XXX
 						virtual_machine_identifier_type vm_id(vm_ids_[j]);
 
 						//FIXME: CPU resource category is hard-coded.
@@ -421,11 +422,11 @@ class ampl_minlp_solver_impl
 					}
 				}
 			}
-::std::cerr << "SOLVER PLACEMENT" << ::std::endl;//XXX
-for (typename physical_virtual_machine_map::const_iterator it = placement_.begin(); it != placement_.end(); ++it)
-{
-::std::cerr << "VM ID: " << (it->first.second) << " placed on PM ID: " << (it->first.first) << " with SHARE: " << ((it->second)[0].second) << ::std::endl;//XXX
-}
+//::std::cerr << "SOLVER PLACEMENT" << ::std::endl;//XXX
+//for (typename physical_virtual_machine_map::const_iterator it = placement_.begin(); it != placement_.end(); ++it)
+//{
+//::std::cerr << "VM ID: " << (it->first.second) << " placed on PM ID: " << (it->first.first) << " with SHARE: " << ((it->second)[0].second) << ::std::endl;//XXX
+//}
 		}
 	}
 
@@ -791,6 +792,10 @@ class minlp_migration_controller: public base_migration_controller<TraitsT>
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")");
 
+{//XXX
+::std::time_t t(::std::time(0));//XXX
+::std::cerr << "BEGIN Migration Manager Control @ " << ::std::asctime(::std::localtime(&t)) <<  " (" << static_cast< unsigned long >(t) << " secs since the Epoch" << ::std::endl;//XXX
+}//XXX
 		typedef typename minlp_solver_type::physical_virtual_machine_map physical_virtual_machine_map;
 		typedef typename physical_virtual_machine_map::const_iterator physical_virtual_machine_iterator;
 		typedef typename minlp_solver_type::resource_share_container resource_share_container;
@@ -841,8 +846,17 @@ class minlp_migration_controller: public base_migration_controller<TraitsT>
 //									::dcs::eesim::utilization_performance_measure
 //						);
 //				}
+				// Retrieve current resource utilization
 				new_value =  ptr_vm->guest_system().application().simulation_model().actual_tier_utilization(
 								ptr_vm->guest_system().id()
+					);
+				// Scale in terms of reference machine
+				new_value = scale_resource_share(
+								ptr_vm->vmm().hosting_machine().resource(cpu_resource_category)->capacity(),
+								ptr_vm->vmm().hosting_machine().resource(cpu_resource_category)->utilization_threshold(),
+								ptr_vm->guest_system().application().reference_resource(cpu_resource_category).capacity(),
+								ptr_vm->guest_system().application().reference_resource(cpu_resource_category).utilization_threshold(),
+								new_value
 					);
 				if (count_ > 1)
 				{
@@ -852,7 +866,7 @@ class minlp_migration_controller: public base_migration_controller<TraitsT>
 				{
 					vm_util_map_[ptr_vm->id()] = new_value;
 				}
-::std::cerr << "MIGRATION CONTROLLER >> VM: " << ptr_vm->id() << " - Utilization: " << new_value << " - Smoothed value: " << vm_util_map_[ptr_vm->id()] << ::std::endl;//XXX
+//::std::cerr << "MIGRATION CONTROLLER >> VM: " << ptr_vm->id() << " - Utilization: " << new_value << " - Smoothed value: " << vm_util_map_[ptr_vm->id()] << ::std::endl;//XXX
 			}
 		}
 
@@ -888,10 +902,10 @@ class minlp_migration_controller: public base_migration_controller<TraitsT>
 
 				physical_virtual_machine_map pm_vm_map(solver.placement());
 ::std::cerr << "CHECK SOLVER PLACEMENT" << ::std::endl;//XXX
-for (typename physical_virtual_machine_map::const_iterator it = solver.placement().begin(); it != solver.placement().end(); ++it)
-{
+for (typename physical_virtual_machine_map::const_iterator it = solver.placement().begin(); it != solver.placement().end(); ++it)//XXX
+{//XXX
 ::std::cerr << "VM ID: " << (it->first.second) << " placed on PM ID: " << (it->first.first) << " with SHARE: " << ((it->second)[0].second) << ::std::endl;//XXX
-}
+}//XXX
 				physical_virtual_machine_iterator pm_vm_end_it(pm_vm_map.end());
 				for (physical_virtual_machine_iterator pm_vm_it = pm_vm_map.begin(); pm_vm_it != pm_vm_end_it; ++pm_vm_it)
 				{
@@ -899,7 +913,7 @@ for (typename physical_virtual_machine_map::const_iterator it = solver.placement
 					virtual_machine_pointer ptr_vm(dc.virtual_machine_ptr(pm_vm_it->first.second));
 					resource_share_container shares(pm_vm_it->second);
 
-::std::cerr << "Going to migrate VM (" << pm_vm_it->first.second << "): " << *ptr_vm << " into PM (" << pm_vm_it->first.first << "): " << *ptr_pm << ::std::endl; //XXX
+//::std::cerr << "Going to migrate VM (" << pm_vm_it->first.second << "): " << *ptr_vm << " into PM (" << pm_vm_it->first.first << "): " << *ptr_pm << ::std::endl; //XXX
 					dc.migrate_virtual_machine(ptr_vm, ptr_pm, shares.begin(), shares.end());
 
 					if (inactive_pms.count(ptr_pm->id()) > 0)
@@ -926,6 +940,10 @@ for (typename physical_virtual_machine_map::const_iterator it = solver.placement
 			++fail_count_;
 		}
 
+{//XXX
+::std::time_t t(::std::time(0));//XXX
+::std::cerr << "END Migration Manager Control @ " << ::std::asctime(::std::localtime(&t)) <<  " (" << static_cast< unsigned long >(t) << " secs since the Epoch" << ::std::endl;//XXX
+}//XXX
 		DCS_DEBUG_TRACE("(" << this << ") END Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")");
 	}
 
