@@ -418,24 +418,10 @@ class ampl_minlp_solver_impl
 		// # of machines
 		oss << "param ni := " << n_pms << ";" << ::std::endl;
 
-		// Create the set of active virtual machines
-		// An active virtual machine is a virtual machine:
-		// * that is powered on
-		vm_container active_vms;
-		for (::std::size_t i = 0; i < n_pms; ++i)
-		{
-			physical_machine_pointer ptr_pm(pms[i]);
+		// Create the set of all virtual machines
+		vm_container vms(dc.virtual_machines());
 
-			if (ptr_pm->power_state() != powered_on_power_status)
-			{
-				continue;
-			}
-
-			vm_container on_vms = ptr_pm->vmm().virtual_machines(powered_on_power_status);
-			active_vms.insert(active_vms.end(), on_vms.begin(), on_vms.end());
-		}
-
-		::std::size_t n_vms(active_vms.size());
+		::std::size_t n_vms(vms.size());
 
 		pm_ids_ = physical_machine_identifier_container(n_pms);
 		vm_ids_ = virtual_machine_identifier_container(n_vms);
@@ -475,7 +461,7 @@ class ampl_minlp_solver_impl
 		oss << "param: Cr ur Srmin := " << ::std::endl;
 		for (::std::size_t j = 0; j < n_vms; ++j)
 		{
-			virtual_machine_pointer ptr_vm(active_vms[j]);
+			virtual_machine_pointer ptr_vm(vms[j]);
 
 			vm_ids_[j] = ptr_vm->id();
 			application_type const& app(ptr_vm->guest_system().application());
@@ -536,10 +522,13 @@ class ampl_minlp_solver_impl
 			<< "param c1{I};"
 			<< "param c2{I};"
 			<< "param r{I};"
-			<< "param ur{J} >= 0, <= 1;"
+			//<< "param ur{J} >= 0, <= 1;"
+			<< "param ur{J} >= 0;"
 			<< "param Cr{J} >= 0;"
-			<< "param Smax{I} >= 0, <= 1;"
-			<< "param Srmin{J} >= 0, <= 1;"
+			//<< "param Smax{I} >= 0, <= 1;"
+			<< "param Smax{I} >= 0;"
+			//<< "param Srmin{J} >= 0, <= 1;"
+			<< "param Srmin{J} >= 0;"
 			<< "param C{I} >= 0;"
 			<< "param wp >= 0 default 0;"
 			<< "param ws >= 0 default 0;"
@@ -549,7 +538,7 @@ class ampl_minlp_solver_impl
 			<< "var x{I} binary;"
 			<< "var y{I,J} binary;"
 			<< "var s{I,J} >= 0, <= 1;"
-			<< "minimize cost: wwp * sum{i in I} x[i]*(c0[i] + c1[i]*(sum{j in J} y[i,j]*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps))) + c2[i]*(sum{j in J} (y[i,j]+eps)*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps)))^r[i]) wws * sum{i in I, j in J} ((s[i,j]*C[i]/Cr[j]-1)^2)*y[i,j];"
+			<< "minimize cost: wwp * sum{i in I} x[i]*(c0[i] + c1[i]*(sum{j in J} y[i,j]*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps))) + c2[i]*(sum{j in J} (y[i,j]+eps)*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps)))^r[i]) + wws * sum{i in I, j in J} ((s[i,j]*C[i]/Cr[j]-1)^2)*y[i,j];"
 			<< "subject to one_vm_per_mach{j in J}: sum{i in I} y[i,j] = 1;"
 			<< "subject to vm_on_active_mach1{i in I, j in J}: y[i,j] <= x[i];"
 			<< "subject to vm_on_active_mach2{i in I}: sum{j in J} y[i,j] >= x[i];"
