@@ -597,6 +597,7 @@ class benchmark
 						::dcs::eesim::utilization_performance_measure,
 						ptr_stat
 					);
+				tier_stat_map_[ptr_app->id()][tier_id].push_back(ptr_stat);
 			}
 
 //			// Register some DES event hooks
