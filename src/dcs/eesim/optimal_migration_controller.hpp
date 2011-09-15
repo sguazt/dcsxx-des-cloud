@@ -655,10 +655,13 @@ class ampl_minlp_solver_impl
 		    << "param c2{I};"
 		    << "param r{I};"
 		    << "param mc{I,J} >= 0;"
-		    << "param ur{J} >= 0, <= 1;"
+		    //<< "param ur{J} >= 0, <= 1;"
+		    << "param ur{J} >= 0;"
 		    << "param Cr{J} >= 0;"
-		    << "param Smax{I} >= 0, <= 1;"
-		    << "param Srmin{J} >= 0, <= 1;"
+		    //<< "param Smax{I} >= 0, <= 1;"
+		    << "param Smax{I} >= 0;"
+		    //<< "param Srmin{J} >= 0, <= 1;"
+		    << "param Srmin{J} >= 0;"
 		    << "param C{I} >= 0;"
 		    << "param wp >= 0 default 0;"
 		    << "param wm >= 0 default 0;"
@@ -795,7 +798,8 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 
 {//XXX
 ::std::time_t t(::std::time(0));//XXX
-::std::cerr << "BEGIN Migration Manager Control @ " << ::std::asctime(::std::localtime(&t)) <<  " (" << static_cast< unsigned long >(t) << " secs since the Epoch" << ::std::endl;//XXX
+::std::string st(::std::asctime(::std::localtime(&t)));
+::std::cerr << "[optimal_migration_controller] BEGIN Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << " - Fail-Count: " << fail_count_ << " - Real-Clock: " << st.substr(0, st.size()-1) <<  " (" << static_cast< unsigned long >(t) << " secs since the Epoch" << "))" << ::std::endl;//XXX
 }//XXX
 		typedef typename minlp_solver_type::physical_virtual_machine_map physical_virtual_machine_map;
 		typedef typename physical_virtual_machine_map::const_iterator physical_virtual_machine_iterator;
@@ -937,13 +941,14 @@ for (typename physical_virtual_machine_map::const_iterator it = solver.placement
 		}
 		else
 		{
-			::std::clog << "[Warning] Control not application: failed to solve optimization problem." << ::std::endl;
+			::std::clog << "[Warning:optim_migr_ctrl] Failed to solve optimization problem." << ::std::endl;
 			++fail_count_;
 		}
 
 {//XXX
 ::std::time_t t(::std::time(0));//XXX
-::std::cerr << "END Migration Manager Control @ " << ::std::asctime(::std::localtime(&t)) <<  " (" << static_cast< unsigned long >(t) << " secs since the Epoch" << ::std::endl;//XXX
+::std::string st(::std::asctime(::std::localtime(&t)));
+::std::cerr << "[optimal_migration_controller] END Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << " - Fail-Count: " << fail_count_ << " - Real-Clock: " << st.substr(0, st.size()-1) <<  " (" << static_cast< unsigned long >(t) << " secs since the Epoch" << "))" << ::std::endl;//XXX
 }//XXX
 		DCS_DEBUG_TRACE("(" << this << ") END Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")");
 	}
