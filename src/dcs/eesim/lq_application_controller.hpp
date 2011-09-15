@@ -857,7 +857,10 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << rt << " (aggregated: " << ptr_stat->
 //		typedef typename category_statistic_container_container::const_iterator tier_iterator;
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")");
+if ((count_ % 1000) == 0)//XXX
+{//XXX
 ::std::cerr << "APP: " << this->application().id() << " - BEGIN Process CONTROL event -- Actual Output: " << measures_.at(response_time_performance_measure)->estimate() << " (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")" << ::std::endl;//XXX
+}//XXX
 
 		if (!ready_)
 		{
@@ -1158,13 +1161,13 @@ DCS_DEBUG_TRACE("phi=" << ptr_ident_strategy_->phi());//XXX
 
 				if (!ublasx::all(ublasx::isfinite(ptr_ident_strategy_->Theta_hat())))
 				{
-					::std::clog << "[Warning] Unable to estimate system parameters: infinite values in system parameters." << ::std::endl;
+					::std::clog << "[Warning:lq_app_ctrl] Unable to estimate system parameters: infinite values in system parameters." << ::std::endl;
 					ok = false;
 				}
 			}
 			catch (::std::exception const& e)
 			{
-				::std::clog << "[Warning] Unable to estimate system parameters: " << e.what() << "." << ::std::endl;
+				::std::clog << "[Warning:lq_app_ctrl] Unable to estimate system parameters: " << e.what() << "." << ::std::endl;
 				DCS_DEBUG_TRACE( "Caught exception: " << e.what() );
 
 				ok = false;
@@ -1246,7 +1249,7 @@ DCS_DEBUG_TRACE("u= " << u_);//XXX
 				}
 				catch (::std::exception const& e)
 				{
-					::std::clog << "[Warning] Unable to compute control input: " << e.what() << "." << ::std::endl;
+					::std::clog << "[Warning:lq_app_ctrl] Unable to compute control input: " << e.what() << "." << ::std::endl;
 					DCS_DEBUG_TRACE( "Caught exception: " << e.what() );
 
 					ok = false;
@@ -1257,7 +1260,7 @@ DCS_DEBUG_TRACE("u= " << u_);//XXX
 //				}
 //				catch (::std::exception const& e)
 //				{
-//					::std::clog << "[Warning] Unable to compute control input." << ::std::endl;
+//					::std::clog << "[Warning:lq_app_ctrl] Unable to compute control input." << ::std::endl;
 //					DCS_DEBUG_TRACE( "Caught exception: " << e.what() );
 //
 //					ok = false;
@@ -1366,11 +1369,11 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 #ifdef DCS_DEBUG
 								if (new_share < default_min_share_)
 								{
-									::std::clog << "[Warning] Optimal share too small; adjusted to " << default_min_share_ << "." << ::std::endl;
+									::std::clog << "[Warning:lq_app_ctrl] Optimal share too small; adjusted to " << default_min_share_ << "." << ::std::endl;
 								}
 								if (new_share > 1)
 								{
-									::std::clog << "[Warning] Optimal share too bug; adjusted to 1." << ::std::endl;
+									::std::clog << "[Warning:lq_app_ctrl] Optimal share too big; adjusted to 1." << ::std::endl;
 								}
 #endif // DCS_DEBUG
 								new_share = ::std::min(::std::max(new_share, default_min_share_), static_cast<real_type>(1));
@@ -1378,7 +1381,7 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 							else
 							{
 #ifdef DCS_DEBUG
-								::std::clog << "[Warning] Optimal share is negative; adjusted to " << ::std::max(ptr_vm->resource_share(res_category), default_min_share_) << "." << ::std::endl;
+								::std::clog << "[Warning:lq_app_ctrl] Optimal share is negative; adjusted to " << ::std::max(ptr_vm->resource_share(res_category), default_min_share_) << "." << ::std::endl;
 #endif // DCS_DEBUG
 								new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
 							}
@@ -1482,7 +1485,7 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 						{
 							++ctrl_fail_count_;
 							ok = false;
-							::std::clog << "[Warning] Control not applied for Application '" << app.id() << "': failed to find suitable control inputs." << ::std::endl;
+							::std::clog << "[Warning:lq_app_ctrl] Control not applied for Application '" << app.id() << "': failed to find suitable control inputs." << ::std::endl;
 						}
 					}
 					else
@@ -1535,11 +1538,11 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 #ifdef DCS_DEBUG
 								if (new_share < default_min_share_)
 								{
-									::std::clog << "[Warning] Optimal share too small; adjusted to " << default_min_share_ << "." << ::std::endl;
+									::std::clog << "[Warning:lq_app_ctrl] Optimal share too small; adjusted to " << default_min_share_ << "." << ::std::endl;
 								}
 								if (new_share > 1)
 								{
-									::std::clog << "[Warning] Optimal share too bug; adjusted to 1." << ::std::endl;
+									::std::clog << "[Warning:lq_app_ctrl] Optimal share too big; adjusted to 1." << ::std::endl;
 								}
 #endif // DCS_DEBUG
 								new_share = ::std::min(::std::max(new_share, default_min_share_), static_cast<real_type>(1));
@@ -1547,7 +1550,7 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 							else
 							{
 #ifdef DCS_DEBUG
-								::std::clog << "[Warning] Optimal share is negative; adjusted to " << ::std::max(ptr_vm->resource_share(res_category), default_min_share_) << "." << ::std::endl;
+								::std::clog << "[Warning:lq_app_ctrl] Optimal share is negative; adjusted to " << ::std::max(ptr_vm->resource_share(res_category), default_min_share_) << "." << ::std::endl;
 #endif // DCS_DEBUG
 								new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
 							}
@@ -1582,7 +1585,7 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 				else
 				{
 					++ctrl_fail_count_;
-					::std::clog << "[Warning] Control not applied for Application '" << app.id() << "': failed to solve the control problem." << ::std::endl;
+					::std::clog << "[Warning:lq_app_ctrl] Control not applied for Application '" << app.id() << "': failed to solve the control problem." << ::std::endl;
 
 #ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
 					// Dump (fake) predicted tier resource share
@@ -1601,7 +1604,7 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 				ptr_ident_strategy_->reset();
 
 				++ident_fail_count_;
-				::std::clog << "[Warning] Control not applied for Application '" << app.id() << "': failed to solve the identification problem." << ::std::endl;
+				::std::clog << "[Warning:lq_app_ctrl] Control not applied for Application '" << app.id() << "': failed to solve the identification problem." << ::std::endl;
 			}
 		}
 		else
@@ -1645,9 +1648,12 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 		reset_measures();
 
 		DCS_DEBUG_TRACE("APP: " << app.id() << " - Control stats: Count: " << count_ << " - Identification Failure Count: " << ident_fail_count_ << " - Control Failures Count: " << ctrl_fail_count_);
-::std::cerr << "APP: " << app.id() << " - Control stats: Count: " << count_ << " - Identification Failure Count: " << ident_fail_count_ << " - Control Failures Count: " << ctrl_fail_count_ << ::std::endl;
-
+if ((count_ % 1000) == 0)//XXX
+{//XXX
+::std::cerr << "APP: " << app.id() << " - Control stats: Count: " << count_ << " - Identification Failure Count: " << ident_fail_count_ << " - Control Failures Count: " << ctrl_fail_count_ << ::std::endl;//XXX
 ::std::cerr << "APP: " << this->application().id() << " - END Process CONTROL event -- Actual Output: " << measures_.at(response_time_performance_measure)->estimate() << " (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")" << ::std::endl;//XXX
+}//XXX
+
 		DCS_DEBUG_TRACE("(" << this << ") END Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")");
 	}
 
@@ -2087,7 +2093,7 @@ class lqr_application_controller: public detail::lq_application_controller<Trait
 //		if (!::dcs::control::is_controllable(A, B))
 //		{
 //			//throw ::std::runtime_error("System (A,B) is not state-controllable");
-//			::std::clog << "[Warning] System (A,B) is not state-controllable [with A=" << A << " and B=" << B << "]." << ::std::endl;
+//			::std::clog << "[Warning:lq_app_ctrl] System (A,B) is not state-controllable [with A=" << A << " and B=" << B << "]." << ::std::endl;
 //		}
 		// Check: if (A,B) is stabilizable, then the assoicated DARE has a
 		//        positive semidefinite solution.
@@ -2095,7 +2101,7 @@ class lqr_application_controller: public detail::lq_application_controller<Trait
 		if (!::dcs::control::is_stabilizable(A, B, true))
 		{
 			//throw ::std::runtime_error("System (A,B) is not stabilizable (DARE cannot have a positive semidefinite solution).");
-			::std::clog << "[Warning] System (A,B) is not stabilizable (the associated DARE cannot have a positive semidefinite solution) [with A=" << A << " and B=" << B << "]." << ::std::endl;
+			::std::clog << "[Warning:lq_app_ctrl] System (A,B) is not stabilizable (the associated DARE cannot have a positive semidefinite solution) [with A=" << A << " and B=" << B << "]." << ::std::endl;
 		}
 //		// Check: if (A,B) controllable and (Q,A) observable, then the
 //		//        associated DARE has a unique and stabilizing solution such
@@ -2106,7 +2112,7 @@ class lqr_application_controller: public detail::lq_application_controller<Trait
 //		if (!::dcs::control::is_observable(A, controller_.Q()))
 //		{
 //			//throw ::std::runtime_error("System (A,Q) is not observable (closed-loop system will not be stable).");
-//			::std::clog << "[Warning] System (Q,A) is not observable (closed-loop system will not be stable) [with " << A << " and B=" << B << "]." << ::std::endl;
+//			::std::clog << "[Warning:lq_app_ctrl] System (Q,A) is not observable (closed-loop system will not be stable) [with " << A << " and B=" << B << "]." << ::std::endl;
 //		}
 		// Check: if (A,B) stabilizable and (Q,A) detectable, then the
 		//        associated DARE has a unique and stabilizing solution such
@@ -2117,7 +2123,7 @@ class lqr_application_controller: public detail::lq_application_controller<Trait
 		if (!::dcs::control::is_detectable(A, controller_.Q(), true))
 		{
 			//throw ::std::runtime_error("System (Q,A) is not detectable (closed-loop system will not be stable).");
-			::std::clog << "[Warning] System (Q,A) is not detectable (closed-loop system will not be stable) [with " << A << " and B=" << B << "]." << ::std::endl;
+			::std::clog << "[Warning:lq_app_ctrl] System (Q,A) is not detectable (closed-loop system will not be stable) [with " << A << " and B=" << B << "]." << ::std::endl;
 		}
 
 
