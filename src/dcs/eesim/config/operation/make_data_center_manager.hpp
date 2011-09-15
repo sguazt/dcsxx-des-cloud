@@ -12,8 +12,9 @@
 #include <dcs/eesim/data_center.hpp>
 #include <dcs/eesim/data_center_manager.hpp>
 #include <dcs/eesim/first_fit_initial_placement_strategy.hpp>
-#include <dcs/eesim/minlp_migration_controller.hpp>
 #include <dcs/eesim/first_fit_scaleout_initial_placement_strategy.hpp>
+#include <dcs/eesim/optimal_initial_placement_strategy.hpp>
+#include <dcs/eesim/optimal_migration_controller.hpp>
 #include <dcs/memory.hpp>
 #include <stdexcept>
 
@@ -69,6 +70,15 @@ template <typename TraitsT, typename RealT>
 				ptr_strategy = ::dcs::make_shared<strategy_impl_type>();
 			}
 			break;
+		case optimal_initial_placement_strategy:
+			{
+				typedef ::dcs::eesim::optimal_initial_placement_strategy<traits_type> strategy_impl_type;
+
+				// Note: there is nothing to configure
+
+				ptr_strategy = ::dcs::make_shared<strategy_impl_type>();
+			}
+			break;
 	}
 
 	ptr_strategy->reference_share_penalty(strategy_conf.ref_penalty);
@@ -90,10 +100,10 @@ template <typename TraitsT, typename RealT>
 
 	switch (controller_conf.category)
 	{
-		case minlp_migration_controller:
+		case optimal_migration_controller:
 			{
-				//typedef typename controller_config_type::minlp_migration_controller_config_type controller_config_impl_type;
-				typedef ::dcs::eesim::minlp_migration_controller<traits_type> controller_impl_type;
+				//typedef typename controller_config_type::optimal_migration_controller_config_type controller_config_impl_type;
+				typedef ::dcs::eesim::optimal_migration_controller<traits_type> controller_impl_type;
 
 				//controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
 
@@ -104,7 +114,7 @@ template <typename TraitsT, typename RealT>
 			break;
 		case dummy_migration_controller:
 			{
-				//typedef typename controller_config_type::minlp_migration_controller_config_type controller_config_impl_type;
+				//typedef typename controller_config_type::dummy_migration_controller_config_type controller_config_impl_type;
 				typedef ::dcs::eesim::dummy_migration_controller<traits_type> controller_impl_type;
 
 				//controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);

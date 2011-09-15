@@ -1,5 +1,5 @@
 /**
- * \file src/dcs/eesim/minlp_migration_controller.hpp
+ * \file src/dcs/eesim/optimal_migration_controller.hpp
  *
  * \brief Migration Controller based on Mixed-Integer Nonlinear Programming.
  *
@@ -22,8 +22,8 @@
  * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
  */
 
-#ifndef DCS_EESIM_MINLP_MIGRATION_CONTROLLER_HPP
-#define DCS_EESIM_MINLP_MIGRATION_CONTROLLER_HPP
+#ifndef DCS_EESIM_OPTIMAL_MIGRATION_CONTROLLER_HPP
+#define DCS_EESIM_OPTIMAL_MIGRATION_CONTROLLER_HPP
 
 
 #include <ctime>//XXX
@@ -542,7 +542,7 @@ class ampl_minlp_solver_impl
 			fan2007_energy_model_impl_type const* ptr_energy_model_impl = dynamic_cast<fan2007_energy_model_impl_type const*>(&energy_model);
 			if (!ptr_energy_model_impl)
 			{
-				throw ::std::runtime_error("[dcs::eesim::detail::migration_controller::minlp_migration_controller_impl::make_problem] Unable to retrieve energy model.");
+				throw ::std::runtime_error("[dcs::eesim::detail::migration_controller::optimal_migration_controller_impl::make_problem] Unable to retrieve energy model.");
 			}
 
 			oss << (i+1)
@@ -701,7 +701,7 @@ class ampl_minlp_solver_impl
 
 
 template <typename TraitsT>
-class minlp_migration_controller: public base_migration_controller<TraitsT>
+class optimal_migration_controller: public base_migration_controller<TraitsT>
 {
 	private: typedef base_migration_controller<TraitsT> base_type;
 	public: typedef TraitsT traits_type;
@@ -735,7 +735,7 @@ class minlp_migration_controller: public base_migration_controller<TraitsT>
 	private: static const real_type default_ewma_smoothing_factor;
 
 
-	public: minlp_migration_controller()
+	public: optimal_migration_controller()
 	: base_type(),
 	  wp_(default_power_cost_weight),
 	  wm_(default_migration_cost_weight),
@@ -747,7 +747,7 @@ class minlp_migration_controller: public base_migration_controller<TraitsT>
 	}
 
 
-	public: minlp_migration_controller(data_center_pointer const& ptr_dc, real_type ts)
+	public: optimal_migration_controller(data_center_pointer const& ptr_dc, real_type ts)
 	: base_type(ptr_dc, ts),
 	  wp_(default_power_cost_weight),
 	  wm_(default_migration_cost_weight),
@@ -759,7 +759,7 @@ class minlp_migration_controller: public base_migration_controller<TraitsT>
 	}
 
 
-//	public: ~minlp_migration_controller()
+//	public: ~optimal_migration_controller()
 //	{
 //	}
 
@@ -960,21 +960,21 @@ for (typename physical_virtual_machine_map::const_iterator it = solver.placement
 	private: uint_type fail_count_;
 	private: statistic_pointer ptr_cost_;
 	private: virtual_machine_utilization_map vm_util_map_;
-}; // minlp_migration_controller
+}; // optimal_migration_controller
 
 template <typename TraitsT>
-const typename minlp_migration_controller<TraitsT>::real_type minlp_migration_controller<TraitsT>::default_power_cost_weight(1);
+const typename optimal_migration_controller<TraitsT>::real_type optimal_migration_controller<TraitsT>::default_power_cost_weight(1);
 
 template <typename TraitsT>
-const typename minlp_migration_controller<TraitsT>::real_type minlp_migration_controller<TraitsT>::default_migration_cost_weight(1);
+const typename optimal_migration_controller<TraitsT>::real_type optimal_migration_controller<TraitsT>::default_migration_cost_weight(1);
 
 template <typename TraitsT>
-const typename minlp_migration_controller<TraitsT>::real_type minlp_migration_controller<TraitsT>::default_share_cost_weight(1);
+const typename optimal_migration_controller<TraitsT>::real_type optimal_migration_controller<TraitsT>::default_share_cost_weight(1);
 
 template <typename TraitsT>
-const typename minlp_migration_controller<TraitsT>::real_type minlp_migration_controller<TraitsT>::default_ewma_smoothing_factor(0.70);
+const typename optimal_migration_controller<TraitsT>::real_type optimal_migration_controller<TraitsT>::default_ewma_smoothing_factor(0.70);
 
 }} // Namespace dcs::eesim
 
 
-#endif // DCS_EESIM_MINLP_MIGRATION_CONTROLLER_HPP
+#endif // DCS_EESIM_OPTIMAL_MIGRATION_CONTROLLER_HPP

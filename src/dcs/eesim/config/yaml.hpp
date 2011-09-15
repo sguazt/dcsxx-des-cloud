@@ -406,6 +406,10 @@ initial_placement_strategy_category text_to_initial_placement_strategy_category(
 	{
 		return first_fit_scaleout_initial_placement_strategy;
 	}
+	if (!istr.compare("optimal"))
+	{
+		return optimal_initial_placement_strategy;
+	}
 
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_initial_placement_strategy_category] Unknown init VM placement strategy category.");
 }
@@ -415,9 +419,9 @@ migration_controller_category text_to_migration_controller_category(::std::strin
 {
 	::std::string istr = ::dcs::string::to_lower_copy(str);
 
-	if (!istr.compare("minlp"))
+	if (!istr.compare("optimal"))
 	{
-		return minlp_migration_controller;
+		return optimal_migration_controller;
 	}
 	if (!istr.compare("none") || !istr.compare("dummy"))
 	{
@@ -2599,6 +2603,15 @@ void operator>>(::YAML::Node const& node, initial_placement_strategy_config<Real
 				strategy_conf.category_conf = strategy_conf_impl;
 			}
 			break;
+		case optimal_initial_placement_strategy:
+			{
+				typedef typename strategy_config_type::optimal_initial_placement_strategy_config_type strategy_config_impl_type;
+
+				strategy_config_impl_type strategy_conf_impl;
+
+				strategy_conf.category_conf = strategy_conf_impl;
+			}
+			break;
 	}
 
 	if (node.FindValue("ref-penalty"))
@@ -2625,9 +2638,9 @@ void operator>>(::YAML::Node const& node, migration_controller_config<RealT>& co
 
 	switch (controller_conf.category)
 	{
-		case minlp_migration_controller:
+		case optimal_migration_controller:
 			{
-				typedef typename controller_config_type::minlp_migration_controller_config_type controller_config_impl_type;
+				typedef typename controller_config_type::optimal_migration_controller_config_type controller_config_impl_type;
 
 				controller_config_impl_type controller_conf_impl;
 
