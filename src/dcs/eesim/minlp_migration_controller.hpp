@@ -38,6 +38,7 @@
 #include <dcs/des/mean_estimator.hpp>
 #include <dcs/des/statistic_categories.hpp>
 #include <dcs/eesim/base_migration_controller.hpp>
+#include <dcs/eesim/detail/ampl/solver_results.hpp>
 #include <dcs/eesim/detail/ampl/utility.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
@@ -56,7 +57,7 @@
 
 namespace dcs { namespace eesim {
 
-namespace detail { namespace /*<unnamed>*/ {
+namespace detail { namespace /*<unnamed>*/ { namespace migration_controller {
 
 //template <typename MachinePointerT>
 //struct active_machine_predicate: ::std::unary_function<MachinePointerT,bool>
@@ -70,58 +71,58 @@ namespace detail { namespace /*<unnamed>*/ {
 //};
 
 
-template <typename PhysicalMachinePtrT>
-struct physical_machine_comparator
-{
-	bool operator()(PhysicalMachinePtrT const& lhs, PhysicalMachinePtrT const& rhs)
-	{
-		return lhs->id() < rhs->id();
-	}
-};
+//template <typename PhysicalMachinePtrT>
+//struct physical_machine_comparator
+//{
+//	bool operator()(PhysicalMachinePtrT const& lhs, PhysicalMachinePtrT const& rhs)
+//	{
+//		return lhs->id() < rhs->id();
+//	}
+//};
 
 
-enum ampl_solver_results
-{
-	ampl_solved_result, // optimal solution found
-	ampl_maybe_solved_result, // optimal solution indicated, but error likely
-	ampl_infeasible_result, // constraints cannot be satisfied
-	ampl_unbounded_result, // objective can be improved without limit
-	ampl_limit_result, // stopped by a limit that you set (such as on iterations)
-	ampl_failure_result, // stopped by an error condition in the solver
-	ampl_unknown_result // fall-back
-};
-
-
-inline
-ampl_solver_results from_string(::std::string const& str)
-{
-	if (!str.compare("solved"))
-	{
-		return ampl_solved_result;
-	}
-	if (!str.compare("solved?"))
-	{
-		return ampl_maybe_solved_result;
-	}
-	if (!str.compare("infeasible"))
-	{
-		return ampl_infeasible_result;
-	}
-	if (!str.compare("unbounded"))
-	{
-		return ampl_unbounded_result;
-	}
-	if (!str.compare("limit"))
-	{
-		return ampl_limit_result;
-	}
-	if (!str.compare("failure"))
-	{
-		return ampl_failure_result;
-	}
-
-	return ampl_unknown_result;
-}
+//enum ampl_solver_results
+//{
+//	ampl_solved_result, // optimal solution found
+//	ampl_maybe_solved_result, // optimal solution indicated, but error likely
+//	ampl_infeasible_result, // constraints cannot be satisfied
+//	ampl_unbounded_result, // objective can be improved without limit
+//	ampl_limit_result, // stopped by a limit that you set (such as on iterations)
+//	ampl_failure_result, // stopped by an error condition in the solver
+//	ampl_unknown_result // fall-back
+//};
+//
+//
+//inline
+//ampl_solver_results from_string(::std::string const& str)
+//{
+//	if (!str.compare("solved"))
+//	{
+//		return ampl_solved_result;
+//	}
+//	if (!str.compare("solved?"))
+//	{
+//		return ampl_maybe_solved_result;
+//	}
+//	if (!str.compare("infeasible"))
+//	{
+//		return ampl_infeasible_result;
+//	}
+//	if (!str.compare("unbounded"))
+//	{
+//		return ampl_unbounded_result;
+//	}
+//	if (!str.compare("limit"))
+//	{
+//		return ampl_limit_result;
+//	}
+//	if (!str.compare("failure"))
+//	{
+//		return ampl_failure_result;
+//	}
+//
+//	return ampl_unknown_result;
+//}
 
 
 class ampl_minlp_input_producer
@@ -155,7 +156,7 @@ class ampl_minlp_output_consumer
 
 	public: ampl_minlp_output_consumer()
 	: solver_exit_code_(0),
-	  solver_result_(ampl_unknown_result),
+	  solver_result_(::dcs::eesim::detail::ampl::unknown_result),
 	  solver_result_code_(0),
 	  cost_(::std::numeric_limits<real_type>::infinity()),
 	  x_(),
@@ -213,7 +214,7 @@ class ampl_minlp_output_consumer
 						::std::string res;
 						::dcs::eesim::detail::ampl::parse_str(line.substr(pos+13), res);
 
-						solver_result_ = from_string(res);
+						solver_result_ = ::dcs::eesim::detail::ampl::solver_result_from_string(res);
 					}
 					else if ((pos = line.find("solve_result_num=")) != ::std::string::npos)
 					{
@@ -228,7 +229,7 @@ class ampl_minlp_output_consumer
 							state = out_analysis_state;
 							++num_solver_info;
 						}
-						else if (solver_result_ == ampl_solved_result && solver_result_code_ >= 0 && solver_result_code_ < 100)
+						else if (solver_result_ == ::dcs::eesim::detail::ampl::solved_result && solver_result_code_ >= 0 && solver_result_code_ < 100)
 						{
 							state = results_state;
 						}
@@ -279,7 +280,7 @@ class ampl_minlp_output_consumer
 	}
 
 
-	public: ampl_solver_results solver_result() const
+	public: ::dcs::eesim::detail::ampl::solver_results solver_result() const
 	{
 		return solver_result_;
 	}
@@ -316,7 +317,7 @@ class ampl_minlp_output_consumer
 
 
 	private: int_type solver_exit_code_;
-	private: ampl_solver_results solver_result_;
+	private: ::dcs::eesim::detail::ampl::solver_results solver_result_;
 	private: int_type solver_result_code_;
 	private: real_type cost_;
 	private: smallint_vector_type x_;
@@ -387,7 +388,7 @@ class ampl_minlp_solver_impl
 
 //::std::cerr << "AMPL terminated" << ::std::endl;//XXX
 		// Build the new solution
-		if (consumer.solver_result() == detail::ampl_solved_result)
+		if (consumer.solver_result() == ::dcs::eesim::detail::ampl::solved_result)
 		{
 //::std::cerr << "AMPL has solved" << ::std::endl;//XXX
 //::std::cerr << "Optimum cost: " << consumer.cost() << ::std::endl;//XXX
@@ -454,7 +455,7 @@ class ampl_minlp_solver_impl
 		// pre: 0 < idx <= size(pm_ids_)
 		DCS_ASSERT(
 				idx > 0 && idx < pm_ids_.size(),
-				throw ::std::invalid_argument("[dcs::eesim::detail::ampl_minlp_solver_impl::physical_machine_id] Bad index.")
+				throw ::std::invalid_argument("[dcs::eesim::detail::migration_controller::ampl_minlp_solver_impl::physical_machine_id] Bad index.")
 			);
 
 		return pm_ids_[idx-1];
@@ -466,7 +467,7 @@ class ampl_minlp_solver_impl
 		// pre: 0 < idx <= size(vm_ids_)
 		DCS_ASSERT(
 				idx > 0 && idx < vm_ids_.size(),
-				throw ::std::invalid_argument("[dcs::eesim::detail::ampl_minlp_solver_impl::virtual_machine_id] Bad index.")
+				throw ::std::invalid_argument("[dcs::eesim::detail::migration_controller::ampl_minlp_solver_impl::virtual_machine_id] Bad index.")
 			);
 
 		return vm_ids_[idx-1];
@@ -541,7 +542,7 @@ class ampl_minlp_solver_impl
 			fan2007_energy_model_impl_type const* ptr_energy_model_impl = dynamic_cast<fan2007_energy_model_impl_type const*>(&energy_model);
 			if (!ptr_energy_model_impl)
 			{
-				throw ::std::runtime_error("[dcs::eesim::detail::minlp_migration_controller_impl::make_problem] Unable to retrieve energy model.");
+				throw ::std::runtime_error("[dcs::eesim::detail::migration_controller::minlp_migration_controller_impl::make_problem] Unable to retrieve energy model.");
 			}
 
 			oss << (i+1)
@@ -696,7 +697,7 @@ class ampl_minlp_solver_impl
 	private: physical_virtual_machine_map placement_;
 }; // ampl_minlp_solver_impl
 
-}} // Namespace detail::<unnamed>
+}}} // Namespace detail::<unnamed>::migration_controller
 
 
 template <typename TraitsT>
@@ -718,7 +719,7 @@ class minlp_migration_controller: public base_migration_controller<TraitsT>
 	private: typedef virtual_machine<traits_type> virtual_machine_type;
 	private: typedef ::dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
 	private: typedef typename virtual_machine_type::application_tier_type application_tier_type;
-	private: typedef detail::ampl_minlp_solver_impl<traits_type> minlp_solver_type;
+	private: typedef detail::migration_controller::ampl_minlp_solver_impl<traits_type> minlp_solver_type;
 	private: typedef ::dcs::des::base_statistic<real_type,uint_type> statistic_type;
 	private: typedef ::dcs::des::mean_estimator<real_type,uint_type> statistic_impl_type;
 	private: typedef ::dcs::shared_ptr<statistic_type> statistic_pointer;
@@ -812,8 +813,8 @@ class minlp_migration_controller: public base_migration_controller<TraitsT>
 		{
 			typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
 			typedef typename virtual_machine_container::const_iterator virtual_machine_iterator;
-			typedef ::std::vector<statistic_pointer> statistic_container;
-			typedef typename statistic_container::const_iterator statistic_iterator;
+//			typedef ::std::vector<statistic_pointer> statistic_container;
+//			typedef typename statistic_container::const_iterator statistic_iterator;
 
 			virtual_machine_container vms(dc.virtual_machines());
 			virtual_machine_iterator vm_end_it(vms.end());
