@@ -398,7 +398,8 @@ class data_center
 							  ptr_pm,
 							  first_share,
 							  last_share,
-							  false);
+							  false,
+							  true);
 	}
 
 
@@ -709,8 +710,6 @@ class data_center
 			ptr_pm->power_on();
 		}
 
-		//ptr_vm->wanted_resource_shares(...);//FIXME
-		ptr_vm->resource_shares(first_share, last_share);
 		ptr_pm->vmm().create_domain(ptr_vm);
 
 		if (power_on)
@@ -726,6 +725,7 @@ class data_center
 			}
 			placement_.place(*ptr_vm, *ptr_pm, first_share, last_share);
 		}
+::std::cerr << "PLACEMENT>> VM: " << *ptr_vm << " - PM: " << *ptr_pm << " - SHARE: " << first_share->second << ::std::endl;//XXX
 	}
 
 

@@ -332,11 +332,15 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 
 		registry_type& ref_reg = registry_type::instance();
 
+		virtual_machine_migration_context<traits_type> evt_state;
+		evt_state.vm_id = ptr_vm->id();
+		evt_state.pm_id = pm.id();
+		evt_state.pm_is_source = pm_is_source;
+
 		ref_reg.des_engine_ptr()->schedule_event(
 				ptr_vm_migr_evt_src_,
 				ref_reg.des_engine_ptr()->simulated_time(),
-				ptr_vm//,FIXME
-//				dst_pm
+				evt_state
 			);
 
 		if (pm_is_source)

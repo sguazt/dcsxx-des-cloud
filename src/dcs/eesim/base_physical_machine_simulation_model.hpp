@@ -13,6 +13,23 @@
 namespace dcs { namespace eesim {
 
 template <typename TraitsT>
+struct virtual_machine_migration_context
+{
+	typedef TraitsT traits_type;
+	typedef typename traits_type::physical_machine_identifier_type physical_machine_identifier_type;
+	typedef typename traits_type::virtual_machine_identifier_type virtual_machine_identifier_type;
+
+	/// The identifier of the migrating VM.
+	virtual_machine_identifier_type vm_id;
+	/// The identifier of the physical machine involved in the migration.
+	physical_machine_identifier_type pm_id;
+	/// Flag telling if the involved physical machine is the source or
+	/// destination one.
+	bool pm_is_source;
+}; // virtual_machine_migration_context
+
+
+template <typename TraitsT>
 class base_physical_machine_simulation_model
 {
 	public: typedef TraitsT traits_type;
@@ -234,7 +251,7 @@ class base_physical_machine_simulation_model
 
 	private: physical_machine_pointer ptr_mach_;
 	private: power_status status_;
-};
+}; // base_physical_machine_simulation_model
 
 }} // Namespace dcs::eesim
 
