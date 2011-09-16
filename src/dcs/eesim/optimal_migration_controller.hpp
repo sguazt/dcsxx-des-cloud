@@ -871,7 +871,7 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 				{
 					vm_util_map_[ptr_vm->id()] = new_value;
 				}
-//::std::cerr << "MIGRATION CONTROLLER >> VM: " << ptr_vm->id() << " - Utilization: " << new_value << " - Smoothed value: " << vm_util_map_[ptr_vm->id()] << ::std::endl;//XXX
+::std::cerr << "MIGRATION CONTROLLER >> VM: " << ptr_vm->id() << " - Utilization: " << new_value << " - Smoothed value: " << vm_util_map_[ptr_vm->id()] << ::std::endl;//XXX
 			}
 		}
 
