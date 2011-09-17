@@ -1,10 +1,37 @@
+/**
+ * \file src/dcs/eesim/default_physical_machine_simulation_model.hpp
+ *
+ * \brief Simulation model class for physical machines.
+ *
+ * Copyright (C) 2009-2011  Distributed Computing System (DCS) Group, Computer
+ * Science Department - University of Piemonte Orientale, Alessandria (Italy).
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ */
+
 #ifndef DCS_EESIM_DEFAULT_PHYSICAL_MACHINE_SIMULATION_MODEL_HPP
 #define DCS_EESIM_DEFAULT_PHYSICAL_MACHINE_SIMULATION_MODEL_HPP
 
 
+#include <algorithm>
+#include <boost/icl/concept/interval.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/mean_estimator.hpp>
+#include <dcs/math/traits/float.hpp>
 #include <dcs/eesim/base_physical_machine_simulation_model.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/power_status.hpp>
@@ -13,12 +40,10 @@
 #include <dcs/eesim/user_request.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
+#include <map>
 #include <string>
-
-
-//FIXME:
-// - statistic type (mean estimator) is hard-coded
-//
+#include <utility>
+#include <vector>
 
 
 namespace dcs { namespace eesim {
@@ -38,12 +63,15 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	private: typedef typename base_type::des_event_type des_event_type;
 	private: typedef typename traits_type::des_engine_type des_engine_type;
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
+	//FIXME: statistic type (mean estimator) is hard-coded
 	private: typedef ::dcs::des::mean_estimator<real_type,uint_type> mean_estimator_statistic_type;
 	private: typedef registry<traits_type> registry_type;
 	private: typedef typename base_type::physical_machine_type physical_machine_type;
 	private: typedef typename base_type::virtual_machine_pointer virtual_machine_pointer;
-	private: typedef user_request<traits_type> user_request_type;
+	//private: typedef user_request<traits_type> user_request_type;
 	private: typedef resource_utilization_profile<traits_type> utilization_profile_type;
+	private: typedef typename traits_type::virtual_machine_identifier_type virtual_machine_identifier_type;
+	private: typedef ::std::map< virtual_machine_identifier_type, ::std::vector< ::std::pair<real_type,real_type> > > virtual_machine_hosting_time_map;
 
 
 	private: static const ::std::string poweron_event_source_name;
@@ -85,9 +113,9 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	private: void connect_to_event_sources()
 	{
 		// Connect to foreign event sources
-		registry_type& ref_reg = registry_type::instance();
+		registry_type& reg(registry_type::instance());
 
-		ref_reg.des_engine_ptr()->begin_of_sim_event_source().connect(
+		reg.des_engine().begin_of_sim_event_source().connect(
 			::dcs::functional::bind(
 				&self_type::process_begin_of_sim,
 				this,
@@ -95,7 +123,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 				::dcs::functional::placeholders::_2
 			)
 		);
-		ref_reg.des_engine_ptr()->system_initialization_event_source().connect(
+		reg.des_engine().system_initialization_event_source().connect(
 			::dcs::functional::bind(
 				&self_type::process_sys_init,
 				this,
@@ -103,7 +131,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 				::dcs::functional::placeholders::_2
 			)
 		);
-		ref_reg.des_engine_ptr()->system_finalization_event_source().connect(
+		reg.des_engine().system_finalization_event_source().connect(
 			::dcs::functional::bind(
 				&self_type::process_sys_finit,
 				this,
@@ -112,32 +140,32 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			)
 		);
 
-		// Connect to local event sources
-		ptr_pwron_evt_src_->connect(
-			::dcs::functional::bind(
-				&self_type::process_power_on,
-				this,
-				::dcs::functional::placeholders::_1,
-				::dcs::functional::placeholders::_2
-			)
-		);
-		ptr_pwroff_evt_src_->connect(
-			::dcs::functional::bind(
-				&self_type::process_power_off,
-				this,
-				::dcs::functional::placeholders::_1,
-				::dcs::functional::placeholders::_2
-			)
-		);
+//		// Connect to local event sources
+//		ptr_pwron_evt_src_->connect(
+//			::dcs::functional::bind(
+//				&self_type::process_power_on,
+//				this,
+//				::dcs::functional::placeholders::_1,
+//				::dcs::functional::placeholders::_2
+//			)
+//		);
+//		ptr_pwroff_evt_src_->connect(
+//			::dcs::functional::bind(
+//				&self_type::process_power_off,
+//				this,
+//				::dcs::functional::placeholders::_1,
+//				::dcs::functional::placeholders::_2
+//			)
+//		);
 	}
 
 
 	private: void disconnect_from_event_sources()
 	{
 		// Disconnect from foreign event sources
-		registry_type& ref_reg = registry_type::instance();
+		registry_type& reg(registry_type::instance());
 
-		ref_reg.des_engine_ptr()->begin_of_sim_event_source().disconnect(
+		reg.des_engine().begin_of_sim_event_source().disconnect(
 			::dcs::functional::bind(
 				&self_type::process_begin_of_sim,
 				this,
@@ -145,7 +173,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 				::dcs::functional::placeholders::_2
 			)
 		);
-		ref_reg.des_engine_ptr()->system_initialization_event_source().disconnect(
+		reg.des_engine().system_initialization_event_source().disconnect(
 			::dcs::functional::bind(
 				&self_type::process_sys_init,
 				this,
@@ -153,7 +181,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 				::dcs::functional::placeholders::_2
 			)
 		);
-		ref_reg.des_engine_ptr()->system_finalization_event_source().disconnect(
+		reg.des_engine().system_finalization_event_source().disconnect(
 			::dcs::functional::bind(
 				&self_type::process_sys_finit,
 				this,
@@ -165,7 +193,8 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 
 
 //FIXME: this may be wrong...review
-	private: void update_experiment_stats(des_engine_context_type& ctx)
+/*
+	private: void update_experiment_stats_old(des_engine_context_type& ctx)
 	{
 //		typedef typename physical_machine_type::vmm_type vmm_type;
 //		typedef typename vmm_type::virtual_machine_container vm_container;
@@ -230,6 +259,148 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		// Update uptime
 		uptime_ += ctx.simulated_time() - last_pwron_time_;
 	}
+*/
+
+
+/*
+	private: void update_experiment_stats()
+	{
+		registry_type& reg(registry_type::instance());
+
+		real_type cur_time(reg.des_engine().simulated_time());
+
+		// Update uptime
+
+		uptime_ += cur_time - last_pwron_time_;
+
+		// Update resource utilization profile
+
+		typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
+		typedef typename virtual_machine_container::const_iterator vm_iterator;
+		typedef user_request<traits_type> user_request_type;
+		typedef ::std::vector<user_request_type> request_container;
+		typedef typename request_container::const_iterator request_iterator;
+		typedef typename utilization_profile_type::const_iterator profile_iterator;
+		typedef typename utilization_profile_type::time_interval_type time_interval_type;
+
+		virtual_machine_container active_vms(this->machine().vmm().virtual_machines(powered_on_power_status));
+		time_interval_type last_uptime(utilization_profile_type::make_time_interval(last_pwron_time_, cur_time));
+		vm_iterator vm_end_it(active_vms.end());
+		for (vm_iterator vm_it = active_vms.begin(); vm_it != vm_end_it; ++vm_it)
+		{
+			virtual_machine_pointer ptr_vm(*vm_it);
+
+			// check: valid VM pointer (paranoid)
+			DCS_DEBUG_ASSERT( ptr_vm );
+
+			request_container reqs(ptr_vm->guest_system().application().simulation_model().tier_in_service_requests(ptr_vm->guest_system().id()));
+			request_iterator req_end_it(reqs.end());
+			for (request_iterator req_it = reqs.begin(); req_it != req_end_it; ++req_it)
+			{
+				user_request_type const& req(*req_it);
+				//FIXME: CPU resource category is hard-coded
+				physical_resource_category category(cpu_resource_category);
+
+				::std::vector<utilization_profile_type> profiles;
+				profiles = req.tier_utilization_profiles(ptr_vm->guest_system().id(), category);
+				if (profiles.size() > 0)
+				{
+					// The last profiles refers to the last visit (at this tier)
+					//utilization_profile_type const& profile(profiles.back());
+					utilization_profile_type profile(make_profile_from_intersection(profiles.back(), last_uptime));
+					profile_iterator profile_end_it(profile.end());
+					for (profile_iterator profile_it = profile.begin(); profile_it != profile_end_it; ++profile_it)
+					{
+						res_profile_map_[category](*profile_it);
+					}
+				}
+			}
+		}
+	}
+*/
+
+
+	private: void update_utilization_profile(virtual_machine_pointer const& ptr_vm)
+	{
+		DCS_DEBUG_ASSERT( ptr_vm );
+
+		DCS_DEBUG_ASSERT( vm_host_time_map_.count(ptr_vm->id()) > 0 );
+		DCS_DEBUG_ASSERT( vm_host_time_map_.at(ptr_vm->id()).size() > 0 );
+
+		typedef user_request<traits_type> user_request_type;
+		typedef ::std::vector<user_request_type> request_container;
+		typedef typename request_container::const_iterator request_iterator;
+		typedef typename utilization_profile_type::const_iterator profile_iterator;
+		typedef typename utilization_profile_type::time_interval_type time_interval_type;
+
+		registry_type& reg(registry_type::instance());
+
+		real_type cur_time(reg.des_engine().simulated_time());
+
+//		time_interval_type host_time(utilization_profile_type::make_time_interval(vm_host_time_map.at(ptr_vm->id()).back().first, vm_host_time_map.at(ptr_vm->id()).back().second));
+		time_interval_type host_time(utilization_profile_type::make_time_interval(vm_host_time_map_.at(ptr_vm->id()).back().first, ::std::min(vm_host_time_map_.at(ptr_vm->id()).back().second, cur_time)));
+		request_container reqs(ptr_vm->guest_system().application().simulation_model().tier_in_service_requests(ptr_vm->guest_system().id()));
+		request_iterator req_end_it(reqs.end());
+		for (request_iterator req_it = reqs.begin(); req_it != req_end_it; ++req_it)
+		{
+			user_request_type const& req(*req_it);
+
+			update_utilization_profile(ptr_vm, req);
+/*
+			//FIXME: CPU resource category is hard-coded
+			physical_resource_category category(cpu_resource_category);
+
+			::std::vector<utilization_profile_type> profiles;
+			profiles = req.tier_utilization_profiles(ptr_vm->guest_system().id(), category);
+			if (profiles.size() > 0)
+			{
+				// The last profiles refers to the last visit (at this tier)
+				//utilization_profile_type const& profile(profiles.back());
+				utilization_profile_type profile(make_profile_from_intersection(profiles.back(), host_time));
+				profile_iterator profile_end_it(profile.end());
+				for (profile_iterator profile_it = profile.begin(); profile_it != profile_end_it; ++profile_it)
+				{
+					res_profile_map_[category](*profile_it);
+				}
+			}
+*/
+		}
+	}
+
+
+	private: void update_utilization_profile(virtual_machine_pointer const& ptr_vm, user_request<traits_type> const& req)
+	{
+		DCS_DEBUG_ASSERT( ptr_vm );
+
+		DCS_DEBUG_ASSERT( vm_host_time_map_.count(ptr_vm->id()) > 0 );
+		DCS_DEBUG_ASSERT( vm_host_time_map_.at(ptr_vm->id()).size() > 0 );
+
+		typedef typename utilization_profile_type::const_iterator profile_iterator;
+		typedef typename utilization_profile_type::time_interval_type time_interval_type;
+
+		registry_type& reg(registry_type::instance());
+
+		real_type cur_time(reg.des_engine().simulated_time());
+
+//		time_interval_type host_time(utilization_profile_type::make_time_interval(vm_host_time_map.at(ptr_vm->id()).back().first, vm_host_time_map.at(ptr_vm->id()).back().second));
+		time_interval_type host_time(utilization_profile_type::make_time_interval(vm_host_time_map_.at(ptr_vm->id()).back().first, ::std::min(vm_host_time_map_.at(ptr_vm->id()).back().second, cur_time)));
+		//FIXME: CPU resource category is hard-coded
+		physical_resource_category category(cpu_resource_category);
+
+		::std::vector<utilization_profile_type> profiles;
+		profiles = req.tier_utilization_profiles(ptr_vm->guest_system().id(), category);
+		if (profiles.size() > 0)
+		{
+			// The last profiles refers to the last visit (at this tier)
+			//utilization_profile_type const& profile(profiles.back());
+			utilization_profile_type profile(make_profile_from_intersection(profiles.back(), host_time));
+			profile_iterator profile_end_it(profile.end());
+			for (profile_iterator profile_it = profile.begin(); profile_it != profile_end_it; ++profile_it)
+			{
+				res_profile_map_[category](*profile_it);
+			}
+		}
+	}
 
 
 	//@{ Interface Member Functions
@@ -242,27 +413,59 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 
 	private: void do_power_on()
 	{
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Power-On (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+
 		pwr_state_ = powered_on_power_status;
 
-		registry_type& ref_reg = registry_type::instance();
+		registry_type& reg(registry_type::instance());
 
-		ref_reg.des_engine_ptr()->schedule_event(
+		real_type cur_time(reg.des_engine().simulated_time());
+
+		// Update info for uptime
+		last_pwron_time_ = cur_time;
+
+		// Fire the power-on event
+		reg.des_engine().schedule_event(
 				ptr_pwron_evt_src_,
-				ref_reg.des_engine_ptr()->simulated_time()
+				cur_time
 			);
+
+		DCS_DEBUG_TRACE("(" << this << ") END Do Power-On (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 	}
 
 
 	private: void do_power_off()
 	{
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Power-Off (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+
+		// Power-off hosted VMs
+		typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
+		typedef typename virtual_machine_container::iterator virtual_machine_iterator;
+		virtual_machine_container vms(this->machine().vmm().virtual_machines());
+		virtual_machine_iterator vm_end_it(vms.end());
+		for (virtual_machine_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
+		{
+			virtual_machine_pointer ptr_vm(*vm_it);
+
+			this->machine().vmm().power_off(ptr_vm);
+		}
+
 		pwr_state_ = powered_off_power_status;
 
-		registry_type& ref_reg = registry_type::instance();
+		registry_type& reg(registry_type::instance());
 
-		ref_reg.des_engine_ptr()->schedule_event(
+		real_type cur_time(reg.des_engine().simulated_time());
+
+		// Update the uptime
+		uptime_ += cur_time - last_pwron_time_;
+
+		// Fire the power-off event
+		reg.des_engine().schedule_event(
 				ptr_pwroff_evt_src_,
-				ref_reg.des_engine_ptr()->simulated_time()
+				cur_time
 			);
+
+		DCS_DEBUG_TRACE("(" << this << ") END Do Power-Off (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 	}
 
 
@@ -280,11 +483,15 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 
 		ptr_vm->power_on();
 
-		registry_type& ref_reg = registry_type::instance();
+		registry_type& reg(registry_type::instance());
 
-		ref_reg.des_engine_ptr()->schedule_event(
+		real_type cur_time(reg.des_engine().simulated_time());
+
+		vm_host_time_map_[ptr_vm->id()].push_back(::std::make_pair(cur_time, ::std::numeric_limits<real_type>::infinity()));
+
+		reg.des_engine().schedule_event(
 				ptr_vm_pwron_evt_src_,
-				ref_reg.des_engine_ptr()->simulated_time(),
+				cur_time,
 				ptr_vm
 			);
 
@@ -304,13 +511,22 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	{
 		DCS_DEBUG_ASSERT( ptr_vm );
 
+		registry_type& reg(registry_type::instance());
+
+		real_type cur_time(reg.des_engine().simulated_time());
+
+		DCS_DEBUG_ASSERT( vm_host_time_map_.count(ptr_vm->id()) > 0 );
+		DCS_DEBUG_ASSERT( vm_host_time_map_.at(ptr_vm->id()).size() > 0 );
+
+		vm_host_time_map_[ptr_vm->id()].back().second = cur_time;
+
+		update_utilization_profile(ptr_vm);
+
 		ptr_vm->power_off();
 
-		registry_type& ref_reg = registry_type::instance();
-
-		ref_reg.des_engine_ptr()->schedule_event(
+		reg.des_engine().schedule_event(
 				ptr_vm_pwroff_evt_src_,
-				ref_reg.des_engine_ptr()->simulated_time(),
+				cur_time,
 				ptr_vm
 			);
 
@@ -330,21 +546,24 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	{
 		DCS_DEBUG_ASSERT( ptr_vm );
 
-		registry_type& ref_reg = registry_type::instance();
+		DCS_DEBUG_ASSERT( vm_host_time_map_.count(ptr_vm->id()) > 0 );
+		DCS_DEBUG_ASSERT( vm_host_time_map_.at(ptr_vm->id()).size() > 0 );
+
+		registry_type& reg(registry_type::instance());
+
+		real_type cur_time(reg.des_engine().simulated_time());
 
 		virtual_machine_migration_context<traits_type> evt_state;
 		evt_state.vm_id = ptr_vm->id();
 		evt_state.pm_id = pm.id();
 		evt_state.pm_is_source = pm_is_source;
 
-		ref_reg.des_engine_ptr()->schedule_event(
-				ptr_vm_migr_evt_src_,
-				ref_reg.des_engine_ptr()->simulated_time(),
-				evt_state
-			);
-
 		if (pm_is_source)
 		{
+			vm_host_time_map_[ptr_vm->id()].back().second = cur_time;
+
+			update_utilization_profile(ptr_vm);
+
 			ptr_vm->guest_system().application().simulation_model().request_tier_service_event_source(ptr_vm->guest_system().id()).disconnect(
 					::dcs::functional::bind(
 							&self_type::process_vm_request_service,
@@ -357,6 +576,8 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		}
 		else
 		{
+			vm_host_time_map_[ptr_vm->id()].push_back(::std::make_pair(cur_time, ::std::numeric_limits<real_type>::infinity()));
+
 			ptr_vm->guest_system().application().simulation_model().request_tier_service_event_source(ptr_vm->guest_system().id()).connect(
 					::dcs::functional::bind(
 							&self_type::process_vm_request_service,
@@ -367,6 +588,12 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 						)
 				);
 		}
+
+		reg.des_engine().schedule_event(
+				ptr_vm_migr_evt_src_,
+				cur_time,
+				evt_state
+			);
 	}
 
 
@@ -499,12 +726,15 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		// been updated in the power-change event handler).
 		if (this->power_state() == powered_on_power_status)
 		{
-			update_experiment_stats(ctx);
+			//update_experiment_stats(ctx);
+			this->machine().power_off();
 		}
 
 		// Compute energy & utilization
+#if 0
 		typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
 		typedef typename virtual_machine_container::const_iterator vm_iterator;
+		typedef user_request<traits_type> user_request_type;
 		typedef ::std::vector<user_request_type> request_container;
 		typedef typename request_container::const_iterator request_iterator;
 		typedef typename utilization_profile_type::const_iterator profile_iterator;
@@ -533,16 +763,21 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 					// The last profiles refers to the last visit (at this tier)
 					utilization_profile_type const& profile(profiles.back());
 					profile_iterator profile_end_it(profile.end());
-					for (profile_iterator it = profile.begin(); it != profile_end_it; ++it)
+					for (profile_iterator profile_it = profile.begin(); profile_it != profile_end_it; ++profile_it)
 					{
-						res_profile_map_[category](*it);
+						res_profile_map_[category](*profile_it);
 					}
 				}
 			}
 		}
+#endif // 0
 		// - Compute total energy as the sum of the energy consumed during each
 		//   active time interval and machine utilization as the ratio between
 		//   busy and up time.
+		typedef user_request<traits_type> user_request_type;
+		typedef ::std::vector<user_request_type> request_container;
+		typedef typename request_container::const_iterator request_iterator;
+		typedef typename utilization_profile_type::const_iterator profile_iterator;
 		real_type idle_energy(this->machine().consumed_energy(0));
 		real_type energy(0);
 		real_type busy_time(0);
@@ -552,9 +787,9 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			physical_resource_category category(cpu_resource_category);
 			utilization_profile_type const& profile(res_profile_map_.at(category));
 			profile_iterator profile_end_it(profile.end());
-			for (profile_iterator it = profile.begin(); it != profile_end_it; ++it)
+			for (profile_iterator profile_it = profile.begin(); profile_it != profile_end_it; ++profile_it)
 			{
-				typename utilization_profile_type::profile_item_type const& item(*it);
+				typename utilization_profile_type::profile_item_type const& item(*profile_it);
 
 				//FIXME: replace boost::icl::length with a wrapper function
 				energy += (this->machine().consumed_energy(item.second)-idle_energy)*::boost::icl::length(item.first);
@@ -564,14 +799,16 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		energy += idle_energy*uptime_;
 
 		// check: machine cannot be busy more than is up (paranoid check)
-		DCS_DEBUG_ASSERT( busy_time <= uptime_ );
+		DCS_DEBUG_ASSERT( ::dcs::math::float_traits<real_type>::definitely_less_equal(busy_time, uptime_) );
 
 		// Update simulation-level stats
 		(*ptr_energy_stat_)(energy);
 		(*ptr_uptime_stat_)(uptime_);
 		if (uptime_ > 0)
 		{
-			(*ptr_util_stat_)(busy_time/uptime_);
+			// The std::min function is used to compensate floating-point error which may
+			// result in busy_time_ a bit greater than uptime_
+			(*ptr_util_stat_)(::std::min(busy_time/uptime_, static_cast<real_type>(1)));
 		}
 		else
 		{
@@ -582,33 +819,33 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	}
 
 
-	private: void process_power_on(des_event_type const& evt, des_engine_context_type& ctx)
-	{
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+//	private: void process_power_on(des_event_type const& evt, des_engine_context_type& ctx)
+//	{
+//		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+//		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+//
+//		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing POWER-ON (Clock: " << ctx.simulated_time() << ")");
+//
+//		last_pwron_time_ = ctx.simulated_time();
+//
+//		DCS_DEBUG_TRACE("(" << this << ") END Processing POWER-ON (Clock: " << ctx.simulated_time() << ")");
+//	}
 
-		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing POWER-ON (Clock: " << ctx.simulated_time() << ")");
 
-		last_pwron_time_ = ctx.simulated_time();
-
-		DCS_DEBUG_TRACE("(" << this << ") END Processing POWER-ON (Clock: " << ctx.simulated_time() << ")");
-	}
-
-
-	private: void process_power_off(des_event_type const& evt, des_engine_context_type& ctx)
-	{
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-
-		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing POWER-OFF (Clock: " << ctx.simulated_time() << ")");
-
-		// pre: make sure a power-off follows in time a power-on
-		DCS_DEBUG_ASSERT( ctx.simulated_time() >= last_pwron_time_ );
-
-		update_experiment_stats(ctx);
-
-		DCS_DEBUG_TRACE("(" << this << ") END Processing POWER-OFF (Clock: " << ctx.simulated_time() << ")");
-	}
+//	private: void process_power_off(des_event_type const& evt, des_engine_context_type& ctx)
+//	{
+//		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+//		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+//
+//		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing POWER-OFF (Clock: " << ctx.simulated_time() << ")");
+//
+//		// pre: make sure a power-off follows in time a power-on
+//		DCS_DEBUG_ASSERT( ctx.simulated_time() >= last_pwron_time_ );
+//
+//		update_experiment_stats(ctx);
+//
+//		DCS_DEBUG_TRACE("(" << this << ") END Processing POWER-OFF (Clock: " << ctx.simulated_time() << ")");
+//	}
 
 
 	private: void process_vm_request_service(des_event_type const& evt, des_engine_context_type& ctx, virtual_machine_pointer const& ptr_vm)
@@ -618,23 +855,10 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		// pre: virtual machine pointer must be a valid pointer
 		DCS_DEBUG_ASSERT( ptr_vm );
 
-		user_request_type req = ptr_vm->guest_system().application().simulation_model().request_state(evt);
-
-		typedef typename utilization_profile_type::const_iterator profile_iterator;
-		::std::vector<utilization_profile_type> profiles;
-		//FIXME: CPU resource category is hard-coded
-		physical_resource_category category(cpu_resource_category);
-		profiles = req.tier_utilization_profiles(ptr_vm->guest_system().id(), category);
-		if (profiles.size() > 0)
-		{
-			// The last profiles refers to the last visit (at this tier)
-			utilization_profile_type const& profile(profiles.back());
-			profile_iterator profile_end_it(profile.end());
-			for (profile_iterator it = profile.begin(); it != profile_end_it; ++it)
-			{
-				res_profile_map_[category](*it);
-			}
-		}
+		update_utilization_profile(
+				ptr_vm,
+				ptr_vm->guest_system().application().simulation_model().request_state(evt)
+			);
 	}
 
 
@@ -654,6 +878,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	private: output_statistic_pointer ptr_uptime_stat_;
 	private: output_statistic_pointer ptr_util_stat_;
 	private: ::std::map<physical_resource_category,utilization_profile_type> res_profile_map_;
+	private: virtual_machine_hosting_time_map vm_host_time_map_;
 };
 
 template <typename TraitsT>

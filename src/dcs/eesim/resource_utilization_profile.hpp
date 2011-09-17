@@ -89,10 +89,41 @@ class resource_utilization_profile
 	public: typedef typename interval_container::const_reverse_iterator const_reverse_iterator;
 	public: typedef typename interval_container::size_type size_type;
 	public: typedef typename interval_container::value_type profile_item_type;
+	//public: typedef typename interval_container::key_type time_interval_type;
+	public: typedef typename interval_type::type time_interval_type;
+//	public: typedef typename interval_container::mapped_type profile_item_value_type;
 
+
+	template <typename TT>
+	friend resource_utilization_profile<TT> make_profile_from_intersection(resource_utilization_profile<TT> const& profile, typename resource_utilization_profile<TT>::time_interval_type const& interval);
 
 	template <typename CharT, typename CharTraitsT, typename TT>
 	friend ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, resource_utilization_profile<TT> const& profile);
+
+
+	/// Default constructor.
+	public: resource_utilization_profile()
+	{
+	}
+
+
+	/// A constructor.
+	protected: explicit resource_utilization_profile(interval_container const& c)
+	: profile_(c)
+	{
+	}
+
+
+	public: static time_interval_type make_time_interval(real_type t1, real_type t2)
+	{
+		return interval_type::right_open(t1, t2);
+	}
+
+
+	public: static profile_item_type make_item(real_type t1, real_type t2, real_type u)
+	{
+		return ::std::make_pair(interval_type::right_open(t1, t2), u);
+	}
 
 
 	public: void operator()(real_type t1, real_type t2, real_type u)
@@ -108,13 +139,20 @@ class resource_utilization_profile
 	}
 
 
+	public: void operator()(time_interval_type const& interval, real_type u)
+	{
+		//profile_ += ::std::make_pair(interval_type::right_open(::boost::icl::lower(interval), ::boost::icl::upper(interval)), u);
+		profile_ += ::std::make_pair(interval, u);
+	}
+
+
 	public: const_iterator begin() const
 	{
 		return profile_.begin();
 	}
 
 
-	public: iterator& begin()
+	public: iterator begin()
 	{
 		return profile_.begin();
 	}
@@ -126,7 +164,7 @@ class resource_utilization_profile
 	}
 
 
-	public: iterator& end()
+	public: iterator end()
 	{
 		return profile_.end();
 	}
@@ -138,7 +176,7 @@ class resource_utilization_profile
 	}
 
 
-	public: iterator& rbegin()
+	public: iterator rbegin()
 	{
 		return profile_.rbegin();
 	}
@@ -150,7 +188,7 @@ class resource_utilization_profile
 	}
 
 
-	public: iterator& rend()
+	public: iterator rend()
 	{
 		return profile_.rend();
 	}
@@ -200,6 +238,13 @@ template <typename TraitsT>
 typename resource_utilization_profile<TraitsT>::difference_type interval_length(typename resource_utilization_profile<TraitsT>::profile_item_type const& item)
 {
 	return ::boost::icl::length(item.first);
+}
+
+
+template <typename TraitsT>
+resource_utilization_profile<TraitsT> make_profile_from_intersection(resource_utilization_profile<TraitsT> const& profile, typename resource_utilization_profile<TraitsT>::time_interval_type const& interval)
+{
+	return resource_utilization_profile<TraitsT>(profile.profile_ & interval);
 }
 
 
