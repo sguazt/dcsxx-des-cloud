@@ -607,14 +607,9 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 
 			if (pm_is_source)
 			{
-				DCS_DEBUG_ASSERT( vm_host_time_map_.count(ptr_vm->id()) > 0 );
-				DCS_DEBUG_ASSERT( vm_host_time_map_.at(ptr_vm->id()).size() > 0 );
+				vm_host_time_map_[ptr_vm->id()].push_back(::std::make_pair(cur_time, ::std::numeric_limits<real_type>::infinity()));
 
-				vm_host_time_map_[ptr_vm->id()].back().second = cur_time;
-
-				update_utilization_profile(ptr_vm);
-
-				ptr_vm->guest_system().application().simulation_model().request_tier_service_event_source(ptr_vm->guest_system().id()).disconnect(
+				ptr_vm->guest_system().application().simulation_model().request_tier_service_event_source(ptr_vm->guest_system().id()).connect(
 						::dcs::functional::bind(
 								&self_type::process_vm_request_service,
 								this,
@@ -626,9 +621,14 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			}
 			else
 			{
-				vm_host_time_map_[ptr_vm->id()].push_back(::std::make_pair(cur_time, ::std::numeric_limits<real_type>::infinity()));
+				DCS_DEBUG_ASSERT( vm_host_time_map_.count(ptr_vm->id()) > 0 );
+				DCS_DEBUG_ASSERT( vm_host_time_map_.at(ptr_vm->id()).size() > 0 );
 
-				ptr_vm->guest_system().application().simulation_model().request_tier_service_event_source(ptr_vm->guest_system().id()).connect(
+				vm_host_time_map_[ptr_vm->id()].back().second = cur_time;
+
+				update_utilization_profile(ptr_vm);
+
+				ptr_vm->guest_system().application().simulation_model().request_tier_service_event_source(ptr_vm->guest_system().id()).disconnect(
 						::dcs::functional::bind(
 								&self_type::process_vm_request_service,
 								this,
