@@ -292,7 +292,7 @@ class ampl_minlp_solver_impl
 	}
 
 
-	public: void solve(data_center_type const& dc, real_type wp, real_type ws, virtual_machine_utilization_map const& vm_util_map)
+	public: void solve(data_center_type const& dc, real_type wp, real_type ws, real_type ref_penalty, virtual_machine_utilization_map const& vm_util_map)
 	{
 		// Reset previous solution
 		pm_ids_.clear();
@@ -303,7 +303,7 @@ class ampl_minlp_solver_impl
 
 		// Create a new problem
 		::std::string problem;
-		problem = make_problem(dc, wp, ws, vm_util_map);
+		problem = make_problem(dc, wp, ws, ref_penalty, vm_util_map);
 
 		// Solve the new problem
 		ampl_minlp_input_producer producer(problem);
@@ -390,7 +390,7 @@ class ampl_minlp_solver_impl
 	}
 
 
-	private: ::std::string make_problem(data_center_type const& dc, real_type wp, real_type ws, virtual_machine_utilization_map const& vm_util_map)
+	private: ::std::string make_problem(data_center_type const& dc, real_type wp, real_type ws, real_type ref_penalty, virtual_machine_utilization_map const& vm_util_map)
 	{
 		typedef ::std::vector<physical_machine_pointer> machine_container;
 		typedef typename machine_container::const_iterator machine_iterator;
@@ -451,7 +451,7 @@ class ampl_minlp_solver_impl
 				<< " " << ptr_energy_model_impl->coefficient(1) // c1
 				<< " " << ptr_energy_model_impl->coefficient(2) // c2
 				<< " " << ptr_energy_model_impl->coefficient(3) // r
-				<< " " << 1 // Smax
+				<< " " << (1-ref_penalty) // Smax
 				<< " " << (ptr_resource->capacity()*ptr_resource->utilization_threshold()) // C
 				<< ::std::endl;
 		}
@@ -611,7 +611,7 @@ DCS_DEBUG_TRACE("BEGIN Initial Placement");//XXX
 
 		optimal_solver_type solver;
 
-		solver.solve(dc, wp_, ws_, vm_util_map);
+		solver.solve(dc, wp_, ws_, this->reference_share_penalty(), vm_util_map);
 
 		// Check solution and act accordingly
 

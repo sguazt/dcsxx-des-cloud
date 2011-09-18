@@ -122,7 +122,7 @@ inline
 	const ::std::size_t st_max_len(30);
 	char* st = new char[st_max_len];
 	::std::size_t st_len;
-	st_len = ::std::strftime(st, st_len, "%Y-%m-%d %H:%M:%S (%Z)", &tm);
+	st_len = ::std::strftime(st, st_max_len, "%Y-%m-%d %H:%M:%S (%Z)", &tm);
 	if (!st_len)
 	{
 		throw ::std::runtime_error("Unable to compute current time.");
