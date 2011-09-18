@@ -30,11 +30,14 @@ class data_center_manager
 	private: typedef typename traits_type::des_engine_type des_engine_type;
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
+	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_source_type des_event_source_type;
+	private: typedef ::dcs::shared_ptr<des_event_source_type> des_event_source_pointer;
 //	private: typedef ::dcs::des::engine_traits<des_engine_type>::event_source_type des_event_source_type;
 //	private: typedef ::dcs::shared_ptr<des_event_source_type> des_event_source_pointer;
 
 
 	public: data_center_manager()
+	: ptr_sys_start_evt_src_(new des_event_source_type())
 	{
 		init();
 	}
@@ -73,9 +76,9 @@ class data_center_manager
 
 	private: void register_event_handlers()
 	{
-		registry<traits_type>& reg = registry<traits_type>::instance();
+		registry<traits_type>& reg(registry<traits_type>::instance());
 
-		reg.des_engine_ptr()->system_initialization_event_source().connect(
+		reg.des_engine().system_initialization_event_source().connect(
 				::dcs::functional::bind(
 					&self_type::process_sys_init,
 					this,
@@ -83,9 +86,17 @@ class data_center_manager
 					::dcs::functional::placeholders::_2
 				)
 			);
-		reg.des_engine_ptr()->system_finalization_event_source().connect(
+		reg.des_engine().system_finalization_event_source().connect(
 				::dcs::functional::bind(
 					&self_type::process_sys_finit,
+					this,
+					::dcs::functional::placeholders::_1,
+					::dcs::functional::placeholders::_2
+				)
+			);
+		ptr_sys_start_evt_src_->connect(
+				::dcs::functional::bind(
+					&self_type::process_system_startup,
 					this,
 					::dcs::functional::placeholders::_1,
 					::dcs::functional::placeholders::_2
@@ -96,9 +107,9 @@ class data_center_manager
 
 	private: void deregister_event_handlers()
 	{
-		registry<traits_type>& reg = registry<traits_type>::instance();
+		registry<traits_type>& reg(registry<traits_type>::instance());
 
-		reg.des_engine_ptr()->system_finalization_event_source().disconnect(
+		reg.des_engine().system_finalization_event_source().disconnect(
 				::dcs::functional::bind(
 					&self_type::process_sys_finit,
 					this,
@@ -106,13 +117,24 @@ class data_center_manager
 					::dcs::functional::placeholders::_2
 				)
 			);
-		reg.des_engine_ptr()->system_initialization_event_source().disconnect(
+		reg.des_engine().system_initialization_event_source().disconnect(
 				::dcs::functional::bind(
 					&self_type::process_sys_init,
 					this,
 					::dcs::functional::placeholders::_1,
 					::dcs::functional::placeholders::_2
 				)
+			);
+	}
+
+
+	private: void schedule_system_startup()
+	{
+		registry<traits_type>& reg(registry<traits_type>::instance());
+
+		reg.des_engine().schedule_event(
+				ptr_sys_start_evt_src_,
+				reg.des_engine().simulated_time()
 			);
 	}
 
@@ -124,27 +146,31 @@ class data_center_manager
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");//XXX
 
-		// precondition: pointer to vm initial placer must be a valid pointer
-		DCS_DEBUG_ASSERT( ptr_dc_ );
+//[XXX]: moved in process_system_startup
+//		// precondition: pointer to vm initial placer must be a valid pointer
+//		DCS_DEBUG_ASSERT( ptr_dc_ );
+//
+////		// Remove all previously placed VM
+////		ptr_dc_->displace_virtual_machines();
+//
+//		// Create a new VM placement
+//		ptr_dc_->place_virtual_machines(
+//			ptr_init_placement_->placement(*ptr_dc_)
+//		);
+//
+//		typename traits_type::uint_type started_apps;
+//
+//		started_apps = ptr_dc_->start_applications();
+//
+//		if (!started_apps)
+//		{
+//			registry<traits_type>::instance().des_engine_ptr()->stop_now();
+//
+//			::std::clog << "[Warning] Unable to start any application." << ::std::endl;
+//		}
+//[/XXX]: moved in process_system_startup
 
-//		// Remove all previously placed VM
-//		ptr_dc_->displace_virtual_machines();
-
-		// Create a new VM placement
-		ptr_dc_->place_virtual_machines(
-			ptr_init_placement_->placement(*ptr_dc_)
-		);
-
-		typename traits_type::uint_type started_apps;
-
-		started_apps = ptr_dc_->start_applications();
-
-		if (!started_apps)
-		{
-			registry<traits_type>::instance().des_engine_ptr()->stop_now();
-
-			::std::clog << "[Warning] Unable to start any application." << ::std::endl;
-		}
+		schedule_system_startup();
 
 		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");//XXX
 	}
@@ -178,10 +204,44 @@ class data_center_manager
 	}
 
 
+	private: void process_system_startup(des_event_type const& evt, des_engine_context_type& ctx)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing SYSTEM-STARTUP (Clock: " << ctx.simulated_time() << ")");//XXX
+
+		// precondition: pointer to vm initial placer must be a valid pointer
+		DCS_DEBUG_ASSERT( ptr_dc_ );
+
+//		// Remove all previously placed VM
+//		ptr_dc_->displace_virtual_machines();
+
+		// Create a new VM placement
+		ptr_dc_->place_virtual_machines(
+			ptr_init_placement_->placement(*ptr_dc_)
+		);
+
+		typename traits_type::uint_type started_apps;
+
+		started_apps = ptr_dc_->start_applications();
+
+		if (!started_apps)
+		{
+			registry<traits_type>::instance().des_engine_ptr()->stop_now();
+
+			::std::clog << "[Warning] Unable to start any application." << ::std::endl;
+		}
+
+		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-STARTUP (Clock: " << ctx.simulated_time() << ")");//XXX
+	}
+
+
 	private: data_center_pointer ptr_dc_;
 	private: initial_placement_strategy_pointer ptr_init_placement_;
 	private: migration_controller_pointer ptr_migrator_;
-};
+	private: des_event_source_pointer ptr_sys_start_evt_src_;
+}; // data_center_manager
 
 
 }} // Namespace dcs::eesim
