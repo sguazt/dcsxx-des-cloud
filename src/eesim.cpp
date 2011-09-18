@@ -1,3 +1,29 @@
+/**
+ * \file src/eesim.cpp
+ *
+ * \brief EESim application entry-point.
+ *
+ * Copyright (C) 2009-2011  Distributed Computing System (DCS) Group, Computer
+ * Science Department - University of Piemonte Orientale, Alessandria (Italy).
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ */
+
+#include <cstddef>
+#include <ctime>
 #include <dcs/assert.hpp>
 #include <dcs/des/engine.hpp>
 #include <dcs/des/engine_traits.hpp>
@@ -83,6 +109,28 @@ void usage()
 				<< "Options:" << ::std::endl
 				<< "  --partial-stats" << ::std::endl
 				<< "  --conf <configuration-file>" << ::std::endl;
+}
+
+
+inline
+::std::string strtime()
+{
+	::std::time_t t(::std::time(0));//XXX
+	::std::tm tm;
+	::localtime_r(&t, &tm);
+
+	const ::std::size_t st_max_len(30);
+	char* st = new char[st_max_len];
+	::std::size_t st_len;
+	st_len = ::std::strftime(st, st_len, "%Y-%m-%d %H:%M:%S (%Z)", &tm);
+	if (!st_len)
+	{
+		throw ::std::runtime_error("Unable to compute current time.");
+	}
+	::std::string sst(st, st_len);
+	delete[] st;
+
+	return sst;
 }
 
 
@@ -549,6 +597,10 @@ int main(int argc, char* argv[])
 	}
 
 
+	std::cout << "--- EESim start at " << detail::strtime() << "." << std::endl;
+	std::cout << "--------------------------------------------------------------------------------" << std::endl;
+
+
 	// Parse command line arguments
 
 	std::string conf_fname; // (argv[1]);
@@ -680,4 +732,7 @@ int main(int argc, char* argv[])
 	std::cout << "STATISTICS:" << std::endl;
 	detail::report_stats(std::cout, sys);
 	std::cout << "--------------------------------------------------------------------------------" << std::endl;
+
+
+	std::cout << "--- EESim stop at " << detail::strtime() << "." << std::endl;
 }
