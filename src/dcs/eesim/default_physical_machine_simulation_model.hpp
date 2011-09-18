@@ -435,7 +435,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		}
 		else
 		{
-			log_warn(DCS_EESIM_LOGGING_AT, "Cannot power-on a powered-off physical machine.");
+			log_warn(DCS_EESIM_LOGGING_AT, "Cannot power-on a non powered-off physical machine.");
 		}
 
 		DCS_DEBUG_TRACE("(" << this << ") END Do Power-On (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
@@ -474,6 +474,10 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 					ptr_pwroff_evt_src_,
 					cur_time
 				);
+		}
+		else
+		{
+			log_warn(DCS_EESIM_LOGGING_AT, "Cannot power-off an already powered-off physical machine.");
 		}
 
 		DCS_DEBUG_TRACE("(" << this << ") END Do Power-Off (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
@@ -518,6 +522,10 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 						)
 				);
 		}
+		else
+		{
+			log_warn(DCS_EESIM_LOGGING_AT, "Cannot power-on a non powered-off virtual machine.");
+		}
 	}
 
 
@@ -556,15 +564,16 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 						)
 				);
 		}
+		else
+		{
+			log_warn(DCS_EESIM_LOGGING_AT, "Cannot power-off an already powered-off virtual machine.");
+		}
 	}
 
 
 	private: void do_vm_migrate(virtual_machine_pointer const& ptr_vm, physical_machine_type& pm, bool pm_is_source)
 	{
 		DCS_DEBUG_ASSERT( ptr_vm );
-
-		DCS_DEBUG_ASSERT( vm_host_time_map_.count(ptr_vm->id()) > 0 );
-		DCS_DEBUG_ASSERT( vm_host_time_map_.at(ptr_vm->id()).size() > 0 );
 
 		if (ptr_vm->power_state() == powered_on_power_status)
 		{
@@ -579,6 +588,9 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 
 			if (pm_is_source)
 			{
+				DCS_DEBUG_ASSERT( vm_host_time_map_.count(ptr_vm->id()) > 0 );
+				DCS_DEBUG_ASSERT( vm_host_time_map_.at(ptr_vm->id()).size() > 0 );
+
 				vm_host_time_map_[ptr_vm->id()].back().second = cur_time;
 
 				update_utilization_profile(ptr_vm);
@@ -616,7 +628,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		}
 		else
 		{
-			log_warn(DCS_EESIM_LOGGING_AT, "Cannot migrate a non-powered-on VM.");
+			log_warn(DCS_EESIM_LOGGING_AT, "Cannot migrate a non powered-on virtual machine.");
 		}
 	}
 
