@@ -202,7 +202,7 @@ class simulated_system
 
 	private: data_center_pointer ptr_dc_;
 	private: data_center_manager_pointer ptr_dc_mngr_;
-};
+}; // simulated_system
 
 
 template <
@@ -256,6 +256,7 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<
 //		}
 //	}
 
+	// Virtual Machines
 	{
 		typedef typename data_center_type::virtual_machine_type virtual_machine_type;
 		typedef typename data_center_type::virtual_machine_pointer virtual_machine_pointer;
@@ -268,6 +269,11 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<
 		typedef typename vm_resource_statistic_map::const_iterator vm_resource_statistic_iterator;
 
 		os << ::std::endl << "-- Virtual Machines --" << ::std::endl;
+
+		os << indent
+		   << "# Migrations: " << ::std::endl;
+		os << indent << indent
+		   << sys.data_center_manager().migration_controller().num_migrations().name() << ": " << sys.data_center_manager().migration_controller().num_migrations() << ::std::endl;
 
 		virtual_machine_container vms = dc.virtual_machines();
 		virtual_machine_iterator vm_end_it = vms.end();
