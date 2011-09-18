@@ -414,7 +414,8 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 
 	private: void do_power_on()
 	{
-		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Power-On (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Power-On physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+::std::cerr << "(" << this << ") BEGIN Do Power-On physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 
 		if (pwr_state_ == powered_off_power_status)
 		{
@@ -438,13 +439,15 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			log_warn(DCS_EESIM_LOGGING_AT, "Cannot power-on a non powered-off physical machine.");
 		}
 
-		DCS_DEBUG_TRACE("(" << this << ") END Do Power-On (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+::std::cerr << "(" << this << ") END Do Power-On physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+		DCS_DEBUG_TRACE("(" << this << ") END Do Power-On physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 	}
 
 
 	private: void do_power_off()
 	{
-		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Power-Off (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Power-Off physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+::std::cerr << "(" << this << ") BEGIN Do Power-Off physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 
 		if (pwr_state_ != powered_off_power_status)
 		{
@@ -480,7 +483,8 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			log_warn(DCS_EESIM_LOGGING_AT, "Cannot power-off an already powered-off physical machine.");
 		}
 
-		DCS_DEBUG_TRACE("(" << this << ") END Do Power-Off (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+::std::cerr << "(" << this << ") END Do Power-Off physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+		DCS_DEBUG_TRACE("(" << this << ") END Do Power-Off physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 	}
 
 
@@ -495,6 +499,9 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	private: void do_vm_power_on(virtual_machine_pointer const& ptr_vm)
 	{
 		DCS_DEBUG_ASSERT( ptr_vm );
+
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Power-On virtual machine: " << *ptr_vm << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+::std::cerr << "(" << this << ") BEGIN Do Power-On virtual machine: " << *ptr_vm << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 
 		if (ptr_vm->power_state() == powered_off_power_status)
 		{
@@ -526,12 +533,18 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		{
 			log_warn(DCS_EESIM_LOGGING_AT, "Cannot power-on a non powered-off virtual machine.");
 		}
+
+::std::cerr << "(" << this << ") END Do Power-On virtual machine: " << *ptr_vm << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+		DCS_DEBUG_TRACE("(" << this << ") END Do Power-On virtual machine: " << *ptr_vm << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 	}
 
 
 	private: void do_vm_power_off(virtual_machine_pointer const& ptr_vm)
 	{
 		DCS_DEBUG_ASSERT( ptr_vm );
+
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Power-Off virtual machine: " << *ptr_vm << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+::std::cerr << "(" << this << ") BEGIN Do Power-Off virtual machine: " << *ptr_vm << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 
 		if (ptr_vm->power_state() != powered_off_power_status)
 		{
@@ -568,12 +581,18 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		{
 			log_warn(DCS_EESIM_LOGGING_AT, "Cannot power-off an already powered-off virtual machine.");
 		}
+
+::std::cerr << "(" << this << ") END Do Power-Off virtual machine: " << *ptr_vm << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+		DCS_DEBUG_TRACE("(" << this << ") END Do Power-Off virtual machine: " << *ptr_vm << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 	}
 
 
 	private: void do_vm_migrate(virtual_machine_pointer const& ptr_vm, physical_machine_type& pm, bool pm_is_source)
 	{
 		DCS_DEBUG_ASSERT( ptr_vm );
+
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Migrate virtual machine: " << *ptr_vm << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+::std::cerr << "(" << this << ") BEGIN Do Migrate virtual machine: " << *ptr_vm << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 
 		if (ptr_vm->power_state() == powered_on_power_status)
 		{
@@ -630,6 +649,9 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		{
 			log_warn(DCS_EESIM_LOGGING_AT, "Cannot migrate a non powered-on virtual machine.");
 		}
+
+::std::cerr << "(" << this << ") END Do Migrate virtual machine: " << *ptr_vm << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+		DCS_DEBUG_TRACE("(" << this << ") END Do Migrate virtual machine: " << *ptr_vm << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 	}
 
 
