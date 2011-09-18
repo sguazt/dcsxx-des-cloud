@@ -51,14 +51,26 @@ class data_center_manager
 
 	public: void controlled_data_center(data_center_pointer const& ptr_dc)
 	{
+		DCS_DEBUG_ASSERT( ptr_dc );
+
 		ptr_dc_ = ptr_dc;
 	}
 
 
 	public: void migration_controller(migration_controller_pointer const& ptr_migrator)
 	{
+		DCS_DEBUG_ASSERT( ptr_migrator );
+
 		ptr_migrator_ = ptr_migrator;
 		ptr_migrator_->controlled_data_center(ptr_dc_);
+	}
+
+
+	public: migration_controller_type const& migration_controller() const
+	{
+		DCS_DEBUG_ASSERT( ptr_migrator_ );
+
+		return *ptr_migrator_;
 	}
 
 

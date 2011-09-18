@@ -29,6 +29,7 @@
 #include <dcs/debug.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/des/engine_traits.hpp>
+#include <dcs/des/mean_estimator.hpp>
 #include <dcs/eesim/base_migration_controller.hpp>
 
 
@@ -45,6 +46,11 @@ class dummy_migration_controller: public base_migration_controller<TraitsT>
 	private: typedef typename traits_type::des_engine_type des_engine_type;
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
+	private: typedef typename base_type::statistic_type statistic_type;
+	private: typedef ::dcs::des::mean_estimator<real_type,uint_type> statistic_impl_type;
+
+
+	private: static statistic_impl_type dummy_num_migrations_stat;
 
 
 	public: dummy_migration_controller()
@@ -66,7 +72,16 @@ class dummy_migration_controller: public base_migration_controller<TraitsT>
 
 		// empty
 	}
+
+
+	private: statistic_type const& do_num_migrations() const
+	{
+		return dummy_num_migrations_stat;
+	}
 };
+
+template <typename TraitsT>
+typename dummy_migration_controller<TraitsT>::statistic_impl_type dummy_migration_controller<TraitsT>::dummy_num_migrations_stat;
 
 }} // Namespace dcs::eesim
 

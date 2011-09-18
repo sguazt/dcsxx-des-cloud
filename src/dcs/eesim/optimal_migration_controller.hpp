@@ -723,7 +723,7 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 	private: typedef ::dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
 	private: typedef typename virtual_machine_type::application_tier_type application_tier_type;
 	private: typedef detail::migration_controller::ampl_minlp_solver_impl<traits_type> minlp_solver_type;
-	private: typedef ::dcs::des::base_statistic<real_type,uint_type> statistic_type;
+	private: typedef typename base_type::statistic_type statistic_type;
 	private: typedef ::dcs::des::mean_estimator<real_type,uint_type> statistic_impl_type;
 	private: typedef ::dcs::shared_ptr<statistic_type> statistic_pointer;
 	private: typedef typename traits_type::physical_machine_identifier_type physical_machine_identifier_type;
@@ -744,7 +744,11 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 	  wm_(default_migration_cost_weight),
 	  ws_(default_share_cost_weight),
 	  ewma_smooth_(default_ewma_smoothing_factor),
-	  ptr_cost_(new statistic_impl_type())
+	  count_(0),
+	  fail_count_(0),
+	  migr_count_(0),
+	  ptr_cost_(new statistic_impl_type()),
+	  ptr_num_migr_(new statistic_impl_type())
 	{
 //		init();
 	}
@@ -756,7 +760,11 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 	  wm_(default_migration_cost_weight),
 	  ws_(default_share_cost_weight),
 	  ewma_smooth_(default_ewma_smoothing_factor),
-	  ptr_cost_(new statistic_impl_type())
+	  count_(0),
+	  fail_count_(0),
+	  migr_count_(0),
+	  ptr_cost_(new statistic_impl_type()),
+	  ptr_num_migr_(new statistic_impl_type())
 	{
 //		init();
 	}
@@ -781,11 +789,27 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process SYSTEM-INITIALIZATION event (Clock: " << ctx.simulated_time() << ")");
 
-		count_ = fail_count_ = 0;
+		count_ = fail_count_
+			   = migr_count_
+			   = uint_type(0);
 		ptr_cost_->reset();
+		ptr_num_migr_->reset();
 		vm_util_map_.clear();
 
 		DCS_DEBUG_TRACE("(" << this << ") END Do Process SYSTEM-INITIALIZATION event (Clock: " << ctx.simulated_time() << ")");
+	}
+
+
+	protected: void do_process_sys_finit(des_event_type const& evt, des_engine_context_type& ctx)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process SYSTEM-FINALIZATION event (Clock: " << ctx.simulated_time() << ")");
+
+		(*ptr_num_migr_)(migr_count_);
+
+		DCS_DEBUG_TRACE("(" << this << ") END Do Process SYSTEM-FINALIZATION event (Clock: " << ctx.simulated_time() << ")");
 	}
 
 
@@ -794,12 +818,12 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
-		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")");
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << " - Fail-Count: " << fail_count_ << ")");
 
 {//XXX
 ::std::time_t t(::std::time(0));//XXX
 ::std::string st(::std::asctime(::std::localtime(&t)));
-::std::cerr << "[optimal_migration_controller] BEGIN Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << " - Fail-Count: " << fail_count_ << " - Real-Clock: " << st.substr(0, st.size()-1) <<  " (" << static_cast< unsigned long >(t) << " secs since the Epoch" << "))" << ::std::endl;//XXX
+::std::cerr << "[optimal_migration_controller] BEGIN Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << " - Fail-Count: " << fail_count_ << " - #Migrations: " << migr_count_ << " - Real-Clock: " << st.substr(0, st.size()-1) <<  " (" << static_cast< unsigned long >(t) << " secs since the Epoch" << "))" << ::std::endl;//XXX
 }//XXX
 		typedef typename minlp_solver_type::physical_virtual_machine_map physical_virtual_machine_map;
 		typedef typename physical_virtual_machine_map::const_iterator physical_virtual_machine_iterator;
@@ -919,6 +943,11 @@ for (typename physical_virtual_machine_map::const_iterator it = solver.placement
 					resource_share_container shares(pm_vm_it->second);
 
 //::std::cerr << "Going to migrate VM (" << pm_vm_it->first.second << "): " << *ptr_vm << " into PM (" << pm_vm_it->first.first << "): " << *ptr_pm << ::std::endl; //XXX
+					if (ptr_vm->vmm().hosting_machine().id() != ptr_pm->id())
+					{
+						++migr_count_;
+					}
+
 					dc.migrate_virtual_machine(ptr_vm, ptr_pm, shares.begin(), shares.end());
 
 					if (inactive_pms.count(ptr_pm->id()) > 0)
@@ -948,9 +977,15 @@ for (typename physical_virtual_machine_map::const_iterator it = solver.placement
 {//XXX
 ::std::time_t t(::std::time(0));//XXX
 ::std::string st(::std::asctime(::std::localtime(&t)));
-::std::cerr << "[optimal_migration_controller] END Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << " - Fail-Count: " << fail_count_ << " - Real-Clock: " << st.substr(0, st.size()-1) <<  " (" << static_cast< unsigned long >(t) << " secs since the Epoch" << "))" << ::std::endl;//XXX
+::std::cerr << "[optimal_migration_controller] END Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << " - Fail-Count: " << fail_count_ << " - #Migrations: " << migr_count_ << " - Real-Clock: " << st.substr(0, st.size()-1) <<  " (" << static_cast< unsigned long >(t) << " secs since the Epoch" << "))" << ::std::endl;//XXX
 }//XXX
-		DCS_DEBUG_TRACE("(" << this << ") END Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")");
+		DCS_DEBUG_TRACE("(" << this << ") END Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << " - Fail-Count: " << fail_count_ << ")");
+	}
+
+
+	private: statistic_type const& do_num_migrations() const
+	{
+		return *ptr_num_migr_;
 	}
 
 	//@} Interface Member Functions
@@ -963,7 +998,9 @@ for (typename physical_virtual_machine_map::const_iterator it = solver.placement
 	private: real_type ewma_smooth_;
 	private: uint_type count_;
 	private: uint_type fail_count_;
+	private: uint_type migr_count_;
 	private: statistic_pointer ptr_cost_;
+	private: statistic_pointer ptr_num_migr_;
 	private: virtual_machine_utilization_map vm_util_map_;
 }; // optimal_migration_controller
 

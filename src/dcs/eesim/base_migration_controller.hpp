@@ -28,6 +28,7 @@
 
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
+#include <dcs/des/base_statistic.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/eesim/data_center.hpp>
 #include <dcs/eesim/registry.hpp>
@@ -45,6 +46,7 @@ class base_migration_controller
 	private: typedef base_migration_controller<TraitsT> self_type;
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::real_type real_type;
+	public: typedef typename traits_type::uint_type uint_type;
 	public: typedef data_center<traits_type> data_center_type;
 	public: typedef ::dcs::shared_ptr<data_center_type> data_center_pointer;
 	private: typedef typename traits_type::des_engine_type des_engine_type;
@@ -52,6 +54,7 @@ class base_migration_controller
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_source_type des_event_source_type;
 	public: typedef ::dcs::shared_ptr<des_event_source_type> des_event_source_pointer;
+	public: typedef ::dcs::des::base_statistic<real_type,uint_type> statistic_type;
 	private: typedef registry<traits_type> registry_type;
 
 
@@ -173,6 +176,12 @@ class base_migration_controller
 	}
 
 
+	public: statistic_type const& num_migrations() const
+	{
+		return do_num_migrations();
+	}
+
+
 	protected: data_center_pointer controlled_data_center_ptr() const
 	{
 		return ptr_dc_;
@@ -206,14 +215,22 @@ class base_migration_controller
 
 			registry_type& reg(registry_type::instance());
 
-			reg.des_engine_ptr()->system_initialization_event_source().connect(
-				::dcs::functional::bind(
-					&self_type::process_sys_init,
-					this,
-					::dcs::functional::placeholders::_1,
-					::dcs::functional::placeholders::_2
-				)
-			);
+			reg.des_engine().system_initialization_event_source().connect(
+					::dcs::functional::bind(
+						&self_type::process_sys_init,
+						this,
+						::dcs::functional::placeholders::_1,
+						::dcs::functional::placeholders::_2
+					)
+				);
+			reg.des_engine().system_initialization_event_source().connect(
+					::dcs::functional::bind(
+						&self_type::process_sys_finit,
+						this,
+						::dcs::functional::placeholders::_1,
+						::dcs::functional::placeholders::_2
+					)
+				);
 		}
 	}
 
@@ -236,14 +253,22 @@ class base_migration_controller
 
 			registry_type& reg(registry_type::instance());
 
-			reg.des_engine_ptr()->system_initialization_event_source().disconnect(
-				::dcs::functional::bind(
-					&self_type::process_sys_init,
-					this,
-					::dcs::functional::placeholders::_1,
-					::dcs::functional::placeholders::_2
-				)
-			);
+			reg.des_engine().system_initialization_event_source().disconnect(
+					::dcs::functional::bind(
+						&self_type::process_sys_init,
+						this,
+						::dcs::functional::placeholders::_1,
+						::dcs::functional::placeholders::_2
+					)
+				);
+			reg.des_engine().system_initialization_event_source().disconnect(
+					::dcs::functional::bind(
+						&self_type::process_sys_finit,
+						this,
+						::dcs::functional::placeholders::_1,
+						::dcs::functional::placeholders::_2
+					)
+				);
 		}
 	}
 
@@ -256,9 +281,9 @@ class base_migration_controller
 		{
 			registry_type& reg(registry_type::instance());
 
-			reg.des_engine_ptr()->schedule_event(
+			reg.des_engine().schedule_event(
 				ptr_control_evt_src_,
-				reg.des_engine_ptr()->simulated_time() + ts_
+				reg.des_engine().simulated_time() + ts_
 			);
 		}
 
@@ -275,6 +300,12 @@ class base_migration_controller
 		schedule_control();
 
 		do_process_sys_init(evt, ctx);
+	}
+
+
+	private: void process_sys_finit(des_event_type const& evt, des_engine_context_type& ctx)
+	{
+		do_process_sys_finit(evt, ctx);
 	}
 
 
@@ -307,13 +338,26 @@ class base_migration_controller
 	}
 
 
-	private: virtual void do_process_control(des_event_type const& evt, des_engine_context_type& ctx) = 0;
+	protected: virtual void do_process_sys_finit(des_event_type const& evt, des_engine_context_type& ctx)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+		// empty
+	}
 
 
 	protected: virtual void do_schedule_control()
 	{
 		// empty
 	}
+
+
+	private: virtual void do_process_control(des_event_type const& evt, des_engine_context_type& ctx) = 0;
+
+
+	private: virtual statistic_type const& do_num_migrations() const = 0;
+
 
 	//@} Interface Member Functions
 

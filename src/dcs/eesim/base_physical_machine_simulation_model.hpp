@@ -5,7 +5,6 @@
 #include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/eesim/physical_machine.hpp>
-#include <dcs/eesim/power_status.hpp>
 #include <dcs/eesim/virtual_machine.hpp>
 #include <dcs/memory.hpp>
 
@@ -252,7 +251,6 @@ class base_physical_machine_simulation_model
 
 
 	private: physical_machine_pointer ptr_mach_;
-	private: power_status status_;
 }; // base_physical_machine_simulation_model
 
 }} // Namespace dcs::eesim
