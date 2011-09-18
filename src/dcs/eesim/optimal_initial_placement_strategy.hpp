@@ -642,7 +642,7 @@ for (typename physical_virtual_machine_map::const_iterator it = solver.placement
 							 *ptr_pm,
 							 shares.begin(),
 							 shares.end());
-DCS_DEBUG_TRACE("Placed: VM(" << ptr_vm->id() << ") -> PM(" << ptr_mach->id() << ")");//XXX
+DCS_DEBUG_TRACE("Placed: VM(" << ptr_vm->id() << ") -> PM(" << ptr_pm->id() << ")");//XXX
 		}
 
 DCS_DEBUG_TRACE("END Initial Placement ==> " << deployment);///XXX
