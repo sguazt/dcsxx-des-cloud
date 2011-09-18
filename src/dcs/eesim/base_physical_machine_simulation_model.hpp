@@ -85,49 +85,31 @@ class base_physical_machine_simulation_model
 
 	public: void power_on()
 	{
-		if (status_ == powered_off_power_status)
-		{
-			do_power_on();
-		}
+		do_power_on();
 	}
 
 
 	public: void power_off()
 	{
-		if (status_ != powered_off_power_status)
-		{
-			do_power_off();
-		}
+		do_power_off();
 	}
 
 
 	public: power_status vm_power_state(virtual_machine_pointer const& ptr_vm) const
 	{
-		DCS_DEBUG_ASSERT( ptr_vm );
-
 		return do_vm_power_state(ptr_vm);
 	}
 
 
 	public: void vm_power_on(virtual_machine_pointer const& ptr_vm)
 	{
-		DCS_DEBUG_ASSERT( ptr_vm );
-
-		if (ptr_vm->power_state() == powered_off_power_status)
-		{
-			do_vm_power_on(ptr_vm);
-		}
+		do_vm_power_on(ptr_vm);
 	}
 
 
 	public: void vm_power_off(virtual_machine_pointer const& ptr_vm)
 	{
-		DCS_DEBUG_ASSERT( ptr_vm );
-
-		if (ptr_vm->power_state() != powered_off_power_status)
-		{
-			do_vm_power_off(ptr_vm);
-		}
+		do_vm_power_off(ptr_vm);
 	}
 
 

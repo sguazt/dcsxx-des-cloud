@@ -33,6 +33,7 @@
 #include <dcs/des/mean_estimator.hpp>
 #include <dcs/math/traits/float.hpp>
 #include <dcs/eesim/base_physical_machine_simulation_model.hpp>
+#include <dcs/eesim/logging.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/power_status.hpp>
 #include <dcs/eesim/registry.hpp>
@@ -415,20 +416,27 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	{
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Power-On (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 
-		pwr_state_ = powered_on_power_status;
+		if (pwr_state_ == powered_off_power_status)
+		{
+			pwr_state_ = powered_on_power_status;
 
-		registry_type& reg(registry_type::instance());
+			registry_type& reg(registry_type::instance());
 
-		real_type cur_time(reg.des_engine().simulated_time());
+			real_type cur_time(reg.des_engine().simulated_time());
 
-		// Update info for uptime
-		last_pwron_time_ = cur_time;
+			// Update info for uptime
+			last_pwron_time_ = cur_time;
 
-		// Fire the power-on event
-		reg.des_engine().schedule_event(
-				ptr_pwron_evt_src_,
-				cur_time
-			);
+			// Fire the power-on event
+			reg.des_engine().schedule_event(
+					ptr_pwron_evt_src_,
+					cur_time
+				);
+		}
+		else
+		{
+			log_warn(DCS_EESIM_LOGGING_AT, "Cannot power-on a powered-off physical machine.");
+		}
 
 		DCS_DEBUG_TRACE("(" << this << ") END Do Power-On (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 	}
@@ -438,32 +446,35 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	{
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Power-Off (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 
-		// Power-off hosted VMs
-		typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
-		typedef typename virtual_machine_container::iterator virtual_machine_iterator;
-		virtual_machine_container vms(this->machine().vmm().virtual_machines());
-		virtual_machine_iterator vm_end_it(vms.end());
-		for (virtual_machine_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
+		if (pwr_state_ != powered_off_power_status)
 		{
-			virtual_machine_pointer ptr_vm(*vm_it);
+			// Power-off hosted VMs
+			typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
+			typedef typename virtual_machine_container::iterator virtual_machine_iterator;
+			virtual_machine_container vms(this->machine().vmm().virtual_machines());
+			virtual_machine_iterator vm_end_it(vms.end());
+			for (virtual_machine_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
+			{
+				virtual_machine_pointer ptr_vm(*vm_it);
 
-			this->machine().vmm().power_off(ptr_vm);
+				this->machine().vmm().power_off(ptr_vm);
+			}
+
+			pwr_state_ = powered_off_power_status;
+
+			registry_type& reg(registry_type::instance());
+
+			real_type cur_time(reg.des_engine().simulated_time());
+
+			// Update the uptime
+			uptime_ += cur_time - last_pwron_time_;
+
+			// Fire the power-off event
+			reg.des_engine().schedule_event(
+					ptr_pwroff_evt_src_,
+					cur_time
+				);
 		}
-
-		pwr_state_ = powered_off_power_status;
-
-		registry_type& reg(registry_type::instance());
-
-		real_type cur_time(reg.des_engine().simulated_time());
-
-		// Update the uptime
-		uptime_ += cur_time - last_pwron_time_;
-
-		// Fire the power-off event
-		reg.des_engine().schedule_event(
-				ptr_pwroff_evt_src_,
-				cur_time
-			);
 
 		DCS_DEBUG_TRACE("(" << this << ") END Do Power-Off (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 	}
@@ -481,102 +492,21 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	{
 		DCS_DEBUG_ASSERT( ptr_vm );
 
-		ptr_vm->power_on();
-
-		registry_type& reg(registry_type::instance());
-
-		real_type cur_time(reg.des_engine().simulated_time());
-
-		vm_host_time_map_[ptr_vm->id()].push_back(::std::make_pair(cur_time, ::std::numeric_limits<real_type>::infinity()));
-
-		reg.des_engine().schedule_event(
-				ptr_vm_pwron_evt_src_,
-				cur_time,
-				ptr_vm
-			);
-
-		ptr_vm->guest_system().application().simulation_model().request_tier_service_event_source(ptr_vm->guest_system().id()).connect(
-				::dcs::functional::bind(
-						&self_type::process_vm_request_service,
-						this,
-						::dcs::functional::placeholders::_1,
-						::dcs::functional::placeholders::_2,
-						ptr_vm
-					)
-			);
-	}
-
-
-	private: void do_vm_power_off(virtual_machine_pointer const& ptr_vm)
-	{
-		DCS_DEBUG_ASSERT( ptr_vm );
-
-		registry_type& reg(registry_type::instance());
-
-		real_type cur_time(reg.des_engine().simulated_time());
-
-		DCS_DEBUG_ASSERT( vm_host_time_map_.count(ptr_vm->id()) > 0 );
-		DCS_DEBUG_ASSERT( vm_host_time_map_.at(ptr_vm->id()).size() > 0 );
-
-		vm_host_time_map_[ptr_vm->id()].back().second = cur_time;
-
-		update_utilization_profile(ptr_vm);
-
-		ptr_vm->power_off();
-
-		reg.des_engine().schedule_event(
-				ptr_vm_pwroff_evt_src_,
-				cur_time,
-				ptr_vm
-			);
-
-		ptr_vm->guest_system().application().simulation_model().request_tier_service_event_source(ptr_vm->guest_system().id()).disconnect(
-				::dcs::functional::bind(
-						&self_type::process_vm_request_service,
-						this,
-						::dcs::functional::placeholders::_1,
-						::dcs::functional::placeholders::_2,
-						ptr_vm
-					)
-			);
-	}
-
-
-	private: void do_vm_migrate(virtual_machine_pointer const& ptr_vm, physical_machine_type& pm, bool pm_is_source)
-	{
-		DCS_DEBUG_ASSERT( ptr_vm );
-
-		DCS_DEBUG_ASSERT( vm_host_time_map_.count(ptr_vm->id()) > 0 );
-		DCS_DEBUG_ASSERT( vm_host_time_map_.at(ptr_vm->id()).size() > 0 );
-
-		registry_type& reg(registry_type::instance());
-
-		real_type cur_time(reg.des_engine().simulated_time());
-
-		virtual_machine_migration_context<traits_type> evt_state;
-		evt_state.vm_id = ptr_vm->id();
-		evt_state.pm_id = pm.id();
-		evt_state.pm_is_source = pm_is_source;
-
-		if (pm_is_source)
+		if (ptr_vm->power_state() == powered_off_power_status)
 		{
-			vm_host_time_map_[ptr_vm->id()].back().second = cur_time;
+			ptr_vm->power_on();
 
-			update_utilization_profile(ptr_vm);
+			registry_type& reg(registry_type::instance());
 
-			ptr_vm->guest_system().application().simulation_model().request_tier_service_event_source(ptr_vm->guest_system().id()).disconnect(
-					::dcs::functional::bind(
-							&self_type::process_vm_request_service,
-							this,
-							::dcs::functional::placeholders::_1,
-							::dcs::functional::placeholders::_2,
-							ptr_vm
-						)
-				);
-		}
-		else
-		{
+			real_type cur_time(reg.des_engine().simulated_time());
+
 			vm_host_time_map_[ptr_vm->id()].push_back(::std::make_pair(cur_time, ::std::numeric_limits<real_type>::infinity()));
+
+			reg.des_engine().schedule_event(
+					ptr_vm_pwron_evt_src_,
+					cur_time,
+					ptr_vm
+				);
 
 			ptr_vm->guest_system().application().simulation_model().request_tier_service_event_source(ptr_vm->guest_system().id()).connect(
 					::dcs::functional::bind(
@@ -588,12 +518,106 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 						)
 				);
 		}
+	}
 
-		reg.des_engine().schedule_event(
-				ptr_vm_migr_evt_src_,
-				cur_time,
-				evt_state
-			);
+
+	private: void do_vm_power_off(virtual_machine_pointer const& ptr_vm)
+	{
+		DCS_DEBUG_ASSERT( ptr_vm );
+
+		if (ptr_vm->power_state() != powered_off_power_status)
+		{
+			registry_type& reg(registry_type::instance());
+
+			real_type cur_time(reg.des_engine().simulated_time());
+
+			DCS_DEBUG_ASSERT( vm_host_time_map_.count(ptr_vm->id()) > 0 );
+			DCS_DEBUG_ASSERT( vm_host_time_map_.at(ptr_vm->id()).size() > 0 );
+
+			vm_host_time_map_[ptr_vm->id()].back().second = cur_time;
+
+			update_utilization_profile(ptr_vm);
+
+			ptr_vm->power_off();
+
+			reg.des_engine().schedule_event(
+					ptr_vm_pwroff_evt_src_,
+					cur_time,
+					ptr_vm
+				);
+
+			ptr_vm->guest_system().application().simulation_model().request_tier_service_event_source(ptr_vm->guest_system().id()).disconnect(
+					::dcs::functional::bind(
+							&self_type::process_vm_request_service,
+							this,
+							::dcs::functional::placeholders::_1,
+							::dcs::functional::placeholders::_2,
+							ptr_vm
+						)
+				);
+		}
+	}
+
+
+	private: void do_vm_migrate(virtual_machine_pointer const& ptr_vm, physical_machine_type& pm, bool pm_is_source)
+	{
+		DCS_DEBUG_ASSERT( ptr_vm );
+
+		DCS_DEBUG_ASSERT( vm_host_time_map_.count(ptr_vm->id()) > 0 );
+		DCS_DEBUG_ASSERT( vm_host_time_map_.at(ptr_vm->id()).size() > 0 );
+
+		if (ptr_vm->power_state() == powered_on_power_status)
+		{
+			registry_type& reg(registry_type::instance());
+
+			real_type cur_time(reg.des_engine().simulated_time());
+
+			virtual_machine_migration_context<traits_type> evt_state;
+			evt_state.vm_id = ptr_vm->id();
+			evt_state.pm_id = pm.id();
+			evt_state.pm_is_source = pm_is_source;
+
+			if (pm_is_source)
+			{
+				vm_host_time_map_[ptr_vm->id()].back().second = cur_time;
+
+				update_utilization_profile(ptr_vm);
+
+				ptr_vm->guest_system().application().simulation_model().request_tier_service_event_source(ptr_vm->guest_system().id()).disconnect(
+						::dcs::functional::bind(
+								&self_type::process_vm_request_service,
+								this,
+								::dcs::functional::placeholders::_1,
+								::dcs::functional::placeholders::_2,
+								ptr_vm
+							)
+					);
+			}
+			else
+			{
+				vm_host_time_map_[ptr_vm->id()].push_back(::std::make_pair(cur_time, ::std::numeric_limits<real_type>::infinity()));
+
+				ptr_vm->guest_system().application().simulation_model().request_tier_service_event_source(ptr_vm->guest_system().id()).connect(
+						::dcs::functional::bind(
+								&self_type::process_vm_request_service,
+								this,
+								::dcs::functional::placeholders::_1,
+								::dcs::functional::placeholders::_2,
+								ptr_vm
+							)
+					);
+			}
+
+			reg.des_engine().schedule_event(
+					ptr_vm_migr_evt_src_,
+					cur_time,
+					evt_state
+				);
+		}
+		else
+		{
+			log_warn(DCS_EESIM_LOGGING_AT, "Cannot migrate a non-powered-on VM.");
+		}
 	}
 
 
