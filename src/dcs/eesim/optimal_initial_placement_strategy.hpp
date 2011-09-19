@@ -331,16 +331,30 @@ class ampl_minlp_solver_impl
 			{
 				physical_machine_identifier_type pm_id(pm_ids_[i]);
 
-				for (::std::size_t j = 0; j < nvm; ++j)
+				real_type share_sum(0); // Normalization factor
+				for (::std::size_t k = 0; k < 2; ++k)
 				{
-					if (placement_flags(i,j))
+					for (::std::size_t j = 0; j < nvm; ++j)
 					{
-						virtual_machine_identifier_type vm_id(vm_ids_[j]);
-
-						//FIXME: CPU resource category is hard-coded.
-						resource_share_container shares(1, ::std::make_pair(cpu_resource_category, placement_shares(i,j)));
-
-						placement_[::std::make_pair(pm_id, vm_id)] = shares;
+						if (placement_flags(i,j))
+						{
+							if (k == 0)
+							{
+								share_sum += placement_shares(i,j);
+							}
+							else
+							{
+								virtual_machine_identifier_type vm_id(vm_ids_[j]);
+								real_type share(placement_shares(i,j));
+								if (share_sum > 1)
+								{
+									share /= share_sum;
+								}
+								//FIXME: CPU resource category is hard-coded.
+								resource_share_container shares(1, ::std::make_pair(cpu_resource_category, share));
+								placement_[::std::make_pair(pm_id, vm_id)] = shares;
+							}
+						}
 					}
 				}
 			}
@@ -499,7 +513,7 @@ class ampl_minlp_solver_impl
 			<< "print 'cost=', cost, ';';"
 			<< "print 'x=[', {i in I} round(x[i]), '];';"
 			<< "print 'y=[', {i in I} (({j in J} round(y[i,j])), ';'), '];';"
-			<< "print 's=[', {i in I} (({j in J} round(s[i,j], 5)), ';'), '];';"
+			<< "print 's=[', {i in I} (({j in J} s[i,j]), ';'), '];';"
 			<< "print '-- [/RESULT] --';" << ::std::endl
 			<< "end;"
 			<< ::std::endl;

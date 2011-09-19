@@ -404,22 +404,36 @@ class ampl_minlp_solver_impl
 			::std::size_t npm(::boost::numeric::ublasx::num_rows(placement_flags));
 			::std::size_t nvm(::boost::numeric::ublasx::num_columns(placement_flags));
 
-			for (::std::size_t i = 0; i < npm; ++i)
+			real_type share_sum(0); // Normalization factor
+			for (::std::size_t k = 0; k < 2; ++k)
 			{
-				physical_machine_identifier_type pm_id(pm_ids_[i]);
-
-				for (::std::size_t j = 0; j < nvm; ++j)
+				for (::std::size_t i = 0; i < npm; ++i)
 				{
-//::std::cerr << "Is VM #" << j << " (ID: " << vm_ids_[j] << ") placed on PM #" << i << " (ID: " << pm_ids_[i] << ")? " << placement_flags(i,j) << ::std::endl;//XXX
-					if (placement_flags(i,j))
+					physical_machine_identifier_type pm_id(pm_ids_[i]);
+
+					for (::std::size_t j = 0; j < nvm; ++j)
 					{
+//::std::cerr << "Is VM #" << j << " (ID: " << vm_ids_[j] << ") placed on PM #" << i << " (ID: " << pm_ids_[i] << ")? " << placement_flags(i,j) << ::std::endl;//XXX
+						if (placement_flags(i,j))
+						{
 //::std::cerr << "INSERTED"<< ::std::endl;//XXX
-						virtual_machine_identifier_type vm_id(vm_ids_[j]);
-
-						//FIXME: CPU resource category is hard-coded.
-						resource_share_container shares(1, ::std::make_pair(cpu_resource_category, placement_shares(i,j)));
-
-						placement_[::std::make_pair(pm_id, vm_id)] = shares;
+							if (k == 0)
+							{
+								share_sum += placement_shares(i,j);
+							}
+							else
+							{
+								virtual_machine_identifier_type vm_id(vm_ids_[j]);
+								real_type share(placement_shares(i,j));
+								if (share_sum > 1)
+								{
+									share /= share_sum;
+								}
+								//FIXME: CPU resource category is hard-coded.
+								resource_share_container shares(1, ::std::make_pair(cpu_resource_category, share));
+								placement_[::std::make_pair(pm_id, vm_id)] = shares;
+							}
+						}
 					}
 				}
 			}
@@ -631,7 +645,7 @@ class ampl_minlp_solver_impl
 			<< "print 'y=[', {i in I} (({j in J} round(y[i,j])), ';'), '];';"
 //			<< "print 's=(', card({I}), ',', card({J}), ')[', ({i in I} (i, ({j in J} (j, s[i,j])), ';')), '];';"
 //			<< "print 's=[', ({i in I} (i, ({j in J} (j, s[i,j])), ';')), '];';"
-			<< "print 's=[', {i in I} (({j in J} round(s[i,j], 5)), ';'), '];';"
+			<< "print 's=[', {i in I} (({j in J} s[i,j]), ';'), '];';"
 			<< "print '-- [/RESULT] --';" << ::std::endl
 			<< "end;"
 			<< ::std::endl;
