@@ -215,6 +215,14 @@ class base_migration_controller
 
 			registry_type& reg(registry_type::instance());
 
+			reg.des_engine().begin_of_sim_event_source().connect(
+					::dcs::functional::bind(
+						&self_type::process_begin_of_sim,
+						this,
+						::dcs::functional::placeholders::_1,
+						::dcs::functional::placeholders::_2
+					)
+				);
 			reg.des_engine().system_initialization_event_source().connect(
 					::dcs::functional::bind(
 						&self_type::process_sys_init,
@@ -253,6 +261,14 @@ class base_migration_controller
 
 			registry_type& reg(registry_type::instance());
 
+			reg.des_engine().begin_of_sim_event_source().disconnect(
+					::dcs::functional::bind(
+						&self_type::process_begin_of_sim,
+						this,
+						::dcs::functional::placeholders::_1,
+						::dcs::functional::placeholders::_2
+					)
+				);
 			reg.des_engine().system_initialization_event_source().disconnect(
 					::dcs::functional::bind(
 						&self_type::process_sys_init,
@@ -295,6 +311,12 @@ class base_migration_controller
 
 	//@{ Event Handlers
 
+	private: void process_begin_of_sim(des_event_type const& evt, des_engine_context_type& ctx)
+	{
+		do_process_begin_of_sim(evt, ctx);
+	}
+
+
 	private: void process_sys_init(des_event_type const& evt, des_engine_context_type& ctx)
 	{
 		schedule_control();
@@ -324,6 +346,15 @@ class base_migration_controller
 	protected: virtual void do_controlled_data_center(data_center_pointer const& ptr_dc)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_dc );
+
+		// empty
+	}
+
+
+	protected: virtual void do_process_begin_of_sim(des_event_type const& evt, des_engine_context_type& ctx)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 		// empty
 	}

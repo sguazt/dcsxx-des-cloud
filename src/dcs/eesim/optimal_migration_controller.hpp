@@ -796,6 +796,20 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 //	}
 
 
+	protected: void do_process_begin_of_sim(des_event_type const& evt, des_engine_context_type& ctx)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
+
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process BEGIN-OF-SIMULATION event (Clock: " << ctx.simulated_time() << ")");
+
+		ptr_cost_->reset();
+		ptr_num_migr_->reset();
+
+		DCS_DEBUG_TRACE("(" << this << ") END Do Process BEGIN-OF-SIMULATION event (Clock: " << ctx.simulated_time() << ")");
+	}
+
+
 	protected: void do_process_sys_init(des_event_type const& evt, des_engine_context_type& ctx)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
@@ -806,8 +820,6 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 		count_ = fail_count_
 			   = migr_count_
 			   = uint_type(0);
-		ptr_cost_->reset();
-		ptr_num_migr_->reset();
 		vm_util_map_.clear();
 
 		DCS_DEBUG_TRACE("(" << this << ") END Do Process SYSTEM-INITIALIZATION event (Clock: " << ctx.simulated_time() << ")");
