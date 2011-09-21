@@ -607,6 +607,13 @@ class lq_application_controller: public base_application_controller<TraitsT>
 		ready_ = false;
 		x_ = vector_type(n_x_, 0);
 		u_ = vector_type(n_u_, 0);
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+		num_ref_measures_ = 5;
+		next_ref_measure_ = 0;
+		ref_measure_ = 0;
+		next_tier_ref_measures_ = ::std::vector<real_type>(num_ref_measures_,0);
+		tier_ref_measures_ = ::std::vector<real_type>(num_ref_measures_,0);
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 	}
 
 
@@ -962,7 +969,27 @@ if ((count_ % 1000) == 0)//XXX
 			// Get the actual application-level output measure
 			//ref_measure = app.sla_cost_model().slo_value(category);
 			////ref_measure = static_cast<real_type>(.5)*app.sla_cost_model().slo_value(category);//EXP
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+			if (count_ > 1)
+			{
+				if ((count_ % num_ref_measures_) == 0)
+				{
+					ref_measure_ = next_ref_measure_ / ((count_>num_ref_measures_) ? static_cast<real_type>(num_ref_measures_) : static_cast<real_type>(num_ref_measures_+1));
+					next_ref_measure_ = ref_measure;
+				}
+				else
+				{
+					next_ref_measure_ += ptr_stat->estimate();
+				}
+			}
+			else
+			{
+				ref_measure_ = app_perf_model.application_measure(category);
+			}
+			ref_measure = ref_measure_;
+#else
 			ref_measure = app_perf_model.application_measure(category);
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 			if (ptr_stat->num_observations() > 0)
 			{
 				actual_measure = ptr_stat->estimate();
@@ -1017,7 +1044,27 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - OBSERVATION: ref: " << ref_measure << 
 								{
 									ptr_stat = tier_measures_[tier_id].at(category);
 
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+									if (count_ > 1)
+									{
+										if ((count_ % num_ref_measures_) == 0)
+										{
+											tier_ref_measures_[tier_id] = next_tier_ref_measures_[tier_id] / ((count_>num_ref_measures_) ? static_cast<real_type>(num_ref_measures_) : static_cast<real_type>(num_ref_measures_+1));
+											next_tier_ref_measures_[tier_id] = ref_measure;
+										}
+										else
+										{
+											next_tier_ref_measures_[tier_id] += ptr_stat->estimate();
+										}
+									}
+									else
+									{
+										tier_ref_measures_[tier_id] = app_perf_model.tier_measure(tier_id, category);
+									}
+									ref_measure = tier_ref_measures_[tier_id];
+#else
 									ref_measure = app_perf_model.tier_measure(tier_id, category);
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 									//ref_measure = static_cast<real_type>(.5)*app_perf_model.tier_measure(tier_id, category);//EXP
 									if (ptr_stat->num_observations() > 0)
 									{
@@ -1712,6 +1759,13 @@ if ((count_ % 1000) == 0)//XXX
 //	private: bool actual_val_ko_sla_trigger_;
 //	private: bool predicted_val_ko_sla_trigger_;
 	private: triggers_type triggers_;
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+	private: uint_type num_ref_measures_;
+	private: real_type next_ref_measure_;
+	private: real_type ref_measure_;
+	private: ::std::vector<real_type> next_tier_ref_measures_;
+	private: ::std::vector<real_type> tier_ref_measures_;
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 }; // lq_application_controller
 
 
