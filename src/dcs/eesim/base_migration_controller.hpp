@@ -231,7 +231,7 @@ class base_migration_controller
 						::dcs::functional::placeholders::_2
 					)
 				);
-			reg.des_engine().system_initialization_event_source().connect(
+			reg.des_engine().system_finalization_event_source().connect(
 					::dcs::functional::bind(
 						&self_type::process_sys_finit,
 						this,
