@@ -3,7 +3,7 @@
  *
  * \brief Global registry class.
  *
- * Copyright (C) 2009-2010  Distributed Computing System (DCS) Group, Computer
+ * Copyright (C) 2009-2011  Distributed Computing System (DCS) Group, Computer
  * Science Department - University of Piemonte Orientale, Alessandria (Italy).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,122 +30,38 @@
 //#undef DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
 
 
-#ifdef DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
-
-
 #include <dcs/config/boost.hpp>
 
-#if !DCS_CONFIG_BOOST_CHECK_VERSION(103200) // 1.32
-#	error "Required Boost libraries >= 1.32."
-#endif
+#if defined(DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON)
 
-#include <boost/serialization/singleton.hpp>
-#include <dcs/memory.hpp>
+# if !DCS_CONFIG_BOOST_CHECK_VERSION(103200) // 1.32
+#  error "Required Boost libraries >= 1.32."
+# endif
 
-
-namespace dcs { namespace eesim {
-
-template <typename TraitsT>
-class registry: public ::boost::serialization::singleton< registry<TraitsT> >
-{
-	private: typedef ::boost::serialization::singleton< registry<TraitsT> > base_type;
-	public: typedef TraitsT traits_type;
-	public: typedef typename traits_type::des_engine_type des_engine_type;
-	public: typedef ::dcs::shared_ptr<des_engine_type> des_engine_pointer;
-	public: typedef typename traits_type::uniform_random_generator_type uniform_random_generator_type;
-	public: typedef ::dcs::shared_ptr<uniform_random_generator_type> uniform_random_generator_pointer;
-
-
-	public: static registry& instance()
-	{
-		return base_type::get_mutable_instance();
-	}
-
-
-	public: static registry const& const_instance()
-	{
-		return base_type::get_const_instance();
-	}
-
-
-	public: void des_engine(des_engine_pointer const& ptr_engine)
-	{
-		ptr_des_eng_ = ptr_engine;
-	}
-
-
-	public: des_engine_pointer des_engine_ptr() const
-	{
-		return ptr_des_eng_;
-	}
-
-
-	public: des_engine_pointer des_engine_ptr()
-	{
-		return ptr_des_eng_;
-	}
-
-
-	public: des_engine_type const& des_engine() const
-	{
-		return *ptr_des_eng_;
-	}
-
-
-	public: des_engine_type& des_engine()
-	{
-		return *ptr_des_eng_;
-	}
-
-
-	public: void uniform_random_generator(uniform_random_generator_pointer const& ptr_generator)
-	{
-		ptr_rng_ = ptr_generator;
-	}
-
-
-	public: uniform_random_generator_pointer uniform_random_generator_ptr() const
-	{
-		return ptr_rng_;
-	}
-
-
-	public: uniform_random_generator_pointer uniform_random_generator_ptr()
-	{
-		return ptr_rng_;
-	}
-
-
-	protected: registry() { }
-
-
-	private: des_engine_pointer ptr_des_eng_;
-	private: uniform_random_generator_pointer ptr_rng_;
-};
-
-}} // Namespace dcs::eesim
-
+# include <boost/serialization/singleton.hpp>
 
 #else // DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
 
 
-#include <dcs/config/boost.hpp>
+# if !DCS_CONFIG_BOOST_CHECK_VERSION(102500) // 1.25
+#  error "Required Boost libraries >= 1.25."
+# endif
 
-#if !DCS_CONFIG_BOOST_CHECK_VERSION(102500) // 1.25
-#	error "Required Boost libraries >= 1.25."
-#endif
+# include <boost/utility.hpp>
+# include <boost/thread/once.hpp>
+# include <dcs/memory.hpp>
+# include <dcs/type_traits/add_const.hpp>
+# include <dcs/type_traits/add_reference.hpp>
 
-#include <boost/utility.hpp>
-#include <boost/thread/once.hpp>
+#endif // DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
+
 #include <boost/scoped_ptr.hpp>
-#include <dcs/memory.hpp>
-#include <dcs/type_traits/add_const.hpp>
-#include <dcs/type_traits/add_reference.hpp>
-
 
 namespace dcs { namespace eesim {
 
-namespace detail {
+#if !defined(DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON)
+
+namespace detail { namespace /*<unnamed>*/ {
 
 /**
  * \brief Thread safe lazy singleton template class.
@@ -208,56 +124,41 @@ template <typename T>
 template <typename T>
 ::boost::scoped_ptr<T> singleton<T>::ptr_t_(0);
 
+}} // Namespace detail::<unnamed>
 
-} // Namespace detail
+#endif // DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
+
+
+#if defined(DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON)
+
+template <typename TraitsT>
+class registry: public ::boost::serialization::singleton< registry<TraitsT> >
+{
+	private: typedef ::boost::serialization::singleton< registry<TraitsT> > base_type;
+#else // DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
 
 template <typename TraitsT>
 class registry: public detail::singleton< registry<TraitsT> >
 {
 	friend class detail::singleton< registry<TraitsT> >;
-
-
+#endif // DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::des_engine_type des_engine_type;
-//	public: typedef typename ::dcs::type_traits::add_reference<des_engine_type>::type des_engine_reference;
-//	public: typedef typename ::dcs::type_traits::add_reference<
-//							typename ::dcs::type_traits::add_const<
-//								des_engine_type
-//							>::type
-//						>::type des_engine_const_reference;
 	public: typedef ::dcs::shared_ptr<des_engine_type> des_engine_pointer;
 	public: typedef typename traits_type::uniform_random_generator_type uniform_random_generator_type;
-//	public: typedef typename ::dcs::type_traits::add_reference<uniform_random_generator_type>::type uniform_random_generator_reference;
-//	public: typedef typename ::dcs::type_traits::add_reference<
-//							typename ::dcs::type_traits::add_const<
-//								uniform_random_generator_type
-//							>::type
-//						>::type uniform_random_generator_const_reference;
 	public: typedef ::dcs::shared_ptr<uniform_random_generator_type> uniform_random_generator_pointer;
 
 
-//	public: void des_engine(des_engine_const_reference engine)
-//	{
-//		des_eng_ = engine;
-//	}
+	public: static registry& instance()
+	{
+		return base_type::get_mutable_instance();
+	}
 
 
-////	public: void des_engine(des_engine_reference engine)
-////	{
-////		des_eng_ = engine;
-////	}
-
-
-//	public: des_engine_reference des_engine()
-//	{
-//		return des_eng_;
-//	}
-
-
-//	public: des_engine_const_reference des_engine() const
-//	{
-//		return des_eng_;
-//	}
+	public: static registry const& const_instance()
+	{
+		return base_type::get_const_instance();
+	}
 
 
 	public: void des_engine(des_engine_pointer const& ptr_engine)
@@ -278,34 +179,28 @@ class registry: public detail::singleton< registry<TraitsT> >
 	}
 
 
+	public: des_engine_type const& des_engine() const
+	{
+		// pre: DES engine must be set
+		DCS_DEBUG_ASSERT( ptr_des_eng_ );
+
+		return *ptr_des_eng_;
+	}
+
+
+	public: des_engine_type& des_engine()
+	{
+		// pre: DES engine must be set
+		DCS_DEBUG_ASSERT( ptr_des_eng_ );
+
+		return *ptr_des_eng_;
+	}
+
+
 	public: void uniform_random_generator(uniform_random_generator_pointer const& ptr_generator)
 	{
 		ptr_rng_ = ptr_generator;
 	}
-
-
-//	public: void uniform_random_generator(uniform_random_generator_type const& generator)
-//	{
-//		rng_ = generator;
-//	}
-
-
-////	public: void uniform_random_generator(uniform_random_generator_reference generator)
-////	{
-////		rng_ = generator;
-////	}
-
-
-//	public: uniform_random_generator_reference uniform_random_generator()
-//	{
-//		return rng_;
-//	}
-
-
-//	public: uniform_random_generator_const_reference uniform_random_generator() const
-//	{
-//		return rng_;
-//	}
 
 
 	public: uniform_random_generator_pointer uniform_random_generator_ptr() const
@@ -320,19 +215,32 @@ class registry: public detail::singleton< registry<TraitsT> >
 	}
 
 
+	public: uniform_random_generator_type const& uniform_random_generator() const
+	{
+		// pre: random number generator must be set
+		DCS_DEBUG_ASSERT( ptr_rng_ );
+
+		return *ptr_rng_;
+	}
+
+
+	public: uniform_random_generator_type& uniform_random_generator()
+	{
+		// pre: random number generator must be set
+		DCS_DEBUG_ASSERT( ptr_rng_ );
+
+		return *ptr_rng_;
+	}
+
+
 	protected: registry() { }
 
 
-	//private: des_engine_type des_eng_;
 	private: des_engine_pointer ptr_des_eng_;
-	//private: uniform_random_generator_type rng_;
 	private: uniform_random_generator_pointer ptr_rng_;
 };
 
 }} // Namespace dcs::eesim
-
-
-#endif // DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
 
 
 #endif // DCS_EESIM_REGISTRY_HPP
