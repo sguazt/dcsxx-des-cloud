@@ -87,6 +87,7 @@ typedef dcs::math::random::base_generator<uint_type> random_generator_type;
 typedef dcs::eesim::traits<
 			des_engine_type,
 			random_generator_type,
+			dcs::eesim::config::configuration<real_type,uint_type>,
 			real_type,
 			uint_type,
 			int_type

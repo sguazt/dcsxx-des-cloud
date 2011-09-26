@@ -784,6 +784,10 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 #endif // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
 //[/XXX]
 
+//		// schedule life-time events
+//		this->schedule_application_start();
+//		this->schedule_application_stop();
+
 		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");
 	}
 

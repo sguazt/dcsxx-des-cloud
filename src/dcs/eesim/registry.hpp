@@ -47,15 +47,18 @@
 #  error "Required Boost libraries >= 1.25."
 # endif
 
-# include <boost/utility.hpp>
+# include <boost/scoped_ptr.hpp>
 # include <boost/thread/once.hpp>
-# include <dcs/memory.hpp>
+# include <boost/utility.hpp>
 # include <dcs/type_traits/add_const.hpp>
 # include <dcs/type_traits/add_reference.hpp>
 
+
 #endif // DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
 
-#include <boost/scoped_ptr.hpp>
+#include <dcs/eesim/config/configuration.hpp>
+#include <dcs/memory.hpp>
+
 
 namespace dcs { namespace eesim {
 
@@ -147,6 +150,8 @@ class registry: public detail::singleton< registry<TraitsT> >
 	public: typedef ::dcs::shared_ptr<des_engine_type> des_engine_pointer;
 	public: typedef typename traits_type::uniform_random_generator_type uniform_random_generator_type;
 	public: typedef ::dcs::shared_ptr<uniform_random_generator_type> uniform_random_generator_pointer;
+	public: typedef typename traits_type::configuration_type configuration_type;
+	public: typedef ::dcs::shared_ptr<configuration_type> configuration_pointer;
 
 
 	public: static registry& instance()
@@ -233,11 +238,42 @@ class registry: public detail::singleton< registry<TraitsT> >
 	}
 
 
+	public: configuration_pointer configuration_ptr() const
+	{
+		return ptr_conf_;
+	}
+
+
+	public: configuration_pointer configuration_ptr()
+	{
+		return ptr_conf_;
+	}
+
+
+	public: configuration_type const& configuration() const
+	{
+		// pre: valid pointer
+		DCS_DEBUG_ASSERT( ptr_conf_ );
+
+		return *ptr_conf_;
+	}
+
+
+	public: configuration_type& configuration()
+	{
+		// pre: valid pointer
+		DCS_DEBUG_ASSERT( ptr_conf_ );
+
+		return *ptr_conf_;
+	}
+
+
 	protected: registry() { }
 
 
 	private: des_engine_pointer ptr_des_eng_;
 	private: uniform_random_generator_pointer ptr_rng_;
+	private: configuration_pointer ptr_conf_;
 };
 
 }} // Namespace dcs::eesim

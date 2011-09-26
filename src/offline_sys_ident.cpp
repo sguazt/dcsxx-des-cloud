@@ -17,7 +17,8 @@
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/replications/engine.hpp>
 #include <dcs/eesim/config/configuration.hpp>
-#include <dcs/eesim/config/operation/make_data_center.hpp>
+#include <dcs/eesim/config/operation/make_application.hpp>
+//#include <dcs/eesim/config/operation/make_data_center.hpp>
 #include <dcs/eesim/config/operation/make_des_engine.hpp>
 #include <dcs/eesim/config/operation/make_random_number_generator.hpp>
 #include <dcs/eesim/config/operation/read_file.hpp>
@@ -120,6 +121,7 @@ typedef dcs::math::random::base_generator<uint_type> random_generator_type;
 typedef dcs::eesim::traits<
 			des_engine_type,
 			random_generator_type,
+			dcs::eesim::config::configuration<real_type,uint_type>,
 			real_type,
 			uint_type,
 			int_type
@@ -6031,7 +6033,7 @@ int main(int argc, char* argv[])
 		reg.uniform_random_generator(ptr_rng);
 
 		// Build the application
-		ptr_app = dcs::eesim::config::make_multi_tier_application<traits_type>(*app_it, conf, ptr_rng, ptr_des_eng);
+		ptr_app = dcs::eesim::config::make_application<traits_type>(*app_it, conf, ptr_rng, ptr_des_eng);
 
 		// Build the signal generator
 		switch (sig_category)

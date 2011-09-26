@@ -33,7 +33,7 @@
 #include <dcs/eesim/application_tier.hpp>
 #include <dcs/eesim/base_application_performance_model.hpp>
 #include <dcs/eesim/base_application_simulation_model.hpp>
-#include <dcs/eesim/data_center.hpp>//[sguazt] EXP
+//#include <dcs/eesim/data_center.hpp>//[sguazt] EXP
 //#include <dcs/eesim/performance_measure.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
 //#include <dcs/eesim/physical_resource.hpp>
@@ -57,6 +57,9 @@
 
 
 namespace dcs { namespace eesim { 
+
+template <typename TraitsT>
+class data_center;
 
 template <typename TraitsT>
 class base_application_simulation_model;
@@ -542,28 +545,28 @@ class multi_tier_application
 //		);
 
 		ptr_sim_model_->tier_virtual_machines(first, last);
-		ptr_sim_model_->enable(true);
+		ptr_sim_model_->start_application();
 
 		DCS_DEBUG_TRACE("END Starting Application: '" << name_ << "'");
 	}
 
 
-	public: void restart()
-	{
-		DCS_DEBUG_TRACE("BEGIN Restarting Application: '" << name_ << "'");
-
-		// check: pointer to simulation model is a valid pointer
-		DCS_DEBUG_ASSERT( ptr_sim_model_ );
-
-		DCS_ASSERT(
-			ptr_sim_model_->enabled(),
-			throw ::std::logic_error("[dcs::eesim::multi_tier_application::restart] Application not started.")
-		);
-
-		ptr_sim_model_->enabled(true);
-
-		DCS_DEBUG_TRACE("END Restarting Application: '" << name_ << "'");
-	}
+//	public: void restart()
+//	{
+//		DCS_DEBUG_TRACE("BEGIN Restarting Application: '" << name_ << "'");
+//
+//		// check: pointer to simulation model is a valid pointer
+//		DCS_DEBUG_ASSERT( ptr_sim_model_ );
+//
+//		DCS_ASSERT(
+//			ptr_sim_model_->enabled(),
+//			throw ::std::logic_error("[dcs::eesim::multi_tier_application::restart] Application not started.")
+//		);
+//
+//		ptr_sim_model_->enabled(true);
+//
+//		DCS_DEBUG_TRACE("END Restarting Application: '" << name_ << "'");
+//	}
 
 
 	public: void stop()
@@ -573,7 +576,7 @@ class multi_tier_application
 		// check: pointer to simulation model is a valid pointer
 		DCS_DEBUG_ASSERT( ptr_sim_model_ );
 
-		ptr_sim_model_->enable(false);
+		ptr_sim_model_->stop_application();
 
 //		// Disconnect from previously registered simulation event sources
 //		ptr_sim_model_->request_departure_event_source().disconnect(

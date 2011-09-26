@@ -34,6 +34,7 @@ namespace dcs { namespace eesim {
 template <
 	typename DesEngineT,
 	typename UniformRandomGeneratorT,
+	typename ConfigurationT,
 	typename RealT,
 	typename UIntT,
 	typename IntT
@@ -42,6 +43,7 @@ struct traits
 {
 	typedef DesEngineT des_engine_type;
 	typedef UniformRandomGeneratorT uniform_random_generator_type;
+	typedef ConfigurationT configuration_type;
 	typedef RealT real_type;
 	typedef UIntT uint_type;
 	typedef IntT int_type;

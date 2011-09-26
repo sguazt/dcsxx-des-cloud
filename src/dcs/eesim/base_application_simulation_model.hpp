@@ -5,8 +5,10 @@
 #include <dcs/des/base_statistic.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/entity.hpp>
+#include <dcs/eesim/base_application_lifetime_strategy.hpp>
 #include <dcs/eesim/multi_tier_application.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
+#include <dcs/eesim/registry.hpp>
 #include <dcs/eesim/user_request.hpp>
 #include <dcs/memory.hpp>
 #include <map>
@@ -36,7 +38,16 @@ class base_application_simulation_model: public ::dcs::des::entity
 	//public: typedef ::std::vector<virtual_machine_pointer> vm_container;
 	public: typedef typename application_type::application_tier_type application_tier_type;
 	public: typedef typename application_tier_type::identifier_type tier_identifier_type;
+	public: typedef base_application_lifetime_strategy<traits_type> application_lifetime_strategy_type;
+	public: typedef ::dcs::shared_ptr<application_lifetime_strategy_type> application_lifetime_strategy_pointer;
 	private: typedef ::std::map<tier_identifier_type,virtual_machine_pointer> tier_vm_mapping_container;
+
+
+	protected: base_application_simulation_model()
+	: start_time_(0),
+	  stop_time_(0)
+	{
+	}
 
 
 	public: void application(application_pointer const& ptr_app)
@@ -292,6 +303,39 @@ class base_application_simulation_model: public ::dcs::des::entity
 	}
 
 
+	public: void start_application()
+	{
+		this->enable(true);
+		start_time_ = registry<traits_type>::instance().des_engine().simulated_time();
+	}
+
+
+	public: void stop_application()
+	{
+		this->enable(false);
+		stop_time_ = registry<traits_type>::instance().des_engine().simulated_time();
+	}
+
+
+//	public: void restart_application()
+//	{
+//		this->enable(true);
+//		start_time_ = registry<traits_type>::instance().des_engine().simulated_time();
+//	}
+
+
+	public: real_type start_time() const
+	{
+		return start_time_;
+	}
+
+
+	public: real_type stop_time() const
+	{
+		return stop_time_;
+	}
+
+
 	protected: application_pointer application_ptr() const
 	{
 		return ptr_app_;
@@ -302,6 +346,40 @@ class base_application_simulation_model: public ::dcs::des::entity
 	{
 		return ptr_app_;
 	}
+
+
+//	private: void schedule_application_start()
+//	{
+//		registry<traits_type>::instance().des_engine().schedule_event(
+//				ptr_stop_app_evt_src_,
+//				ptr_app_life_strategy_->start_time()
+//			);
+//	}
+//
+//
+//	private: void schedule_application_stop()
+//	{
+//		registry<traits_type>::instance().des_engine().schedule_event(
+//				ptr_start_app_evt_src_,
+//				ptr_app_life_strategy_->stop_time()
+//			);
+//	}
+//
+//
+//	private: void process_application_start(des_event_type const& evt, des_engine_context& ctx)
+//	{
+//		ptr_app_->start();
+//
+//		do_process_application_start(evt, ctx);
+//	}
+//
+//
+//	private: void process_application_stop(des_event_type const& evt, des_engine_context& ctx)
+//	{
+//		ptr_app_->stop();
+//
+//		do_process_application_stop(evt, ctx);
+//	}
 
 
 	private: virtual uint_type do_actual_num_arrivals() const = 0;
@@ -391,9 +469,18 @@ class base_application_simulation_model: public ::dcs::des::entity
 	private: virtual void do_resource_share(uint_type tier_id, physical_resource_category category, real_type share) = 0;
 
 
+//	private: virtual void do_process_application_start(des_event_type const& evt, des_engine_context& ctx) = 0;
+//
+//
+//	private: virtual void do_process_application_stop(des_event_type const& evt, des_engine_context& ctx) = 0;
+
+
 	private: application_pointer ptr_app_;
 	private: tier_vm_mapping_container tier_vm_map_;
-};
+//	private: application_lifetime_strategy_pointer ptr_app_life_strategy_;
+	private: real_type start_time_;
+	private: real_type stop_time_;
+}; // base_application_simulation_model
 
 }} // Namespace dcs::eesim
 

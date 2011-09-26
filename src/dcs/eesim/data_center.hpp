@@ -26,6 +26,7 @@
 #define DCS_EESIM_DATA_CENTER_HPP
 
 
+#include <cstddef>
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
@@ -33,6 +34,7 @@
 #include <dcs/eesim/base_physical_machine_controller.hpp>
 #include <dcs/eesim/multi_tier_application.hpp>
 #include <dcs/eesim/physical_machine.hpp>
+#include <dcs/eesim/power_status.hpp>
 #include <dcs/eesim/virtual_machine.hpp>
 #include <dcs/eesim/virtual_machines_placement.hpp>
 #include <dcs/eesim/registry.hpp>
@@ -82,15 +84,23 @@ class data_center
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
 
 
-
+	/// Default constructor
 	public: data_center()
 	{
 		init();
 	}
 
 
+	/// Destructor
+	public: virtual ~data_center()
+	{
+		finit();
+	}
+
+
 	public: application_identifier_type add_application(application_pointer const& ptr_app,
-														application_controller_pointer const& ptr_app_control)
+														application_controller_pointer const& ptr_app_control,
+														bool deploy = true)
 	{
 		// pre: ptr_app must be a valid application pointer.
 		DCS_ASSERT(
@@ -110,7 +120,10 @@ class data_center
 		app_ctrls_.push_back(ptr_app_control);
 		apps_.back()->id(id);
 
-		deploy_application(id);
+		if (deploy)
+		{
+			deploy_application(id);
+		}
 
 		ptr_app->data_centre(this);
 
@@ -326,6 +339,34 @@ class data_center
 	}
 
 
+	public: ::std::vector<virtual_machine_pointer> application_virtual_machines(application_identifier_type id) const
+	{
+		typedef typename deployed_application_container::const_iterator app_iterator;
+		typedef typename deployed_application_vm_container::const_iterator vm_iterator;
+
+		app_iterator app_it(deployed_apps_.find(id));
+		if (app_it == deployed_apps_.end())
+		{
+			throw ::std::invalid_argument("[dcs::eesim::application_virtual_machines] Invalid application identifier.");
+		}
+
+		::std::vector<virtual_machine_pointer> vms;
+
+		vm_iterator vm_end_it(app_it->second.end());
+		for (vm_iterator vm_it = app_it->second.begin(); vm_it != vm_end_it; ++vm_it)
+		{
+			virtual_machine_identifier_type vm_id(*vm_it);
+
+			// paranoid-check: make sure VM vm_id does exist
+			DCS_DEBUG_ASSERT(vms_.count(vm_id) > 0);
+
+			vms.push_back(vms_[vm_id]);
+		}
+
+		return vms;
+	}
+
+
 	public: void place_virtual_machines(virtual_machines_placement_type const& placement,
 										bool power_on = false)
 	{
@@ -489,7 +530,7 @@ class data_center
 		app_iterator app_it(deployed_apps_.find(app_id));
 		if (app_it == deployed_apps_.end())
 		{
-			::std::invalid_argument("[dcs::eesim::start_application] Invalid application identifier.");
+			throw ::std::invalid_argument("[dcs::eesim::start_application] Invalid application identifier.");
 		}
 
 		bool startable(true);
@@ -559,7 +600,7 @@ class data_center
 		app_iterator app_it(deployed_apps_.find(app_id));
 		if (app_it == deployed_apps_.end())
 		{
-			::std::invalid_argument("[dcs::eesim::stop_application] Invalid application identifier.");
+			throw ::std::invalid_argument("[dcs::eesim::stop_application] Invalid application identifier.");
 		}
 
 		bool stoppable(true);
@@ -590,9 +631,24 @@ class data_center
 
 	private: void init()
 	{
-		registry<traits_type>& ref_reg = registry<traits_type>::instance();
+		registry<traits_type>& ref_reg(registry<traits_type>::instance());
 
 		ref_reg.des_engine_ptr()->system_initialization_event_source().connect(
+			::dcs::functional::bind(
+				&self_type::process_sys_init,
+				this,
+				::dcs::functional::placeholders::_1,
+				::dcs::functional::placeholders::_2
+			)
+		);
+	}
+
+
+	private: void finit()
+	{
+		registry<traits_type>& ref_reg(registry<traits_type>::instance());
+
+		ref_reg.des_engine_ptr()->system_initialization_event_source().disconnect(
 			::dcs::functional::bind(
 				&self_type::process_sys_init,
 				this,
@@ -755,7 +811,7 @@ class data_center
 	private: virtual_machine_container vms_;
 	private: virtual_machines_placement_type placement_;
 	private: deployed_application_container deployed_apps_;
-};
+}; // data_center
 
 
 }} // Namespace dcs::eesim

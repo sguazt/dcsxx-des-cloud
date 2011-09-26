@@ -9,8 +9,10 @@
 #include <dcs/eesim/config/configuration.hpp>
 #include <dcs/eesim/config/initial_placement_strategy.hpp>
 #include <dcs/eesim/config/migration_controller.hpp>
+#include <dcs/eesim/config/operation/make_application_instance_builder.hpp>
 #include <dcs/eesim/data_center.hpp>
 #include <dcs/eesim/data_center_manager.hpp>
+#include <dcs/eesim/dummy_migration_controller.hpp>
 #include <dcs/eesim/first_fit_initial_placement_strategy.hpp>
 #include <dcs/eesim/first_fit_scaleout_initial_placement_strategy.hpp>
 #include <dcs/eesim/optimal_initial_placement_strategy.hpp>
@@ -131,6 +133,7 @@ template <typename TraitsT, typename RealT>
 	return ptr_controller;
 }
 
+
 }} // Namespace detail::<unnamed>
 
 
@@ -148,6 +151,8 @@ template <
 	typedef RealT real_type;
 	typedef UIntT uint_type;
 	typedef ::dcs::eesim::data_center_manager<traits_type> data_center_manager_type;
+	typedef configuration<real_type,uint_type> configuration_type;
+
 
 	::dcs::shared_ptr<data_center_manager_type> ptr_dc_mngr = ::dcs::make_shared<data_center_manager_type>();
 
@@ -165,6 +170,9 @@ template <
 		ptr_dc_mngr->initial_placement_strategy(ptr_strategy);
 	}
 
+	// Incremental placement strategy
+	// TODO
+
 	// Migration controller
 	{
 		::dcs::shared_ptr< ::dcs::eesim::base_migration_controller<traits_type> > ptr_controller;
@@ -175,6 +183,30 @@ template <
 			);
 
 		ptr_dc_mngr->migration_controller(ptr_controller);
+	}
+
+	// Application builders
+	{
+		typedef typename configuration_type::data_center_config_type data_center_config_type;
+		typedef typename data_center_config_type::application_config_container::const_iterator iterator;
+
+		iterator end_it = conf.data_center().applications().end();
+		for (iterator it = conf.data_center().applications().begin(); it != end_it; ++it)
+		{
+//			::dcs::shared_ptr< ::dcs::eesim::multi_tier_application<traits_type> > ptr_app;
+//
+//			ptr_app = make_application<traits_type>(*it, conf, ptr_rng, ptr_des_eng);
+//
+//			::dcs::shared_ptr< ::dcs::eesim::base_application_controller<traits_type> > ptr_app_controller;
+//
+//			ptr_app_controller = make_application_controller<traits_type>(it->controller, ptr_app);
+//			ptr_app_controller->application(ptr_app);
+//
+//			ptr_dc->add_application(ptr_app, ptr_app_controller);
+			ptr_dc_mngr->add_application_instance_builder(
+					make_application_instance_builder<traits_type>(*it)
+				);
+		}
 	}
 
 	return ptr_dc_mngr;

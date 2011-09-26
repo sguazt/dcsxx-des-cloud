@@ -1,5 +1,5 @@
-#ifndef DCS_EESIM_CONFIG_OPERATION_LOGGER_HPP
-#define DCS_EESIM_CONFIG_OPERATION_LOGGER_HPP
+#ifndef DCS_EESIM_CONFIG_OPERATION_MAKE_LOGGER_HPP
+#define DCS_EESIM_CONFIG_OPERATION_MAKE_LOGGER_HPP
 
 
 #include <boost/variant.hpp>
@@ -142,4 +142,4 @@ template <typename TraitsT, typename RealT, typename UIntT>
 }}} // Namespace dcs::eesim::config
 
 
-#endif // DCS_EESIM_CONFIG_OPERATION_LOGGER_HPP
+#endif // DCS_EESIM_CONFIG_OPERATION_MAKE_LOGGER_HPP
