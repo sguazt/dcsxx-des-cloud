@@ -1,5 +1,5 @@
-#ifndef DCS_EESIM_CONFIG_APPLICATION_CONFIG_HPP
-#define DCS_EESIM_CONFIG_APPLICATION_CONFIG_HPP
+#ifndef DCS_EESIM_CONFIG_APPLICATION_CONTROLLER_HPP
+#define DCS_EESIM_CONFIG_APPLICATION_CONTROLLER_HPP
 
 
 #include <boost/variant.hpp>
@@ -514,4 +514,4 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 }}} // Namespace dcs::eesim::config
 
 
-#endif // DCS_EESIM_CONFIG_APPLICATION_CONFIG_HPP
+#endif // DCS_EESIM_CONFIG_APPLICATION_CONTROLLER_HPP

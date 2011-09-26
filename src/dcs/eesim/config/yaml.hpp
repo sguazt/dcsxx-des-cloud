@@ -6,6 +6,7 @@
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/eesim/config/application.hpp>
+#include <dcs/eesim/config/application_builder.hpp>
 #include <dcs/eesim/config/application_controller.hpp>
 #include <dcs/eesim/config/application_performance_model.hpp>
 #include <dcs/eesim/config/application_simulation_model.hpp>
@@ -2369,6 +2370,56 @@ void operator>>(::YAML::Node const& node, application_controller_config<RealT,UI
 
 
 template <typename RealT, typename UIntT>
+void operator>>(::YAML::Node const& node, application_builder_config<RealT,UIntT>& conf)
+{
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+	typedef application_builder_config<real_type,uint_type> builder_config_type;
+
+	if (node.FindValue("min-num-instances"))
+	{
+		node["min-num-instances"] >> conf.min_num_instances;
+	}
+	else
+	{
+		conf.min_num_instances = 1;
+	}
+	if (node.FindValue("max-num-instances"))
+	{
+		node["max-num-instances"] >> conf.max_num_instances;
+	}
+	else
+	{
+		conf.max_num_instances = conf.min_num_instances;
+	}
+	if (node.FindValue("num-preallocated-instances"))
+	{
+		node["num-preallocated-instances"] >> conf.num_preallocated_instances;
+	}
+	else
+	{
+		conf.num_preallocated_instances = 0;
+	}
+	if (node.FindValue("preallocated-is-endless"))
+	{
+		node["preallocated-is-endless"] >> conf.preallocated_is_endless;
+	}
+	else
+	{
+		conf.preallocated_is_endless = false;
+	}
+	if (conf.num_preallocated_instances <  conf.max_num_instances)
+	{
+		node["arrival-distribution"] >> conf.arrival_distribution;
+	}
+	if (conf.num_preallocated_instances <  conf.max_num_instances || !conf.preallocated_is_endless)
+	{
+		node["runtime-distribution"] >> conf.runtime_distribution;
+	}
+}
+
+
+template <typename RealT, typename UIntT>
 void operator>>(::YAML::Node const& node, application_config<RealT,UIntT>& app)
 {
 	// Read (optional) name
@@ -2417,6 +2468,17 @@ void operator>>(::YAML::Node const& node, application_config<RealT,UIntT>& app)
 	}
 	// Read controller
 	node["controller"] >> app.controller;
+	// Read instance
+	if (node.FindValue("instances"))
+	{
+		node["instances"] >> app.builder;
+	}
+	else
+	{
+		app.builder.min_num_instances = app.builder.max_num_instances
+									  = app.builder.num_preallocated_instances
+									  = 1;
+	}
 }
 
 

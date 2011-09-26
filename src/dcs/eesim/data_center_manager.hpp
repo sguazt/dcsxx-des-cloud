@@ -26,6 +26,7 @@
 #define DCS_EESIM_DATA_CENTER_MANAGER_HPP
 
 
+#include <cmath>
 #include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/eesim/application_instance.hpp>
@@ -270,19 +271,21 @@ class data_center_manager
 			uint_type num_insts(ptr_builder->num_preallocated_instances());
 			for (uint_type i = 1; i <= num_insts; ++i)
 			{
-				application_instance_pointer ptr_inst((*ptr_builder)(urng, cur_time));
+				application_instance_pointer ptr_inst((*ptr_builder)(urng, true, cur_time));
 
 				// paranoid-check: valid pointer
 				DCS_DEBUG_ASSERT( ptr_inst );
 
 				ptr_dc_->add_application(ptr_inst->application_ptr(),
 										 ptr_inst->application_controller_ptr());
+
+				schedule_application_destruction(ptr_inst);
 			}
 			// Build "future" apps (creation is done on a scheduled event)
 			num_insts = ptr_builder->min_num_instances();
 			for (uint_type i = ptr_builder->num_preallocated_instances()+1; i <= num_insts; ++i)
 			{
-				application_instance_pointer ptr_inst((*ptr_builder)(urng, cur_time));
+				application_instance_pointer ptr_inst((*ptr_builder)(urng, true, cur_time));
 
 				// paranoid-check: valid pointer
 				DCS_DEBUG_ASSERT( ptr_inst );
@@ -333,6 +336,11 @@ class data_center_manager
 
 	private: void schedule_application_destruction(application_instance_pointer const& ptr_app_inst)
 	{
+		if (::std::isinf(ptr_app_inst->stop_time()))
+		{
+			return;
+		}
+
 		registry<traits_type>& reg(registry<traits_type>::instance());
 
 		reg.des_engine().schedule_event(

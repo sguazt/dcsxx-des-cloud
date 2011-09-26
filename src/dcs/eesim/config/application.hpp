@@ -3,6 +3,7 @@
 
 
 #include <algorithm>
+#include <dcs/eesim/config/application_builder.hpp>
 #include <dcs/eesim/config/application_controller.hpp>
 #include <dcs/eesim/config/application_performance_model.hpp>
 #include <dcs/eesim/config/application_simulation_model.hpp>
@@ -30,6 +31,7 @@ struct application_config
 	typedef application_simulation_model_config<real_type,uint_type> simulation_model_config_type;
 	typedef application_sla_config<real_type> sla_config_type;
 	typedef application_controller_config<RealT,UIntT> controller_config_type;
+	typedef application_builder_config<RealT,UIntT> builder_config_type;
 
 	::std::string name;
 	performance_model_config_type perf_model;
@@ -38,7 +40,9 @@ struct application_config
 	reference_resource_container reference_resources;
 	tier_container tiers;
 	controller_config_type controller;
+	builder_config_type builder;
 };
+
 
 template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, application_config<RealT,UIntT> const& app)
@@ -86,6 +90,7 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 	os << "}";
 
 	os << ", " << app.controller;
+	os << ", " << app.builder;
 
 	os << ">";
 

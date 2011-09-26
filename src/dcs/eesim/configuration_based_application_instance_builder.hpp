@@ -13,6 +13,7 @@
 #include <dcs/eesim/registry.hpp>
 #include <dcs/math/stats/distribution/any_distribution.hpp>
 #include <dcs/math/stats/function/rand.hpp>
+#include <limits>
 
 
 namespace dcs { namespace eesim {
@@ -43,29 +44,36 @@ class configuration_based_application_instance_builder: public base_application_
 
 
 	public: configuration_based_application_instance_builder(application_config_type const& app_conf,
-															 uint_type min_num_insts = uint_type(0),
-															 uint_type max_num_insts = uint_type(0),
-															 uint_type num_prealloc_insts = uint_type(0))
-	: base_type(min_num_insts, max_num_insts, num_prealloc_insts),
+															 uint_type min_num_insts = uint_type(1),
+															 uint_type max_num_insts = uint_type(1),
+															 uint_type num_prealloc_insts = uint_type(1),
+															 bool prealloc_endless = true)
+	: base_type(min_num_insts, max_num_insts, num_prealloc_insts, prealloc_endless),
 	  app_conf_(app_conf)
 	{
 	}
 
 
-	private: application_instance_pointer do_build(urng_type& rng, real_type clock)
+	private: application_instance_pointer do_build(urng_type& rng, bool preallocated, real_type clock)
 	{
 		typedef registry<traits_type> registry_type;
 
 		real_type st(0);
-		real_type rt(0);
+		real_type rt(::std::numeric_limits<real_type>::infinity());
 
-		while ((st = ::dcs::math::stats::rand(this->start_time_distribution(), rng)) < 0)
+		if (!preallocated)
 		{
-			;
+			while ((st = ::dcs::math::stats::rand(this->start_time_distribution(), rng)) < 0)
+			{
+				;
+			}
 		}
-		while ((rt = ::dcs::math::stats::rand(this->run_time_distribution(), rng)) < 0)
+		if (!preallocated || !this->preallocated_is_endless())
 		{
-			;
+			while ((rt = ::dcs::math::stats::rand(this->run_time_distribution(), rng)) < 0)
+			{
+				;
+			}
 		}
 
 		registry_type const& reg(registry_type::instance());

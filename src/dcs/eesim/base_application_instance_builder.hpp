@@ -32,17 +32,20 @@ class base_application_instance_builder
 	public: base_application_instance_builder()
 	: min_num_insts_(0),
 	  max_num_insts_(0),
-	  num_prealloc_insts_(0)
+	  num_prealloc_insts_(0),
+	  prealloc_endless_(false)
 	{
 	}
 
 
 	public: base_application_instance_builder(uint_type min_num_insts,
 											  uint_type max_num_insts,
-											  uint_type num_prealloc_insts)
+											  uint_type num_prealloc_insts,
+											  bool prealloc_endless)
 	: min_num_insts_(min_num_insts),
 	  max_num_insts_(max_num_insts),
-	  num_prealloc_insts_(num_prealloc_insts)
+	  num_prealloc_insts_(num_prealloc_insts),
+	  prealloc_endless_(prealloc_endless)
 	{
 	}
 
@@ -80,6 +83,18 @@ class base_application_instance_builder
 	public: uint_type num_preallocated_instances() const
 	{
 		return num_prealloc_insts_;
+	}
+
+
+	public: void preallocated_is_endless(bool value)
+	{
+		prealloc_endless_ = value;
+	}
+
+
+	public: bool preallocated_is_endless() const
+	{
+		return prealloc_endless_;
 	}
 
 
@@ -133,13 +148,13 @@ class base_application_instance_builder
 	}
 
 
-	public: application_instance_pointer operator()(urng_type& rng, real_type clock=real_type(0))
+	public: application_instance_pointer operator()(urng_type& rng, bool preallocated, real_type clock=real_type(0))
 	{
-		return do_build(rng, clock);
+		return do_build(rng, preallocated, clock);
 	}
 
 
-	private: virtual application_instance_pointer do_build(urng_type& urng, real_type clock) = 0;
+	private: virtual application_instance_pointer do_build(urng_type& urng, bool preallocated, real_type clock) = 0;
 
 
 //	private: application_pointer ptr_app_;
@@ -147,6 +162,7 @@ class base_application_instance_builder
 	private: uint_type min_num_insts_;
 	private: uint_type max_num_insts_;
 	private: uint_type num_prealloc_insts_;
+	private: bool prealloc_endless_;
 	private: distribution_type st_distr_;
 	private: distribution_type rt_distr_;
 }; // base_application_instance_builder
