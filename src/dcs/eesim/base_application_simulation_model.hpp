@@ -5,7 +5,6 @@
 #include <dcs/des/base_statistic.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/entity.hpp>
-#include <dcs/eesim/base_application_lifetime_strategy.hpp>
 #include <dcs/eesim/multi_tier_application.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/registry.hpp>
@@ -38,8 +37,6 @@ class base_application_simulation_model: public ::dcs::des::entity
 	//public: typedef ::std::vector<virtual_machine_pointer> vm_container;
 	public: typedef typename application_type::application_tier_type application_tier_type;
 	public: typedef typename application_tier_type::identifier_type tier_identifier_type;
-	public: typedef base_application_lifetime_strategy<traits_type> application_lifetime_strategy_type;
-	public: typedef ::dcs::shared_ptr<application_lifetime_strategy_type> application_lifetime_strategy_pointer;
 	private: typedef ::std::map<tier_identifier_type,virtual_machine_pointer> tier_vm_mapping_container;
 
 
@@ -477,7 +474,6 @@ class base_application_simulation_model: public ::dcs::des::entity
 
 	private: application_pointer ptr_app_;
 	private: tier_vm_mapping_container tier_vm_map_;
-//	private: application_lifetime_strategy_pointer ptr_app_life_strategy_;
 	private: real_type start_time_;
 	private: real_type stop_time_;
 }; // base_application_simulation_model
