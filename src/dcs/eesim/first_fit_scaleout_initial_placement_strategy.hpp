@@ -3,6 +3,7 @@
 
 
 #include <cstddef>
+#include <dcs/debug.hpp>
 #include <dcs/eesim/base_initial_placement_strategy.hpp>
 #include <dcs/eesim/data_center.hpp>
 #include <dcs/eesim/registry.hpp>
@@ -12,9 +13,7 @@
 #include <dcs/eesim/virtual_machines_placement.hpp>
 #include <dcs/math/stats/distribution/discrete_uniform.hpp>
 #include <dcs/math/stats/function/rand.hpp>
-#include <dcs/memory.hpp>
 #include <set>
-#include <stdexcept>
 #include <vector>
 
 
@@ -98,14 +97,16 @@ class first_fit_scaleout_initial_placement_strategy: public base_initial_placeme
 	private: typedef base_initial_placement_strategy<TraitsT> base_type;
 	public: typedef TraitsT traits_type;
 	private: typedef typename traits_type::real_type real_type;
+	private: typedef data_center<traits_type> data_center_type;
 
 
-	private: virtual_machines_placement<traits_type> do_placement(data_center<traits_type> const& dc)
+	private: virtual_machines_placement<traits_type> do_placement(data_center_type const& dc)
 	{
-		typedef physical_machine<traits_type> physical_machine_type;
-		typedef virtual_machine<traits_type> virtual_machine_type;
-		typedef ::dcs::shared_ptr<physical_machine_type> physical_machine_pointer;
-		typedef ::dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
+		typedef typename data_center_type::application_type application_type;
+		typedef typename data_center_type::physical_machine_type physical_machine_type;
+		typedef typename data_center_type::physical_machine_pointer physical_machine_pointer;
+		typedef typename data_center_type::virtual_machine_type virtual_machine_type;
+		typedef typename data_center_type::virtual_machine_pointer virtual_machine_pointer;
 		typedef typename physical_machine_type::identifier_type pm_identifier_type;
 		typedef typename virtual_machine_type::identifier_type vm_identifier_type;
 		typedef ::std::vector<physical_machine_pointer> pm_container;
@@ -116,14 +117,13 @@ class first_fit_scaleout_initial_placement_strategy: public base_initial_placeme
         typedef ::std::vector<share_type> share_container;
         typedef typename share_container::const_iterator share_iterator;
 		typedef ::std::size_t size_type;
-		typedef multi_tier_application<traits_type> application_type;
 
 		vm_container vms(dc.virtual_machines());
 
 		pm_container machs(dc.physical_machines());
 
-		size_type nmachs = machs.size();
-		size_type nvms = vms.size();
+		size_type nmachs(machs.size());
+		size_type nvms(vms.size());
 
 DCS_DEBUG_TRACE("BEGIN Initial Placement");//XXX
 DCS_DEBUG_TRACE("#Machines: " << nmachs);//XXX
@@ -138,13 +138,15 @@ DCS_DEBUG_TRACE("#VMs: " << nvms);//XXX
 
 		::std::vector< ::std::pair<physical_resource_category,real_type> > shares;
 		::std::set<pm_identifier_type> used_machs;
-		vm_iterator vm_end_it = vms.end();
+		vm_iterator vm_end_it(vms.end());
 		for (vm_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
 		{
 			virtual_machine_pointer ptr_vm(*vm_it);
-			physical_machine_pointer ptr_mach;
+
+			// paranoid-check: valid pointer.
+			DCS_DEBUG_ASSERT( ptr_vm );
+
 			application_type const& app(ptr_vm->guest_system().application());
-			bool placed(false);
 
 			// Retrieve the share for every resource of the VM guest system
 			share_container ref_shares(ptr_vm->guest_system().resource_shares());
@@ -152,10 +154,16 @@ DCS_DEBUG_TRACE("#VMs: " << nvms);//XXX
 			// For each physical machine PM, try to deploy current VM on PM
 			// until a suitable machine (i.e., a machine with sufficient free
 			// capacity) is found.
-			pm_iterator pm_end_it = machs.end();
+			bool placed(false);
+			physical_machine_pointer ptr_mach;
+			pm_iterator pm_end_it(machs.end());
+			share_iterator ref_share_end_it(ref_shares.end());
 			for (pm_iterator pm_it = machs.begin(); pm_it != pm_end_it && !placed; ++pm_it)
 			{
 				ptr_mach = *pm_it;
+
+				// paranoid-check: valid pointer.
+				DCS_DEBUG_ASSERT( ptr_mach );
 
 				if (used_machs.count(ptr_mach->id()))
 				{
@@ -165,7 +173,6 @@ DCS_DEBUG_TRACE("#VMs: " << nvms);//XXX
 
 				// Reference to actual resource shares
 				share_container shares;
-				share_iterator ref_share_end_it = ref_shares.end();
 				for (share_iterator ref_share_it = ref_shares.begin(); ref_share_it != ref_share_end_it; ++ref_share_it)
 				{
 					physical_resource_category ref_category(ref_share_it->first);
@@ -187,9 +194,8 @@ DCS_DEBUG_TRACE("#VMs: " << nvms);//XXX
 															   actual_threshold,
 															   ref_share);
 
-					shares.push_back(share_type(ref_category, share));
+					shares.push_back(::std::make_pair(ref_category, share));
 				}
-
 
                 placed = deployment.try_place(*ptr_vm,
                                               *ptr_mach,

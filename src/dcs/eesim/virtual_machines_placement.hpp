@@ -59,11 +59,6 @@ class virtual_machines_placement
 //	}
 
 
-	public: virtual_machines_placement()
-	{
-	}
-
-
 	public: template <typename ForwardIterT>
 		bool placeable(virtual_machine_type& vm,
 					   physical_machine_type& pm,

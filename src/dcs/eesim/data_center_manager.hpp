@@ -29,13 +29,13 @@
 #include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/eesim/application_instance.hpp>
-#include <dcs/eesim/application_instance_builder.hpp>
 #include <dcs/eesim/base_incremental_placement_strategy.hpp>
 #include <dcs/eesim/base_initial_placement_strategy.hpp>
 #include <dcs/eesim/base_migration_controller.hpp>
 #include <dcs/eesim/data_center.hpp>
 #include <dcs/eesim/registry.hpp>
 #include <dcs/eesim/virtual_machine.hpp>
+#include <dcs/eesim/virtual_machines_placement.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
@@ -446,6 +446,8 @@ class data_center_manager
     private: void process_application_creation(des_event_type const& evt, des_engine_context_type& ctx)
     {
 		typedef ::std::vector<virtual_machine_pointer> vm_container;
+		typedef virtual_machines_placement<traits_type> vms_placement_type;
+		typedef typename vms_placement_type::const_iterator vms_placement_iterator;
 
 		application_instance_pointer ptr_app_inst(evt.template unfolded_state<application_instance_pointer>());
 
@@ -459,8 +461,19 @@ class data_center_manager
 
 		// Place VMs
 		vm_container vms(ptr_dc_->application_virtual_machines(app_id));
-		//ptr_incr_placement_->place(ptr_dc_, vms.begin(), vms.end());
-		//place_virtual_machine...
+		vms_placement_type vm_placement;
+		vm_placement = ptr_incr_placement_->place(ptr_dc_, vms.begin(), vms.end());
+		vms_placement_iterator vmp_end_it(vm_placement.end());
+		for (vms_placement_iterator vmp_it = vm_placement.begin(); vmp_it != vmp_end_it; ++vmp_it)
+		{
+			ptr_dc_.place_virtual_machine(
+					ptr_dc_.virtual_machine_ptr(vm_placement.vm_id(vmp_it)),
+					ptr_dc_.physical_machine_ptr(vm_placement.pm_id(vmp_it)),
+					vm_placement.shares_begin(vmp_it),
+					vm_placement.shares_end(vmp_it),
+					false
+				);
+		}
 
 		// Start application
 		start_application(app_id);
@@ -472,6 +485,9 @@ class data_center_manager
 
 	private: void process_application_destruction(des_event_type const& evt, des_engine_context_type& ctx)
 	{
+		typedef ::std::vector<virtual_machine_pointer> vm_container;
+		typedef typename vm_container::const_iterator vm_iterator;
+
 		application_instance_pointer ptr_app_inst(evt.template unfolded_state<application_instance_pointer>());
 
 		// paranoid-check: valid pointer
@@ -479,10 +495,23 @@ class data_center_manager
 
 		application_identifier_type app_id(ptr_app_inst->application().id());
 
+		// Stop application
 		stop_application(app_id);
 
-		//displace_virtual_machine...
+		// Destroy VMs
+		vm_container vms(ptr_dc_->application_virtual_machines(app_id));
+		vm_iterator vm_end_it(vms.end());
+		for (vm_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
+		{
+			virtual_machine_pointer ptr_vm(*vm_it);
 
+			// paranoid-check: valid pointer.
+			DCS_DEBUG_ASSERT( ptr_vm );
+
+			displace_virtual_machine(ptr_vm);
+		}
+
+		// Destroy application
 		undeploy_application(app_id);
 	}
 

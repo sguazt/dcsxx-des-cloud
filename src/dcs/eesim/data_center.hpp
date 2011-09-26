@@ -580,7 +580,7 @@ class data_center
 
 			bool stopped;
 
-			stopped = start_application(app_id);
+			stopped = stop_application(app_id);
 
 			if (stopped)
 			{
@@ -592,7 +592,7 @@ class data_center
 	}
 
 
-	public: bool stop_applicaion(application_identifier_type app_id)
+	public: bool stop_application(application_identifier_type app_id)
 	{
 		typedef typename deployed_application_container::const_iterator app_iterator;
 		typedef typename deployed_application_vm_container::const_iterator vm_iterator;
