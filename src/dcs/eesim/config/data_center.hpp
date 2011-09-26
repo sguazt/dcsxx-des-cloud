@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <dcs/eesim/config/application.hpp>
 #include <dcs/eesim/config/initial_placement_strategy.hpp>
+#include <dcs/eesim/config/incremental_placement_strategy.hpp>
 #include <dcs/eesim/config/migration_controller.hpp>
 #include <dcs/eesim/config/physical_machine.hpp>
 #include <iosfwd>
@@ -24,6 +25,7 @@ class data_center_config
 	public: typedef ::std::vector<application_config_type> application_config_container;
 	public: typedef ::std::vector<physical_machine_config_type> physical_machine_config_container;
 	public: typedef initial_placement_strategy_config<RealT> initial_placement_strategy_config_type;
+	public: typedef incremental_placement_strategy_config<RealT> incremental_placement_strategy_config_type;
 	public: typedef migration_controller_config<real_type> migration_controller_config_type;
 
 
@@ -63,6 +65,18 @@ class data_center_config
 	}
 
 
+	public: void incremental_placement_strategy(incremental_placement_strategy_config_type const& strategy_conf)
+	{
+		incr_place_conf_ = strategy_conf;
+	}
+
+
+	public: incremental_placement_strategy_config_type const& incremental_placement_strategy() const
+	{
+		return incr_place_conf_;
+	}
+
+
 	public: void migration_controller(migration_controller_config_type controller_conf)
 	{
 		migr_ctrl_conf_ = controller_conf;
@@ -78,6 +92,7 @@ class data_center_config
 	private: application_config_container apps_;
 	private: physical_machine_config_container machs_;
 	private: initial_placement_strategy_config_type init_place_conf_;
+	private: incremental_placement_strategy_config_type incr_place_conf_;
 	private: migration_controller_config_type migr_ctrl_conf_;
 };
 
@@ -103,6 +118,8 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 	os << "]";
 
 	os << ", " << dc.initial_placement_strategy();
+
+	os << ", " << dc.incremental_placement_strategy();
 
 	os << ", " << dc.migration_controller();
 

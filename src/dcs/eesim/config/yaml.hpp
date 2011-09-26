@@ -13,6 +13,7 @@
 #include <dcs/eesim/config/application_tier.hpp>
 #include <dcs/eesim/config/configuration.hpp>
 #include <dcs/eesim/config/data_center.hpp>
+#include <dcs/eesim/config/incremental_placement_strategy.hpp>
 #include <dcs/eesim/config/initial_placement_strategy.hpp>
 #include <dcs/eesim/config/logging.hpp>
 #include <dcs/eesim/config/metric_category.hpp>
@@ -411,7 +412,20 @@ initial_placement_strategy_category text_to_initial_placement_strategy_category(
 		return optimal_initial_placement_strategy;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_initial_placement_strategy_category] Unknown init VM placement strategy category.");
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_initial_placement_strategy_category] Unknown initial VM placement strategy category.");
+}
+
+
+incremental_placement_strategy_category text_to_incremental_placement_strategy_category(::std::string const& str)
+{
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("best-fit"))
+	{
+		return best_fit_incremental_placement_strategy;
+	}
+
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_incremental_placement_strategy_category] Unknown incremental VM placement strategy category.");
 }
 
 
@@ -2626,6 +2640,41 @@ void operator>>(::YAML::Node const& node, initial_placement_strategy_config<Real
 
 
 template <typename RealT>
+void operator>>(::YAML::Node const& node, incremental_placement_strategy_config<RealT>& strategy_conf)
+{
+	typedef incremental_placement_strategy_config<RealT> strategy_config_type;
+
+	::std::string label;
+
+	node["type"] >> label;
+
+	strategy_conf.category = detail::text_to_incremental_placement_strategy_category(label);
+
+	switch (strategy_conf.category)
+	{
+		case best_fit_incremental_placement_strategy:
+			{
+				typedef typename strategy_config_type::best_fit_incremental_placement_strategy_config_type strategy_config_impl_type;
+
+				strategy_config_impl_type strategy_conf_impl;
+
+				strategy_conf.category_conf = strategy_conf_impl;
+			}
+			break;
+	}
+
+	if (node.FindValue("ref-penalty"))
+	{
+		node["ref-penalty"] >> strategy_conf.ref_penalty;
+	}
+	else
+	{
+		strategy_conf.ref_penalty = 0;
+	}
+}
+
+
+template <typename RealT>
 void operator>>(::YAML::Node const& node, migration_controller_config<RealT>& controller_conf)
 {
 	typedef migration_controller_config<RealT> controller_config_type;
@@ -2809,6 +2858,18 @@ class yaml_reader
 				subnode >> strategy;
 
 				dc.initial_placement_strategy(strategy);
+			}
+			// Incremental placement
+			{
+				typedef typename data_center_config_type::incremental_placement_strategy_config_type incremental_placement_strategy_config_type;
+
+				::YAML::Node const& subnode = node["incremental-placement-strategy"];
+
+				incremental_placement_strategy_config_type strategy;
+
+				subnode >> strategy;
+
+				dc.incremental_placement_strategy(strategy);
 			}
 			// Migration controller
 			{

@@ -38,6 +38,8 @@ class best_fit_incremental_placement_strategy: public base_incremental_placement
 		typedef typename data_center_type::physical_machine_type physical_machine_type;
 		typedef typename data_center_type::physical_machine_pointer physical_machine_pointer;
 		typedef typename physical_machine_type::identifier_type pm_identifier_type;
+		typedef typename data_center_type::virtual_machine_type virtual_machine_type;
+		typedef typename data_center_type::virtual_machine_pointer virtual_machine_pointer;
 		typedef ::std::vector<physical_machine_pointer> pm_container;
 		typedef typename pm_container::const_iterator pm_iterator;
 		typedef typename vm_identifier_container::const_iterator vm_identifier_iterator;
@@ -62,7 +64,7 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 		{
 			vm_identifier_type vm_id(*vm_it);
 
-			virtual_machine_pointer ptr_vm(dc.virtual_machine(vm_id));
+			virtual_machine_pointer ptr_vm(dc.virtual_machine_ptr(vm_id));
 
 			// paranoid-check: valid pointer
 			DCS_DEBUG_ASSERT( ptr_vm );
