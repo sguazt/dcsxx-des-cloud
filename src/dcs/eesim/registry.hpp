@@ -238,6 +238,12 @@ class registry: public detail::singleton< registry<TraitsT> >
 	}
 
 
+	public: void configuration(configuration_pointer const& ptr_conf)
+	{
+		ptr_conf_ = ptr_conf;
+	}
+
+
 	public: configuration_pointer configuration_ptr() const
 	{
 		return ptr_conf_;
