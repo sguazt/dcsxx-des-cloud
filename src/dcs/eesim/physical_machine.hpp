@@ -340,7 +340,8 @@ template <
 	typedef ::std::vector<resource_pointer> resource_container;
 	typedef typename resource_container::const_iterator resource_iterator;
 
-    os << "<Name: " << machine.name()
+    os << "<ID: " << machine.id()
+	   << ", Name: " << machine.name()
 	   << ", Resources: {";
 
 	resource_container resources = machine.resources();
