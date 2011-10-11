@@ -9,15 +9,14 @@ namespace dcs { namespace eesim { namespace detail { namespace ampl {
 
 enum solver_results
 {
-	solved_result, // optimal solution found
-	maybe_solved_result, // optimal solution indicated, but error likely
-	infeasible_result, // constraints cannot be satisfied
-	unbounded_result, // objective can be improved without limit
-	limit_result, // stopped by a limit that you set (such as on iterations)
-	failure_result, // stopped by an error condition in the solver
-	unknown_result // fall-back
+	solved_result, ///< Optimal solution found.
+	maybe_solved_result, ///< Optimal solution indicated, but error likely.
+	infeasible_result, ///< Constraints cannot be satisfied.
+	unbounded_result, ///< Objective can be improved without limit.
+	limit_result, ///< Stopped by a limit that the user set (such as on iterations).
+	failure_result, ///< Stopped by an error condition in the solver.
+	unknown_result ///< Fall-back case.
 };
-
 
 inline
 solver_results solver_result_from_string(::std::string const& str)

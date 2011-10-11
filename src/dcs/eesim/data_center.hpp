@@ -503,20 +503,24 @@ class data_center
 
 		uint_type started_apps(0);
 
+::std::cerr << "[data_center>> Starting Apps" << ::std::endl;//XXX
 		app_iterator app_end_it(deployed_apps_.end());
 		for (app_iterator app_it(deployed_apps_.begin()); app_it != app_end_it; ++app_it)
 		{
 			application_identifier_type app_id(app_it->first);
+::std::cerr << "[data_center> Starting App: " << app_id << ::std::endl;//XXX
 
 			bool started;
 
 			started = start_application(app_id);
+::std::cerr << "[data_center> Started App? " << ::std::boolalpha << started << ::std::endl;//XXX
 
 			if (started)
 			{
 				++started_apps;
 			}
 		}
+::std::cerr << "[data_center>> Started Apps: " << started_apps << ::std::endl;//XXX
 
 		return started_apps;
 	}

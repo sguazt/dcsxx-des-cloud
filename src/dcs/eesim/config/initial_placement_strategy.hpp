@@ -3,6 +3,10 @@
 
 
 #include <boost/variant.hpp>
+#include <dcs/eesim/optimal_solver_categories.hpp>
+#include <dcs/eesim/optimal_solver_ids.hpp>
+#include <dcs/eesim/optimal_solver_input_methods.hpp>
+#include <dcs/eesim/optimal_solver_proxies.hpp>
 #include <dcs/macro.hpp>
 #include <iosfwd>
 
@@ -33,8 +37,17 @@ struct first_fit_scaleout_initial_placement_strategy_config
 };
 
 
+template <typename RealT>
 struct optimal_initial_placement_strategy_config
 {
+	typedef RealT real_type;
+
+	real_type wp;
+	real_type ws;
+	optimal_solver_categories category;
+	optimal_solver_input_methods input_method;
+	optimal_solver_ids solver_id;
+	optimal_solver_proxies proxy;
 };
 
 
@@ -45,7 +58,7 @@ struct initial_placement_strategy_config
     typedef best_fit_initial_placement_strategy_config best_fit_initial_placement_strategy_config_type;
     typedef first_fit_initial_placement_strategy_config first_fit_initial_placement_strategy_config_type;
     typedef first_fit_scaleout_initial_placement_strategy_config first_fit_scaleout_initial_placement_strategy_config_type;
-    typedef optimal_initial_placement_strategy_config optimal_initial_placement_strategy_config_type;
+    typedef optimal_initial_placement_strategy_config<real_type> optimal_initial_placement_strategy_config_type;
 
 
 	initial_placement_strategy_category category;
@@ -113,12 +126,17 @@ template <typename CharT, typename CharTraitsT>
 }
 
 
-template <typename CharT, typename CharTraitsT>
-::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, optimal_initial_placement_strategy_config const& strategy)
+template <typename CharT, typename CharTraitsT, typename RealT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, optimal_initial_placement_strategy_config<RealT> const& strategy)
 {
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( strategy );
-
-	os << "<(optimal-initial-placement)>";
+	os << "<(optimal-initial-placement)"
+	   << " power-weight: " << strategy.wp
+	   << ", sla-weight: " << strategy.ws
+	   << ", category: " << strategy.category
+	   << ", input: " << strategy.input_method
+	   << ", solver: " << strategy.solver_id
+	   << ", proxy: " << strategy.proxy
+	   << ">";
 
 	return os;
 }

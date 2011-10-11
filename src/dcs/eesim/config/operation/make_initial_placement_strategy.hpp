@@ -9,6 +9,7 @@
 #include <dcs/eesim/first_fit_initial_placement_strategy.hpp>
 #include <dcs/eesim/first_fit_scaleout_initial_placement_strategy.hpp>
 #include <dcs/eesim/optimal_initial_placement_strategy.hpp>
+#include <dcs/eesim/optimal_solver_params.hpp>
 #include <dcs/memory.hpp>
 
 
@@ -65,11 +66,19 @@ template <typename TraitsT, typename RealT>
 			break;
 		case optimal_initial_placement_strategy:
 			{
+				typedef typename strategy_config_type::optimal_initial_placement_strategy_config_type strategy_config_impl_type;
 				typedef ::dcs::eesim::optimal_initial_placement_strategy<traits_type> strategy_impl_type;
 
-				// Note: there is nothing to configure
+				strategy_config_impl_type const& strategy_conf_impl = ::boost::get<strategy_config_impl_type>(strategy_conf.category_conf);
 
-				ptr_strategy = ::dcs::make_shared<strategy_impl_type>();
+				optimal_solver_params<traits_type> params(strategy_conf_impl.category,
+														  strategy_conf_impl.input_method,
+														  strategy_conf_impl.solver_id,
+														  strategy_conf_impl.proxy);
+
+				ptr_strategy = ::dcs::make_shared<strategy_impl_type>(params,
+																	  strategy_conf_impl.wp,
+																	  strategy_conf_impl.ws);
 			}
 			break;
 	}

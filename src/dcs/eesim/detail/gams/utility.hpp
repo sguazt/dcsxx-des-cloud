@@ -1,5 +1,5 @@
-#ifndef DCS_EESIM_DETAIL_AMPL_UTILITY_HPP
-#define DCS_EESIM_DETAIL_AMPL_UTILITY_HPP
+#ifndef DCS_EESIM_DETAIL_GAMS_UTILITY_HPP
+#define DCS_EESIM_DETAIL_GAMS_UTILITY_HPP
 
 
 #ifdef __GNUC__
@@ -30,60 +30,17 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim { namespace detail { namespace ampl {
-
-/*
-::std::string make_tmp_file(::std::string name)
-{
-	name += "XXXXXX";
-	::std::vector<char> tmpl(name.begin(), name.end());
-	tmpl.push_back('\0');
-
-	int fd = ::mkstemp(&tmpl[0]);
-	if (fd != -1)
-	{
-		name.assign(tmpl.begin(), tmpl.end()-1);
-		::close(fd);
-	}
-
-	return name;
-}
-
-::std::string make_tmp_file(::std::string name, ::std::ofstream& of)
-{
-	name += "XXXXXX";
-	::std::vector<char> tmpl(name.begin(), name.end());
-	tmpl.push_back('\0');
-
-	int fd = ::mkstemp(&tmpl[0]);
-	if (fd != -1)
-	{
-		name.assign(tmpl.begin(), tmpl.end()-1);
-		of.open(name.c_str(), ::std::ios_base::trunc | ::std::ios_base::out);
-		::close(fd);
-	}
-
-	return name;
-}
-
-::std::string make_tmp_file(::std::string path, ::std::string name, ::std::ofstream& of)
-{
-	path += "/" + name;
-
-	return make_tmp_file(path, of);
-}
-*/
-
+namespace dcs { namespace eesim { namespace detail { namespace gams {
 
 template <typename ArgsT, typename ProducerT>
-bool run_ampl_command_producer(::std::string const& cmd,
+bool run_gams_command_producer(::std::string const& cmd,
 							   ArgsT const& args,
 							   ProducerT& producer)
 {
 
 	DCS_DEBUG_ASSERT( !cmd.empty() );
 
-	// Run the AMPL command
+	// Run the GAMS command
 
 	int pipefd[2];
 	const ::std::size_t CHILD_RD(0);
@@ -92,7 +49,7 @@ bool run_ampl_command_producer(::std::string const& cmd,
 	{
 		char const* err_str(::strerror(errno));
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::ampl::run_ampl_command_producer] pipe(2) failed: "
+		oss << "[dcs::eesim::detail::gams::run_gams_command_producer] pipe(2) failed: "
 			<< err_str;
 		throw ::std::runtime_error(oss.str());
 	}
@@ -110,7 +67,7 @@ bool run_ampl_command_producer(::std::string const& cmd,
 	{
 		char const* err_str(::strerror(errno));
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::ampl::run_ampl_command_producer] fork(2) failed: "
+		oss << "[dcs::eesim::detail::gams::run_gams_command_producer] fork(2) failed: "
 			<< err_str;
 		throw ::std::runtime_error(oss.str());
 	}
@@ -132,7 +89,7 @@ bool run_ampl_command_producer(::std::string const& cmd,
 			{
 				char const* err_str = ::strerror(errno);
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::ampl::run_ampl_command] getrlimit(2) failed: "
+				oss << "[dcs::eesim::detail::gams::run_gams_command] getrlimit(2) failed: "
 					<< ::std::string(err_str);
 				throw ::std::runtime_error(oss.str());
 			}
@@ -148,7 +105,7 @@ bool run_ampl_command_producer(::std::string const& cmd,
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::ampl::run_ampl_command] getrlimit(2) failed: "
+			oss << "[dcs::eesim::detail::gams::run_gams_command] getrlimit(2) failed: "
 				<< ::std::string(err_str);
 			throw ::std::runtime_error(oss.str());
 		}
@@ -171,7 +128,7 @@ bool run_ampl_command_producer(::std::string const& cmd,
 			{
 				char const* err_str(::strerror(errno));
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::ampl::run_ampl_command_producer] dup2(2) failed: "
+				oss << "[dcs::eesim::detail::gams::run_gams_command_producer] dup2(2) failed: "
 					<< err_str;
 				throw ::std::runtime_error(oss.str());
 			}
@@ -228,7 +185,7 @@ bool run_ampl_command_producer(::std::string const& cmd,
 			}
 		}
 #ifdef DCS_DEBUG
-::std::cerr << "Executing AMPL: " << cmd;//XXX
+::std::cerr << "Executing GAMS: " << cmd;//XXX
 for (::std::size_t i=0; i < args.size(); ++i)//XXX
 {//XXX
 ::std::cerr << " " << args[i] << ::std::flush;//XXX
@@ -278,7 +235,7 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
 	// Write to the child process
 	producer(os);
 
-::std::cerr << "END parsing AMPL output" << ::std::endl;//XXX
+::std::cerr << "END parsing GAMS output" << ::std::endl;//XXX
 
     // Wait the child termination (in order to prevent zombies)
     int status;
@@ -286,7 +243,7 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
     {
         char const* err_str = ::strerror(errno);
         ::std::ostringstream oss;
-        oss << "[dcs::eesim::detail::ampl::run_ampl_command_producer] waitpid(2) failed: "
+        oss << "[dcs::eesim::detail::gams::run_gams_command_producer] waitpid(2) failed: "
             << ::std::string(err_str);
         throw ::std::runtime_error(oss.str());
     }
@@ -297,13 +254,13 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
 		if (WEXITSTATUS(status))
 		{
 			// status != 0 --> error in the execution
-			::std::clog << "[Warning] AMPL command exited with status " << WEXITSTATUS(status) << ::std::endl;
+			::std::clog << "[Warning] GAMS command exited with status " << WEXITSTATUS(status) << ::std::endl;
 			ok = false;
 		}
 	}
 	else if (WIFSIGNALED(status))
 	{
-		::std::clog << "[Warning] AMPL command received signal " << WTERMSIG(status) << ::std::endl;
+		::std::clog << "[Warning] GAMS command received signal " << WTERMSIG(status) << ::std::endl;
 		ok = false;
 	}
 	else
@@ -316,7 +273,7 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
 
 
 template <typename ArgsT, typename ProducerT, typename ConsumerT>
-bool run_ampl_command(::std::string const& cmd,
+bool run_gams_command(::std::string const& cmd,
 					  ArgsT const& args,
 					  ProducerT& producer,
 					  ConsumerT& consumer)
@@ -324,11 +281,11 @@ bool run_ampl_command(::std::string const& cmd,
 
 	DCS_DEBUG_ASSERT( !cmd.empty() );
 
-	// Run the AMPL command
+	// Run the GAMS command
 
-	// Create two pipes to let to communicate with AMPL.
-	// Specifically, we want to write the input into AMPL (through the producer)
-	// and to read the output from AMPL (through the consumer).
+	// Create two pipes to let to communicate with GAMS.
+	// Specifically, we want to write the input into GAMS (through the producer)
+	// and to read the output from GAMS (through the consumer).
 	// So, the child process read its input from the parent and write its output on
 	// the pipe; while the parent write the child's input on the pipe and read its
 	// input from the child.
@@ -345,7 +302,7 @@ bool run_ampl_command(::std::string const& cmd,
 	{
 		char const* err_str(::strerror(errno));
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::ampl::run_ampl_command] pipe(2) failed: "
+		oss << "[dcs::eesim::detail::gams::run_gams_command] pipe(2) failed: "
 			<< err_str;
 		throw ::std::runtime_error(oss.str());
 	}
@@ -353,7 +310,7 @@ bool run_ampl_command(::std::string const& cmd,
 	{
 		char const* err_str(::strerror(errno));
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::ampl::run_ampl_command] pipe(2) failed: "
+		oss << "[dcs::eesim::detail::gams::run_gams_command] pipe(2) failed: "
 			<< err_str;
 		throw ::std::runtime_error(oss.str());
 	}
@@ -371,7 +328,7 @@ bool run_ampl_command(::std::string const& cmd,
 	{
 		char const* err_str(::strerror(errno));
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::ampl::run_ampl_command] fork(2) failed: "
+		oss << "[dcs::eesim::detail::gams::run_gams_command] fork(2) failed: "
 			<< err_str;
 		throw ::std::runtime_error(oss.str());
 	}
@@ -393,7 +350,7 @@ bool run_ampl_command(::std::string const& cmd,
 			{
 				char const* err_str = ::strerror(errno);
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::ampl::run_ampl_command] getrlimit(2) failed: "
+				oss << "[dcs::eesim::detail::gams::run_gams_command] getrlimit(2) failed: "
 					<< ::std::string(err_str);
 				throw ::std::runtime_error(oss.str());
 			}
@@ -409,7 +366,7 @@ bool run_ampl_command(::std::string const& cmd,
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::ampl::run_ampl_command] getrlimit(2) failed: "
+			oss << "[dcs::eesim::detail::gams::run_gams_command] getrlimit(2) failed: "
 				<< ::std::string(err_str);
 			throw ::std::runtime_error(oss.str());
 		}
@@ -432,7 +389,7 @@ bool run_ampl_command(::std::string const& cmd,
 			{
 				char const* err_str(::strerror(errno));
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::ampl::run_ampl_command] dup2(2) failed: "
+				oss << "[dcs::eesim::detail::gams::run_gams_command] dup2(2) failed: "
 					<< err_str;
 				throw ::std::runtime_error(oss.str());
 			}
@@ -454,7 +411,7 @@ bool run_ampl_command(::std::string const& cmd,
 			{
 				char const* err_str(::strerror(errno));
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::ampl::run_ampl_command] dup2(2) failed: "
+				oss << "[dcs::eesim::detail::gams::run_gams_command] dup2(2) failed: "
 					<< err_str;
 				throw ::std::runtime_error(oss.str());
 			}
@@ -511,7 +468,7 @@ bool run_ampl_command(::std::string const& cmd,
 			}
 		}
 #ifdef DCS_DEBUG
-::std::cerr << "Executing AMPL: " << cmd;//XXX
+::std::cerr << "Executing GAMS: " << cmd;//XXX
 for (::std::size_t i=0; i < args.size(); ++i)//XXX
 {//XXX
 ::std::cerr << " " << args[i] << ::std::flush;//XXX
@@ -585,7 +542,7 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
 	// Read the input from the child process
     consumer(is);
 
-::std::cerr << "END parsing AMPL output" << ::std::endl;//XXX
+::std::cerr << "END parsing GAMS output" << ::std::endl;//XXX
 ::std::cerr << "IS state: " << is.good() << " - " << is.eof() << " - " << is.fail() << " - " << is.bad() << ::std::endl;//XXX
 
     // Wait the child termination (in order to prevent zombies)
@@ -594,7 +551,7 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
     {
         char const* err_str = ::strerror(errno);
         ::std::ostringstream oss;
-        oss << "[dcs::eesim::detail::ampl::run_ampl_command] waitpid(2) failed: "
+        oss << "[dcs::eesim::detail::gams::run_gams_command] waitpid(2) failed: "
             << ::std::string(err_str);
         throw ::std::runtime_error(oss.str());
     }
@@ -605,13 +562,13 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
 		if (WEXITSTATUS(status))
 		{
 			// status != 0 --> error in the execution
-			::std::clog << "[Warning] AMPL command exited with status " << WEXITSTATUS(status) << ::std::endl;
+			::std::clog << "[Warning] GAMS command exited with status " << WEXITSTATUS(status) << ::std::endl;
 			ok = false;
 		}
 	}
 	else if (WIFSIGNALED(status))
 	{
-		::std::clog << "[Warning] AMPL command received signal " << WTERMSIG(status) << ::std::endl;
+		::std::clog << "[Warning] GAMS command received signal " << WTERMSIG(status) << ::std::endl;
 		ok = false;
 	}
 	else
@@ -647,7 +604,7 @@ void parse_str(::std::string const& text, T& x)
 	}
 	else
 	{
-		throw ::std::runtime_error("[dcs::eesim::detail::ampl::parse_str] Unable to parse a AMPL number");
+		throw ::std::runtime_error("[dcs::eesim::detail::gams::parse_str] Unable to parse a GAMS number");
 	}
 }
 
@@ -691,7 +648,7 @@ void parse_str(::std::string const& text, ::std::string& x)
 		}
 		else
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::ampl::parse_str] Unable to parse a AMPL string");
+			throw ::std::runtime_error("[dcs::eesim::detail::gams::parse_str] Unable to parse a GAMS string");
 		}
 	}
 }
@@ -716,16 +673,10 @@ void parse_str(::std::string const& text, ::boost::numeric::ublas::vector<T>& v)
 			{
 				// Found an element separator
 				iss.get();
-//					while (iss.good() && (ch = iss.peek()) && ::std::isspace(ch))
-//					{
-//						iss.get();
-//					}
 			}
 			else if (ch == ']')
 			{
 				// Found the end of the vector
-//					iss.get();
-//					inside = false;
 				done = true;
 			}
 			else if (::std::isdigit(ch) || ch == '+' || ch == '-' || ch == '.')
@@ -762,7 +713,7 @@ void parse_str(::std::string const& text, ::boost::numeric::ublas::vector<T>& v)
 
 		if (ko)
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::ampl::parse_str] Unable to parse a AMPL vector.");
+			throw ::std::runtime_error("[dcs::eesim::detail::gams::parse_str] Unable to parse a GAMS vector.");
 		}
 	}
 }
@@ -791,10 +742,6 @@ void parse_str(::std::string const& text, ::boost::numeric::ublas::matrix<T>& A)
 			{
 				// Found a column separator
 				iss.get();
-//					while (iss.good() && (ch = iss.peek()) && ::std::isspace(ch))
-//					{
-//						iss.get();
-//					}
 			}
 			else if (ch == ';')
 			{
@@ -806,8 +753,6 @@ void parse_str(::std::string const& text, ::boost::numeric::ublas::matrix<T>& A)
 			else if (ch == ']')
 			{
 				// Found the end of the matrix
-//					iss.get();
-//					inside = false;
 				done = true;
 			}
 			else if (::std::isdigit(ch) || ch == '+' || ch == '-' || ch == '.')
@@ -851,104 +796,102 @@ void parse_str(::std::string const& text, ::boost::numeric::ublas::matrix<T>& A)
 
 		if (ko)
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::ampl::parse_str] Unable to parse a AMPL matrix.");
+			throw ::std::runtime_error("[dcs::eesim::detail::gams::parse_str] Unable to parse a GAMS matrix.");
 		}
 	}
 }
 
 
 inline
-::std::string find_ampl_command()
+::std::string find_gams_command()
 {
-	const ::std::string cmd_name("ampl");
+	const ::std::string cmd_name("gams");
 	return cmd_name;
 }
 
 
 inline
-::std::string to_ampl_solver(optimal_solver_ids solver_id)
+::std::string to_gams_solver(optimal_solver_ids solver_id)
 {
 	switch (solver_id)
 	{
-		case acrs_optimal_solver_id:
-			return "acrs";
-		case algencan_optimal_solver_id:
-			return "algencan";
-		case blmvm_optimal_solver_id:
-			return "blmvm";
+		case alphaecp_optimal_solver_id:
+			return "alphaecp";
+		case baron_optimal_solver_id:
+			return "baron";
+		case bdmlp_optimal_solver_id:
+			return "bdmlp";
 		case bonmin_optimal_solver_id:
 			return "bonmin";
 		case cbc_optimal_solver_id:
 			return "cbc";
-		case condor_optimal_solver_id:
-			return "condor";
 		case conopt_optimal_solver_id:
 			return "conopt";
 		case couenne_optimal_solver_id:
 			return "couenne";
 		case cplex_optimal_solver_id:
 			return "cplex";
-		case donlp2_optimal_solver_id:
-			return "donlp2";
-		case filmint_optimal_solver_id:
-			return "filmint";
-		case filter_optimal_solver_id:
-			return "filter";
-		case filtermpec_optimal_solver_id:
-			return "mpec";
-		case fortmp_optimal_solver_id:
-			return "afortmp";
-		case fsqp_optimal_solver_id:
-			return "fsqp";
+//		case decis_optimal_solver_id:
+//			return "decism";
+		case dicopt_optimal_solver_id:
+			return "dicopt";
+		case gurobi_optimal_solver_id:
+			return "gurobi";
 		case ipopt_optimal_solver_id:
 			return "ipopt";
 		case knitro_optimal_solver_id:
 			return "knitro";
-		case lancelot_optimal_solver_id:
-			return "lancelot";
-		case lbfgsb_optimal_solver_id:
-			return "lbfgsb";
 		case lgo_optimal_solver_id:
 			return "lgo";
-		case loqo_optimal_solver_id:
-			return "loqo";
-		case lpsolve_optimal_solver_id:
-			return "lpsolve";
-		case minlp_optimal_solver_id:
-			return "minlp";
+		case lindoglobal_optimal_solver_id:
+			return "lindoglobal";
 		case minos_optimal_solver_id:
 			return "minos";
-		case mlocpsoa_optimal_solver_id:
-			return "mlocpsoa";
 		case mosek_optimal_solver_id:
 			return "mosek";
-		case npsol_optimal_solver_id:
-			return "npsol";
-		case nsips_optimal_solver_id:
-			return "nsips";
-		case ooqp_optimal_solver_id:
-			return "ooqp";
+//		case msnlp_optimal_solver_id:
+//			return "msnlp";
+		case nlpec_optimal_solver_id:
+			return "nlpec";
+//		case oqnlp_optimal_solver_id:
+//			return "oqnlp";
+//		case osl_optimal_solver_id:
+//			return "osl";
+//		case os_optimal_solver_id:
+//			return "os";
+//		case osicplex_optimal_solver_id:
+//			return "osicplex";
+//		case osiglpk_optimal_solver_id:
+//			return "osiglpk";
+//		case osigurobi_optimal_solver_id:
+//			return "osigurobi";
+//		case osimosek_optimal_solver_id:
+//			return "osimosek";
+//		case osisoplex_optimal_solver_id:
+//			return "osisoplex";
+//		case osixpress_optimal_solver_id:
+//			return "osixpress";
 		case path_optimal_solver_id:
 			return "path";
-		case pcx_optimal_solver_id:
-			return "pcx";
-		case pennon_optimal_solver_id:
-			return "pennon";
+		case pathnlp_optimal_solver_id:
+			return "pathnlp";
+		case sbb_optimal_solver_id:
+			return "sbb";
+		case scip_optimal_solver_id:
+			return "scip";
 		case snopt_optimal_solver_id:
 			return "snopt";
-		case tron_optimal_solver_id:
-			return "tron";
-		case wsatoip_optimal_solver_id:
-			return "wsatoip";
+//		case xa_optimal_solver_id:
+//			return "xa";
 		case xpressmp_optimal_solver_id:
 			return "xpress";
 		default:
 			break;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::detail::ampl::to_ampl_solver] Solver not usable from AMPL.");
+	throw ::std::runtime_error("[dcs::eesim::detail::gams::to_gams_solver] Solver not usable from GAMS.");
 }
 
-}}}} // Namespace dcs::eesim::detail::ampl
+}}}} // Namespace dcs::eesim::detail::gams
 
-#endif // DCS_EESIM_DETAIL_AMPL_UTILITY_HPP
+#endif // DCS_EESIM_DETAIL_GAMS_UTILITY_HPP

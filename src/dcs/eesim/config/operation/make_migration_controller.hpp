@@ -6,6 +6,7 @@
 #include <dcs/eesim/base_migration_controller.hpp>
 #include <dcs/eesim/config/migration_controller.hpp>
 #include <dcs/eesim/data_center.hpp>
+#include <dcs/eesim/optimal_solver_params.hpp>
 #include <dcs/eesim/dummy_migration_controller.hpp>
 #include <dcs/eesim/optimal_migration_controller.hpp>
 #include <dcs/memory.hpp>
@@ -30,14 +31,22 @@ template <typename TraitsT, typename RealT>
 	{
 		case optimal_migration_controller:
 			{
-				//typedef typename controller_config_type::optimal_migration_controller_config_type controller_config_impl_type;
+				typedef typename controller_config_type::optimal_migration_controller_config_type controller_config_impl_type;
 				typedef ::dcs::eesim::optimal_migration_controller<traits_type> controller_impl_type;
 
-				//controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
+				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
 
-				// Note: there is nothing to configure
+				optimal_solver_params<traits_type> params(controller_conf_impl.category,
+														  controller_conf_impl.input_method,
+														  controller_conf_impl.solver_id,
+														  controller_conf_impl.proxy);
 
-				ptr_controller = ::dcs::make_shared<controller_impl_type>(ptr_dc, controller_conf.sampling_time);
+				ptr_controller = ::dcs::make_shared<controller_impl_type>(ptr_dc,
+																		  controller_conf.sampling_time,
+																		  params,
+																		  controller_conf_impl.wp,
+																		  controller_conf_impl.wm,
+																		  controller_conf_impl.ws);
 			}
 			break;
 		case dummy_migration_controller:

@@ -15,8 +15,11 @@ class base_initial_placement_strategy
 	public: typedef typename traits_type::real_type real_type;
 
 
-	public: base_initial_placement_strategy()
-	: ref_penalty_(0)
+	public: static const real_type default_reference_share_penalty;
+
+
+	public: explicit base_initial_placement_strategy(real_type ref_penalty = default_reference_share_penalty)
+	: ref_penalty_(ref_penalty)
 	{
 	}
 
@@ -47,7 +50,10 @@ class base_initial_placement_strategy
 
 	/// The penalty (in percentage) to assign to the reference share 
 	private: real_type ref_penalty_;
-};
+}; // base_initial_placement_strategy
+
+template <typename TraitsT>
+const typename TraitsT::real_type base_initial_placement_strategy<TraitsT>::default_reference_share_penalty(0);
 
 }} // Namespace dcs::eesim
 

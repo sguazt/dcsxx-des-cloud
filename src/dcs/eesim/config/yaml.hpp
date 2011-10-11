@@ -21,6 +21,10 @@
 #include <dcs/eesim/config/migration_controller.hpp>
 #include <dcs/eesim/config/numeric_matrix.hpp>
 #include <dcs/eesim/config/numeric_multiarray.hpp>
+#include <dcs/eesim/config/optimal_solver_categories.hpp>
+#include <dcs/eesim/config/optimal_solver_ids.hpp>
+#include <dcs/eesim/config/optimal_solver_input_methods.hpp>
+#include <dcs/eesim/config/optimal_solver_proxies.hpp>
 #include <dcs/eesim/config/physical_machine.hpp>
 #include <dcs/eesim/config/physical_machine_controller.hpp>
 #include <dcs/eesim/config/physical_resource.hpp>
@@ -625,6 +629,507 @@ application_performance_model_category text_to_application_performance_model_cat
 
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_application_performance_model_category] Unknown application performance model category.");
 }
+
+
+optimal_solver_categories text_to_optimal_solver_category(::std::string const& str)
+{
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("bco"))
+	{
+		return bco_optimal_solver_category;
+	}
+	if (!istr.compare("co"))
+	{
+		return co_optimal_solver_category;
+	}
+	if (!istr.compare("cp"))
+	{
+		return cp_optimal_solver_category;
+	}
+	if (!istr.compare("go"))
+	{
+		return go_optimal_solver_category;
+	}
+	if (!istr.compare("kestrel"))
+	{
+		return kestrel_optimal_solver_category;
+	}
+	if (!istr.compare("lno"))
+	{
+		return lno_optimal_solver_category;
+	}
+	if (!istr.compare("lp"))
+	{
+		return lp_optimal_solver_category;
+	}
+	if (!istr.compare("milp"))
+	{
+		return milp_optimal_solver_category;
+	}
+	if (!istr.compare("minco"))
+	{
+		return minco_optimal_solver_category;
+	}
+	if (!istr.compare("multi"))
+	{
+		return multi_optimal_solver_category;
+	}
+	if (!istr.compare("nco"))
+	{
+		return nco_optimal_solver_category;
+	}
+	if (!istr.compare("ndo"))
+	{
+		return ndo_optimal_solver_category;
+	}
+	if (!istr.compare("sdp"))
+	{
+		return sdp_optimal_solver_category;
+	}
+	if (!istr.compare("sio"))
+	{
+		return sio_optimal_solver_category;
+	}
+	if (!istr.compare("slp"))
+	{
+		return slp_optimal_solver_category;
+	}
+	if (!istr.compare("socp"))
+	{
+		return socp_optimal_solver_category;
+	}
+	if (!istr.compare("uco"))
+	{
+		return uco_optimal_solver_category;
+	}
+
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_optimal_solver_category] Unknown optimal solver category.");
+}
+
+
+optimal_solver_input_methods text_to_optimal_solver_input_method(::std::string const& str)
+{
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("ampl"))
+	{
+		return ampl_optimal_solver_input_method;
+	}
+	if (!istr.compare("c"))
+	{
+		return c_optimal_solver_input_method;
+	}
+	if (!istr.compare("cplex"))
+	{
+		return cplex_optimal_solver_input_method;
+	}
+	if (!istr.compare("dimacs"))
+	{
+		return dimacs_optimal_solver_input_method;
+	}
+	if (!istr.compare("fortran"))
+	{
+		return fortran_optimal_solver_input_method;
+	}
+	if (!istr.compare("gams"))
+	{
+		return gams_optimal_solver_input_method;
+	}
+	if (!istr.compare("lp"))
+	{
+		return lp_optimal_solver_input_method;
+	}
+	if (!istr.compare("matlab"))
+	{
+		return matlab_optimal_solver_input_method;
+	}
+	if (!istr.compare("matlab_binary"))
+	{
+		return matlabbinary_optimal_solver_input_method;
+	}
+	if (!istr.compare("mps"))
+	{
+		return mps_optimal_solver_input_method;
+	}
+	if (!istr.compare("netflo"))
+	{
+		return netflo_optimal_solver_input_method;
+	}
+	if (!istr.compare("qps"))
+	{
+		return qps_optimal_solver_input_method;
+	}
+	if (!istr.compare("relax4"))
+	{
+		return relax4_optimal_solver_input_method;
+	}
+	if (!istr.compare("sdpa"))
+	{
+		return sdpa_optimal_solver_input_method;
+	}
+	if (!istr.compare("sdplr"))
+	{
+		return sdplr_optimal_solver_input_method;
+	}
+	if (!istr.compare("smps"))
+	{
+		return smps_optimal_solver_input_method;
+	}
+	if (!istr.compare("sparse"))
+	{
+		return sparse_optimal_solver_input_method;
+	}
+	if (!istr.compare("sparse_sdpa"))
+	{
+		return sparsesdpa_optimal_solver_input_method;
+	}
+	if (!istr.compare("tsp"))
+	{
+		return tsp_optimal_solver_input_method;
+	}
+	if (!istr.compare("zimpl"))
+	{
+		return zimpl_optimal_solver_input_method;
+	}
+
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_optimal_solver_input_method] Unknown optimal solver input method.");
+}
+
+
+optimal_solver_ids text_to_optimal_solver_id(::std::string const& str)
+{
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("acrs"))
+	{
+		return acrs_optimal_solver_id;
+	}
+	if (!istr.compare("algencan"))
+	{
+		return algencan_optimal_solver_id;
+	}
+	if (!istr.compare("alphaecp"))
+	{
+		return alphaecp_optimal_solver_id;
+	}
+	if (!istr.compare("asa"))
+	{
+		return asa_optimal_solver_id;
+	}
+	if (!istr.compare("baron"))
+	{
+		return baron_optimal_solver_id;
+	}
+	if (!istr.compare("bdmlp"))
+	{
+		return bdmlp_optimal_solver_id;
+	}
+	if (!istr.compare("biqmac"))
+	{
+		return biqmac_optimal_solver_id;
+	}
+	if (!istr.compare("blmvm"))
+	{
+		return blmvm_optimal_solver_id;
+	}
+	if (!istr.compare("bnbs"))
+	{
+		return bnbs_optimal_solver_id;
+	}
+	if (!istr.compare("bonmin"))
+	{
+		return bonmin_optimal_solver_id;
+	}
+	if (!istr.compare("bpmpd"))
+	{
+		return bpmpd_optimal_solver_id;
+	}
+	if (!istr.compare("cbc"))
+	{
+		return cbc_optimal_solver_id;
+	}
+	if (!istr.compare("clp"))
+	{
+		return clp_optimal_solver_id;
+	}
+	if (!istr.compare("concorde"))
+	{
+		return concorde_optimal_solver_id;
+	}
+	if (!istr.compare("condor"))
+	{
+		return condor_optimal_solver_id;
+	}
+	if (!istr.compare("conopt"))
+	{
+		return conopt_optimal_solver_id;
+	}
+	if (!istr.compare("couenne"))
+	{
+		return couenne_optimal_solver_id;
+	}
+	if (!istr.compare("cplex"))
+	{
+		return cplex_optimal_solver_id;
+	}
+	if (!istr.compare("csdp"))
+	{
+		return csdp_optimal_solver_id;
+	}
+	if (!istr.compare("ddsip"))
+	{
+		return ddsip_optimal_solver_id;
+	}
+	if (!istr.compare("dicopt"))
+	{
+		return dicopt_optimal_solver_id;
+	}
+	if (!istr.compare("donlp2"))
+	{
+		return donlp2_optimal_solver_id;
+	}
+	if (!istr.compare("dsdp"))
+	{
+		return dsdp_optimal_solver_id;
+	}
+	if (!istr.compare("feaspump"))
+	{
+		return feaspump_optimal_solver_id;
+	}
+	if (!istr.compare("filmint"))
+	{
+		return filmint_optimal_solver_id;
+	}
+	if (!istr.compare("filter"))
+	{
+		return filter_optimal_solver_id;
+	}
+	if (!istr.compare("filtermpec"))
+	{
+		return filtermpec_optimal_solver_id;
+	}
+	if (!istr.compare("fortmp"))
+	{
+		return fortmp_optimal_solver_id;
+	}
+	if (!istr.compare("fsqp"))
+	{
+		return fsqp_optimal_solver_id;
+	}
+	if (!istr.compare("gams-ampl"))
+	{
+		return gamsampl_optimal_solver_id;
+	}
+	if (!istr.compare("glpk"))
+	{
+		return glpk_optimal_solver_id;
+	}
+	if (!istr.compare("gurobi"))
+	{
+		return gurobi_optimal_solver_id;
+	}
+	if (!istr.compare("icos"))
+	{
+		return icos_optimal_solver_id;
+	}
+	if (!istr.compare("ipopt"))
+	{
+		return ipopt_optimal_solver_id;
+	}
+	if (!istr.compare("knitro"))
+	{
+		return knitro_optimal_solver_id;
+	}
+	if (!istr.compare("lancelot"))
+	{
+		return lancelot_optimal_solver_id;
+	}
+	if (!istr.compare("l-bfgs-b"))
+	{
+		return lbfgsb_optimal_solver_id;
+	}
+	if (!istr.compare("lgo"))
+	{
+		return lgo_optimal_solver_id;
+	}
+	if (!istr.compare("lindoglobal"))
+	{
+		return lindoglobal_optimal_solver_id;
+	}
+	if (!istr.compare("loqo"))
+	{
+		return loqo_optimal_solver_id;
+	}
+	if (!istr.compare("lpsolve"))
+	{
+		return lpsolve_optimal_solver_id;
+	}
+	if (!istr.compare("lrambo"))
+	{
+		return lrambo_optimal_solver_id;
+	}
+	if (!istr.compare("miles"))
+	{
+		return miles_optimal_solver_id;
+	}
+	if (!istr.compare("minlp"))
+	{
+		return minlp_optimal_solver_id;
+	}
+	if (!istr.compare("minos"))
+	{
+		return minos_optimal_solver_id;
+	}
+	if (!istr.compare("minto"))
+	{
+		return minto_optimal_solver_id;
+	}
+	if (!istr.compare("mosek"))
+	{
+		return mosek_optimal_solver_id;
+	}
+	if (!istr.compare("mslip"))
+	{
+		return mslip_optimal_solver_id;
+	}
+	if (!istr.compare("mlocpsoa"))
+	{
+		return mlocpsoa_optimal_solver_id;
+	}
+	if (!istr.compare("netflo"))
+	{
+		return netflo_optimal_solver_id;
+	}
+	if (!istr.compare("nlpec"))
+	{
+		return nlpec_optimal_solver_id;
+	}
+	if (!istr.compare("nmtr"))
+	{
+		return nmtr_optimal_solver_id;
+	}
+	if (!istr.compare("nomad"))
+	{
+		return nomad_optimal_solver_id;
+	}
+	if (!istr.compare("nsips"))
+	{
+		return nsips_optimal_solver_id;
+	}
+	if (!istr.compare("ooqp"))
+	{
+		return ooqp_optimal_solver_id;
+	}
+	if (!istr.compare("path"))
+	{
+		return path_optimal_solver_id;
+	}
+	if (!istr.compare("pathnlp"))
+	{
+		return pathnlp_optimal_solver_id;
+	}
+	if (!istr.compare("penbmi"))
+	{
+		return penbmi_optimal_solver_id;
+	}
+	if (!istr.compare("pennon"))
+	{
+		return pennon_optimal_solver_id;
+	}
+	if (!istr.compare("pensdp"))
+	{
+		return pensdp_optimal_solver_id;
+	}
+	if (!istr.compare("pcx"))
+	{
+		return pcx_optimal_solver_id;
+	}
+	if (!istr.compare("pgapack"))
+	{
+		return pgapack_optimal_solver_id;
+	}
+	if (!istr.compare("pswarm"))
+	{
+		return pswarm_optimal_solver_id;
+	}
+	if (!istr.compare("qsopt_ex"))
+	{
+		return qsoptex_optimal_solver_id;
+	}
+	if (!istr.compare("relax4"))
+	{
+		return relax4_optimal_solver_id;
+	}
+	if (!istr.compare("sbb"))
+	{
+		return sbb_optimal_solver_id;
+	}
+	if (!istr.compare("scip"))
+	{
+		return scip_optimal_solver_id;
+	}
+	if (!istr.compare("sdpa"))
+	{
+		return sdpa_optimal_solver_id;
+	}
+	if (!istr.compare("sdplr"))
+	{
+		return sdplr_optimal_solver_id;
+	}
+	if (!istr.compare("sdpt3"))
+	{
+		return sdpt3_optimal_solver_id;
+	}
+	if (!istr.compare("sedumi"))
+	{
+		return sedumi_optimal_solver_id;
+	}
+	if (!istr.compare("snopt"))
+	{
+		return snopt_optimal_solver_id;
+	}
+	if (!istr.compare("symphony"))
+	{
+		return symphony_optimal_solver_id;
+	}
+	if (!istr.compare("tron"))
+	{
+		return tron_optimal_solver_id;
+	}
+	if (!istr.compare("worhp"))
+	{
+		return worhp_optimal_solver_id;
+	}
+	if (!istr.compare("wsatoip"))
+	{
+		return wsatoip_optimal_solver_id;
+	}
+	if (!istr.compare("xpressmp"))
+	{
+		return xpressmp_optimal_solver_id;
+	}
+
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_optimal_solver_id] Unknown optimal solver id.");
+}
+
+
+optimal_solver_proxies text_to_optimal_solver_proxy(::std::string const& str)
+{
+	::std::string istr = ::dcs::string::to_lower_copy(str);
+
+	if (!istr.compare("neos"))
+	{
+		return neos_optimal_solver_proxy;
+	}
+	if (!istr.compare("none"))
+	{
+		return none_optimal_solver_proxy;
+	}
+
+	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_optimal_solver_proxy] Unknown optimal solver proxy.");
+}
+
 }} // Namespace detail::<unnamed>
 
 
@@ -2642,7 +3147,8 @@ void operator>>(::YAML::Node const& node, physical_machine_config<RealT>& mach)
 template <typename RealT>
 void operator>>(::YAML::Node const& node, initial_placement_strategy_config<RealT>& strategy_conf)
 {
-	typedef initial_placement_strategy_config<RealT> strategy_config_type;
+	typedef RealT real_type;
+	typedef initial_placement_strategy_config<real_type> strategy_config_type;
 
 	::std::string label;
 
@@ -2684,6 +3190,40 @@ void operator>>(::YAML::Node const& node, initial_placement_strategy_config<Real
 				typedef typename strategy_config_type::optimal_initial_placement_strategy_config_type strategy_config_impl_type;
 
 				strategy_config_impl_type strategy_conf_impl;
+
+				// Read power consumption weight
+				if (node.FindValue("power-weight"))
+				{
+					node["power-weight"] >> strategy_conf_impl.wp;
+				}
+				else
+				{
+					strategy_conf_impl.wp = real_type(1);
+				}
+				// Read sla violation weight weight
+				if (node.FindValue("sla-weight"))
+				{
+					node["sla-weight"] >> strategy_conf_impl.ws;
+				}
+				else
+				{
+					strategy_conf_impl.ws = real_type(1);
+				}
+				node["category"] >> label;
+				strategy_conf_impl.category = detail::text_to_optimal_solver_category(label);
+				node["input"] >> label;
+				strategy_conf_impl.input_method = detail::text_to_optimal_solver_input_method(label);
+				node["solver"] >> label;
+				strategy_conf_impl.solver_id = detail::text_to_optimal_solver_id(label);
+				if (node.FindValue("solver-proxy"))
+				{
+					node["solver-proxy"] >> label;
+					strategy_conf_impl.proxy = detail::text_to_optimal_solver_proxy(label);
+				}
+				else
+				{
+					strategy_conf_impl.proxy = none_optimal_solver_proxy;
+				}
 
 				strategy_conf.category_conf = strategy_conf_impl;
 			}
@@ -2739,7 +3279,8 @@ void operator>>(::YAML::Node const& node, incremental_placement_strategy_config<
 template <typename RealT>
 void operator>>(::YAML::Node const& node, migration_controller_config<RealT>& controller_conf)
 {
-	typedef migration_controller_config<RealT> controller_config_type;
+	typedef RealT real_type;
+	typedef migration_controller_config<real_type> controller_config_type;
 
 	::std::string label;
 
@@ -2754,6 +3295,49 @@ void operator>>(::YAML::Node const& node, migration_controller_config<RealT>& co
 				typedef typename controller_config_type::optimal_migration_controller_config_type controller_config_impl_type;
 
 				controller_config_impl_type controller_conf_impl;
+
+				// Read power consumption weight
+				if (node.FindValue("power-weight"))
+				{
+					node["power-weight"] >> controller_conf_impl.wp;
+				}
+				else
+				{
+					controller_conf_impl.wp = real_type(1);
+				}
+				// Read migration consumption weight
+				if (node.FindValue("migration-weight"))
+				{
+					node["migration-weight"] >> controller_conf_impl.wm;
+				}
+				else
+				{
+					controller_conf_impl.wm = real_type(1);
+				}
+				// Read sla violation weight weight
+				if (node.FindValue("sla-weight"))
+				{
+					node["sla-weight"] >> controller_conf_impl.ws;
+				}
+				else
+				{
+					controller_conf_impl.ws = real_type(1);
+				}
+				node["category"] >> label;
+				controller_conf_impl.category = detail::text_to_optimal_solver_category(label);
+				node["input"] >> label;
+				controller_conf_impl.input_method = detail::text_to_optimal_solver_input_method(label);
+				node["solver"] >> label;
+				controller_conf_impl.solver_id = detail::text_to_optimal_solver_id(label);
+				if (node.FindValue("solver-proxy"))
+				{
+					node["solver-proxy"] >> label;
+					controller_conf_impl.proxy = detail::text_to_optimal_solver_proxy(label);
+				}
+				else
+				{
+					controller_conf_impl.proxy = none_optimal_solver_proxy;
+				}
 
 				controller_conf.category_conf = controller_conf_impl;
 			}
