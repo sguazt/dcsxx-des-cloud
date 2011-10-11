@@ -1023,6 +1023,7 @@ int main(int argc, char* argv[])
 //	typedef dcs::shared_ptr< dcs::eesim::data_center<traits_type> > data_center_pointer;
 //	typedef dcs::shared_ptr< dcs::eesim::data_center_manager<traits_type> > data_center_manager_pointer;
 	typedef dcs::eesim::config::configuration<real_type,uint_type> configuration_type;
+	typedef dcs::shared_ptr<configuration_type> configuration_pointer;
 //	typedef configuration_type::data_center_config_type data_center_config_type;
 //	typedef data_center_config_type::application_config_container::const_iterator app_iterator;
 //	typedef dcs::eesim::physical_machine<traits_type> physical_machine_type;
@@ -1061,7 +1062,7 @@ int main(int argc, char* argv[])
 
 	configuration_category conf_cat = yaml_configuration;
 
-	configuration_type conf;
+	configuration_pointer ptr_conf;
 
 	try
 	{
@@ -1069,10 +1070,12 @@ int main(int argc, char* argv[])
 		{
 			case yaml_configuration:
 
-				conf = dcs::eesim::config::read_file(
-					conf_fname,
-					dcs::eesim::config::yaml_reader<real_type,uint_type>()
-				);
+				ptr_conf = dcs::make_shared<configuration_type>(
+							dcs::eesim::config::read_file(
+								conf_fname,
+								dcs::eesim::config::yaml_reader<real_type,uint_type>()
+							)
+						);
 				break;
 			default:
 				throw std::runtime_error("Unknown configuration category.");
@@ -1084,11 +1087,11 @@ int main(int argc, char* argv[])
 		return -2;
     }
 
-	DCS_DEBUG_TRACE("Configuration: " << conf); //XXX
+	DCS_DEBUG_TRACE("Configuration: " << *ptr_conf); //XXX
 
 	// Print configuration (for ease later info retrieval)
 	::std::cout << "CONFIGURATION:" << ::std::endl
-				<< conf << ::std::endl
+				<< *ptr_conf << ::std::endl
 				<< "--------------------------------------------------------------------------------" << ::std::endl
 				<< ::std::endl;
 
@@ -1096,13 +1099,13 @@ int main(int argc, char* argv[])
 
 	registry_type& reg(registry_type::instance());
     des_engine_pointer ptr_des_eng;
-    ptr_des_eng = dcs::eesim::config::make_des_engine(conf);
+    ptr_des_eng = dcs::eesim::config::make_des_engine(*ptr_conf);
     reg.des_engine(ptr_des_eng);
     random_generator_pointer ptr_rng;
-    ptr_rng = dcs::eesim::config::make_random_number_generator(conf);
+    ptr_rng = dcs::eesim::config::make_random_number_generator(*ptr_conf);
     reg.uniform_random_generator(ptr_rng);
 
-	random_seeder_type seeder(conf.rng().seed);
+	random_seeder_type seeder(ptr_conf->rng().seed);
 	ptr_des_eng->system_initialization_event_source().connect(
 			dcs::functional::bind(
 				&detail::process_sys_init_sim_event,
@@ -1118,15 +1121,15 @@ int main(int argc, char* argv[])
 	std::cerr.precision(16);
 	std::cout.precision(16);
 
-	bench.run(conf);
+	bench.run(*ptr_conf);
 
 	// Report statistics
 	std::cout << "STATISTICS:" << std::endl;
 	bench.report_stats(std::cout);
 	std::cout << "--------------------------------------------------------------------------------" << std::endl;
 
-//	app_iterator app_end_it = conf.data_center().applications().end();
-//	for (app_iterator app_it = conf.data_center().applications().begin(); app_it != app_end_it; ++app_it)
+//	app_iterator app_end_it = ptr_conf->data_center().applications().end();
+//	for (app_iterator app_it = ptr_conf->data_center().applications().begin(); app_it != app_end_it; ++app_it)
 //	{
 //		dcs::shared_ptr<application_type> ptr_app;
 //		benchmark<traits_type> bench;
@@ -1138,11 +1141,11 @@ int main(int argc, char* argv[])
 //
 //		// Build the random number generator
 //		random_generator_pointer ptr_rng;
-//		ptr_rng = dcs::eesim::config::make_random_number_generator(conf);
+//		ptr_rng = dcs::eesim::config::make_random_number_generator(*ptr_conf);
 //		reg.uniform_random_generator(ptr_rng);
 //
 //		// Build the application
-//		ptr_app = dcs::eesim::config::make_multi_tier_application<traits_type>(*app_it, conf, ptr_rng, ptr_des_eng);
+//		ptr_app = dcs::eesim::config::make_multi_tier_application<traits_type>(*app_it, *ptr_conf, ptr_rng, ptr_des_eng);
 //
 //		bench.run(*ptr_app/*, num_samples*/);
 //

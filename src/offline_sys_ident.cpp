@@ -5875,6 +5875,7 @@ int main(int argc, char* argv[])
 	typedef dcs::shared_ptr< dcs::eesim::data_center<traits_type> > data_center_pointer;
 	typedef dcs::shared_ptr< dcs::eesim::data_center_manager<traits_type> > data_center_manager_pointer;
 	typedef dcs::eesim::config::configuration<real_type,uint_type> configuration_type;
+	typedef dcs::shared_ptr<configuration_type> configuration_pointer;
 	typedef base_system_identificator<traits_type> system_identificator_type;
 	//typedef siso_system_identificator<traits_type> system_identificator_type;
 	//typedef miso_system_identificator<traits_type> system_identificator_type;
@@ -5964,7 +5965,7 @@ int main(int argc, char* argv[])
 
 	configuration_category conf_cat = yaml_configuration;
 
-	dcs::eesim::config::configuration<real_type,uint_type> conf;
+	configuration_pointer ptr_conf;
 
 	try
 	{
@@ -5972,10 +5973,12 @@ int main(int argc, char* argv[])
 		{
 			case yaml_configuration:
 
-				conf = dcs::eesim::config::read_file(
-					conf_fname,
-					::dcs::eesim::config::yaml_reader<real_type,uint_type>()
-				);
+				ptr_conf = dcs::make_shared<configuration_type>(
+							dcs::eesim::config::read_file(
+								conf_fname,
+								::dcs::eesim::config::yaml_reader<real_type,uint_type>()
+							)
+						);
 				break;
 			default:
 				throw ::std::runtime_error("Unknown configuration category.");
@@ -5987,7 +5990,7 @@ int main(int argc, char* argv[])
 		return -2;
     }
 
-	DCS_DEBUG_TRACE("Configuration: " << conf); //XXX
+	DCS_DEBUG_TRACE("Configuration: " << *ptr_conf); //XXX
 
 	// Build the registry
 
@@ -5996,14 +5999,14 @@ int main(int argc, char* argv[])
 //	ptr_des_eng = detail::make_des_engine<traits_type>();
 //	reg.des_engine(ptr_des_eng);
 //	random_generator_pointer ptr_rng;
-//	ptr_rng = dcs::eesim::config::make_random_number_generator(conf);
+//	ptr_rng = dcs::eesim::config::make_random_number_generator(*ptr_conf);
 //	reg.uniform_random_generator(ptr_rng);
 
 //	// Build the Data Center
 //	data_center_pointer ptr_dc;
 //	data_center_manager_pointer ptr_dc_mngr;
-//	ptr_dc = dcs::eesim::config::make_data_center<traits_type>(conf, ptr_rng, ptr_des_eng);
-//	ptr_dc_mngr = dcs::eesim::config::make_data_center_manager<traits_type>(conf, ptr_dc);
+//	ptr_dc = dcs::eesim::config::make_data_center<traits_type>(*ptr_conf, ptr_rng, ptr_des_eng);
+//	ptr_dc_mngr = dcs::eesim::config::make_data_center_manager<traits_type>(*ptr_conf, ptr_dc);
 
 //	excite_sampling_time = 5;
 //	//sig_category = constant_signal;
@@ -6012,8 +6015,8 @@ int main(int argc, char* argv[])
 //	sysid_category = siso_system_identification;
 //	//sysid_category = miso_system_identification;
 
-	app_iterator app_end_it = conf.data_center().applications().end();
-	for (app_iterator app_it = conf.data_center().applications().begin(); app_it != app_end_it; ++app_it)
+	app_iterator app_end_it = ptr_conf->data_center().applications().end();
+	for (app_iterator app_it = ptr_conf->data_center().applications().begin(); app_it != app_end_it; ++app_it)
 	{
 		dcs::shared_ptr<application_type> ptr_app;
 		dcs::shared_ptr< detail::base_signal_generator<real_type> > ptr_sig_gen;
@@ -6029,11 +6032,11 @@ int main(int argc, char* argv[])
 
 		// Build the random number generator
 		random_generator_pointer ptr_rng;
-		ptr_rng = dcs::eesim::config::make_random_number_generator(conf);
+		ptr_rng = dcs::eesim::config::make_random_number_generator(*ptr_conf);
 		reg.uniform_random_generator(ptr_rng);
 
 		// Build the application
-		ptr_app = dcs::eesim::config::make_application<traits_type>(*app_it, conf, ptr_rng, ptr_des_eng);
+		ptr_app = dcs::eesim::config::make_application<traits_type>(*app_it, *ptr_conf, ptr_rng, ptr_des_eng);
 
 		// Build the signal generator
 		switch (sig_category)

@@ -582,6 +582,8 @@ int main(int argc, char* argv[])
 //				int_type
 //			> traits_type;
 //	typedef dcs::eesim::registry<traits_type> registry_type;
+	typedef dcs::eesim::config::configuration<real_type,uint_type> configuration_type;
+	typedef dcs::shared_ptr<configuration_type> configuration_pointer;
 	typedef dcs::shared_ptr<des_engine_type> des_engine_pointer;
 	typedef dcs::shared_ptr<random_generator_type> random_generator_pointer;
 	//typedef dcs::eesim::data_center<traits_type> data_center_type;
@@ -631,7 +633,7 @@ int main(int argc, char* argv[])
 
 	configuration_category conf_cat = yaml_configuration;
 
-	dcs::eesim::config::configuration<real_type,uint_type> conf;
+	configuration_pointer ptr_conf;
 
 	try
 	{
@@ -639,10 +641,12 @@ int main(int argc, char* argv[])
 		{
 			case yaml_configuration:
 
-				conf = dcs::eesim::config::read_file(
-					conf_fname,
-					::dcs::eesim::config::yaml_reader<real_type,uint_type>()
-				);
+				ptr_conf = dcs::make_shared<configuration_type>(
+							dcs::eesim::config::read_file(
+								conf_fname,
+								::dcs::eesim::config::yaml_reader<real_type,uint_type>()
+							)
+						);
 				break;
 			default:
 				throw ::std::runtime_error("Unknown configuration category.");
@@ -654,28 +658,29 @@ int main(int argc, char* argv[])
 		return -2;
 	}
 
-	DCS_DEBUG_TRACE("Configuration: " << conf); //XXX
+	DCS_DEBUG_TRACE("Configuration: " << *ptr_conf); //XXX
 
 	// Print configuration (for ease later info retrieval)
 	::std::cout << "CONFIGURATION:" << ::std::endl
-				<< conf << ::std::endl
+				<< *ptr_conf << ::std::endl
 				<< "--------------------------------------------------------------------------------" << ::std::endl
 				<< ::std::endl;
 
 	// Build the registry
 
 	registry_type& reg(registry_type::instance());
+	reg.configuration(ptr_conf);
 	des_engine_pointer ptr_des_eng;
-	ptr_des_eng = dcs::eesim::config::make_des_engine(conf);
+	ptr_des_eng = dcs::eesim::config::make_des_engine(*ptr_conf);
 	reg.des_engine(ptr_des_eng);
 	random_generator_pointer ptr_rng;
-	ptr_rng = dcs::eesim::config::make_random_number_generator(conf);//OK
+	ptr_rng = dcs::eesim::config::make_random_number_generator(*ptr_conf);//OK
 //	ptr_rng = dcs::make_shared<dcs::math::random::mt19937>(5489UL);//XXX
 	reg.uniform_random_generator(ptr_rng);
 
 //	detail::test_rng(ptr_rng);//XXX
 
-	random_seeder_type seeder(conf.rng().seed);
+	random_seeder_type seeder(ptr_conf->rng().seed);
 
 	detail::simulated_system<traits_type> sys;
 
@@ -702,7 +707,7 @@ int main(int argc, char* argv[])
 
 	// Attach a simulation observer
 	dcs::shared_ptr< dcs::eesim::logging::base_logger<traits_type> > ptr_sim_log;
-	ptr_sim_log = dcs::eesim::config::make_logger<traits_type>(conf);
+	ptr_sim_log = dcs::eesim::config::make_logger<traits_type>(*ptr_conf);
 	//FIXME: makes it user configurable
 	//FIXME: makes sinks more flexible like:
 	//       ...->sink(text_file_sink("sim-obs.log"))
@@ -714,8 +719,8 @@ int main(int argc, char* argv[])
 	// Build the Data Center
 	data_center_pointer ptr_dc;
 	data_center_manager_pointer ptr_dc_mngr;
-	ptr_dc = dcs::eesim::config::make_data_center<traits_type>(conf, ptr_rng, ptr_des_eng);
-	ptr_dc_mngr = dcs::eesim::config::make_data_center_manager<traits_type>(conf, ptr_dc);
+	ptr_dc = dcs::eesim::config::make_data_center<traits_type>(*ptr_conf, ptr_rng, ptr_des_eng);
+	ptr_dc_mngr = dcs::eesim::config::make_data_center_manager<traits_type>(*ptr_conf, ptr_dc);
 
 	sys.data_center(ptr_dc);
 	sys.data_center_manager(ptr_dc_mngr);
