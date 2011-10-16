@@ -164,6 +164,17 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 	}
 
 
+	public: virtual_machine_pointer virtual_machine_ptr(virtual_machine_identifier_type id) const
+	{
+		DCS_ASSERT(
+				vms_.count(id) > 0,
+				throw ::std::runtime_error("[dcs::eesim::virtual_machine_monitor::virtual_machine_ptr] VM not found.")
+			);
+
+		return vms_.at(id);
+	}
+
+
 //	public: void overhead(real_type value)
 //	{
 //		overhead_ = value;
