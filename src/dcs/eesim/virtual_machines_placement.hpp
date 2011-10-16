@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <dcs/math/traits/float.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
+#include <dcs/eesim/utility.hpp>
 #include <iostream>
 #include <map>
 #include <set>
@@ -41,10 +42,11 @@ class virtual_machines_placement
 	private: typedef ::std::map<physical_resource_category,real_type> share_container;
 	private: typedef ::std::map<vm_pm_pair_type,share_container> placement_container;
 	//private: typedef ::std::vector<physical_machine_identifier_type> by_vm_index_container;
-	private: typedef ::std::map<physical_machine_identifier_type,virtual_machine_identifier_type> by_vm_index_container;
+	private: typedef ::std::map<virtual_machine_identifier_type,physical_machine_identifier_type> by_vm_index_container;
 	private: typedef ::std::set<virtual_machine_identifier_type> by_pm_index_subcontainer;
 	//private: typedef ::std::vector<by_pm_index_subcontainer> by_pm_index_container;
 	private: typedef ::std::map<physical_machine_identifier_type,by_pm_index_subcontainer> by_pm_index_container;
+	public: typedef typename placement_container::size_type size_type;
 	public: typedef typename placement_container::iterator iterator;
 	public: typedef typename placement_container::const_iterator const_iterator;
 	public: typedef typename share_container::iterator share_iterator;
@@ -210,9 +212,23 @@ class virtual_machines_placement
 	}
 
 
+	public: bool placed(virtual_machine_identifier_type vm_id,
+						physical_machine_identifier_type pm_id) const
+	{
+		return placed(vm_id) && (by_vm_idx_.at(vm_id) == pm_id);
+	}
+
+
 	public: bool placed(virtual_machine_type const& vm) const
 	{
 		return placed(vm.id());
+	}
+
+
+	public: bool placed(virtual_machine_type const& vm,
+						physical_machine_type const& pm) const
+	{
+		return placed(vm.id(), pm.id());
 	}
 
 
@@ -221,6 +237,30 @@ class virtual_machines_placement
 		placements_.clear();
 		by_vm_idx_.clear();
 		by_pm_idx_.clear();
+	}
+
+
+	public: size_type size() const
+	{
+		return placements_.size();
+	}
+
+
+	public: size_type pm_size() const
+	{
+		return by_pm_idx_.size();
+	}
+
+
+	public: size_type vm_size() const
+	{
+		return by_vm_idx_.size();
+	}
+
+
+	public: bool empty() const
+	{
+		return placements_.empty();
 	}
 
 
@@ -360,21 +400,21 @@ class virtual_machines_placement
 	}
 
 
-	private: vm_pm_pair_type make_vm_pm_pair(virtual_machine_identifier_type vm_id, physical_machine_identifier_type pm_id)
+	private: vm_pm_pair_type make_vm_pm_pair(virtual_machine_identifier_type vm_id, physical_machine_identifier_type pm_id) const
 	{
 		return ::std::make_pair(vm_id, pm_id);
 	}
 
 
-	private: vm_pm_pair_type make_vm_pm_pair_by_vm(virtual_machine_identifier_type vm_id)
+	private: vm_pm_pair_type make_vm_pm_pair_by_vm(virtual_machine_identifier_type vm_id) const
 	{
-		return ::std::make_pair(vm_id, by_vm_idx_[vm_id]);
+		return ::std::make_pair(vm_id, by_vm_idx_.at(vm_id));
 	}
 
 
-	private: vm_pm_pair_type make_vm_pm_pair_by_pm(physical_machine_identifier_type pm_id)
+	private: vm_pm_pair_type make_vm_pm_pair_by_pm(physical_machine_identifier_type pm_id) const
 	{
-		return ::std::make_pair(by_pm_idx_[pm_id], pm_id);
+		return ::std::make_pair(by_pm_idx_.at(pm_id), pm_id);
 	}
 
 
