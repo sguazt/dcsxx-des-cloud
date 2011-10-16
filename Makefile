@@ -59,7 +59,10 @@
 ## - srcdirs: list of source paths (relative to $(srcdir)).
 ## - targets: targets executable's filename.
 
-export targets := eesim offline_sys_ident offline_bench
+#export targets := eesim offline_sys_ident offline_bench
+export targets := eesim
+#export targets := offline_bench
+#export targets := offline_sys_ident
 export docdir := ./docs
 export srcdir := ./src
 export builddir := ./build
@@ -70,7 +73,7 @@ export xmpdir := ./examples
 export xmp_srcdir := $(xmpdir)/src
 export xmp_builddir := ./build
 export srcdirs := .
-export test_srcdirs := . dcs/perfeval/qn
+export test_srcdirs := . dcs/perfeval/qn dcs/eesim
 export xmp_srcdirs := . dcs/eesim
 export libdirs := ./libs/lib
 export test_libdirs :=
@@ -79,7 +82,7 @@ export incdirs := $(srcdir) ./libs/include
 export test_incdirs := $(test_srcdir)
 export xmp_incdirs := $(xmp_srcdir)
 #export libs := m boost_thread-mt yaml-cpp
-export libs := m yaml-cpp blas lapack lpsolve55
+export libs := m yaml-cpp blas lapack
 #export test_libs := boost_unit_test_framework
 export test_libs :=
 export xmp_libs :=
@@ -108,8 +111,8 @@ xmp_bindir := $(xmp_builddir)/examples
 bin_ext :=
 obj_ext := o
 pch_ext := hpp.gch
-use_pch := true
-#use_pch := false
+#use_pch := true
+use_pch := false
 CXXFLAGS_common = -Wall -Wextra -ansi -pedantic -DBOOST_UBLAS_TYPE_CHECK=0 $(addprefix -I, $(incdirs)) -I$(libsdir)/include
 CXXFLAGS_debug := -g $(CXXFLAGS_common)
 CXXFLAGS_release := -g0 -O3 -DNDEBUG $(CXXFLAGS_common)
