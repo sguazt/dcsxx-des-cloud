@@ -309,6 +309,7 @@ class data_center_manager
 
 	private: void schedule_application_creation(application_instance_pointer const& ptr_app_inst)
 	{
+::std::cerr << "data_center_manager>> Create application at " << ptr_app_inst->start_time() << ::std::endl;//XXX
 		registry<traits_type>& reg(registry<traits_type>::instance());
 
 		real_type cur_time(reg.des_engine().simulated_time());
@@ -336,6 +337,7 @@ class data_center_manager
 
 	private: void schedule_application_destruction(application_instance_pointer const& ptr_app_inst)
 	{
+::std::cerr << "data_center_manager>> Destroy application at " << ptr_app_inst->stop_time() << ::std::endl;//XXX
 		if (::std::isinf(ptr_app_inst->stop_time()))
 		{
 			return;
@@ -394,6 +396,7 @@ class data_center_manager
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing SYSTEM-FINALIZATION (Clock: " << ctx.simulated_time() << ")");//XXX
+::std::cerr << "(" << this << ") BEGIN Processing SYSTEM-FINALIZATION (Clock: " << ctx.simulated_time() << ")" << ::std::endl;//XXX
 
 		// precondition: pointer to vm initial placer must be a valid pointer
 		DCS_DEBUG_ASSERT( ptr_dc_ );
@@ -412,6 +415,7 @@ class data_center_manager
 			::std::clog << "[Warning] Unable to stop any application." << ::std::endl;
 		}
 
+::std::cerr << "(" << this << ") END Processing SYSTEM-FINALIZATION (Clock: " << ctx.simulated_time() << ")" << ::std::endl;//XXX
 		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-FINALIZATION (Clock: " << ctx.simulated_time() << ")");//XXX
 	}
 
@@ -422,6 +426,7 @@ class data_center_manager
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing SYSTEM-STARTUP (Clock: " << ctx.simulated_time() << ")");//XXX
+::std::cerr << "(" << this << ") BEGIN Processing SYSTEM-STARTUP (Clock: " << ctx.simulated_time() << ")" << ::std::endl;//XXX
 
 		// precondition: pointer to vm initial placer must be a valid pointer
 		DCS_DEBUG_ASSERT( ptr_dc_ );
@@ -429,15 +434,18 @@ class data_center_manager
 //		// Remove all previously placed VM
 //		ptr_dc_->displace_virtual_machines();
 
+::std::cerr << "[data_center_manager>> Create applications" << ::std::endl;
 		create_applications();
 
 		// Create a new VM placement
+::std::cerr << "[data_center_manager>> Place VMs" << ::std::endl;
 		ptr_dc_->place_virtual_machines(
 			ptr_init_placement_->placement(*ptr_dc_)
 		);
 
 		typename traits_type::uint_type started_apps;
 
+::std::cerr << "[data_center_manager>> Start applications" << ::std::endl;
 		started_apps = ptr_dc_->start_applications();
 
 		if (!started_apps)
@@ -447,6 +455,7 @@ class data_center_manager
 			::std::clog << "[Warning] Unable to start any application." << ::std::endl;
 		}
 
+::std::cerr << "(" << this << ") END Processing SYSTEM-STARTUP (Clock: " << ctx.simulated_time() << ")" << ::std::endl;//XXX
 		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-STARTUP (Clock: " << ctx.simulated_time() << ")");//XXX
 	}
 
@@ -456,6 +465,9 @@ class data_center_manager
 		typedef ::std::vector<virtual_machine_pointer> vm_container;
 		typedef virtual_machines_placement<traits_type> vms_placement_type;
 		typedef typename vms_placement_type::const_iterator vms_placement_iterator;
+
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing APPLICATION-CREATION (Clock: " << ctx.simulated_time() << ")");//XXX
+::std::cerr << "(" << this << ") BEGIN Processing APPLICATION-CREATION (Clock: " << ctx.simulated_time() << ")" << ::std::endl;//XXX
 
 		application_instance_pointer ptr_app_inst(evt.template unfolded_state<application_instance_pointer>());
 
@@ -487,7 +499,10 @@ class data_center_manager
 		start_application(app_id);
 
 		// Schedule application stop event
-		schedule_application_stop(ptr_app_inst);
+		schedule_application_destruction(ptr_app_inst);
+
+::std::cerr << "(" << this << ") END Processing APPLICATION-CREATION (Clock: " << ctx.simulated_time() << ")" << ::std::endl;//XXX
+		DCS_DEBUG_TRACE("(" << this << ") END Processing APPLICATION-CREATION (Clock: " << ctx.simulated_time() << ")");//XXX
 	}
 
 
@@ -495,6 +510,9 @@ class data_center_manager
 	{
 		typedef ::std::vector<virtual_machine_pointer> vm_container;
 		typedef typename vm_container::const_iterator vm_iterator;
+
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing APPLICATION-DESTRUCTION (Clock: " << ctx.simulated_time() << ")");//XXX
+::std::cerr << "(" << this << ") BEGIN Processing APPLICATION-DESTRUCTION (Clock: " << ctx.simulated_time() << ")" << ::std::endl;//XXX
 
 		application_instance_pointer ptr_app_inst(evt.template unfolded_state<application_instance_pointer>());
 
@@ -521,6 +539,9 @@ class data_center_manager
 
 		// Destroy application
 		undeploy_application(app_id);
+
+::std::cerr << "(" << this << ") END Processing APPLICATION-DESTRUCTION (Clock: " << ctx.simulated_time() << ")" << ::std::endl;//XXX
+		DCS_DEBUG_TRACE("(" << this << ") END Processing APPLICATION-DESTRUCTION (Clock: " << ctx.simulated_time() << ")");//XXX
 	}
 
 
