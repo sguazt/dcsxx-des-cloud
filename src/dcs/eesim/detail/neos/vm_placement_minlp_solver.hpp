@@ -2,6 +2,7 @@
 #define DCS_EESIM_DETAIL_NEOS_VM_PLACEMENT_MINLP_SOLVER_HPP
 
 
+#include <dcs/eesim/best_fit_decreasing_initial_placement_strategy.hpp>
 #include <dcs/eesim/detail/ampl/solver_results.hpp>
 #include <dcs/eesim/detail/ampl/vm_placement_problem.hpp>
 #include <dcs/eesim/detail/ampl/vm_placement_problem_result.hpp>
@@ -16,6 +17,7 @@
 #include <dcs/eesim/optimal_solver_ids.hpp>
 #include <dcs/eesim/optimal_solver_input_methods.hpp>
 #include <dcs/eesim/optimal_solver_proxies.hpp>
+#include <dcs/eesim/virtual_machines_placement.hpp>
 #include <string>
 
 
@@ -50,7 +52,8 @@ inline
 inline
 ::std::string gams_options()
 {
-	return	"";
+//	return	"option sysout = on;";
+	return "";
 }
 
 }} // Namespace detail::<unnamed>
@@ -99,6 +102,12 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 		// Reset previous solution
 		this->result().reset();
 
+		// As initial guess use a specif heuristic
+		//FIXME: Best-Fit-Decreasing heuristic is hard-coded
+		best_fit_decreasing_initial_placement_strategy<traits_type> heuristic_strategy;
+		heuristic_strategy.reference_share_penalty(ref_penalty);
+		virtual_machines_placement<traits_type> init_guess(heuristic_strategy.placement(dc));
+
 		switch (this->input_method())
 		{
 			case ampl_optimal_solver_input_method:
@@ -108,7 +117,7 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 					// Create a new problem
 					// 1. Create a problem in AMPL format
 					ampl::vm_placement_problem<traits_type> problem_descr;
-					problem_descr = ampl::make_initial_vm_placement_problem<traits_type>(dc, wp, ws, ref_penalty, vm_util_map);
+					problem_descr = ampl::make_initial_vm_placement_problem<traits_type>(dc, wp, ws, ref_penalty, vm_util_map, init_guess);
 					::std::string xml_job;
 					xml_job = make_ampl_job(xml_tmpl_,
 										    problem_descr.model,
@@ -148,7 +157,7 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 					// Create a new problem
 					// 1. Create a problem in AMPL format
 					gams::vm_placement_problem<traits_type> problem_descr;
-					problem_descr = gams::make_initial_vm_placement_problem<traits_type>(dc, wp, ws, ref_penalty, vm_util_map);
+					problem_descr = gams::make_initial_vm_placement_problem<traits_type>(dc, wp, ws, ref_penalty, vm_util_map, init_guess);
 					::std::string xml_job;
 					xml_job = make_gams_job(xml_tmpl_,
 										    problem_descr.model,
@@ -260,6 +269,9 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 		// Reset previous solution
 		this->result().reset();
 
+		// As initial guess use the current VM placement.
+		virtual_machines_placement<traits_type> init_guess(dc.current_virtual_machines_placement());
+
 		switch (this->input_method())
 		{
 			case ampl_optimal_solver_input_method:
@@ -269,7 +281,7 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 					// Create a new problem
 					// 1. Create a problem in AMPL format
 					ampl::vm_placement_problem<traits_type> problem_descr;
-					problem_descr = ampl::make_vm_placement_problem<traits_type>(dc, wp, wm, ws, vm_util_map);
+					problem_descr = ampl::make_vm_placement_problem<traits_type>(dc, wp, wm, ws, vm_util_map, init_guess);
 					::std::string xml_job;
 					xml_job = make_ampl_job(xml_tmpl_,
 										    problem_descr.model,
@@ -301,7 +313,7 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 					// Create a new problem
 					// 1. Create a problem in GAMS format
 					gams::vm_placement_problem<traits_type> problem_descr;
-					problem_descr = gams::make_vm_placement_problem<traits_type>(dc, wp, wm, ws, vm_util_map);
+					problem_descr = gams::make_vm_placement_problem<traits_type>(dc, wp, wm, ws, vm_util_map, init_guess);
 					::std::string xml_job;
 					xml_job = make_gams_job(xml_tmpl_,
 										    problem_descr.model,

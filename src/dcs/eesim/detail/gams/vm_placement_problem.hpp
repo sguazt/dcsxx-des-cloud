@@ -4,10 +4,12 @@
 
 #include <cstddef>
 #include <dcs/eesim/power_status.hpp>
+#include <dcs/eesim/virtual_machines_placement.hpp>
 #include <dcs/memory.hpp>
 #include <dcs/perfeval/energy.hpp>
 #include <iosfwd>
 #include <map>
+#include <utility>
 #include <stdexcept>
 #include <sstream>
 #include <string>
@@ -25,6 +27,7 @@ template <typename TraitsT>
 												typename TraitsT::real_type ref_penalty,
 												::std::map<typename TraitsT::virtual_machine_identifier_type,
 														   typename TraitsT::real_type> const& vm_util_map,
+												virtual_machines_placement<TraitsT> const& init_guess,
 												::std::vector<typename TraitsT::physical_machine_identifier_type>& pm_ids,
 												::std::vector<typename TraitsT::virtual_machine_identifier_type>& vm_ids)
 {
@@ -49,6 +52,8 @@ template <typename TraitsT>
 	typedef typename traits_type::virtual_machine_identifier_type vm_identifier_type;
 	typedef typename ::std::vector<pm_identifier_type> pm_identifier_container;
 	typedef typename ::std::vector<vm_identifier_type> vm_identifier_container;
+	typedef typename ::std::map<pm_identifier_type, ::std::size_t> pm_identifier_index_map;
+	typedef typename ::std::map<vm_identifier_type, ::std::size_t> vm_identifier_index_map;
 
 	::std::ostringstream oss;
 
@@ -78,6 +83,8 @@ template <typename TraitsT>
 
 	pm_ids = pm_identifier_container(n_pms);
 	vm_ids = vm_identifier_container(n_vms);
+	pm_identifier_index_map pm_id_idx_map;
+	vm_identifier_index_map vm_id_idx_map;
 
 	// Power model coefficients, max share and resource capacity
 	oss << "parameters" << ::std::endl
@@ -91,6 +98,7 @@ template <typename TraitsT>
 		pm_pointer ptr_pm(pms[i]);
 
 		pm_ids[i] = ptr_pm->id();
+		pm_id_idx_map[ptr_pm->id()] = i;
 
 		//FIXME: CPU resource category is hard-coded
 		resource_pointer ptr_resource(ptr_pm->resource(::dcs::eesim::cpu_resource_category));
@@ -115,6 +123,7 @@ template <typename TraitsT>
 		vm_pointer ptr_vm(vms[j]);
 
 		vm_ids[j] = ptr_vm->id();
+		vm_id_idx_map[ptr_vm->id()] = j;
 		application_type const& app(ptr_vm->guest_system().application());
 
 		//FIXME: CPU resource category is hard-coded
@@ -147,17 +156,64 @@ template <typename TraitsT>
     	<< "cost 'The objective cost'" << ::std::endl
     	<< ";" << ::std::endl
 		<< "s.up(i,j) = 1;" << ::std::endl
-		<< "u.up(i) = 1;" << ::std::endl
-		<< "equations" << ::std::endl
-    	<< "eq_one_vm_per_mach 'Each VM must be placed exactly on a single machine'" << ::std::endl
-    	<< "eq_vm_on_active_mach1 'Each VM must be placed on active (powered on) machine'" << ::std::endl
-    	<< "eq_vm_on_active_mach2 'ditto'" << ::std::endl
-    	<< "eq_valid_vm_share 'The share assigned to a VM on a machine can be greater than 0 only if the VM is really assigned to that machine'" << ::std::endl
-    	<< "eq_min_vm_share 'The share assigned to a VM on machine must be no less than the min value on the reference machine'" << ::std::endl
-    	<< "eq_max_aggr_vm_share 'The aggregated share demand on a physical machine must not exceed the maximum value'" << ::std::endl
-    	<< "eq_valid_util 'Utilization must be in [0,1] interval'" << ::std::endl
-    	<< "eq_obj 'Objective'" << ::std::endl
-    	<< ";" << ::std::endl
+		<< "u.up(i) = 1;" << ::std::endl;
+
+	// Provide initial values (useful for local optimization techniques)
+	if (!init_guess.empty())
+	{
+		oss << "x.l(i) = 0;" << ::std::endl
+			<< "y.l(i,j) = 0;" << ::std::endl
+			<< "s.l(i,j) = 0;" << ::std::endl;
+
+		typedef typename virtual_machines_placement<traits_type>::const_iterator vm_placement_iterator;
+		typedef typename virtual_machines_placement<traits_type>::share_const_iterator vm_placement_share_iterator;
+
+		::std::set< ::std::size_t > used_pms;
+		vm_placement_iterator vmp_end_it(init_guess.end());
+		for (vm_placement_iterator vmp_it = init_guess.begin(); vmp_it != vmp_end_it; ++vmp_it)
+		{
+			pm_identifier_type pm_id(init_guess.pm_id(vmp_it));
+			vm_identifier_type vm_id(init_guess.vm_id(vmp_it));
+			::std::size_t pm_idx(pm_id_idx_map[pm_id]+1);
+			::std::size_t vm_idx(vm_id_idx_map[vm_id]+1);
+
+			if (used_pms.count(pm_idx) == 0)
+			{
+				oss << "x.l('" << pm_idx << "') = 1;" << ::std::endl;
+				used_pms.insert(pm_idx);
+			}
+
+			oss << "y.l('" << pm_idx << "','" << vm_idx << "') = 1;" << ::std::endl;
+
+			bool found(false);
+			vm_placement_share_iterator end_share_it(init_guess.shares_end(vmp_it));
+			for (vm_placement_share_iterator share_it = init_guess.shares_begin(vmp_it); share_it != end_share_it; ++share_it)
+			{
+				//FIXME: CPU resource category is hard-coded
+				if (init_guess.resource_category(share_it) == ::dcs::eesim::cpu_resource_category)
+				{
+					oss << "s.l('" << pm_idx << "','" << vm_idx << "') = " << init_guess.resource_share(share_it) << ";" << ::std::endl;
+					found = true;
+				}
+			}
+
+			if (!found)
+			{
+				throw ::std::runtime_error("[dcs::eesim::detail::gams::make_initial_vm_placement_problem] Incompatible resource categories.");
+			}
+		}
+	}
+
+	oss << "equations" << ::std::endl
+		<< "eq_one_vm_per_mach 'Each VM must be placed exactly on a single machine'" << ::std::endl
+		<< "eq_vm_on_active_mach1 'Each VM must be placed on active (powered on) machine'" << ::std::endl
+		<< "eq_vm_on_active_mach2 'ditto'" << ::std::endl
+		<< "eq_valid_vm_share 'The share assigned to a VM on a machine can be greater than 0 only if the VM is really assigned to that machine'" << ::std::endl
+		<< "eq_min_vm_share 'The share assigned to a VM on machine must be no less than the min value on the reference machine'" << ::std::endl
+		<< "eq_max_aggr_vm_share 'The aggregated share demand on a physical machine must not exceed the maximum value'" << ::std::endl
+		<< "eq_valid_util 'Utilization must be in [0,1] interval'" << ::std::endl
+		<< "eq_obj 'Objective'" << ::std::endl
+		<< ";" << ::std::endl
 		<< "eq_obj .. cost =e= wwp * sum(i, x(i)*(pmpvals(i,'c0') + pmpvals(i,'c1')*sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C')*(s(i,j)+epsilon))) + pmpvals(i,'c2')*sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C')*(s(i,j)+epsilon)))**pmpvals(i,'r'))) + wws * sum(i, sum(j, y(i,j)*abs(s(i,j)*pmpvals(i,'C')/vmpvals(j,'Cr')-1)**2));" << ::std::endl
 		<< "eq_one_vm_per_mach(j) .. sum(i, y(i,j)) =e= 1;" << ::std::endl
 		<< "eq_vm_on_active_mach1(i,j) .. y(i,j) =l= x(i);" << ::std::endl
@@ -188,12 +244,34 @@ template <typename TraitsT>
 
 
 template <typename TraitsT>
+inline
+::std::string make_initial_vm_placement_problem(data_center<TraitsT> const& dc,
+												typename TraitsT::real_type wp,
+												typename TraitsT::real_type ws,
+												typename TraitsT::real_type ref_penalty,
+												::std::map<typename TraitsT::virtual_machine_identifier_type,
+														   typename TraitsT::real_type> const& vm_util_map,
+												::std::vector<typename TraitsT::physical_machine_identifier_type>& pm_ids,
+												::std::vector<typename TraitsT::virtual_machine_identifier_type>& vm_ids)
+{
+	return make_initial_vm_placement_problem(dc,
+											 wp,
+											 ws,
+											 ref_penalty,
+											 vm_util_map,
+											 virtual_machines_placement<TraitsT>(),
+											 pm_ids, vm_ids);
+}
+
+
+template <typename TraitsT>
 ::std::string make_vm_placement_problem(data_center<TraitsT> const& dc,
 										typename TraitsT::real_type wp,
-										typename TraitsT::real_type ws,
 										typename TraitsT::real_type wm,
+										typename TraitsT::real_type ws,
 										::std::map<typename TraitsT::virtual_machine_identifier_type,
 												   typename TraitsT::real_type> const& vm_util_map,
+										virtual_machines_placement<TraitsT> const& init_guess,
 										::std::vector<typename TraitsT::physical_machine_identifier_type>& pm_ids,
 										::std::vector<typename TraitsT::virtual_machine_identifier_type>& vm_ids)
 {
@@ -218,6 +296,8 @@ template <typename TraitsT>
 	typedef typename traits_type::virtual_machine_identifier_type vm_identifier_type;
 	typedef typename ::std::vector<pm_identifier_type> pm_identifier_container;
 	typedef typename ::std::vector<vm_identifier_type> vm_identifier_container;
+	typedef typename ::std::map<pm_identifier_type, ::std::size_t> pm_identifier_index_map;
+	typedef typename ::std::map<vm_identifier_type, ::std::size_t> vm_identifier_index_map;
 
 	::std::ostringstream oss;
 
@@ -261,6 +341,8 @@ template <typename TraitsT>
 
 	pm_ids = pm_identifier_container(n_pms);
 	vm_ids = vm_identifier_container(n_vms);
+	pm_identifier_index_map pm_id_idx_map;
+	vm_identifier_index_map vm_id_idx_map;
 
 	// Power model coefficients, max share and resource capacity
 	oss << "parameters" << ::std::endl
@@ -276,6 +358,7 @@ template <typename TraitsT>
 		pm_pointer ptr_pm(pms[i]);
 
 		pm_ids[i] = ptr_pm->id();
+		pm_id_idx_map[ptr_pm->id()] = i;
 
 		//FIXME: CPU resource category is hard-coded
 		resource_pointer ptr_resource(ptr_pm->resource(::dcs::eesim::cpu_resource_category));
@@ -300,6 +383,7 @@ template <typename TraitsT>
 		vm_pointer ptr_vm(active_vms[j]);
 
 		vm_ids[j] = ptr_vm->id();
+		vm_id_idx_map[ptr_vm->id()] = j;
 		application_type const& app(ptr_vm->guest_system().application());
 
 		//FIXME: CPU resource category is hard-coded
@@ -356,8 +440,55 @@ template <typename TraitsT>
     	<< "cost 'The objective cost'" << ::std::endl
     	<< ";" << ::std::endl
 		<< "s.up(i,j) = 1;" << ::std::endl
-		<< "u.up(i) = 1;" << ::std::endl
-		<< "equations" << ::std::endl
+		<< "u.up(i) = 1;" << ::std::endl;
+
+	// Provide initial values (useful for local optimization techniques)
+	if (!init_guess.empty())
+	{
+		oss << "x.l(i) = 0;" << ::std::endl
+			<< "y.l(i,j) = 0;" << ::std::endl
+			<< "s.l(i,j) = 0;" << ::std::endl;
+
+		typedef typename virtual_machines_placement<traits_type>::const_iterator vm_placement_iterator;
+		typedef typename virtual_machines_placement<traits_type>::share_const_iterator vm_placement_share_iterator;
+
+		::std::set< ::std::size_t > used_pms;
+		vm_placement_iterator vmp_end_it(init_guess.end());
+		for (vm_placement_iterator vmp_it = init_guess.begin(); vmp_it != vmp_end_it; ++vmp_it)
+		{
+			pm_identifier_type pm_id(init_guess.pm_id(vmp_it));
+			vm_identifier_type vm_id(init_guess.vm_id(vmp_it));
+			::std::size_t pm_idx(pm_id_idx_map[pm_id]+1);
+			::std::size_t vm_idx(vm_id_idx_map[vm_id]+1);
+
+			if (used_pms.count(pm_idx) == 0)
+			{
+				oss << "x.l('" << pm_idx << "') = 1;" << ::std::endl;
+				used_pms.insert(pm_idx);
+			}
+
+			oss << "y.l('" << pm_idx << "','" << vm_idx << "') = 1;" << ::std::endl;
+
+			bool found(false);
+			vm_placement_share_iterator end_share_it(init_guess.shares_end(vmp_it));
+			for (vm_placement_share_iterator share_it = init_guess.shares_begin(vmp_it); share_it != end_share_it; ++share_it)
+			{
+				//FIXME: CPU resource category is hard-coded
+				if (init_guess.resource_category(share_it) == ::dcs::eesim::cpu_resource_category)
+				{
+					oss << "s.l('" << pm_idx << "','" << vm_idx << "') = " << init_guess.resource_share(share_it) << ";" << ::std::endl;
+					found = true;
+				}
+			}
+
+			if (!found)
+			{
+				throw ::std::runtime_error("[dcs::eesim::detail::gams::make_initial_vm_placement_problem] Incompatible resource categories.");
+			}
+		}
+	}
+
+	oss << "equations" << ::std::endl
     	<< "eq_one_vm_per_mach 'Each VM must be placed exactly on a single machine'" << ::std::endl
     	<< "eq_vm_on_active_mach1 'Each VM must be placed on active (powered on) machine'" << ::std::endl
     	<< "eq_vm_on_active_mach2 'ditto'" << ::std::endl
@@ -395,6 +526,27 @@ template <typename TraitsT>
 		<< "putclose;" << ::std::endl;
 
 	return oss.str();
+}
+
+
+template <typename TraitsT>
+inline
+::std::string make_vm_placement_problem(data_center<TraitsT> const& dc,
+										typename TraitsT::real_type wp,
+										typename TraitsT::real_type wm,
+										typename TraitsT::real_type ws,
+										::std::map<typename TraitsT::virtual_machine_identifier_type,
+												   typename TraitsT::real_type> const& vm_util_map,
+										::std::vector<typename TraitsT::physical_machine_identifier_type>& pm_ids,
+										::std::vector<typename TraitsT::virtual_machine_identifier_type>& vm_ids)
+{
+	return make_vm_placement_problem(dc,
+									 wp,
+									 wm,
+									 ws,
+									 vm_util_map,
+									 virtual_machines_placement<TraitsT>(),
+									 pm_ids, vm_ids);
 }
 
 }} // Namespace detail::<unnamed>
@@ -438,6 +590,31 @@ vm_placement_problem<TraitsT> make_initial_vm_placement_problem(data_center<Trai
 
 template <typename TraitsT>
 inline
+vm_placement_problem<TraitsT> make_initial_vm_placement_problem(data_center<TraitsT> const& dc,
+																typename TraitsT::real_type wp,
+																typename TraitsT::real_type ws,
+																typename TraitsT::real_type ref_penalty,
+																::std::map<typename TraitsT::virtual_machine_identifier_type,
+																		   typename TraitsT::real_type> const& vm_util_map,
+																virtual_machines_placement<TraitsT> const& init_guess)
+{
+	vm_placement_problem<TraitsT> problem;
+
+	problem.model = detail::make_initial_vm_placement_problem(dc,
+															  wp,
+															  ws,
+															  ref_penalty,
+															  vm_util_map,
+															  init_guess,
+															  problem.pm_ids,
+															  problem.vm_ids);
+
+	return problem;
+}
+
+
+template <typename TraitsT>
+inline
 vm_placement_problem<TraitsT> make_vm_placement_problem(data_center<TraitsT> const& dc,
 														typename TraitsT::real_type wp,
 														typename TraitsT::real_type wm,
@@ -449,9 +626,33 @@ vm_placement_problem<TraitsT> make_vm_placement_problem(data_center<TraitsT> con
 
 	problem.model = detail::make_vm_placement_problem(dc,
 													  wp,
-													  ws,
 													  wm,
+													  ws,
 													  vm_util_map,
+													  problem.pm_ids,
+													  problem.vm_ids);
+	return problem;
+}
+
+
+template <typename TraitsT>
+inline
+vm_placement_problem<TraitsT> make_vm_placement_problem(data_center<TraitsT> const& dc,
+														typename TraitsT::real_type wp,
+														typename TraitsT::real_type wm,
+														typename TraitsT::real_type ws,
+														::std::map<typename TraitsT::virtual_machine_identifier_type,
+																   typename TraitsT::real_type> const& vm_util_map,
+														virtual_machines_placement<TraitsT> const& init_guess)
+{
+	vm_placement_problem<TraitsT> problem;
+
+	problem.model = detail::make_vm_placement_problem(dc,
+													  wp,
+													  wm,
+													  ws,
+													  vm_util_map,
+													  init_guess,
 													  problem.pm_ids,
 													  problem.vm_ids);
 	return problem;

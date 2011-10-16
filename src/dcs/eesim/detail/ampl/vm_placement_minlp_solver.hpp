@@ -3,13 +3,7 @@
 
 
 #include <cstddef>
-////#include <boost/numeric/ublas/io.hpp>
-//#include <boost/numeric/ublas/matrix.hpp>
-//#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublasx/operation/num_columns.hpp>
-#include <boost/numeric/ublasx/operation/num_rows.hpp>
-#include <dcs/assert.hpp>
-#include <dcs/des/engine_traits.hpp>
+#include <dcs/eesim/best_fit_decreasing_initial_placement_strategy.hpp>
 #include <dcs/eesim/data_center.hpp>
 #include <dcs/eesim/detail/ampl/solver_results.hpp>
 #include <dcs/eesim/detail/ampl/utility.hpp>
@@ -22,13 +16,11 @@
 #include <dcs/eesim/optimal_solver_input_methods.hpp>
 #include <dcs/eesim/optimal_solver_proxies.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
+#include <dcs/eesim/virtual_machines_placement.hpp>
 #include <iosfwd>
-//#include <limits>
-#include <map>
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <utility>
 #include <vector>
 
 
@@ -77,26 +69,6 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 	private: typedef typename base_type::real_type real_type;
 	private: typedef typename base_type::data_center_type data_center_type;
 	private: typedef typename base_type::virtual_machine_utilization_map virtual_machine_utilization_map;
-/*
-	public: typedef typename traits_type::real_type real_type;
-	public: typedef typename traits_type::uint_type uint_type;
-	public: typedef data_center<traits_type> data_center_type;
-	public: typedef typename traits_type::physical_machine_identifier_type physical_machine_identifier_type;
-	public: typedef typename traits_type::virtual_machine_identifier_type virtual_machine_identifier_type;
-	public: typedef ::std::pair<physical_machine_identifier_type,virtual_machine_identifier_type> physical_virtual_machine_pair_type;
-	public: typedef ::std::vector< ::std::pair<physical_resource_category,real_type> > resource_share_container;
-	public: typedef ::std::map<physical_virtual_machine_pair_type,resource_share_container> physical_virtual_machine_map;
-	public: typedef ::std::map<virtual_machine_identifier_type,real_type> virtual_machine_utilization_map;
-	private: typedef typename traits_type::des_engine_type des_engine_type;
-	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
-	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
-	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_source_type des_event_source_type;
-	private: typedef typename data_center_type::physical_machine_type physical_machine_type;
-	private: typedef typename data_center_type::physical_machine_pointer physical_machine_pointer;
-	private: typedef typename data_center_type::virtual_machine_type virtual_machine_type;
-	private: typedef typename data_center_type::virtual_machine_pointer virtual_machine_pointer;
-	private: typedef typename virtual_machine_type::application_tier_type application_tier_type;
-*/
 
 
 	public: static const optimal_solver_ids default_solver_id;
@@ -129,9 +101,20 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 		// Reset previous solution
 		this->result().reset();
 
+		// As initial guess use a specif heuristic
+		// FIXME: Best-Fit-Decreasing heuristic is hard-coded
+		best_fit_decreasing_initial_placement_strategy<traits_type> heuristc_strategy;
+		heuristic_strategy.reference_share_penalty(ref_penalty);
+		virtual_machines_placement<traits_type> init_guess(heuristic_strategy.placement(dc));
+
 		// Create a new problem
 		vm_placement_problem<traits_type> problem_descr;
-		problem_descr = make_vm_placement_problem<traits_type>(dc, wp, ws, ref_penalty, vm_util_map);
+		problem_descr = make_vm_placement_problem<traits_type>(dc,
+															   wp,
+															   ws,
+															   ref_penalty,
+															   vm_util_map,
+															   init_guess);
 
 		//FIXME: solver 'couenne' is hard-coded
 		::std::ostringstream oss;
@@ -200,27 +183,6 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 	private: typedef typename base_type::real_type real_type;
 	private: typedef typename base_type::data_center_type data_center_type;
 	private: typedef typename base_type::virtual_machine_utilization_map virtual_machine_utilization_map;
-/*
-	public: typedef TraitsT traits_type;
-	public: typedef typename traits_type::real_type real_type;
-	public: typedef typename traits_type::uint_type uint_type;
-	public: typedef data_center<traits_type> data_center_type;
-	public: typedef typename traits_type::physical_machine_identifier_type physical_machine_identifier_type;
-	public: typedef typename traits_type::virtual_machine_identifier_type virtual_machine_identifier_type;
-	public: typedef ::std::pair<physical_machine_identifier_type,virtual_machine_identifier_type> physical_virtual_machine_pair_type;
-	public: typedef ::std::vector< ::std::pair<physical_resource_category,real_type> > resource_share_container;
-	public: typedef ::std::map<physical_virtual_machine_pair_type,resource_share_container> physical_virtual_machine_map;
-	public: typedef ::std::map<virtual_machine_identifier_type,real_type> virtual_machine_utilization_map;
-	private: typedef typename traits_type::des_engine_type des_engine_type;
-	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
-	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
-	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_source_type des_event_source_type;
-	private: typedef typename data_center_type::physical_machine_type physical_machine_type;
-	private: typedef typename data_center_type::physical_machine_pointer physical_machine_pointer;
-	private: typedef typename data_center_type::virtual_machine_type virtual_machine_type;
-	private: typedef typename data_center_type::virtual_machine_pointer virtual_machine_pointer;
-	private: typedef typename virtual_machine_type::application_tier_type application_tier_type;
-*/
 
 
     public: static const optimal_solver_ids default_solver_id;
@@ -253,9 +215,17 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 		// Reset previous solution
 		this->result().reset();
 
+		// As initial guess use the current VM placement.
+		virtual_machines_placement<traits_type> init_guess(dc.current_virtual_machines_placement());
+
 		// Create a new problem
 		vm_placement_problem<traits_type> problem_descr;
-		problem_descr = make_vm_placement_problem<traits_type>(dc, wp, wm, ws, vm_util_map);
+		problem_descr = make_vm_placement_problem<traits_type>(dc,
+															   wp,
+															   wm,
+															   ws,
+															   vm_util_map,
+															   init_guess);
 
 		::std::ostringstream oss;
 		oss << "reset;"
