@@ -59,7 +59,7 @@ class vm_placement_problem_result
 
 			::std::size_t pos(0);
 
-//::std::cerr << "Read-AMPL>> " << line << " (old state: " << state << ")" <<::std::endl;//XXX
+::std::cerr << "Read-AMPL>> " << line << " (old state: " << state << ")" <<::std::endl;//XXX
 			switch (state)
 			{
 				case skip_state:
@@ -72,6 +72,7 @@ class vm_placement_problem_result
 					if ((pos = line.find("solve_exitcode=")) != ::std::string::npos)
 					{
 						parse_str(line.substr(pos+15), solver_exit_code_);
+::std::cerr << "Read-AMPL>> SOLVE EXITCODE: " << solver_exit_code_ << ::std::endl;//XXX
 
 						if (solver_exit_code_ != 0)
 						{
@@ -86,22 +87,28 @@ class vm_placement_problem_result
 						parse_str(line.substr(pos+13), res);
 
 						solver_result_ = solver_result_from_string(res);
+::std::cerr << "Read-AMPL>> SOLVE RESULT: " << solver_result_ << ::std::endl;//XXX
 					}
 					else if ((pos = line.find("solve_result_num=")) != ::std::string::npos)
 					{
 						parse_str(line.substr(pos+17), solver_result_code_);
+::std::cerr << "Read-AMPL>> SOLVE RESULT NUM: " << solver_result_code_ << ::std::endl;//XXX
 					}
 
 					if (ok)
 					{
 
-						if (num_solver_info < 3)
+						if (num_solver_info < 2)
 						{
 							state = out_analysis_state;
 							++num_solver_info;
 						}
-						else if (solver_result_ == solved_result && solver_result_code_ >= 0 && solver_result_code_ < 100)
+						else if ((solver_result_ == solved_result && solver_result_code_ >= 0 && solver_result_code_ < 100)
+								 ||
+								 (solver_result_ == unknown_result && solver_result_code_ == -1))
 						{
+							// Either a solution has been found or the problem has not been solved anymore.
+							// The latter case may happen when initial value gives the best value found by the solver
 							state = results_state;
 						}
 						else
@@ -115,22 +122,22 @@ class vm_placement_problem_result
 					if (line.find("cost=") != ::std::string::npos)
 					{
 						parse_str(line.substr(pos+5), cost_);
-//::std::cerr << "Read-AMPL>> COST: " << cost_ << ::std::endl;//XXX
+::std::cerr << "Read-AMPL>> COST: " << cost_ << ::std::endl;//XXX
 					}
 					else if (line.find("x=") != ::std::string::npos)
 					{
 						parse_str(line.substr(pos+2), x_);
-//::std::cerr << "Read-AMPL>> X: " << x_ << ::std::endl;//XXX
+::std::cerr << "Read-AMPL>> X: " << x_ << ::std::endl;//XXX
 					}
 					else if (line.find("y=") != ::std::string::npos)
 					{
 						parse_str(line.substr(pos+2), y_);
-//::std::cerr << "Read-AMPL>> Y: " << y_ << ::std::endl;//XXX
+::std::cerr << "Read-AMPL>> Y: " << y_ << ::std::endl;//XXX
 					}
 					else if (line.find("s=") != ::std::string::npos)
 					{
 						parse_str(line.substr(pos+2), s_);
-//::std::cerr << "Read-AMPL>> S: " << s_ << ::std::endl;//XXX
+::std::cerr << "Read-AMPL>> S: " << s_ << ::std::endl;//XXX
 					}
 					else if (line.find("-- [/RESULT] --") != ::std::string::npos)
 					{
@@ -140,7 +147,7 @@ class vm_placement_problem_result
 				case end_state:
 					break;
 			}
-//::std::cerr << "Read-AMPL>> " << line << " (new state: " << state << ")" <<::std::endl;//XXX
+::std::cerr << "Read-AMPL>> " << line << " (new state: " << state << ")" <<::std::endl;//XXX
 		}
 	}
 
