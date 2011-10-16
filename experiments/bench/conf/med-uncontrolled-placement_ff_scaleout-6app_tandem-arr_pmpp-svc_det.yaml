@@ -27,7 +27,7 @@ simulation:
 #            value: 5
             type: banks2005
             min-value: 5
-            max-value: 200
+#            max-value: 200
         replication-size:
             type: fixed-num-observations
             num-observations: 1000000
