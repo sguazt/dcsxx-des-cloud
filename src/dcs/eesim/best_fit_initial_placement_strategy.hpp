@@ -15,7 +15,15 @@
 
 namespace dcs { namespace eesim {
 
-/// This is substantially a First-Fit decreasing heuristic.
+/**
+ * \brief Best-fit placement.
+ *
+ * Mimic the Best-Fit approximation algorithm for the Bin Packing problem when
+ * when object i is to be packed, find out that bin which after accommodating
+ * object i will have the least amount of space left.
+ *
+ * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ */
 template <typename TraitsT>
 class best_fit_initial_placement_strategy: public base_initial_placement_strategy<TraitsT>
 {
