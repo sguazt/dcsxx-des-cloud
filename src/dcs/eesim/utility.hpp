@@ -2,15 +2,27 @@
 #define DCS_EESIM_UTILITY_HPP
 
 
+#include <algorithm>
+#include <cmath>
 #include <dcs/macro.hpp>
 #include <dcs/eesim/physical_machine.hpp>
 #include <dcs/eesim/physical_resource.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
+#include <limits>
 #include <utility>
 #include <vector>
 
 
 namespace dcs { namespace eesim {
+
+template <typename RealT>
+inline
+RealT resource_scaling_factor(RealT source_capacity,
+							  RealT target_capacity)
+{
+	return target_capacity/source_capacity;
+}
+
 
 template <typename RealT>
 inline
@@ -22,8 +34,22 @@ RealT resource_scaling_factor(RealT source_capacity,
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( source_threshold );
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( target_threshold );
 
-//	return (source_capacity*source_threshold)/(target_capacity*target_threshold);
-	return target_capacity/source_capacity;
+	return resource_scaling_factor(source_capacity*source_threshold, target_capacity*target_threshold);
+}
+
+
+template <typename RealT>
+inline
+RealT scale_resource_share(RealT source_capacity,
+						   RealT target_capacity,
+						   RealT source_share,
+						   RealT target_share_threshold = ::std::numeric_limits<RealT>::infinity())
+{
+	RealT target_share = source_share/resource_scaling_factor(source_capacity, target_capacity);
+
+	return ::std::isfinite(target_share_threshold)
+		   ? ::std::min(target_share, target_share_threshold)
+		   : target_share;
 }
 
 
@@ -33,14 +59,16 @@ RealT scale_resource_share(RealT source_capacity,
 						   RealT source_threshold,
 						   RealT target_capacity,
 						   RealT target_threshold,
-						   RealT source_share)
+						   RealT source_share,
+						   RealT target_share_threshold = ::std::numeric_limits<RealT>::infinity())
 {
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( source_threshold );
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( target_threshold );
-
 //	return source_share*(source_capacity*source_threshold)/(target_capacity*target_threshold);
 //	return source_share*(source_capacity/target_capacity);
-	return source_share/resource_scaling_factor(source_capacity, source_threshold, target_capacity, target_threshold);
+	RealT target_share = source_share/resource_scaling_factor(source_capacity, source_threshold, target_capacity, target_threshold);
+
+	return ::std::isfinite(target_share_threshold)
+		   ? ::std::min(target_share, target_share_threshold)
+		   : target_share;
 }
 
 
@@ -122,6 +150,22 @@ template <typename TraitsT, typename ShareForwardIterT>
 
 	return shares;
 }
+
+
+template <typename RealT>
+inline
+RealT scale_resource_utilization(RealT source_capacity,
+								 RealT target_capacity,
+								 RealT source_utilization,
+								 RealT target_threshold = ::std::numeric_limits<RealT>::infinity())
+{
+	RealT target_utilization(source_utilization/resource_scaling_factor(source_capacity, target_capacity));
+
+	return ::std::isfinite(target_threshold)
+		   ? ::std::min(target_utilization, target_threshold)
+		   : target_utilization;
+}
+
 
 }} // Namespace dcs::eesim
 
