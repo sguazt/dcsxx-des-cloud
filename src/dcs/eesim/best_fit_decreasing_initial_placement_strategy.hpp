@@ -39,6 +39,8 @@ class best_fit_decreasing_initial_placement_strategy: public base_initial_placem
 		typedef ::std::pair<physical_resource_category,real_type> share_type;
 		typedef ::std::vector<share_type> share_container;
 		typedef typename share_container::const_iterator share_iterator;
+		typedef ::std::map<physical_resource_category,real_type> resource_share_map;
+		typedef ::std::map<physical_resource_category,real_type> resource_utilization_map;
 
 		pm_container sorted_pms(dc.physical_machines());
 		::std::sort(sorted_pms.begin(),
@@ -51,6 +53,7 @@ class best_fit_decreasing_initial_placement_strategy: public base_initial_placem
 					detail::ptr_virtual_machine_greater_comparator<vm_type>());
 
 
+::std::cerr << "BEGIN Initial Placement" << ::std::endl;//XXX
 DCS_DEBUG_TRACE("BEGIN Initial Placement");//XXX
 DCS_DEBUG_TRACE("#Machines: " << machs.size());//XXX
 DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
@@ -71,14 +74,6 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 			share_container ref_shares(ptr_vm->guest_system().resource_shares());
 //			resource_view_container ref_resources(ptr_vm->guest_system().application().reference_resources());
 
-//[EXP]
-::std::map<physical_resource_category,real_type> vm_util_map;
-vm_util_map[cpu_resource_category] = ptr_vm->guest_system().application().performance_model().tier_measure(
-								ptr_vm->guest_system().id(),
-								::dcs::eesim::utilization_performance_measure
-	);
-//[/EXP]
-
 			// For each physical machine PM, try to deploy current VM on PM
 			// until a suitable machine (i.e., a machine with sufficient free
 			// capacity) is found.
@@ -93,7 +88,7 @@ vm_util_map[cpu_resource_category] = ptr_vm->guest_system().application().perfor
 				DCS_DEBUG_ASSERT( ptr_pm );
 
 				// Reference to actual resource shares
-				share_container shares;
+				resource_share_map shares;
 				for (share_iterator ref_share_it = ref_shares.begin(); ref_share_it != ref_share_end_it; ++ref_share_it)
 				{
 					physical_resource_category ref_category(ref_share_it->first);
@@ -110,20 +105,49 @@ vm_util_map[cpu_resource_category] = ptr_vm->guest_system().application().perfor
 					real_type actual_threshold(ptr_pm->resource(ref_category)->utilization_threshold());
 
 					real_type share;
-					share = ::dcs::eesim::scale_resource_share(ref_capacity,
-															   ref_threshold,
-															   actual_capacity,
-															   actual_threshold,
-															   ref_share);
+					share = scale_resource_share(ref_capacity,
+												 ref_threshold,
+												 actual_capacity,
+												 actual_threshold,
+												 ref_share);
 
-					shares.push_back(::std::make_pair(ref_category, share));
+					shares[ref_category] = share;
+				}
+
+				// Reference to actual resource utilizaition
+				resource_utilization_map utils;
+				{
+					physical_resource_category ref_category(cpu_resource_category);
+					real_type ref_util(0);
+					ref_util = app.performance_model().tier_measure(
+									ptr_vm->guest_system().id(),
+									::dcs::eesim::utilization_performance_measure
+						);
+
+					real_type ref_capacity(app.reference_resource(ref_category).capacity());
+					real_type actual_capacity(ptr_pm->resource(ref_category)->capacity());
+
+					real_type util(0);
+					util = scale_resource_share(ref_capacity,
+												actual_capacity,
+												ref_util,
+												ptr_pm->resource(ref_category)->utilization_threshold());
+					if (shares.count(ref_category))
+					{
+						util /= shares.at(ref_category);
+					}
+
+					utils[ref_category] = util;
 				}
 
 				// Try to place current VM on current PM
 				placed = deployment.try_place(*ptr_vm,
 											  *ptr_pm,
 											  shares.begin(),
-											  shares.end());
+											  shares.end(),
+											  utils.begin(),
+											  utils.end(),
+											  dc);
 DCS_DEBUG_TRACE("Placed: VM(" << ptr_vm->id() << ") -> PM(" << ptr_pm->id() << ") ==> OK? " <<  std::boolalpha << placed);///XXX
 			}
 		}
