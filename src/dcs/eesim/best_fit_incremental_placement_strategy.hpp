@@ -6,16 +6,12 @@
 #include <dcs/eesim/base_incremental_placement_strategy.hpp>
 #include <dcs/eesim/data_center.hpp>
 #include <dcs/eesim/detail/placement_strategy_utility.hpp>
+#include <dcs/eesim/performance_measure_category.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/utility.hpp>
 #include <dcs/eesim/virtual_machines_placement.hpp>
-#include <utility>
+#include <map>
 #include <vector>
-
-
-//FIXME:
-// - Fit is based only on the CPU resource (see detail::pm_comparator)
-//
 
 
 namespace dcs { namespace eesim {
@@ -35,36 +31,40 @@ class best_fit_incremental_placement_strategy: public base_incremental_placement
 	private: virtual_machines_placement<traits_type> do_place(data_center_type const& dc, vm_identifier_container const& vms)
 	{
 		typedef typename data_center_type::application_type application_type;
-		typedef typename data_center_type::physical_machine_type physical_machine_type;
-		typedef typename data_center_type::physical_machine_pointer physical_machine_pointer;
-		typedef typename physical_machine_type::identifier_type pm_identifier_type;
-		typedef typename data_center_type::virtual_machine_type virtual_machine_type;
-		typedef typename data_center_type::virtual_machine_pointer virtual_machine_pointer;
-		typedef ::std::vector<physical_machine_pointer> pm_container;
+		typedef typename data_center_type::physical_machine_type pm_type;
+		typedef typename data_center_type::physical_machine_pointer pm_pointer;
+		typedef typename pm_type::identifier_type pm_identifier_type;
+		typedef typename data_center_type::virtual_machine_type vm_type;
+		typedef typename data_center_type::virtual_machine_pointer vm_pointer;
+		typedef ::std::vector<pm_pointer> pm_container;
 		typedef typename pm_container::const_iterator pm_iterator;
 		typedef typename vm_identifier_container::const_iterator vm_identifier_iterator;
 		typedef ::std::pair<physical_resource_category,real_type> share_type;
 		typedef ::std::vector<share_type> share_container;
 		typedef typename share_container::const_iterator share_iterator;
+		typedef ::std::map<physical_resource_category,real_type> resource_share_map;
+		typedef ::std::map<physical_resource_category,real_type> resource_utilization_map;
 
-		pm_container machs(dc.physical_machines());
+		pm_container sorted_pms(dc.physical_machines());
 
 DCS_DEBUG_TRACE("BEGIN Incremental Placement");//XXX
-DCS_DEBUG_TRACE("#Machines: " << machs.size());//XXX
+DCS_DEBUG_TRACE("#Machines: " << sorted_pms.size());//XXX
 DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 
 		virtual_machines_placement<traits_type> deployment;
 
 		// Sort physical machines according to their capacity
 		// (from the less powerful to the more powerful)
-		::std::sort(machs.begin(), machs.end(), detail::pm_comparator<physical_machine_type>());
+		::std::sort(sorted_pms.begin(),
+					sorted_pms.end(),
+					detail::ptr_physical_machine_less_comparator<pm_type>());
 
 		vm_identifier_iterator vm_end_it(vms.end());
 		for (vm_identifier_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
 		{
 			vm_identifier_type vm_id(*vm_it);
 
-			virtual_machine_pointer ptr_vm(dc.virtual_machine_ptr(vm_id));
+			vm_pointer ptr_vm(dc.virtual_machine_ptr(vm_id));
 
 			// paranoid-check: valid pointer
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -78,17 +78,17 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 			// until a suitable machine (i.e., a machine with sufficient free
 			// capacity) is found.
 			bool placed(false);
-			pm_iterator pm_end_it(machs.end());
+			pm_iterator pm_end_it(sorted_pms.end());
 			share_iterator ref_share_end_it(ref_shares.end());
-			for (pm_iterator pm_it = machs.begin(); pm_it != pm_end_it && !placed; ++pm_it)
+			for (pm_iterator pm_it = sorted_pms.begin(); pm_it != pm_end_it && !placed; ++pm_it)
 			{
-				physical_machine_pointer ptr_mach(*pm_it);
+				pm_pointer ptr_pm(*pm_it);
 
 				// paranoid-check: valid pointer
-				DCS_DEBUG_ASSERT( ptr_mach );
+				DCS_DEBUG_ASSERT( ptr_pm );
 
 				// Reference to actual resource shares
-				share_container shares;
+				resource_share_map shares;
 				for (share_iterator ref_share_it = ref_shares.begin(); ref_share_it != ref_share_end_it; ++ref_share_it)
 				{
 					physical_resource_category ref_category(ref_share_it->first);
@@ -101,8 +101,8 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 					real_type ref_capacity(app.reference_resource(ref_category).capacity());
 					real_type ref_threshold(app.reference_resource(ref_category).utilization_threshold());
 
-					real_type actual_capacity(ptr_mach->resource(ref_category)->capacity());
-					real_type actual_threshold(ptr_mach->resource(ref_category)->utilization_threshold());
+					real_type actual_capacity(ptr_pm->resource(ref_category)->capacity());
+					real_type actual_threshold(ptr_pm->resource(ref_category)->utilization_threshold());
 
 					real_type share;
 					share = ::dcs::eesim::scale_resource_share(ref_capacity,
@@ -111,15 +111,45 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 															   actual_threshold,
 															   ref_share);
 
-					shares.push_back(::std::make_pair(ref_category, share));
+					shares[ref_category] = share;
+				}
+
+				// Reference to actual resource utilization
+				resource_utilization_map utils;
+				{
+					//FIXME: CPU resource category is hard-coded.
+					physical_resource_category ref_category(cpu_resource_category);
+					real_type ref_util(0);
+					ref_util = app.performance_model().tier_measure(
+									ptr_vm->guest_system().id(),
+									utilization_performance_measure
+						);
+
+					real_type ref_capacity(app.reference_resource(ref_category).capacity());
+					real_type actual_capacity(ptr_pm->resource(ref_category)->capacity());
+
+					real_type util(0);
+					util = scale_resource_share(ref_capacity,
+												actual_capacity,
+												ref_util,
+												ptr_pm->resource(ref_category)->utilization_threshold());
+					if (shares.count(ref_category))
+					{
+						util /= shares.at(ref_category);
+					}
+
+					utils[ref_category] = util;
 				}
 
 				// Try to place current VM on current PM
 				placed = deployment.try_place(*ptr_vm,
-											  *ptr_mach,
+											  *ptr_pm,
 											  shares.begin(),
-											  shares.end());
-DCS_DEBUG_TRACE("Placed: VM(" << ptr_vm->id() << ") -> PM(" << ptr_mach->id() << ") ==> OK? " <<  std::boolalpha << placed);///XXX
+											  shares.end(),
+											  utils.begin(),
+											  utils.end(),
+											  dc);
+DCS_DEBUG_TRACE("Placed: VM(" << ptr_vm->id() << ") -> PM(" << ptr_pm->id() << ") ==> OK? " <<  std::boolalpha << placed);///XXX
 			}
 		}
 

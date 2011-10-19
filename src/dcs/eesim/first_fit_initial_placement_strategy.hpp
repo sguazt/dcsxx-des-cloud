@@ -5,9 +5,11 @@
 #include <dcs/debug.hpp>
 #include <dcs/eesim/base_initial_placement_strategy.hpp>
 #include <dcs/eesim/data_center.hpp>
+#include <dcs/eesim/performance_measure_category.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/utility.hpp>
 #include <dcs/eesim/virtual_machines_placement.hpp>
+#include <map>
 #include <utility>
 #include <vector>
 
@@ -38,12 +40,14 @@ class first_fit_initial_placement_strategy: public base_initial_placement_strate
 		typedef ::std::pair<physical_resource_category,real_type> share_type;
 		typedef ::std::vector<share_type> share_container;
 		typedef typename share_container::const_iterator share_iterator;
+		typedef ::std::map<physical_resource_category,real_type> resource_share_map;
+		typedef ::std::map<physical_resource_category,real_type> resource_utilization_map;
 
-		pm_container machs(dc.physical_machines());
+		pm_container pms(dc.physical_machines());
 		vm_container vms(dc.virtual_machines());
 
 DCS_DEBUG_TRACE("BEGIN Initial Placement");//XXX
-DCS_DEBUG_TRACE("#Machines: " << machs.size());//XXX
+DCS_DEBUG_TRACE("#Machines: " << pms.size());//XXX
 DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 
 		virtual_machines_placement<traits_type> deployment;
@@ -66,17 +70,17 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 			// until a suitable machine (i.e., a machine with sufficient free
 			// capacity) is found.
 			bool placed(false);
-			pm_iterator pm_end_it(machs.end());
+			pm_iterator pm_end_it(pms.end());
 			share_iterator ref_share_end_it(ref_shares.end());
-			for (pm_iterator pm_it = machs.begin(); pm_it != pm_end_it && !placed; ++pm_it)
+			for (pm_iterator pm_it = pms.begin(); pm_it != pm_end_it && !placed; ++pm_it)
 			{
-				pm_pointer ptr_mach(*pm_it);
+				pm_pointer ptr_pm(*pm_it);
 
 				// paranoid-check: valid pointer.
-				DCS_DEBUG_ASSERT( ptr_mach );
+				DCS_DEBUG_ASSERT( ptr_pm );
 
 				// Reference to actual resource shares
-				share_container shares;
+				resource_share_map shares;
 				for (share_iterator ref_share_it = ref_shares.begin(); ref_share_it != ref_share_end_it; ++ref_share_it)
 				{
 					physical_resource_category ref_category(ref_share_it->first);
@@ -89,8 +93,8 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 					real_type ref_capacity(app.reference_resource(ref_category).capacity());
 					real_type ref_threshold(app.reference_resource(ref_category).utilization_threshold());
 
-					real_type actual_capacity(ptr_mach->resource(ref_category)->capacity());
-					real_type actual_threshold(ptr_mach->resource(ref_category)->utilization_threshold());
+					real_type actual_capacity(ptr_pm->resource(ref_category)->capacity());
+					real_type actual_threshold(ptr_pm->resource(ref_category)->utilization_threshold());
 
 					real_type share;
 					share = ::dcs::eesim::scale_resource_share(ref_capacity,
@@ -99,22 +103,52 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 															   actual_threshold,
 															   ref_share);
 
-					shares.push_back(::std::make_pair(ref_category, share));
+					shares[ref_category] = share;
+				}
+
+				// Reference to actual resource utilization
+				resource_utilization_map utils;
+				{
+					//FIXME: CPU resource category is hard-coded.
+					physical_resource_category ref_category(cpu_resource_category);
+					real_type ref_util(0);
+					ref_util = app.performance_model().tier_measure(
+									ptr_vm->guest_system().id(),
+									utilization_performance_measure
+						);
+
+					real_type ref_capacity(app.reference_resource(ref_category).capacity());
+					real_type actual_capacity(ptr_pm->resource(ref_category)->capacity());
+
+					real_type util(0);
+					util = scale_resource_share(ref_capacity,
+												actual_capacity,
+												ref_util,
+												ptr_pm->resource(ref_category)->utilization_threshold());
+					if (shares.count(ref_category))
+					{
+						util /= shares.at(ref_category);
+					}
+
+					utils[ref_category] = util;
 				}
 
 				// Try to place current VM on current PM
 				placed = deployment.try_place(*ptr_vm,
-											  *ptr_mach,
+											  *ptr_pm,
 											  shares.begin(),
-											  shares.end());
-DCS_DEBUG_TRACE("Placed: VM(" << ptr_vm->id() << ") -> PM(" << ptr_mach->id() << ") ==> OK? " <<  std::boolalpha << placed);///XXX
+											  shares.end(),
+											  utils.begin(),
+											  utils.end(),
+											  dc);
+DCS_DEBUG_TRACE("Placed: VM(" << ptr_vm->id() << ") -> PM(" << ptr_pm->id() << ") ==> OK? " <<  std::boolalpha << placed);///XXX
 			}
 		}
 
 DCS_DEBUG_TRACE("END Initial Placement ==> " << deployment);///XXX
 		return deployment;
 	}
-};
+}; // first_fit_initial_placement_strategy
 
 }} // Namespace dcs::eesim
 
