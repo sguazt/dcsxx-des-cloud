@@ -43,22 +43,28 @@ inline
 		//<< "param Srmin{J} >= 0, <= 1;"
 		<< "param Srmin{J} >= 0;"
 		<< "param C{I} >= 0;"
+		<< "param Umax{I} >= 0;"
 		<< "param wp >= 0 default 0;"
 		<< "param ws >= 0 default 0;"
 		<< "param eps := 1.0e-5;"
 		<< "param wwp := wp / (ni * max{i in I} (c0[i]+c1[i]+c2[i]));"
 		<< "param wws := ws / nj;"
+		<< "param shares_sum;"
 		<< "var x{I} binary;"
 		<< "var y{I,J} binary;"
 		<< "var s{I,J} >= 0, <= 1;"
-		<< "minimize cost: wwp * sum{i in I} x[i]*(c0[i] + c1[i]*(sum{j in J} y[i,j]*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps))) + c2[i]*(sum{j in J} (y[i,j]+eps)*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps)))^r[i]) + wws * sum{i in I, j in J} ((s[i,j]*C[i]/Cr[j]-1)^2)*y[i,j];"
+		// NOTE: we use term "c2[i]*(eps+sum...) instead of "c2[i]*sum..." since
+		// AMPL claims that the value of pow(0,0.4001) cannot be evaluated.
+//		<< "minimize cost: wwp * sum{i in I} x[i]*(c0[i] + c1[i]*(sum{j in J} y[i,j]*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps))) + c2[i]*(sum{j in J} y[i,j]*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps)))^r[i]) + wws * sum{i in I, j in J} ((s[i,j]*C[i]/Cr[j]-1)^2)*y[i,j];"
+		//<< "minimize cost: wwp * sum{i in I} x[i]*(c0[i] + c1[i]*(sum{j in J} y[i,j]*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps))) + c2[i]*(sum{j in J} (y[i,j]+eps)*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps)))^r[i]) + wws * sum{i in I, j in J} ((s[i,j]*C[i]/Cr[j]-1)^2)*y[i,j];"
+		<< "minimize cost: wwp * sum{i in I} x[i]*(c0[i] + c1[i]*(sum{j in J} y[i,j]*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps))) + c2[i]*(eps+sum{j in J} y[i,j]*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps)))^r[i]) + wws * sum{i in I, j in J} ((s[i,j]*C[i]/Cr[j]-1)^2)*y[i,j];"
 		<< "subject to one_vm_per_mach{j in J}: sum{i in I} y[i,j] = 1;"
 		<< "subject to vm_on_active_mach1{i in I, j in J}: y[i,j] <= x[i];"
 		<< "subject to vm_on_active_mach2{i in I}: sum{j in J} y[i,j] >= x[i];"
 		<< "subject to valid_vm_share{i in I, j in J}: s[i,j] <= y[i,j];"
 		<< "subject to min_vm_share{i in I, j in J}: s[i,j] >= y[i,j]*Srmin[j]*Cr[j]/C[i];"
 		<< "subject to max_aggr_vm_share{i in I}: sum{j in J} s[i,j] <= Smax[i];"
-		<< "subject to valid_util{i in I}: sum{j in J} y[i,j]*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps)) <= 1;"
+		<< "subject to valid_util{i in I}: sum{j in J} y[i,j]*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps)) <= Umax[i];"
 		<< ::std::endl;
 
 	return oss.str();
@@ -119,8 +125,8 @@ template <typename TraitsT>
 	// # of VMs
 	oss << "param nj := " << n_vms << ";" << ::std::endl;
 
-	// Power model coefficients, max share and resource capacity
-	oss << "param: c0 c1 c2 r Smax C := " << ::std::endl;
+	// Power model coefficients, max share, resource capacity, and utilization threshold
+	oss << "param: c0 c1 c2 r Smax C Umax := " << ::std::endl;
 	for (::std::size_t i = 0; i < n_pms; ++i)
 	{
 		pm_pointer ptr_pm(pms[i]);
@@ -143,6 +149,7 @@ template <typename TraitsT>
 			<< " " << ptr_energy_model_impl->coefficient(3) // r
 			<< " " << (1.0-ref_penalty) // Smax
 			<< " " << (ptr_resource->capacity()*ptr_resource->utilization_threshold()) // C
+			<< " " << ptr_resource->utilization_threshold() // Umax
 			<< ::std::endl;
 	}
 	oss << ";";// << ::std::endl;
@@ -293,6 +300,7 @@ inline
 		//<< "param Srmin{J} >= 0, <= 1;"
 		<< "param Srmin{J} >= 0;"
 		<< "param C{I} >= 0;"
+		<< "param Umax{I} >= 0;"
 		<< "param wp >= 0 default 0;"
 		<< "param wm >= 0 default 0;"
 		<< "param ws >= 0 default 0;"
@@ -300,18 +308,22 @@ inline
 		<< "param wwp := wp / (ni * max{i in I} (c0[i]+c1[i]+c2[i]));"
 		<< "param wwm := if wm > 0 then wm / (nj * max{i in I, j in J} mc[i,j]) else 0;"
 		<< "param wws := ws / nj;"
+		<< "param shares_sum;"
 		<< "var x{I} binary;"
 		<< "var y{I,J} binary;"
 		<< "var s{I,J} >= 0, <= 1;"
-		<< "minimize cost: wwp * sum{i in I} x[i]*(c0[i] + c1[i]*(sum{j in J} y[i,j]*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps))) + c2[i]*(sum{j in J} (y[i,j]+eps)*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps)))^r[i]) + wwm * sum{i in I, j in J} mc[i,j]*y[i,j] + wws * sum{i in I, j in J} ((s[i,j]*C[i]/Cr[j]-1)^2)*y[i,j];"
-		<< "minimize cost: wwp * sum{i in I} x[i]*(c0[i] + c1[i]*(sum{j in J} y[i,j]*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps))) + c2[i]*(sum{j in J} y[i,j]*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps)))^r[i]) + wwm * sum{i in I, j in J} mc[i,j]*y[i,j] + wws * sum{i in I, j in J} ((s[i,j]*C[i]/Cr[j]-1)^2)*y[i,j];"
+		// NOTE: we use term "c2[i]*(eps+sum...) instead of "c2[i]*sum..." since
+		// AMPL claims that the value of pow(0,0.4001) cannot be evaluated.
+//		<< "minimize cost: wwp * sum{i in I} x[i]*(c0[i] + c1[i]*(sum{j in J} y[i,j]*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps))) + c2[i]*(sum{j in J} y[i,j]*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps)))^r[i]) + wwm * sum{i in I, j in J} mc[i,j]*y[i,j] + wws * sum{i in I, j in J} ((s[i,j]*C[i]/Cr[j]-1)^2)*y[i,j];"
+		//<< "minimize cost: wwp * sum{i in I} x[i]*(c0[i] + c1[i]*(sum{j in J} y[i,j]*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps))) + c2[i]*(sum{j in J} (y[i,j]+eps)*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps)))^r[i]) + wwm * sum{i in I, j in J} mc[i,j]*y[i,j] + wws * sum{i in I, j in J} ((s[i,j]*C[i]/Cr[j]-1)^2)*y[i,j];"
+		<< "minimize cost: wwp * sum{i in I} x[i]*(c0[i] + c1[i]*(sum{j in J} y[i,j]*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps))) + c2[i]*(eps+sum{j in J} y[i,j]*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps)))^r[i]) + wwm * sum{i in I, j in J} mc[i,j]*y[i,j] + wws * sum{i in I, j in J} ((s[i,j]*C[i]/Cr[j]-1)^2)*y[i,j];"
 		<< "subject to one_vm_per_mach{j in J}: sum{i in I} y[i,j] = 1;"
 		<< "subject to vm_on_active_mach1{i in I, j in J}: y[i,j] <= x[i];"
 		<< "subject to vm_on_active_mach2{i in I}: sum{j in J} y[i,j] >= x[i];"
 		<< "subject to valid_vm_share{i in I, j in J}: s[i,j] <= y[i,j];"
 		<< "subject to min_vm_share{i in I, j in J}: s[i,j] >= y[i,j]*Srmin[j]*Cr[j]/C[i];"
 		<< "subject to max_aggr_vm_share{i in I}: sum{j in J} s[i,j] <= Smax[i];"
-		<< "subject to valid_util{i in I}: sum{j in J} y[i,j]*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps)) <= 1;"
+		<< "subject to valid_util{i in I}: sum{j in J} y[i,j]*ur[j]*Cr[j]/(C[i]*(s[i,j]+eps)) <= Umax[i];"
 		<< ::std::endl;
 
 	return oss.str();
@@ -386,8 +398,8 @@ template <typename TraitsT>
 	// # of VMs
 	oss << "param nj := " << n_vms << ";" << ::std::endl;
 
-	// Power model coefficients, max share and resource capacity
-	oss << "param: c0 c1 c2 r Smax C := " << ::std::endl;
+	// Power model coefficients, max share, resource capacity, and utilization threshold
+	oss << "param: c0 c1 c2 r Smax C Umax := " << ::std::endl;
 	for (::std::size_t i = 0; i < n_pms; ++i)
 	{
 		pm_pointer ptr_pm(pms[i]);
@@ -411,6 +423,7 @@ template <typename TraitsT>
 			<< " " << ptr_energy_model_impl->coefficient(3) // r
 			<< " " << 1 // Smax
 			<< " " << (ptr_resource->capacity()*ptr_resource->utilization_threshold()) // C
+			<< " " << ptr_resource->utilization_threshold() // Umax
 			<< ::std::endl;
 	}
 	oss << ";" << ::std::endl;

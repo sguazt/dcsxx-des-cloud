@@ -134,6 +134,15 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 			<< "option display_precision 0;"
 			<< "option print_precision 0;"
 			<< "solve;"
+			<< "if solve_result_num < 0 then {"
+			<< " for {i in I} {"
+			<< "  let shares_sum := sum{j in J} round(s[i,j],5);"
+			<< "  if shares_sum > Smax[i] then"
+			<< "   let{j in J} s[i,j] := round(s[i,j]*Smax[i]/shares_sum,5);"
+			<< "  else"
+			<< "  let{j in J} s[i,j] := round(s[i,j],5);"
+			<< " }"
+			<< "}"
 			<< "print '-- [RESULT] --';"
 			<< "print 'solve_exitcode=', solve_exitcode, ';';"
 			<< "print 'solve_result=', solve_result, ';';"
@@ -147,13 +156,12 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 			<< "print 'y=[', {i in I} (({j in J} round(y[i,j])), ';'), '];';"
 //			<< "print 's=(', card({I}), ',', card({J}), ')[', ({i in I} (i, ({j in J} (j, s[i,j])), ';')), '];';"
 //			<< "print 's=[', ({i in I} (i, ({j in J} (j, s[i,j])), ';')), '];';"
-			<< "print 's=[', {i in I} (({j in J} s[i,j]), ';'), '];';"
+			<< "print 's=[', {i in I} (({j in J} round(s[i,j],5)), ';'), '];';"
 			<< "print '-- [/RESULT] --';"
 			<< ::std::endl
 			<< "end;"
 			<< ::std::endl;
 
-::std::cerr << "Create problem: " << oss.str() << ::std::endl;//XXX
 		// Solve the new problem
 		detail::minlp_input_producer producer(oss.str());
 		detail::minlp_output_consumer consumer;
@@ -244,6 +252,15 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 			<< "option display_precision 0;"
 			<< "option print_precision 0;"
 			<< "solve;"
+			<< "if solve_result_num < 100 then {"
+			<< " for {i in I} {"
+			<< "  let shares_sum := sum{j in J} round(s[i,j],5);"
+			<< "  if shares_sum > Smax[i] then"
+			<< "   let{j in J} s[i,j] := round(s[i,j]*Smax[i]/shares_sum,5);"
+			<< "  else"
+			<< "  let{j in J} s[i,j] := round(s[i,j],5);"
+			<< " }"
+			<< "}"
 			<< "print '-- [RESULT] --';"
 			<< "print 'solve_exitcode=', solve_exitcode, ';';"
 			<< "print 'solve_result=', solve_result, ';';"
@@ -257,7 +274,7 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 			<< "print 'y=[', {i in I} (({j in J} round(y[i,j])), ';'), '];';"
 //			<< "print 's=(', card({I}), ',', card({J}), ')[', ({i in I} (i, ({j in J} (j, s[i,j])), ';')), '];';"
 //			<< "print 's=[', ({i in I} (i, ({j in J} (j, s[i,j])), ';')), '];';"
-			<< "print 's=[', {i in I} (({j in J} s[i,j]), ';'), '];';"
+			<< "print 's=[', {i in I} (({j in J} round(s[i,j],5)), ';'), '];';"
 			<< "print '-- [/RESULT] --';"
 			<< ::std::endl
 			<< "end;"
