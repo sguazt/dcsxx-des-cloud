@@ -489,6 +489,8 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<
 		}
 	}
 
+	real_type tot_energy(0);
+
 	// Machine statistics
 	{
 		typedef typename data_center_type::physical_machine_type physical_machine_type;
@@ -512,7 +514,18 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<
 			   << "Consumed Energy: " << ptr_mach->simulation_model().consumed_energy() << ::std::endl;
 			os << indent << indent
 			   << "Utilization: " << ptr_mach->simulation_model().utilization() << ::std::endl;
+
+			tot_energy += ptr_mach->simulation_model().consumed_energy().estimate();
 		}
+	}
+
+	// Data Center statistics
+	{
+		os << ::std::endl << "-- Data Center --" << ::std::endl;
+		os << indent
+		   << "Consumed Energy: " << tot_energy << ::std::endl;
+		os << indent
+		   << "# Migrations: " << sys.data_center_manager().migration_controller().num_migrations() << ::std::endl;
 	}
 }
 
