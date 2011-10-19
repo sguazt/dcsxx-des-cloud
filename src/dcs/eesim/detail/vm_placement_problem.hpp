@@ -122,7 +122,7 @@ vm_placement_problem_result<TraitsT> make_vm_placement_problem_result(ProblemDes
 						real_type share(placement_shares(i,j));
 						if (share_sum > 1)
 						{
-						share /= share_sum;
+							share /= share_sum;
 						}
 						//FIXME: CPU resource category is hard-coded.
 						resource_share_container shares(1, ::std::make_pair(cpu_resource_category, share));
