@@ -6,6 +6,7 @@
 #include <dcs/eesim/base_initial_placement_strategy.hpp>
 #include <dcs/eesim/data_center.hpp>
 #include <dcs/eesim/detail/placement_strategy_utility.hpp>
+#include <dcs/eesim/performance_measure_category.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/utility.hpp>
 #include <dcs/eesim/virtual_machines_placement.hpp>
@@ -53,7 +54,6 @@ class best_fit_decreasing_initial_placement_strategy: public base_initial_placem
 					detail::ptr_virtual_machine_greater_comparator<vm_type>());
 
 
-::std::cerr << "BEGIN Initial Placement" << ::std::endl;//XXX
 DCS_DEBUG_TRACE("BEGIN Initial Placement");//XXX
 DCS_DEBUG_TRACE("#Machines: " << machs.size());//XXX
 DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
@@ -117,11 +117,12 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 				// Reference to actual resource utilizaition
 				resource_utilization_map utils;
 				{
+					//FIXME: CPU resource category is hard-coded.
 					physical_resource_category ref_category(cpu_resource_category);
 					real_type ref_util(0);
 					ref_util = app.performance_model().tier_measure(
 									ptr_vm->guest_system().id(),
-									::dcs::eesim::utilization_performance_measure
+									utilization_performance_measure
 						);
 
 					real_type ref_capacity(app.reference_resource(ref_category).capacity());
