@@ -10,7 +10,7 @@
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/utility.hpp>
 #include <dcs/eesim/virtual_machines_placement.hpp>
-#include <utility>
+#include <map>
 #include <vector>
 
 
