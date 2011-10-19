@@ -77,7 +77,7 @@ template <typename TraitsT>
 	oss << "sets" << ::std::endl
 		<< "i 'The set of physical machines' /1*" << n_pms << "/" << ::std::endl
 		<< "j 'The set of virtual machines' /1*" << n_vms << "/" << ::std::endl
-		<< "pmplbls 'Names of parameters related to each physical machine' / c0, c1, c2, r, S_max, C /" << ::std::endl
+		<< "pmplbls 'Names of parameters related to each physical machine' / c0, c1, c2, r, S_max, C, U_max /" << ::std::endl
 		<< "vmplbls 'Names of parameters related to each virtual machine' / Cr, ur, Sr_min /" << ::std::endl
 		<< ";" << ::std::endl;
 
@@ -114,7 +114,8 @@ template <typename TraitsT>
 			<< "pmpvals('" << (i+1) << "','c2') = " << ptr_energy_model_impl->coefficient(2) << ";" << ::std::endl
 			<< "pmpvals('" << (i+1) << "','r') = " << ptr_energy_model_impl->coefficient(3) << ";" << ::std::endl
 			<< "pmpvals('" << (i+1) << "','S_max') = " << (1.0-ref_penalty) << ";" << ::std::endl
-			<< "pmpvals('" << (i+1) << "','C') = " << (ptr_resource->capacity()*ptr_resource->utilization_threshold()) << ";" << ::std::endl;
+			<< "pmpvals('" << (i+1) << "','C') = " << (ptr_resource->capacity()*ptr_resource->utilization_threshold()) << ";" << ::std::endl
+			<< "pmpvals('" << (i+1) << "','U_max') = " << ptr_resource->utilization_threshold() << ";" << ::std::endl;
 	}
 
 	// Reference machine capacity, utilization and min share of tiers
@@ -138,6 +139,7 @@ template <typename TraitsT>
     	<< "wwp 'Normalized weight for the power consumption cost'" << ::std::endl
     	<< "wws 'Normalized weight for the SLA violation cost'" << ::std::endl
     	<< "epsilon 'Small numeric constant'" << ::std::endl
+		<< "shares_sum 'The aggregated share demand on a given physical machine'" << ::std::endl
     	<< ";" << ::std::endl
 		<< "wwp$(wp gt 0) = wp / (" << n_pms << "*smax(i, pmpvals(i,'c0')+pmpvals(i,'c1')+pmpvals(i,'c2')));" << ::std::endl
 		<< "wwp$(wp eq 0) = 0;" << ::std::endl
@@ -221,13 +223,22 @@ template <typename TraitsT>
 		<< "eq_valid_vm_share(i,j) .. s(i,j) =l= y(i,j);" << ::std::endl
 		<< "eq_min_vm_share(i,j) .. s(i,j) =g= y(i,j)*vmpvals(j,'Sr_min')*vmpvals(j,'Cr')/pmpvals(i,'C');" << ::std::endl
 		<< "eq_max_aggr_vm_share(i) .. sum(j, s(i,j)) =l= pmpvals(i,'S_max');" << ::std::endl
-		<< "eq_valid_util(i) .. sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C')*(s(i,j)+epsilon))) =l= 1;" << ::std::endl
+		<< "eq_valid_util(i) .. sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C')*(s(i,j)+epsilon))) =l= pmpvals(i,'U_max');" << ::std::endl
 		<< "model mdl 'Enegy vs Performance cost (initial)' / all /;" << ::std::endl
+		<< "mdl.reslim = 1000000;" << ::std::endl
 		<< "solve mdl using minlp minimizing cost;" << ::std::endl
+		<< "if(mdl.solvestat eq 1," << ::std::endl
+		<< "loop(i," << ::std::endl
+		<< "shares_sum = sum(j, s.l(i,j));" << ::std::endl
+		<< "if(shares_sum > pmpvals(i,'S_max')," << ::std::endl
+		<< "loop(j, s.l(i,j) = s.l(i,j)*pmpvals(i,'S_max')/shares_sum);" << ::std::endl
+		<< ");" << ::std::endl
+		<< ");" << ::std::endl
+		<< ");" << ::std::endl
 		<< "$set ofile '%system.OFILE%';" << ::std::endl
 		<< "file lst / '%ofile%' /;" << ::std::endl
 		<< "lst.ap = 1;" << ::std::endl
-		<< "lst.pw = 1000000;" << ::std::endl
+		<< "lst.pw = 32767;" << ::std::endl
 		<< "put lst;" << ::std::endl
 		<< "put / '-- [RESULT] --' /;" << ::std::endl
 		<< "put / 'solver_status=', mdl.solvestat /;" << ::std::endl
@@ -235,7 +246,7 @@ template <typename TraitsT>
 		<< "put / 'cost=', cost.l /;" << ::std::endl
 		<< "put / 'x=['; loop(i, put x.l(i)::0); put ']'/;" << ::std::endl
 		<< "put / 'y=['; loop(i, loop(j, put y.l(i,j)::0); put ';'); put ']'/;" << ::std::endl
-		<< "put / 's=['; loop(i, loop(j, put s.l(i,j)); put ';'); put ']'/;" << ::std::endl
+		<< "put / 's=['; loop(i, loop(j, put s.l(i,j)::5); put ';'); put ']'/;" << ::std::endl
 		<< "put / '-- [/RESULT] --' /;" << ::std::endl
 		<< "putclose;" << ::std::endl;
 
@@ -335,7 +346,7 @@ template <typename TraitsT>
 	oss << "sets" << ::std::endl
 		<< "i 'The set of physical machines' /1*" << n_pms << "/" << ::std::endl
 		<< "j 'The set of virtual machines' /1*" << n_vms << "/" << ::std::endl
-		<< "pmplbls 'Names of parameters related to each physical machine' / c0, c1, c2, r, S_max, C /" << ::std::endl
+		<< "pmplbls 'Names of parameters related to each physical machine' / c0, c1, c2, r, S_max, C, U_max /" << ::std::endl
 		<< "vmplbls 'Names of parameters related to each virtual machine' / Cr, ur, Sr_min /" << ::std::endl
 		<< ";" << ::std::endl;
 
@@ -374,7 +385,8 @@ template <typename TraitsT>
 			<< "pmpvals('" << (i+1) << "','c2') = " << ptr_energy_model_impl->coefficient(2) << ";" << ::std::endl
 			<< "pmpvals('" << (i+1) << "','r') = " << ptr_energy_model_impl->coefficient(3) << ";" << ::std::endl
 			<< "pmpvals('" << (i+1) << "','S_max') = " << 1 << ";" << ::std::endl
-			<< "pmpvals('" << (i+1) << "','C') = " << (ptr_resource->capacity()*ptr_resource->utilization_threshold()) << ";" << ::std::endl;
+			<< "pmpvals('" << (i+1) << "','C') = " << (ptr_resource->capacity()*ptr_resource->utilization_threshold()) << ";" << ::std::endl
+			<< "pmpvals('" << (i+1) << "','U_max') = " << (ptr_resource->capacity()*ptr_resource->utilization_threshold()) << ";" << ::std::endl;
 	}
 
 	// Reference machine capacity, utilization and min share of tiers
@@ -420,6 +432,7 @@ template <typename TraitsT>
     	<< "wwm 'Normalized weight for the power consumption cost'" << ::std::endl
     	<< "wws 'Normalized weight for the SLA violation cost'" << ::std::endl
     	<< "epsilon 'Small numeric constant'" << ::std::endl
+		<< "shares_sum 'The aggregated share demand on a given physical machine'" << ::std::endl
     	<< ";" << ::std::endl
 		<< "wwp$(wp gt 0) = wp / (" << n_pms << "*smax(i, pmpvals(i,'c0')+pmpvals(i,'c1')+pmpvals(i,'c2')));" << ::std::endl
 		<< "wwp$(wp eq 0) = 0;" << ::std::endl
@@ -507,13 +520,24 @@ template <typename TraitsT>
 		<< "eq_valid_vm_share(i,j) .. s(i,j) =l= y(i,j);" << ::std::endl
 		<< "eq_min_vm_share(i,j) .. s(i,j) =g= y(i,j)*vmpvals(j,'Sr_min')*vmpvals(j,'Cr')/pmpvals(i,'C');" << ::std::endl
 		<< "eq_max_aggr_vm_share(i) .. sum(j, s(i,j)) =l= pmpvals(i,'S_max');" << ::std::endl
-		<< "eq_valid_util(i) .. sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C')*(s(i,j)+epsilon))) =l= 1;" << ::std::endl
+		<< "eq_valid_util(i) .. sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C')*(s(i,j)+epsilon))) =l= pmpvals(i,'U_max');" << ::std::endl
 		<< "model mdl 'Enegy vs Performance cost' / all /;" << ::std::endl
+		<< "mdl.reslim = 1000000;" << ::std::endl
 		<< "solve mdl using minlp minimizing cost;" << ::std::endl
+		// Normalize shares (if needed)
+		<< "if(mdl.solvestat eq 1," << ::std::endl
+		<< "loop(i," << ::std::endl
+		<< "shares_sum = sum(j, s.l(i,j));" << ::std::endl
+		<< "if(shares_sum > pmpvals(i,'S_max')," << ::std::endl
+		<< "loop(j, s.l(i,j) = s.l(i,j)*pmpvals(i,'S_max')/shares_sum);" << ::std::endl
+		<< ");" << ::std::endl
+		<< ");" << ::std::endl
+		<< ");" << ::std::endl
+		// Output results
 		<< "$set ofile '%system.OFILE%';" << ::std::endl
 		<< "file lst / '%ofile%' /;" << ::std::endl
 		<< "lst.ap = 1;" << ::std::endl
-		<< "lst.pw = 1000000;" << ::std::endl
+		<< "lst.pw = 32767;" << ::std::endl
 		<< "put lst;" << ::std::endl
 		<< "put / '-- [RESULT] --' /;" << ::std::endl
 		<< "put / 'solver_status=', mdl.solvestat /;" << ::std::endl
@@ -521,7 +545,7 @@ template <typename TraitsT>
 		<< "put / 'cost=', cost.l /;" << ::std::endl
 		<< "put / 'x=['; loop(i, put x.l(i)::0); put ']'/;" << ::std::endl
 		<< "put / 'y=['; loop(i, loop(j, put y.l(i,j)::0); put ';'); put ']'/;" << ::std::endl
-		<< "put / 's=['; loop(i, loop(j, put s.l(i,j)); put ';'); put ']'/;" << ::std::endl
+		<< "put / 's=['; loop(i, loop(j, put s.l(i,j)::5); put ';'); put ']'/;" << ::std::endl
 		<< "put / '-- [/RESULT] --' /;" << ::std::endl
 		<< "putclose;" << ::std::endl;
 
