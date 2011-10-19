@@ -34,8 +34,9 @@ class virtual_machines_placement
 
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::real_type real_type;
-	public: typedef physical_machine<traits_type> physical_machine_type;
-	public: typedef virtual_machine<traits_type> virtual_machine_type;
+	public: typedef data_center<traits_type> data_center_type;
+	public: typedef typename data_center_type::physical_machine_type physical_machine_type;
+	public: typedef typename data_center_type::virtual_machine_type virtual_machine_type;
 	private: typedef typename traits_type::virtual_machine_identifier_type physical_machine_identifier_type;
 	private: typedef typename traits_type::virtual_machine_identifier_type virtual_machine_identifier_type;
 	private: typedef ::std::pair<virtual_machine_identifier_type,physical_machine_identifier_type> vm_pm_pair_type;
@@ -51,86 +52,124 @@ class virtual_machines_placement
 	public: typedef typename placement_container::const_iterator const_iterator;
 	public: typedef typename share_container::iterator share_iterator;
 	public: typedef typename share_container::const_iterator share_const_iterator;
+	public: typedef ::std::map<physical_resource_category, real_type> resource_utilization_map;
 
 
-//	public: virtual_machines_placement(::std::size_t nvms, ::std::size_t npms)
-//	: placements_(),
-//	  by_vm_idx_(nvms),
-//	  by_pm_idx_(npms)
-//	{
-//	}
-
-
-	public: template <typename ForwardIterT>
-		bool placeable(virtual_machine_type& vm,
-					   physical_machine_type& pm,
+	public: template <typename ForwardIterT, typename ForwardUtilIterT>
+		bool placeable(virtual_machine_type const& vm,
+					   physical_machine_type const& pm,
 					   ForwardIterT first_share,
-					   ForwardIterT last_share)
+					   ForwardIterT last_share,
+					   ForwardUtilIterT first_util,
+					   ForwardUtilIterT last_util,
+					   data_center_type const& dc)
 	{
+		typedef typename data_center_type::virtual_machine_pointer virtual_machine_pointer;
 		typedef typename share_container::const_iterator share_iterator;
 		typedef typename by_pm_index_subcontainer::const_iterator pm_vm_iterator;
 
-		physical_machine_identifier_type pm_id = pm.id();
-		virtual_machine_identifier_type vm_id = vm.id();
+		physical_machine_identifier_type pm_id(pm.id());
+		virtual_machine_identifier_type vm_id(vm.id());
 
 //		share_container wanted_shares(first_share, last_share);
 		share_container free_shares;
 		share_container wanted_shares;
-//
+		resource_utilization_map free_utils;
+		resource_utilization_map wanted_utils;
+
 		// Initialize wanted and free shares containers and make some
 		// preliminary check.
 		while (first_share != last_share)
 		{
-			physical_resource_category category = first_share->first;
-			real_type max_share = pm.resource(category)->utilization_threshold();
-			real_type wanted_share = first_share->second;
+			physical_resource_category category(first_share->first);
+			//real_type max_share(pm.resource(category)->utilization_threshold());
+			real_type max_share(1);//FIXME: usare ref_penalty config parameter oppure prevedere un share_threshold per ogni risorsa fisica
+			real_type wanted_share(first_share->second);
 			if (::dcs::math::float_traits<real_type>::definitely_greater(wanted_share, max_share))
 			{
 				return false;
 			}
-//
-//			//wanted_shares.insert(::std::make_pair(category, wanted_share));
 			wanted_shares[category] = wanted_share;
 			free_shares[category] = max_share;
+//			if (!wanted_utils.empty())
+//			{
+//				free_utils[category] = pm.resource(category)->utilization_threshold();
+//			}
 			++first_share;
 		}
 
-		pm_vm_iterator pm_vm_end_it = by_pm_idx_[pm_id].end();
-		for (pm_vm_iterator pm_vm_it = by_pm_idx_[pm_id].begin(); pm_vm_it != pm_vm_end_it; ++pm_vm_it)
+		// Initialize wanted and free utilizations containers and make some
+		// preliminary check.
+		while (first_util != last_util)
 		{
-			// Iterate over each VM deployed on this machine (but the one we
-			// currently want to place)
-
-			//vm_pm_pair_type key = ::std::make_pair(*pm_vm_it, pm_id);
-			vm_pm_pair_type key = make_vm_pm_pair(*pm_vm_it, pm_id);
-
-			if (*pm_vm_it != vm_id)
+			physical_resource_category category(first_util->first);
+			real_type max_util(pm.resource(category)->utilization_threshold());
+			real_type wanted_util(first_util->second);
+			if (::dcs::math::float_traits<real_type>::definitely_greater(wanted_util, max_util))
 			{
-				for (share_iterator share_it = placements_[key].begin(); share_it != placements_[key].end(); ++share_it)
+				return false;
+			}
+			wanted_utils[category] = wanted_util;
+			free_utils[category] = max_util;
+			++first_util;
+		}
+
+		if (by_pm_idx_.count(pm_id) > 0)
+		{
+			pm_vm_iterator pm_vm_end_it(by_pm_idx_.at(pm_id).end());
+			for (pm_vm_iterator pm_vm_it = by_pm_idx_.at(pm_id).begin(); pm_vm_it != pm_vm_end_it; ++pm_vm_it)
+			{
+				// Iterate over each VM deployed on this machine (but the one we
+				// currently want to place)
+
+				vm_pm_pair_type key(make_vm_pm_pair(*pm_vm_it, pm_id));
+
+				if (*pm_vm_it != vm_id)
 				{
-					physical_resource_category category = share_it->first;
-//					real_type share = share_it->second;
-
-					free_shares[category] -= share_it->second;
-//					if (free_shares.count(category) > 0)
-//					{
-//						free_shares[category] -= share;
-//					}
-//					else
-//					{
-//						free_shares[category] = pm.resource(category)->utilization_threshold() - share;
-//					}
-
-					if (
-							(
-								wanted_shares.count(category) > 0
-								&&
-								::dcs::math::float_traits<real_type>::definitely_less(free_shares[category], wanted_shares[category])
-							)
-							||
-							free_shares[category] <= 0)
+					share_iterator share_end_it(placements_.at(key).end());
+					for (share_iterator share_it = placements_.at(key).begin(); share_it != share_end_it; ++share_it)
 					{
-						return false;
+						physical_resource_category category(share_it->first);
+
+						free_shares[category] -= share_it->second;
+
+						if (
+								(
+									wanted_shares.count(category) > 0
+									&&
+									::dcs::math::float_traits<real_type>::definitely_less(free_shares.at(category), wanted_shares.at(category))
+								)
+								||
+								free_shares[category] <= 0)
+						{
+							return false;
+						}
+
+						if (!wanted_utils.empty())
+						{
+							virtual_machine_pointer ptr_vm(dc.virtual_machine_ptr(*pm_vm_it));
+
+							// check: paranoid check
+							DCS_DEBUG_ASSERT( ptr_vm );
+
+							free_utils[category] -= scale_resource_utilization(ptr_vm->guest_system().application().reference_resource(category).capacity(),
+																			   pm.resource(category)->capacity(),
+																			   ptr_vm->guest_system().application().performance_model().tier_measure(ptr_vm->guest_system().id(), ::dcs::eesim::utilization_performance_measure),
+																			   pm.resource(category)->utilization_threshold())
+													/
+													share_it->second;
+							if (
+									(
+										wanted_utils.count(category) > 0
+										&&
+										::dcs::math::float_traits<real_type>::definitely_less(free_utils.at(category), wanted_utils.at(category))
+									)
+									||
+									free_utils[category] <= 0)
+							{
+								return false;
+							}
+						}
 					}
 				}
 			}
@@ -141,21 +180,41 @@ class virtual_machines_placement
 
 
 	public: template <typename ForwardIterT>
+		bool placeable(virtual_machine_type const& vm,
+					   physical_machine_type const& pm,
+					   ForwardIterT first_share,
+					   ForwardIterT last_share)
+	{
+		resource_utilization_map utils_map;
+		return placeable(vm,
+						 pm,
+						 first_share,
+						 last_share,
+						 utils_map.begin(),
+						 utils_map.end(),
+						 data_center_type());
+	}
+
+
+	public: template <typename ForwardIterT, typename ForwardUtilIterT>
 		bool try_place(virtual_machine_type& vm,
 					   physical_machine_type& pm,
 					   ForwardIterT first_share, // <category,share> pair
-					   ForwardIterT last_share) // <category,share> pair
+					   ForwardIterT last_share, // <category,share> pair
+					   ForwardUtilIterT first_util, // <category,utilization> pair
+					   ForwardUtilIterT last_util, // <category,utilization> pair
+					   data_center_type const& dc)
 	{
-		physical_machine_identifier_type pm_id = pm.id();
-		virtual_machine_identifier_type vm_id = vm.id();
+		physical_machine_identifier_type pm_id(pm.id());
+		virtual_machine_identifier_type vm_id(vm.id());
 
-		if (!placeable(vm, pm, first_share, last_share))
+		if (!placeable(vm, pm, first_share, last_share, first_util, last_util, dc))
 		{
 			return false;
 		}
 
 		//vm_pm_pair_type key = ::std::make_pair(vm_id, pm_id);
-		vm_pm_pair_type key = make_vm_pm_pair(vm_id, pm_id);
+		vm_pm_pair_type key(make_vm_pm_pair(vm_id, pm_id));
 		placements_[key] = share_container(first_share, last_share);
 		while (first_share != last_share)
 		{
@@ -167,6 +226,23 @@ class virtual_machines_placement
 		by_pm_idx_[pm_id].insert(vm_id);
 
 		return true;
+	}
+
+
+	public: template <typename ForwardIterT>
+		bool try_place(virtual_machine_type& vm,
+					   physical_machine_type& pm,
+					   ForwardIterT first_share, // <category,share> pair
+					   ForwardIterT last_share) // <category,share> pair
+	{
+		resource_utilization_map utils_map;
+		return try_place(vm,
+						 pm,
+						 first_share,
+						 last_share,
+						 utils_map.begin(),
+						 utils_map.end(),
+						 data_center_type());
 	}
 
 
