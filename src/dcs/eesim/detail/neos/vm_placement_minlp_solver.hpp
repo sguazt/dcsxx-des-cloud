@@ -38,6 +38,15 @@ inline
 			"option display_precision 0;"
 			"option print_precision 0;"
 			"solve;"
+			"if solve_result_num < 0 then {"
+			" for {i in I} {"
+			"  let shares_sum := sum{j in J} round(s[i,j],5);"
+			"  if shares_sum > Smax[i] then"
+			"   let{j in J} s[i,j] := round(s[i,j]*Smax[i]/shares_sum,5);"
+			"  else"
+			"   let{j in J} s[i,j] := round(s[i,j],5);"
+			" }"
+			"}"
 			"print '-- [RESULT] --';"
 			"print 'solve_exitcode=', solve_exitcode, ';';"
 			"print 'solve_result=', solve_result, ';';"
@@ -118,6 +127,7 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 					// 1. Create a problem in AMPL format
 					ampl::vm_placement_problem<traits_type> problem_descr;
 					problem_descr = ampl::make_initial_vm_placement_problem<traits_type>(dc, wp, ws, ref_penalty, vm_util_map, init_guess);
+::std::cerr << "Created AMPL problem: " << problem_descr.model << "reset data; data;" << problem_descr.data << ::std::endl;//XXX
 					::std::string xml_job;
 					xml_job = make_ampl_job(xml_tmpl_,
 										    problem_descr.model,
@@ -159,6 +169,7 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 					gams::vm_placement_problem<traits_type> problem_descr;
 					problem_descr = gams::make_initial_vm_placement_problem<traits_type>(dc, wp, ws, ref_penalty, vm_util_map, init_guess);
 					::std::string xml_job;
+::std::cerr << "Created GAMS problem: " << problem_descr.model << ::std::endl;//XXX
 					xml_job = make_gams_job(xml_tmpl_,
 										    problem_descr.model,
 										    detail::gams_options());
@@ -282,6 +293,7 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 					// 1. Create a problem in AMPL format
 					ampl::vm_placement_problem<traits_type> problem_descr;
 					problem_descr = ampl::make_vm_placement_problem<traits_type>(dc, wp, wm, ws, vm_util_map, init_guess);
+::std::cerr << "Created AMPL problem: " << problem_descr.model << "reset data; data;" << problem_descr.data << ::std::endl;//XXX
 					::std::string xml_job;
 					xml_job = make_ampl_job(xml_tmpl_,
 										    problem_descr.model,
@@ -314,6 +326,7 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 					// 1. Create a problem in GAMS format
 					gams::vm_placement_problem<traits_type> problem_descr;
 					problem_descr = gams::make_vm_placement_problem<traits_type>(dc, wp, wm, ws, vm_util_map, init_guess);
+::std::cerr << "Created GAMS problem: " << problem_descr.model << ::std::endl;//XXX
 					::std::string xml_job;
 					xml_job = make_gams_job(xml_tmpl_,
 										    problem_descr.model,
