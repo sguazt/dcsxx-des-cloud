@@ -525,7 +525,7 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<
 		os << indent
 		   << "Consumed Energy: " << tot_energy << ::std::endl;
 		os << indent
-		   << "# Migrations: " << sys.data_center_manager().migration_controller().num_migrations() << ::std::endl;
+		   << "# VM Migrations: " << sys.data_center_manager().migration_controller().num_migrations() << ::std::endl;
 	}
 }
 
