@@ -304,6 +304,19 @@ class base_application_simulation_model: public ::dcs::des::entity
 	{
 		this->enable(true);
 		start_time_ = registry<traits_type>::instance().des_engine().simulated_time();
+
+		// Enable event sources
+		request_arrival_event_source().enable(true);
+		request_departure_event_source().enable(true);
+		uint_type num_tiers(application().num_tiers());
+		for (uint_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+		{
+			request_tier_arrival_event_source(tier_id).enable(true);
+			request_tier_service_event_source(tier_id).enable(true);
+			request_tier_departure_event_source(tier_id).enable(true);
+		}
+
+		do_start_application();
 	}
 
 
@@ -311,6 +324,19 @@ class base_application_simulation_model: public ::dcs::des::entity
 	{
 		this->enable(false);
 		stop_time_ = registry<traits_type>::instance().des_engine().simulated_time();
+
+		// Disable event sources
+		request_arrival_event_source().enable(false);
+		request_departure_event_source().enable(false);
+		uint_type num_tiers(application().num_tiers());
+		for (uint_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+		{
+			request_tier_arrival_event_source(tier_id).enable(false);
+			request_tier_service_event_source(tier_id).enable(false);
+			request_tier_departure_event_source(tier_id).enable(false);
+		}
+
+		do_stop_application();
 	}
 
 
@@ -416,6 +442,12 @@ class base_application_simulation_model: public ::dcs::des::entity
 
 
 	private: virtual output_statistic_type const& do_tier_num_departures(uint_type tier_id) const = 0;
+
+
+	private: virtual void do_start_application() = 0;
+
+
+	private: virtual void do_stop_application() = 0;
 
 
 	private: virtual des_event_source_type& do_request_arrival_event_source() = 0;

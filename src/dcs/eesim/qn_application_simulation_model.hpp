@@ -557,6 +557,18 @@ class qn_application_simulation_model: public base_application_simulation_model<
 	}
 
 
+	private: void do_start_application()
+	{
+		// empty
+	}
+
+
+	private: void do_stop_application()
+	{
+		// empty
+	}
+
+
 	private: des_event_source_type& do_request_arrival_event_source()
 	{
 		return model_.arrival_event_source();
