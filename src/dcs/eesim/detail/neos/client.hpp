@@ -1770,7 +1770,6 @@ inline
 	::std::string res;
 
 	job_credentials creds;
-::std::cerr << "Submitting Job: " << job_xml << ::std::endl;//XXX
 	creds = neos.submit_job(job_xml);
 
 ::std::cerr << "Job Crediantials: (" << creds.id << "," << creds.password << ")" << ::std::endl;//XXX
