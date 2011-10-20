@@ -23,6 +23,7 @@
  */
 
 #include <cstddef>
+#include <cstdlib>
 #include <ctime>
 #include <dcs/assert.hpp>
 #include <dcs/des/engine.hpp>
@@ -49,6 +50,11 @@
 #include <dcs/math/random.hpp>
 #include <dcs/memory.hpp>
 #include <exception>
+#ifdef DCS_DEBUG
+# if __GNUC__
+#  include <execinfo.h>
+# endif // __GNUC__
+#endif // DCS_DEBUG
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -576,6 +582,25 @@ void process_sys_finit_sim_event(des_event_type const& evt, des_engine_context_t
 	DCS_DEBUG_TRACE("END Process System Finalization at Clock: " << ctx.simulated_time());
 }
 
+
+#ifdef DCS_DEBUG
+void stack_tracer()
+{
+#if __GNUC__
+	void *trace_elems[20];
+	int trace_elem_count(backtrace(trace_elems, 20));
+	char **stack_syms(backtrace_symbols(trace_elems, trace_elem_count));
+	for (int i = 0; i < trace_elem_count; ++i)
+	{
+		::std::cerr << stack_syms[i] << ::std::endl;
+	}
+	::free(stack_syms);
+
+	::std::exit(1);
+#endif // __GNUC__
+}
+#endif // DCS_DEBUG
+
 }} // Namespace detail::<unnamed>
 
 
@@ -603,6 +628,10 @@ int main(int argc, char* argv[])
 	typedef dcs::shared_ptr< dcs::eesim::data_center<traits_type> > data_center_pointer;
 	typedef dcs::shared_ptr< dcs::eesim::data_center_manager<traits_type> > data_center_manager_pointer;
 
+
+#ifdef DCS_DEBUG
+	::std::set_terminate(detail::stack_tracer);
+#endif // DCS_DEBUG
 
 	prog_name = argv[0];
 
