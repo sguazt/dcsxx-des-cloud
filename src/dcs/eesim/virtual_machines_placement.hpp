@@ -55,11 +55,11 @@ class virtual_machines_placement
 	public: typedef ::std::map<physical_resource_category, real_type> resource_utilization_map;
 
 
-	public: template <typename ForwardIterT, typename ForwardUtilIterT>
+	public: template <typename ForwardShareIterT, typename ForwardUtilIterT>
 		bool placeable(virtual_machine_type const& vm,
 					   physical_machine_type const& pm,
-					   ForwardIterT first_share,
-					   ForwardIterT last_share,
+					   ForwardShareIterT first_share,
+					   ForwardShareIterT last_share,
 					   ForwardUtilIterT first_util,
 					   ForwardUtilIterT last_util,
 					   data_center_type const& dc)
@@ -196,11 +196,11 @@ class virtual_machines_placement
 	}
 
 
-	public: template <typename ForwardIterT, typename ForwardUtilIterT>
+	public: template <typename ForwardShareIterT, typename ForwardUtilIterT>
 		bool try_place(virtual_machine_type& vm,
 					   physical_machine_type& pm,
-					   ForwardIterT first_share, // <category,share> pair
-					   ForwardIterT last_share, // <category,share> pair
+					   ForwardShareIterT first_share, // <category,share> pair
+					   ForwardShareIterT last_share, // <category,share> pair
 					   ForwardUtilIterT first_util, // <category,utilization> pair
 					   ForwardUtilIterT last_util, // <category,utilization> pair
 					   data_center_type const& dc)
@@ -246,16 +246,35 @@ class virtual_machines_placement
 	}
 
 
+	public: template <typename ForwardShareIterT, typename ForwardUtilIterT>
+		void place(virtual_machine_type& vm,
+				   physical_machine_type& pm,
+				   ForwardShareIterT first_share, // <category,share> pair
+				   ForwardShareIterT last_share, // <category,share> pair
+				   ForwardUtilIterT first_util, // <category,utilization> pair
+				   ForwardUtilIterT last_util, // <category,utilization> pair
+				   data_center_type const& dc)
+	{
+		if (!try_place(vm, pm, first_share, last_share, first_util, last_util, dc))
+		{
+			throw ::std::runtime_error("[dcs::eesim::virtual_machines_placement::place] Tried to place an unplaceable VM.");
+		}
+	}
+
+
 	public: template <typename ForwardIterT>
 		void place(virtual_machine_type& vm,
 				   physical_machine_type& pm,
 				   ForwardIterT first_share, // <category,share> pair
 				   ForwardIterT last_share) // <category,share> pair
 	{
-		if (!try_place(vm, pm, first_share, last_share))
-		{
-			throw ::std::runtime_error("[dcs::eesim::virtual_machines_placement::place] Tried to place an unplaceable VM.");
-		}
+		resource_utilization_map utils_map;
+		place(vm, pm,
+			  first_share,
+			  last_share,
+			  utils_map.begin(),
+			  utils_map.end(),
+			  data_center_type());
 	}
 
 
