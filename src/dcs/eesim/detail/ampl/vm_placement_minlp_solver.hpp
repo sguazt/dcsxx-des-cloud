@@ -103,18 +103,18 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 
 		// As initial guess use a specif heuristic
 		// FIXME: Best-Fit-Decreasing heuristic is hard-coded
-		best_fit_decreasing_initial_placement_strategy<traits_type> heuristc_strategy;
+		best_fit_decreasing_initial_placement_strategy<traits_type> heuristic_strategy;
 		heuristic_strategy.reference_share_penalty(ref_penalty);
 		virtual_machines_placement<traits_type> init_guess(heuristic_strategy.placement(dc));
 
 		// Create a new problem
 		vm_placement_problem<traits_type> problem_descr;
-		problem_descr = make_vm_placement_problem<traits_type>(dc,
-															   wp,
-															   ws,
-															   ref_penalty,
-															   vm_util_map,
-															   init_guess);
+		problem_descr = make_initial_vm_placement_problem<traits_type>(dc,
+																	   wp,
+																	   ws,
+																	   ref_penalty,
+																	   vm_util_map,
+																	   init_guess);
 
 		//FIXME: solver 'couenne' is hard-coded
 		::std::ostringstream oss;
@@ -162,6 +162,7 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 			<< "end;"
 			<< ::std::endl;
 
+::std::cerr << "Created AMPL problem: " << oss.str() << ::std::endl;//XXX
 		// Solve the new problem
 		detail::minlp_input_producer producer(oss.str());
 		detail::minlp_output_consumer consumer;
@@ -173,7 +174,7 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 		// Build the new solution
 		if (consumer.solver_result() == ::dcs::eesim::detail::ampl::solved_result)
 		{
-			this->result(::dcs::eesim::detail::make_vm_placement_problem_result<traits_type>(problem_descr, problem_res));
+			this->result(::dcs::eesim::detail::make_vm_placement_problem_result<traits_type>(problem_descr, consumer));
 			this->result().solved(true);
 		}
 	}
@@ -196,8 +197,8 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
     public: static const optimal_solver_ids default_solver_id;
 
 
-	public: explicit vm_placement_minlp_solver(optimal_solver_ids solver_id = default_optimal_solver_id)
-	: base_type(solver_id, ampl_optiml_solver_input_method)
+	public: explicit vm_placement_minlp_solver(optimal_solver_ids solver_id = default_solver_id)
+	: base_type(solver_id, ampl_optimal_solver_input_method)
 	{
 	}
 
@@ -280,7 +281,7 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 			<< "end;"
 			<< ::std::endl;
 
-::std::cerr << "Create problem: " << oss.str() << ::std::endl;//XXX
+::std::cerr << "Created AMPL problem: " << oss.str() << ::std::endl;//XXX
 		// Solve the new problem
 		detail::minlp_input_producer producer(oss.str());
 		detail::minlp_output_consumer consumer;
@@ -293,7 +294,7 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 		// Build the new solution
 		if (consumer.solver_result() == solved_result)
 		{
-			this->result(::dcs::eesim::detail::make_vm_placement_problem_result<traits_type>(problem_descr, problem_res));
+			this->result(::dcs::eesim::detail::make_vm_placement_problem_result<traits_type>(problem_descr, consumer));
 			this->result().solved(true);
 		}
 	}
