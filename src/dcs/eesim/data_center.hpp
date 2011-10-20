@@ -38,6 +38,7 @@
 #include <dcs/eesim/virtual_machine.hpp>
 #include <dcs/eesim/virtual_machines_placement.hpp>
 #include <dcs/eesim/registry.hpp>
+#include <dcs/exception.hpp>
 #include <dcs/memory.hpp>
 #include <stdexcept>
 #include <vector>
@@ -307,6 +308,109 @@ class data_center
 	}
 
 
+	public: void deploy_application(application_identifier_type app_id)
+	{
+		// pre: app_id must be a valid ID and the related application pointer
+		//      must be valid as well.
+		DCS_ASSERT(
+				static_cast<application_identifier_type>(apps_.size()) > app_id
+				&&
+				apps_[app_id],
+				throw ::std::invalid_argument("[dcs::eesim::data_center::deploy_application] Invalid application identifier.")
+			);
+
+		if (deployed(app_id))
+		{
+			return;
+		}
+
+		uint_type ntiers = apps_[app_id]->num_tiers();
+		for (uint_type t = 0; t < ntiers; ++t)
+		{
+			application_tier_pointer ptr_tier(apps_[app_id]->tier(t));
+
+			::std::string vm_name = std::string("VM for ") + ptr_tier->name();
+
+			virtual_machine_pointer ptr_vm;
+
+			ptr_vm = ::dcs::make_shared<virtual_machine_type>(vm_name);
+			ptr_vm->id(vms_.size());
+			ptr_vm->guest_system(ptr_tier);
+			vms_.push_back(ptr_vm);
+			deployed_apps_[app_id].push_back(ptr_vm->id());
+			apps_[app_id]->simulation_model().tier_virtual_machine(ptr_vm);
+			//ptr_tier->virtual_machine(ptr_vm);
+		}
+	}
+
+
+	public: void undeploy_application(application_identifier_type app_id)
+	{
+		// pre: app_id must be a valid ID and the related application pointer
+		//      must be valid as well.
+		DCS_ASSERT(
+				static_cast<application_identifier_type>(apps_.size()) > app_id
+				&&
+				apps_[app_id],
+				throw ::std::invalid_argument("[dcs::eesim::data_center::undeploy_application] Invalid application identifier.")
+			);
+
+		typedef typename deployed_application_container::const_iterator app_iterator;
+
+::std::cerr << "Undeploying Application: " << app_id << ::std::endl;//XXX
+		app_iterator app_it = deployed_apps_.find(app_id);
+
+		// pre: app_id must identify an already deployed application
+		DCS_ASSERT(
+			app_it != deployed_apps_.end(),
+			throw ::std::invalid_argument("[dcs::eesim::data_center::undeploy_application] Cannot undeploy a non-deployed application.")
+		);
+
+		// destroy all associated VMs
+		typedef typename deployed_application_vm_container::const_iterator vm_iterator;
+		vm_iterator vm_end_it(app_it->second.end());
+		for (vm_iterator vm_it = app_it->second.begin(); vm_it != vm_end_it; ++vm_it)
+		{
+			virtual_machine_identifier_type vm_id(*vm_it);
+
+			// check: make sure vm_id is a valid VM identifier.
+			DCS_DEBUG_ASSERT( vm_id < static_cast<virtual_machine_identifier_type>(vms_.size()) );
+			// check: double check on VM identifier.
+			DCS_DEBUG_ASSERT( vms_[vm_id]->id() == vm_id );
+
+			// Displace this VM
+			displace_virtual_machine(vms_[vm_id]);
+
+			// Remove from the VM list
+			vms_.erase(vms_.begin()+vm_id);
+		}
+
+		// Undeploy the application
+		deployed_apps_.erase(app_id);
+::std::cerr << "Undeployed Application: " << app_id << ::std::endl;//XXX
+	}
+
+
+	public: bool deployed(application_identifier_type id) const
+	{
+		// pre: app_id must be a valid ID and the related application pointer
+		//      must be valid as well.
+		DCS_ASSERT(
+				static_cast<application_identifier_type>(apps_.size()) > id
+				&&
+				apps_[id],
+				throw ::std::invalid_argument("[dcs::eesim::data_center::deployed] Invalid application identifier.")
+			);
+
+		if (deployed_apps_.find(id) != deployed_apps_.end())
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+
 //FIXME: name-clash between method name and type name
 //	public: virtual_machine_type const& virtual_machine(virtual_machine_identifier_type id) const
 //	{
@@ -357,8 +461,10 @@ class data_center
 		{
 			virtual_machine_identifier_type vm_id(*vm_it);
 
-			// paranoid-check: make sure VM vm_id does exist
-			DCS_DEBUG_ASSERT(vms_.count(vm_id) > 0);
+			// check: make sure vm_id is a valid VM identifier.
+			DCS_DEBUG_ASSERT( vm_id < static_cast<virtual_machine_identifier_type>(vms_.size()) );
+			// check: double check on VM identifier.
+			DCS_DEBUG_ASSERT( vms_[vm_id]->id() == vm_id );
 
 			vms.push_back(vms_[vm_id]);
 		}
@@ -446,6 +552,13 @@ class data_center
 
 	public: void displace_virtual_machine(virtual_machine_pointer const& ptr_vm, bool power_off = true)
 	{
+		/// pre: ptr_vm must be a valid pointer
+		DCS_ASSERT(
+				ptr_vm,
+				DCS_EXCEPTION_THROW( ::std::invalid_argument, "Invalid VM pointer." )
+			);
+
+::std::cerr << "Displacing VM " << *ptr_vm << ::std::endl;//XXX
 		typedef typename virtual_machines_placement_type::const_iterator iterator;
 		iterator it = placement_.find(*ptr_vm);
 		if (it != placement_.end())
@@ -456,14 +569,17 @@ class data_center
 
 			if (power_off)
 			{
+::std::cerr << "Powering off" << ::std::endl;//XXX
 				physical_machine_identifier_type pm_id(it->first.second);
 				physical_machine_pointer ptr_pm(pms_[pm_id]);
 
 				ptr_pm->vmm().power_off(ptr_vm);
 				ptr_pm->vmm().destroy_domain(ptr_vm);
+::std::cerr << "Powered off" << ::std::endl;//XXX
 			}
 			placement_.displace(*ptr_vm);
 		}
+::std::cerr << "Displaced VM " << *ptr_vm << ::std::endl;//XXX
 	}
 
 
@@ -685,75 +801,6 @@ class data_center
 	protected: application_pointer application_ptr(application_identifier_type id) const
 	{
 		return apps_[id];
-	}
-
-
-	private: void deploy_application(application_identifier_type app_id)
-	{
-		uint_type ntiers = apps_[app_id]->num_tiers();
-		for (uint_type t = 0; t < ntiers; ++t)
-		{
-			application_tier_pointer ptr_tier(apps_[app_id]->tier(t));
-
-			::std::string vm_name = std::string("VM for ") + ptr_tier->name();
-
-			virtual_machine_pointer ptr_vm;
-
-			ptr_vm = ::dcs::make_shared<virtual_machine_type>(vm_name);
-			ptr_vm->id(vms_.size());
-			ptr_vm->guest_system(ptr_tier);
-			vms_.push_back(ptr_vm);
-			deployed_apps_[app_id].push_back(ptr_vm->id());
-			apps_[app_id]->simulation_model().tier_virtual_machine(ptr_vm);
-			//ptr_tier->virtual_machine(ptr_vm);
-		}
-	}
-
-
-	private: void undeploy_application(application_identifier_type app_id)
-	{
-		typedef typename deployed_application_container::const_iterator app_iterator;
-
-		app_iterator app_it = deployed_apps_.find(app_id);
-
-		// pre: app_id must identify an already deployed application
-		DCS_ASSERT(
-			app_it != deployed_apps_.end(),
-			throw ::std::invalid_argument("[dcs::eesim::data_center::undeploy_application] Cannot undeploy a non-deployed application.")
-		);
-
-		// destroy all associated VMs
-		typedef typename deployed_application_vm_container::const_iterator vm_iterator;
-		vm_iterator vm_end_it(app_it->second.end());
-		for (vm_iterator vm_it = app_it->second.begin(); vm_it != vm_end_it; ++vm_it)
-		{
-			virtual_machine_identifier_type vm_id(*vm_it);
-
-			// check: make sure vm_id is a valid VM identifier.
-			DCS_DEBUG_ASSERT( vm_id < vms_.size() );
-			// check: double check on VM identifier.
-			DCS_DEBUG_ASSERT( vms_[vm_id]->id() == vm_id );
-
-			// Displace this VM
-			displace_virtual_machine(vms_[vm_id]);
-
-			// Remove from the VM list
-			vms_.erase(vms_.begin()+vm_id);
-		}
-
-		// Undeploy the application
-		deployed_apps_.erase(app_id);
-	}
-
-
-	private: bool deployed(application_identifier_type id) const
-	{
-		if (deployed_apps_.find(id) != deployed_apps_.end())
-		{
-			return true;
-		}
-
-		return false;
 	}
 
 
