@@ -11,11 +11,17 @@ namespace dcs { namespace eesim { namespace config {
 
 enum incremental_placement_strategy_category
 {
-	best_fit_incremental_placement_strategy
+	best_fit_incremental_placement_strategy,
+	best_fit_decreasing_incremental_placement_strategy
 };
 
 
 struct best_fit_incremental_placement_strategy_config
+{
+};
+
+
+struct best_fit_decreasing_incremental_placement_strategy_config
 {
 };
 
@@ -25,10 +31,12 @@ struct incremental_placement_strategy_config
 {
 	typedef RealT real_type;
     typedef best_fit_incremental_placement_strategy_config best_fit_incremental_placement_strategy_config_type;
+    typedef best_fit_decreasing_incremental_placement_strategy_config best_fit_decreasing_incremental_placement_strategy_config_type;
 
 
 	incremental_placement_strategy_category category;
-    ::boost::variant<best_fit_incremental_placement_strategy_config_type> category_conf;
+    ::boost::variant<best_fit_incremental_placement_strategy_config_type,
+    				 best_fit_decreasing_incremental_placement_strategy_config_type> category_conf;
 	real_type ref_penalty;
 };
 
@@ -40,6 +48,9 @@ template <typename CharT, typename CharTraitsT>
 	{
 		case best_fit_incremental_placement_strategy:
 			os << "best-fit";
+			break;
+		case best_fit_decreasing_incremental_placement_strategy:
+			os << "best-fit-decreasing";
 			break;
 	}
 
@@ -53,6 +64,17 @@ template <typename CharT, typename CharTraitsT>
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( strategy );
 
 	os << "<(best-fit-incremental-placement)>";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, best_fit_decreasing_incremental_placement_strategy_config const& strategy)
+{
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( strategy );
+
+	os << "<(best-fit-decreasing-incremental-placement)>";
 
 	return os;
 }

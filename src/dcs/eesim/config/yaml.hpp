@@ -429,6 +429,10 @@ incremental_placement_strategy_category text_to_incremental_placement_strategy_c
 	{
 		return best_fit_incremental_placement_strategy;
 	}
+	if (!istr.compare("best-fit-decreasing"))
+	{
+		return best_fit_decreasing_incremental_placement_strategy;
+	}
 
 	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_incremental_placement_strategy_category] Unknown incremental VM placement strategy category.");
 }
@@ -3257,6 +3261,15 @@ void operator>>(::YAML::Node const& node, incremental_placement_strategy_config<
 		case best_fit_incremental_placement_strategy:
 			{
 				typedef typename strategy_config_type::best_fit_incremental_placement_strategy_config_type strategy_config_impl_type;
+
+				strategy_config_impl_type strategy_conf_impl;
+
+				strategy_conf.category_conf = strategy_conf_impl;
+			}
+			break;
+		case best_fit_decreasing_incremental_placement_strategy:
+			{
+				typedef typename strategy_config_type::best_fit_decreasing_incremental_placement_strategy_config_type strategy_config_impl_type;
 
 				strategy_config_impl_type strategy_conf_impl;
 
