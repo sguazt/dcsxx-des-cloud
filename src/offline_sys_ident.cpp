@@ -12,6 +12,8 @@
 #include <boost/numeric/ublasx/operation/size.hpp>
 #include <boost/variant.hpp>
 #include <cmath>
+#include <cstddef>
+#include <cstdlib>
 #include <dcs/assert.hpp>
 #include <dcs/des/engine.hpp>
 #include <dcs/des/engine_traits.hpp>
@@ -1318,13 +1320,13 @@ void stack_tracer()
 {
 #if __GNUC__
     void *trace_elems[20];
-    int trace_elem_count(backtrace( trace_elems, 20 ));
-    char **stack_syms(backtrace_symbols( trace_elems, trace_elem_count ));
-    for ( int i = 0 ; i < trace_elem_count ; ++i )
+    int trace_elem_count(backtrace(trace_elems, 20));
+    char **stack_syms(backtrace_symbols(trace_elems, trace_elem_count));
+    for (int i = 0; i < trace_elem_count; ++i)
     {
-        std::cerr << stack_syms[i] << "\n";
+        ::std::cerr << stack_syms[i] << ::std::endl;
     }
-    free( stack_syms );
+    ::free(stack_syms);
 
     ::std::exit(1);
 #endif // __GNUC__
