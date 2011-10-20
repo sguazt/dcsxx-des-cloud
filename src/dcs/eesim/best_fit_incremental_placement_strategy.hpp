@@ -24,11 +24,11 @@ class best_fit_incremental_placement_strategy: public base_incremental_placement
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::real_type real_type;
 	private: typedef typename base_type::virtual_machine_identifier_type vm_identifier_type;
-	private: typedef typename base_type::virtual_machine_identifier_container vm_identifier_container;
-	private: typedef data_center<traits_type> data_center_type;
+	private: typedef typename base_type::data_center_type data_center_type;
+	private: typedef typename base_type::virtual_machine_container vm_container;
 
 
-	private: virtual_machines_placement<traits_type> do_place(data_center_type const& dc, vm_identifier_container const& vms)
+	private: virtual_machines_placement<traits_type> do_place(data_center_type const& dc, vm_container const& vms)
 	{
 		typedef typename data_center_type::application_type application_type;
 		typedef typename data_center_type::physical_machine_type pm_type;
@@ -38,33 +38,61 @@ class best_fit_incremental_placement_strategy: public base_incremental_placement
 		typedef typename data_center_type::virtual_machine_pointer vm_pointer;
 		typedef ::std::vector<pm_pointer> pm_container;
 		typedef typename pm_container::const_iterator pm_iterator;
-		typedef typename vm_identifier_container::const_iterator vm_identifier_iterator;
+		typedef typename vm_container::const_iterator vm_iterator;
 		typedef ::std::pair<physical_resource_category,real_type> share_type;
 		typedef ::std::vector<share_type> share_container;
 		typedef typename share_container::const_iterator share_iterator;
 		typedef ::std::map<physical_resource_category,real_type> resource_share_map;
 		typedef ::std::map<physical_resource_category,real_type> resource_utilization_map;
 
-		pm_container sorted_pms(dc.physical_machines());
+		/// Sort physical machines according to their capacity; however,
+		/// powered-on machines are preferred first, then suspended, and
+		/// eventually powered-off.
+		/// (Sorting is done from the less powerful to the more powerful)
 
+		//pm_container sorted_pms(dc.physical_machines());
+		//::std::sort(sorted_pms.begin(),
+		//			sorted_pms.end(),
+		//			detail::ptr_physical_machine_less_comparator<pm_type>());
+		pm_container sorted_pms;
+		pm_container pms;
+		pms = dc.physical_machines(powered_on_power_status);
+		if (!pms.empty())
+		{
+			::std::sort(pms.begin(),
+						pms.end(),
+						detail::ptr_physical_machine_less_comparator<pm_type>());
+			sorted_pms.insert(sorted_pms.end(), pms.begin(), pms.end());
+		}
+		pms = dc.physical_machines(suspended_power_status);
+		if (!pms.empty())
+		{
+			::std::sort(pms.begin(),
+						pms.end(),
+						detail::ptr_physical_machine_less_comparator<pm_type>());
+			sorted_pms.insert(sorted_pms.end(), pms.begin(), pms.end());
+		}
+		pms = dc.physical_machines(powered_off_power_status);
+		if (!pms.empty())
+		{
+			::std::sort(pms.begin(),
+						pms.end(),
+						detail::ptr_physical_machine_less_comparator<pm_type>());
+			sorted_pms.insert(sorted_pms.end(), pms.begin(), pms.end());
+		}
+		pms.clear();
+
+::std::cerr << "BEGIN Incremental Placement" << ::std::endl;//XXX
 DCS_DEBUG_TRACE("BEGIN Incremental Placement");//XXX
 DCS_DEBUG_TRACE("#Machines: " << sorted_pms.size());//XXX
 DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 
-		virtual_machines_placement<traits_type> deployment;
+		virtual_machines_placement<traits_type> deployment(dc.current_virtual_machines_placement());
 
-		// Sort physical machines according to their capacity
-		// (from the less powerful to the more powerful)
-		::std::sort(sorted_pms.begin(),
-					sorted_pms.end(),
-					detail::ptr_physical_machine_less_comparator<pm_type>());
-
-		vm_identifier_iterator vm_end_it(vms.end());
-		for (vm_identifier_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
+		vm_iterator vm_end_it(vms.end());
+		for (vm_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
 		{
-			vm_identifier_type vm_id(*vm_it);
-
-			vm_pointer ptr_vm(dc.virtual_machine_ptr(vm_id));
+			vm_pointer ptr_vm(*vm_it);
 
 			// paranoid-check: valid pointer
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -150,6 +178,7 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 											  utils.end(),
 											  dc);
 DCS_DEBUG_TRACE("Placed: VM(" << ptr_vm->id() << ") -> PM(" << ptr_pm->id() << ") ==> OK? " <<  std::boolalpha << placed);///XXX
+::std::cerr << "Evaluating Placement of VM(" << ptr_vm->id() << ") over PM(" << ptr_pm->id() << ") ==> " <<  (placed ? "YES" : "NO") << ::std::endl;///XXX
 			}
 		}
 

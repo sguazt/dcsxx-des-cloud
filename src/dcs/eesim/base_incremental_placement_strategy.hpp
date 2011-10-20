@@ -15,7 +15,10 @@ class base_incremental_placement_strategy
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::real_type real_type;
 	public: typedef typename traits_type::virtual_machine_identifier_type virtual_machine_identifier_type;
-	public: typedef ::std::vector<virtual_machine_identifier_type> virtual_machine_identifier_container; 
+	public: typedef data_center<traits_type> data_center_type;
+	public: typedef virtual_machines_placement<traits_type> virtual_machines_placement_type;
+	protected: typedef typename data_center_type::virtual_machine_pointer virtual_machine_pointer;
+	protected: typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
 
 
 	public: base_incremental_placement_strategy()
@@ -27,16 +30,16 @@ class base_incremental_placement_strategy
 	public: virtual ~base_incremental_placement_strategy() { }
 
 
-	public: virtual_machines_placement<traits_type> place(data_center<traits_type> const& dc, virtual_machine_identifier_container const& vms)
-	{
-		return do_place(dc, vms);
-	}
+//	public: virtual_machines_placement_type place(data_center_type const& dc, virtual_machine_container const& vms)
+//	{
+//		return do_place(dc, vms);
+//	}
 
 
 	public: template <typename ForwardIterT>
-		virtual_machines_placement<traits_type> place(data_center<traits_type> const& dc, ForwardIterT first, ForwardIterT last)
+		virtual_machines_placement_type place(data_center_type const& dc, ForwardIterT first, ForwardIterT last)
 	{
-		return do_place(dc, virtual_machine_identifier_container(first, last));
+		return do_place(dc, virtual_machine_container(first, last));
 	}
 
 
@@ -52,7 +55,7 @@ class base_incremental_placement_strategy
 	}
 
 
-	private: virtual virtual_machines_placement<traits_type> do_place(data_center<traits_type> const& dc, virtual_machine_identifier_container const& vms) = 0;
+	private: virtual virtual_machines_placement_type do_place(data_center_type const& dc, virtual_machine_container const& vms) = 0;
 
 
 	/// The penalty (in percentage) to assign to the reference share 
