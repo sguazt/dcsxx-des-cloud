@@ -42,9 +42,11 @@
 //#include <dcs/math/random/any_generator.hpp>
 #include <dcs/math/random.hpp>
 #include <dcs/memory.hpp>
-#if __GNUC__
-# include <execinfo.h>
-#endif // __GNUC__
+#ifdef // DCS_DEBUG
+# if __GNUC__
+#  include <execinfo.h>
+# endif // __GNUC__
+#endif // DCS_DEBUG
 #include <iostream>
 #include <map>
 #include <stdexcept>
