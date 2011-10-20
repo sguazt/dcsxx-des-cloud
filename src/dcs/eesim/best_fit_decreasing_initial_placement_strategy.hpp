@@ -55,8 +55,8 @@ class best_fit_decreasing_initial_placement_strategy: public base_initial_placem
 
 
 DCS_DEBUG_TRACE("BEGIN Initial Placement");//XXX
-DCS_DEBUG_TRACE("#Machines: " << machs.size());//XXX
-DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
+DCS_DEBUG_TRACE("#Machines: " << sorted_pms.size());//XXX
+DCS_DEBUG_TRACE("#VMs: " << sorted_vms.size());//XXX
 
 		virtual_machines_placement<traits_type> deployment;
 
