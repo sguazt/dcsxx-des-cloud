@@ -9,6 +9,7 @@
 #include <dcs/eesim/config/application.hpp>
 #include <dcs/eesim/config/operation//make_application.hpp>
 #include <dcs/eesim/config/operation//make_application_controller.hpp>
+#include <dcs/eesim/config/operation//make_probability_distribution.hpp>
 #include <dcs/eesim/multi_tier_application.hpp>
 #include <dcs/eesim/registry.hpp>
 #include <dcs/math/stats/distribution/any_distribution.hpp>
@@ -43,14 +44,34 @@ class configuration_based_application_instance_builder: public base_application_
 	}
 
 
-	public: configuration_based_application_instance_builder(application_config_type const& app_conf,
-															 uint_type min_num_insts = uint_type(1),
-															 uint_type max_num_insts = uint_type(1),
-															 uint_type num_prealloc_insts = uint_type(1),
-															 bool prealloc_endless = true)
-	: base_type(min_num_insts, max_num_insts, num_prealloc_insts, prealloc_endless),
+	public: configuration_based_application_instance_builder(application_config_type const& app_conf)
+	: base_type(),
 	  app_conf_(app_conf)
 	{
+		init();
+	}
+
+
+	public: void application_config(application_config_type const& app_conf)
+	{
+		app_conf_ = app_conf;
+
+		init();
+	}
+
+
+	private: void init()
+	{
+		this->min_num_instances(app_conf_.builder.min_num_instances);
+		this->max_num_instances(app_conf_.builder.max_num_instances);
+		this->num_preallocated_instances(app_conf_.builder.num_preallocated_instances);
+		this->preallocated_is_endless(app_conf_.builder.preallocated_is_endless);
+		this->start_time_distribution(
+				config::make_probability_distribution<traits_type>(app_conf_.builder.arrival_distribution)
+			);
+		this->run_time_distribution(
+				config::make_probability_distribution<traits_type>(app_conf_.builder.runtime_distribution)
+			);
 	}
 
 
