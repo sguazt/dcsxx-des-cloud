@@ -49,7 +49,7 @@ class application_instance
 		// paranoid-check: valid pointer
 		DCS_DEBUG_ASSERT( ptr_app_ );
 
-		return ptr_app_;
+		return *ptr_app_;
 	}
 
 
@@ -58,7 +58,7 @@ class application_instance
 		// paranoid-check: valid pointer
 		DCS_DEBUG_ASSERT( ptr_app_ );
 
-		return ptr_app_;
+		return *ptr_app_;
 	}
 
 
@@ -79,7 +79,7 @@ class application_instance
 		// paranoid-check: valid pointer
 		DCS_DEBUG_ASSERT( ptr_app_ctrl_ );
 
-		return ptr_app_ctrl_;
+		return *ptr_app_ctrl_;
 	}
 
 
@@ -88,7 +88,7 @@ class application_instance
 		// paranoid-check: valid pointer
 		DCS_DEBUG_ASSERT( ptr_app_ctrl_ );
 
-		return ptr_app_ctrl_;
+		return *ptr_app_ctrl_;
 	}
 
 
