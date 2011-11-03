@@ -9,6 +9,8 @@
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/registry.hpp>
 #include <dcs/eesim/user_request.hpp>
+#include <dcs/exception.hpp>
+#include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
 #include <map>
 #include <stdexcept>
@@ -40,10 +42,27 @@ class base_application_simulation_model: public ::dcs::des::entity
 	private: typedef ::std::map<tier_identifier_type,virtual_machine_pointer> tier_vm_mapping_container;
 
 
+	/// Default constructor.
 	protected: base_application_simulation_model()
 	: start_time_(0),
 	  stop_time_(0)
 	{
+	}
+
+
+	/// Copy constructor.
+	private: base_application_simulation_model(base_application_simulation_model const& that)
+	{
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-constructor not yet implemented." );
+	}
+
+
+	/// Copy assignment.
+	private: base_application_simulation_model& operator=(base_application_simulation_model const& rhs)
+	{
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-assigment not yet implemented." );
 	}
 
 
@@ -67,11 +86,17 @@ class base_application_simulation_model: public ::dcs::des::entity
 
 	public: void tier_virtual_machine(virtual_machine_pointer const& ptr_vm)
 	{
+		// pre: ptr_vm must be a valid pointer
+		DCS_ASSERT(
+				ptr_vm,
+				DCS_EXCEPTION_THROW( ::std::invalid_argument, "Invalid virtual machine." )
+			);
+
 		typedef typename virtual_machine_type::resource_share_container share_container;
 
 		uint_type tier_id(ptr_vm->guest_system().id());
 
-		tier_vm_map_[ptr_vm->guest_system().id()] = ptr_vm;
+		tier_vm_map_[tier_id] = ptr_vm;
 
 		share_container shares(ptr_vm->resource_shares());
 		this->resource_shares(tier_id, shares.begin(), shares.end());
@@ -303,18 +328,19 @@ class base_application_simulation_model: public ::dcs::des::entity
 	public: void start_application()
 	{
 		this->enable(true);
+
 		start_time_ = registry<traits_type>::instance().des_engine().simulated_time();
 
-		// Enable event sources
-		request_arrival_event_source().enable(true);
-		request_departure_event_source().enable(true);
-		uint_type num_tiers(application().num_tiers());
-		for (uint_type tier_id = 0; tier_id < num_tiers; ++tier_id)
-		{
-			request_tier_arrival_event_source(tier_id).enable(true);
-			request_tier_service_event_source(tier_id).enable(true);
-			request_tier_departure_event_source(tier_id).enable(true);
-		}
+//		// Enable event sources
+//		request_arrival_event_source().enable(true);
+//		request_departure_event_source().enable(true);
+//		uint_type num_tiers(application().num_tiers());
+//		for (uint_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+//		{
+//			request_tier_arrival_event_source(tier_id).enable(true);
+//			request_tier_service_event_source(tier_id).enable(true);
+//			request_tier_departure_event_source(tier_id).enable(true);
+//		}
 
 		do_start_application();
 	}
@@ -322,21 +348,22 @@ class base_application_simulation_model: public ::dcs::des::entity
 
 	public: void stop_application()
 	{
-		this->enable(false);
+		do_stop_application();
+
 		stop_time_ = registry<traits_type>::instance().des_engine().simulated_time();
 
-		// Disable event sources
-		request_arrival_event_source().enable(false);
-		request_departure_event_source().enable(false);
-		uint_type num_tiers(application().num_tiers());
-		for (uint_type tier_id = 0; tier_id < num_tiers; ++tier_id)
-		{
-			request_tier_arrival_event_source(tier_id).enable(false);
-			request_tier_service_event_source(tier_id).enable(false);
-			request_tier_departure_event_source(tier_id).enable(false);
-		}
+		this->enable(false);
 
-		do_stop_application();
+//		// Disable event sources
+//		request_arrival_event_source().enable(false);
+//		request_departure_event_source().enable(false);
+//		uint_type num_tiers(application().num_tiers());
+//		for (uint_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+//		{
+//			request_tier_arrival_event_source(tier_id).enable(false);
+//			request_tier_service_event_source(tier_id).enable(false);
+//			request_tier_departure_event_source(tier_id).enable(false);
+//		}
 	}
 
 
@@ -370,6 +397,11 @@ class base_application_simulation_model: public ::dcs::des::entity
 		return ptr_app_;
 	}
 
+
+	protected: virtual void do_enable(bool flag)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(flag);
+	}
 
 //	private: void schedule_application_start()
 //	{
