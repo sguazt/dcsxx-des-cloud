@@ -22,8 +22,8 @@
  * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
  */
 
-#ifndef DCS_EESIM_APPLICATION_CONTROLLER_HPP
-#define DCS_EESIM_APPLICATION_CONTROLLER_HPP
+#ifndef DCS_EESIM_PID_APPLICATION_CONTROLLER_HPP
+#define DCS_EESIM_PID_APPLICATION_CONTROLLER_HPP
 
 
 #include <boost/numeric/ublas/matrix.hpp>
@@ -34,8 +34,11 @@
 #include <dcs/eesim/base_application_statistics_retriever.hpp>
 #include <dcs/eesim/multi_tier_application.hpp>
 #include <dcs/eesim/registry.hpp>
+#include <dcs/exception.hpp>
 #include <dcs/functional/bind.hpp>
+#include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
+#include <stdexcept>
 #include <vector>
 
 
@@ -68,7 +71,7 @@ class pid_application_controller
 	private: static const real_type default_sample_time;
 
 
-	public: application_controller()
+	public: pid_application_controller()
 		: controller_(
 			matrix_type(0, 0, default_Kp),
 			matrix_type(0, 0, default_Ki),
@@ -79,7 +82,7 @@ class pid_application_controller
 	}
 
 
-	public: application_controller(application_pointer const& ptr_app)
+	public: pid_application_controller(application_pointer const& ptr_app)
 		: controller_(
 			matrix_type(ptr_app->num_tiers(), ptr_app->num_tiers(), default_Kp),
 			matrix_type(ptr_app->num_tiers(), ptr_app->num_tiers(), default_Ki),
@@ -88,6 +91,26 @@ class pid_application_controller
 		  ptr_app_(ptr_app)
 	{
 		init();
+	}
+
+
+	/// Copy constructor.
+	private: pid_application_controller(pid_application_controller const& that)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(that);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-constructor not yet implemented." );
+	}
+
+
+	/// Copy assignment.
+	private: pid_application_controller& operator=(pid_application_controller const& rhs)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(rhs);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-assigment not yet implemented." );
 	}
 
 
@@ -182,21 +205,21 @@ class pid_application_controller
 	private: ::dcs::control::mimo_pid_controller<vector_type, matrix_type, real_type> controller_;
 	private: application_pointer ptr_app_;
 	private: des_event_source_pointer ptr_control_evt_src_;
-};
+}; // pid_application_controller
 
 template <typename TraitsT>
-const typename TraitsT::real_type application_controller<TraitsT>::default_Kp = 5;
+const typename TraitsT::real_type pid_application_controller<TraitsT>::default_Kp = 5;
 
 template <typename TraitsT>
-const typename TraitsT::real_type application_controller<TraitsT>::default_Ki = 10;
+const typename TraitsT::real_type pid_application_controller<TraitsT>::default_Ki = 10;
 
 template <typename TraitsT>
-const typename TraitsT::real_type application_controller<TraitsT>::default_Kd = 0.05;
+const typename TraitsT::real_type pid_application_controller<TraitsT>::default_Kd = 0.05;
 
 template <typename TraitsT>
-const typename TraitsT::real_type application_controller<TraitsT>::default_sample_time = 1;
+const typename TraitsT::real_type pid_application_controller<TraitsT>::default_sample_time = 1;
 
 }} // Namespace dcs::eesim
 
 
-#endif // DCS_EESIM_APPLICATION_CONTROLLER_HPP
+#endif // DCS_EESIM_PID_APPLICATION_CONTROLLER_HPP
