@@ -48,7 +48,7 @@ class best_fit_decreasing_initial_placement_strategy: public base_initial_placem
 					sorted_pms.end(),
 					detail::ptr_physical_machine_greater_comparator<pm_type>());
 
-		vm_container sorted_vms(dc.virtual_machines());
+		vm_container sorted_vms(dc.active_virtual_machines());
 		::std::sort(sorted_vms.begin(),
 					sorted_vms.end(),
 					detail::ptr_virtual_machine_greater_comparator<vm_type>());
