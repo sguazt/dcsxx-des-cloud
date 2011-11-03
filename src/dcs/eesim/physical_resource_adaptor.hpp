@@ -22,17 +22,20 @@
  * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
  */
 
-#ifndef DCS_EESIM_PHYSICAL_MACHINE_ADAPTOR_HPP
-#define DCS_EESIM_PHYSICAL_MACHINE_ADAPTOR_HPP
+#ifndef DCS_EESIM_PHYSICAL_RESOURCE_ADAPTOR_HPP
+#define DCS_EESIM_PHYSICAL_RESOURCE_ADAPTOR_HPP
 
 
 #include <dcs/perfeval/energy/any_model.hpp>
 #include <dcs/eesim/base_physical_resource.hpp>
 #include <dcs/eesim/physical_resource.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
+#include <dcs/exception.hpp>
+#include <dcs/macro.hpp>
 #include <dcs/type_traits/add_reference.hpp>
 #include <dcs/type_traits/add_const.hpp>
 #include <dcs/type_traits/remove_reference.hpp>
+#include <stdexcept>
 #include <vector>
 
 
@@ -53,7 +56,7 @@ template <
 >
 class physical_resource_adaptor: public base_physical_resource<
 										typename PhysicalResourceTraitsT::traits_type
-								>
+								 >
 {
 	public: typedef PhysicalResourceT physical_resource_type;
 	public: typedef typename PhysicalResourceTraitsT::traits_type traits_type;
@@ -67,6 +70,26 @@ class physical_resource_adaptor: public base_physical_resource<
 	public: physical_resource_adaptor(resource_const_reference adaptee_resource)
 		: resource_(adaptee_resource)
 	{
+	}
+
+
+	/// Copy constructor.
+	private: physical_resource_adaptor(physical_resource_adaptor const& that)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(that);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-constructor not yet implemented." );
+	}
+
+
+	/// Copy assignment.
+	private: physical_resource_adaptor& operator=(physical_resource_adaptor const& rhs)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(rhs);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-assigment not yet implemented." );
 	}
 
 
@@ -94,4 +117,4 @@ class physical_resource_adaptor: public base_physical_resource<
 }} // Namespace dcs::eesim
 
 
-#endif // DCS_EESIM_PHYSICAL_MACHINE_ADAPTOR_HPP
+#endif // DCS_EESIM_PHYSICAL_RESOURCE_ADAPTOR_HPP
