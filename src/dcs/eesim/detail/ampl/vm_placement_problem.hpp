@@ -115,7 +115,7 @@ template <typename TraitsT>
 	oss << "param ni := " << n_pms << ";" << ::std::endl;
 
 	// Create the set of all virtual machines
-	vm_container vms(dc.virtual_machines());
+	vm_container vms(dc.active_virtual_machines());
 
 	::std::size_t n_vms(vms.size());
 
