@@ -3,7 +3,7 @@
  *
  * \brief Models a data center.
  *
- * Copyright (C) 2009-2010  Distributed Computing System (DCS) Group, Computer
+ * Copyright (C) 2009-2011  Distributed Computing System (DCS) Group, Computer
  * Science Department - University of Piemonte Orientale, Alessandria (Italy).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,6 +32,7 @@
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/eesim/base_application_controller.hpp>
 #include <dcs/eesim/base_physical_machine_controller.hpp>
+#include <dcs/eesim/logging.hpp>
 #include <dcs/eesim/multi_tier_application.hpp>
 #include <dcs/eesim/physical_machine.hpp>
 #include <dcs/eesim/power_status.hpp>
@@ -39,7 +40,11 @@
 #include <dcs/eesim/virtual_machines_placement.hpp>
 #include <dcs/eesim/registry.hpp>
 #include <dcs/exception.hpp>
+#include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
+#include <map>
+#include <set>
+#include <sstream>
 #include <stdexcept>
 #include <vector>
 
@@ -64,18 +69,18 @@ class data_center
 	public: typedef ::dcs::shared_ptr<application_controller_type> application_controller_pointer;
 	public: typedef ::dcs::shared_ptr<physical_machine_controller_type> physical_machine_controller_pointer;
 	public: typedef virtual_machines_placement<traits_type> virtual_machines_placement_type;
-	private: typedef ::std::vector<application_pointer> application_container;
-	private: typedef ::std::vector<application_controller_pointer> application_controller_container;
-	private: typedef ::std::vector<physical_machine_pointer> physical_machine_container;
-	private: typedef ::std::vector<physical_machine_controller_pointer> physical_machine_controller_container;
+	private: typedef ::std::map<application_identifier_type,application_pointer> application_container;
+	private: typedef ::std::map<application_identifier_type,application_controller_pointer> application_controller_container;
+	private: typedef ::std::map<physical_machine_identifier_type,physical_machine_pointer> physical_machine_container;
+	private: typedef ::std::map<physical_machine_identifier_type,physical_machine_controller_pointer> physical_machine_controller_container;
 	public: typedef virtual_machine<traits_type> virtual_machine_type;
 	public: typedef ::dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
-	private: typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
+	private: typedef ::std::map<virtual_machine_identifier_type,virtual_machine_pointer> virtual_machine_container;
 	private: typedef registry<traits_type> registry_type;
 	private: typedef typename traits_type::uint_type uint_type;
 	private: typedef typename application_type::application_tier_type application_tier_type;
 	private: typedef ::dcs::shared_ptr<application_tier_type> application_tier_pointer;
-	private: typedef ::std::vector<virtual_machine_identifier_type> deployed_application_vm_container;
+	private: typedef ::std::set<virtual_machine_identifier_type> deployed_application_vm_container;
 	private: typedef ::std::map<
 						application_identifier_type,
 						deployed_application_vm_container
@@ -83,12 +88,33 @@ class data_center
 	private: typedef typename traits_type::des_engine_type des_engine_type;
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::engine_context_type des_engine_context_type;
+	private: typedef ::std::set<application_identifier_type> application_id_container;
 
 
 	/// Default constructor
 	public: data_center()
 	{
 		init();
+	}
+
+
+	/// Copy constructor.
+	private: data_center(data_center const& that)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(that);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-constructor not yet implemented." );
+	}
+
+
+	/// Copy assigment.
+	private: data_center& operator=(data_center const& rhs)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(rhs);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-constructor not yet implemented." );
 	}
 
 
@@ -116,10 +142,12 @@ class data_center
 
 		application_identifier_type id;
 
-		id = apps_.size();
-		apps_.push_back(ptr_app);
-		app_ctrls_.push_back(ptr_app_control);
-		apps_.back()->id(id);
+		id = registry<traits_type>::instance().application_id_generator()();
+		apps_[id] = ptr_app;
+		app_ctrls_[id] = ptr_app_control;
+::std::cerr << "[data_center] Added APPLICATION: " << *ptr_app << " (" << ptr_app << ")" << ::std::endl;///XXX
+		ptr_app->id(id);
+::std::cerr << "[data_center] Change ID to APPLICATION: " << *ptr_app << " (" << ptr_app << ")" << ::std::endl;///XXX
 
 		if (deploy)
 		{
@@ -136,13 +164,14 @@ class data_center
 	{
 		// pre: app_id must be a valid application identifier.
 		DCS_ASSERT(
-			app_id < apps_.size(),
+			apps_.count(app_id) > 0,
 			throw ::std::invalid_argument("[dcs::eesim::remove_application] Invalid application identifier.")
 		);
 
 		undeploy_application(app_id);
 
-		apps_.erase(apps_.begin()+app_id);
+		apps_.erase(app_id);
+		app_ctrls_.erase(app_id);
 	}
 
 
@@ -162,10 +191,12 @@ class data_center
 
 		physical_machine_identifier_type id;
 
-		id = pms_.size();
-		pms_.push_back(ptr_mach);
-		pm_ctrls_.push_back(ptr_mach_control);
-		pms_.back()->id(id);
+		id = registry<traits_type>::instance().physical_machine_id_generator()();
+		pms_[id] = ptr_mach;
+		pm_ctrls_[id] = ptr_mach_control;
+::std::cerr << "[data_center] Added PHYSICAL-MACHINE: " << *ptr_mach << " (" << ptr_mach << ")" << ::std::endl;///XXX
+		ptr_mach->id(id);
+::std::cerr << "[data_center] Change ID to PHYSICAL-MACHINE: " << *ptr_mach << " (" << ptr_mach << ")" << ::std::endl;///XXX
 
 		return id;
 	}
@@ -175,12 +206,12 @@ class data_center
 	{
 		// pre: mach_id must be a valid physical machine identifier.
 		DCS_ASSERT(
-			mach_id < pms_.size(),
-			throw ::std::invalid_argument("[dcs::eesim::remove_application] Invalid physical machine identifier.")
+			pms_.count(mach_id) > 0,
+			throw ::std::invalid_argument("[dcs::eesim::remove_physical_machine] Invalid physical machine identifier.")
 		);
 
-		pms_.erase(pms_.begin()+mach_id);
-		pm_ctrls_.erase(pms_.begin()+mach_id);
+		pms_.erase(mach_id);
+		pm_ctrls_.erase(mach_id);
 	}
 
 
@@ -200,111 +231,239 @@ class data_center
 
 	public: physical_machine_pointer physical_machine_ptr(physical_machine_identifier_type id) const
 	{
-		return pms_[id];
+		// pre: mach_id must be a valid physical machine identifier.
+		DCS_ASSERT(
+			pms_.count(id) > 0,
+			throw ::std::invalid_argument("[dcs::eesim::physical_machine_ptr] Invalid physical machine identifier.")
+		);
+
+		return pms_.at(id);
 	}
 
 
 	public: physical_machine_pointer physical_machine_ptr(physical_machine_identifier_type id)
 	{
+		// pre: mach_id must be a valid physical machine identifier.
+		DCS_ASSERT(
+			pms_.count(id) > 0,
+			throw ::std::invalid_argument("[dcs::eesim::physical_machine_ptr] Invalid physical machine identifier.")
+		);
+
 		return pms_[id];
 	}
 
 
 	public: ::std::vector<physical_machine_pointer> physical_machines() const
 	{
-		return pms_;
+		typedef ::std::vector<physical_machine_pointer> result_container;
+		typedef typename physical_machine_container::const_iterator pm_iterator;
+
+		result_container pms;
+		pm_iterator end_it(pms_.end());
+		for (pm_iterator it = pms_.begin(); it != end_it; ++it)
+		{
+			// check: paranoid check
+			DCS_DEBUG_ASSERT( it->second );
+
+			pms.push_back(it->second);
+		}
+
+		return pms;
 	}
 
 
 	public: ::std::vector<physical_machine_pointer> physical_machines(power_status status) const
 	{
-		typedef typename physical_machine_container::const_iterator machine_iterator;
+		typedef ::std::vector<physical_machine_pointer> result_container;
+		typedef typename physical_machine_container::const_iterator pm_iterator;
 
-		::std::vector<physical_machine_pointer> ptr_machs;
+		result_container pms;
 
-		machine_iterator it_end = pms_.end();
-		for (machine_iterator it = pms_.begin(); it != it_end; ++it)
+		pm_iterator end_it(pms_.end());
+		for (pm_iterator it = pms_.begin(); it != end_it; ++it)
 		{
-			if ((*it)->power_state() == status)
+			physical_machine_pointer ptr_pm(it->second);
+
+			// check: paranoid check
+			DCS_DEBUG_ASSERT( ptr_pm );
+
+			if (ptr_pm->power_state() == status)
 			{
-				ptr_machs.push_back(*it);
+				pms.push_back(ptr_pm);
 			}
 		}
 
-		return ptr_machs;
+		return pms;
 	}
 
 
 	public: template <typename UnaryPredicateT>
 		::std::vector<physical_machine_pointer> physical_machines(UnaryPredicateT pred) const
 	{
-		typedef typename physical_machine_container::const_iterator machine_iterator;
+		typedef ::std::vector<physical_machine_pointer> result_container;
+		typedef typename physical_machine_container::const_iterator pm_iterator;
 
-		::std::vector<physical_machine_pointer> ptr_machs;
+		result_container pms;
 
-		machine_iterator end_it(pms_.end());
-		for (machine_iterator it(pms_.begin()); it != end_it; ++it)
+		pm_iterator end_it(pms_.end());
+		for (pm_iterator it = pms_.begin(); it != end_it; ++it)
 		{
-			if (pred(*it))
+			physical_machine_pointer ptr_pm(it->second);
+
+			// check: paranoid check
+			DCS_DEBUG_ASSERT( ptr_pm );
+
+			if (pred(ptr_pm))
 			{
-				ptr_machs.push_back(*it);
+				pms.push_back(ptr_pm);
 			}
 		}
 
-		return ptr_machs;
+		return pms;
 	}
 
 
 	public: physical_machine_controller_type const& physical_machine_controller(physical_machine_identifier_type id) const
 	{
-		return *(pm_ctrls_[id]);
+		// pre: id must be a valid physical machine identifier.
+		DCS_ASSERT(
+			pm_ctrls_.count(id) > 0,
+			throw ::std::invalid_argument("[dcs::eesim::physical_machine_controller] Invalid physical machine identifier.")
+		);
+
+		return *(pm_ctrls_.at(id));
 	}
 
 
 	public: physical_machine_controller_type& physical_machine_controller(physical_machine_identifier_type id)
 	{
+		// pre: id must be a valid physical machine identifier.
+		DCS_ASSERT(
+			pm_ctrls_.count(id) > 0,
+			throw ::std::invalid_argument("[dcs::eesim::physical_machine_controller] Invalid physical machine identifier.")
+		);
+
 		return *(pm_ctrls_[id]);
 	}
 
 	public: physical_machine_controller_pointer physical_machine_controller_ptr(physical_machine_identifier_type id) const
 	{
-		return pm_ctrls_[id];
+		// pre: id must be a valid physical machine identifier.
+		DCS_ASSERT(
+			pm_ctrls_.count(id) > 0,
+			throw ::std::invalid_argument("[dcs::eesim::physical_machine_controller_ptr] Invalid physical machine identifier.")
+		);
+
+		return pm_ctrls_.at(id);
 	}
 
 
 	public: physical_machine_controller_pointer physical_machine_controller_ptr(physical_machine_identifier_type id)
 	{
+		// pre: id must be a valid physical machine identifier.
+		DCS_ASSERT(
+			pm_ctrls_.count(id) > 0,
+			throw ::std::invalid_argument("[dcs::eesim::physical_machine_controller_ptr] Invalid physical machine identifier.")
+		);
+
 		return pm_ctrls_[id];
 	}
 
 
 	public: application_controller_type const& application_controller(application_identifier_type id) const
 	{
-		return *(app_ctrls_[id]);
+		// pre: id must be a valid application identifier.
+		DCS_ASSERT(
+			app_ctrls_.count(id) > 0,
+			throw ::std::invalid_argument("[dcs::eesim::application_controller] Invalid application identifier.")
+		);
+
+		return *(app_ctrls_.at(id));
 	}
 
 
 	public: application_controller_type& application_controller(application_identifier_type id)
 	{
+		// pre: id must be a valid application identifier.
+		DCS_ASSERT(
+			app_ctrls_.count(id) > 0,
+			throw ::std::invalid_argument("[dcs::eesim::application_controller] Invalid application identifier.")
+		);
+
 		return *(app_ctrls_[id]);
 	}
 
 
 	public: application_controller_pointer application_controller_ptr(application_identifier_type id) const
 	{
-		return app_ctrls_[id];
+		// pre: id must be a valid application identifier.
+		DCS_ASSERT(
+			app_ctrls_.count(id) > 0,
+			throw ::std::invalid_argument("[dcs::eesim::application_controller_ptr] Invalid application identifier.")
+		);
+
+		return app_ctrls_.at(id);
 	}
 
 
 	public: application_controller_pointer application_controller_ptr(application_identifier_type id)
 	{
+		// pre: id must be a valid application identifier.
+		DCS_ASSERT(
+			app_ctrls_.count(id) > 0,
+			throw ::std::invalid_argument("[dcs::eesim::application_controller_ptr] Invalid application identifier.")
+		);
+
 		return app_ctrls_[id];
 	}
 
 
 	public: ::std::vector<application_pointer> applications() const
 	{
-		return apps_;
+		typedef ::std::vector<application_pointer> result_container;
+		typedef typename application_container::const_iterator app_iterator;
+
+		result_container apps;
+
+		app_iterator end_it(apps_.end());
+		for (app_iterator it = apps_.begin(); it != end_it; ++it)
+		{
+			application_pointer ptr_app(it->second);
+
+			// check: paranoid check
+			DCS_DEBUG_ASSERT( ptr_app );
+
+			apps.push_back(ptr_app);
+		}
+
+		return apps;
+	}
+
+
+	public: ::std::vector<application_pointer> active_applications() const
+	{
+		typedef ::std::vector<application_pointer> result_container;
+		typedef typename application_container::const_iterator app_iterator;
+
+		result_container apps;
+
+		app_iterator end_it(apps_.end());
+		for (app_iterator it = apps_.begin(); it != end_it; ++it)
+		{
+			application_pointer ptr_app(it->second);
+
+			// check: paranoid check
+			DCS_DEBUG_ASSERT( ptr_app );
+
+			if (this->inhibited_application(ptr_app->id()))
+			{
+				continue;
+			}
+
+			apps.push_back(ptr_app);
+		}
+
+		return apps;
 	}
 
 
@@ -313,34 +472,42 @@ class data_center
 		// pre: app_id must be a valid ID and the related application pointer
 		//      must be valid as well.
 		DCS_ASSERT(
-				static_cast<application_identifier_type>(apps_.size()) > app_id
+				apps_.count(app_id) > 0
 				&&
-				apps_[app_id],
+				apps_.at(app_id),
 				throw ::std::invalid_argument("[dcs::eesim::data_center::deploy_application] Invalid application identifier.")
 			);
 
+::std::cerr << "[data_center] BEGIN Deploy application: " << apps_.at(app_id) << ::std::endl;//XXX
 		if (deployed(app_id))
 		{
 			return;
 		}
 
-		uint_type ntiers = apps_[app_id]->num_tiers();
+		uint_type ntiers = apps_.at(app_id)->num_tiers();
 		for (uint_type t = 0; t < ntiers; ++t)
 		{
 			application_tier_pointer ptr_tier(apps_[app_id]->tier(t));
 
 			::std::string vm_name = std::string("VM for ") + ptr_tier->name();
 
-			virtual_machine_pointer ptr_vm;
+			virtual_machine_pointer ptr_vm(new virtual_machine_type(vm_name));
 
-			ptr_vm = ::dcs::make_shared<virtual_machine_type>(vm_name);
-			ptr_vm->id(vms_.size());
 			ptr_vm->guest_system(ptr_tier);
-			vms_.push_back(ptr_vm);
-			deployed_apps_[app_id].push_back(ptr_vm->id());
+
+			virtual_machine_identifier_type id;
+
+			id = registry<traits_type>::instance().virtual_machine_id_generator()();
+
+			vms_[id] = ptr_vm;
+::std::cerr << "[data_center] Added VIRTUAL-MACHINE: " << *ptr_vm << " (" << ptr_vm << ")" << ::std::endl;///XXX
+			ptr_vm->id(id);
+::std::cerr << "[data_center] Change ID to VIRTUAL-MACHINE: " << *ptr_vm << " (" << ptr_vm << ")" << ::std::endl;///XXX
+			deployed_apps_[app_id].insert(id);
 			apps_[app_id]->simulation_model().tier_virtual_machine(ptr_vm);
 			//ptr_tier->virtual_machine(ptr_vm);
 		}
+::std::cerr << "[data_center] END Deploy application: " << apps_.at(app_id) << ::std::endl;//XXX
 	}
 
 
@@ -349,15 +516,15 @@ class data_center
 		// pre: app_id must be a valid ID and the related application pointer
 		//      must be valid as well.
 		DCS_ASSERT(
-				static_cast<application_identifier_type>(apps_.size()) > app_id
+				apps_.count(app_id) > 0
 				&&
-				apps_[app_id],
+				apps_.at(app_id),
 				throw ::std::invalid_argument("[dcs::eesim::data_center::undeploy_application] Invalid application identifier.")
 			);
 
 		typedef typename deployed_application_container::const_iterator app_iterator;
 
-::std::cerr << "Undeploying Application: " << app_id << ::std::endl;//XXX
+::std::cerr << "[data_center] BEGIN Undeploy application: " << apps_.at(app_id) << ::std::endl;//XXX
 		app_iterator app_it = deployed_apps_.find(app_id);
 
 		// pre: app_id must identify an already deployed application
@@ -374,20 +541,22 @@ class data_center
 			virtual_machine_identifier_type vm_id(*vm_it);
 
 			// check: make sure vm_id is a valid VM identifier.
-			DCS_DEBUG_ASSERT( vm_id < static_cast<virtual_machine_identifier_type>(vms_.size()) );
+			DCS_DEBUG_ASSERT( vms_.count(vm_id) > 0 );
+			// check: make sure vm_id refer to a valid VM
+			DCS_DEBUG_ASSERT( vms_.at(vm_id) );
 			// check: double check on VM identifier.
-			DCS_DEBUG_ASSERT( vms_[vm_id]->id() == vm_id );
+			DCS_DEBUG_ASSERT( vms_.at(vm_id)->id() == vm_id );
 
 			// Displace this VM
-			displace_virtual_machine(vms_[vm_id]);
+			displace_virtual_machine(vms_.at(vm_id));
 
 			// Remove from the VM list
-			vms_.erase(vms_.begin()+vm_id);
+			vms_.erase(vm_id);
 		}
 
 		// Undeploy the application
 		deployed_apps_.erase(app_id);
-::std::cerr << "Undeployed Application: " << app_id << ::std::endl;//XXX
+::std::cerr << "[data_center] END Undeploy application: " << apps_.at(app_id) << ::std::endl;//XXX
 	}
 
 
@@ -396,9 +565,9 @@ class data_center
 		// pre: app_id must be a valid ID and the related application pointer
 		//      must be valid as well.
 		DCS_ASSERT(
-				static_cast<application_identifier_type>(apps_.size()) > id
+				apps_.count(id) > 0
 				&&
-				apps_[id],
+				apps_.at(id),
 				throw ::std::invalid_argument("[dcs::eesim::data_center::deployed] Invalid application identifier.")
 			);
 
@@ -427,19 +596,72 @@ class data_center
 
 	public: virtual_machine_pointer virtual_machine_ptr(virtual_machine_identifier_type id) const
 	{
-		return vms_[id];
+		// pre: id must be a valid VM id
+		DCS_ASSERT(
+				vms_.count(id) > 0,
+				DCS_EXCEPTION_THROW( ::std::invalid_argument, "Invalid virtual machine identifier." )
+			);
+
+		return vms_.at(id);
 	}
 
 
 	public: virtual_machine_pointer virtual_machine_ptr(virtual_machine_identifier_type id)
 	{
+		// pre: id must be a valid VM id
+		DCS_ASSERT(
+				vms_.count(id) > 0,
+				DCS_EXCEPTION_THROW( ::std::invalid_argument, "Invalid virtual machine identifier." )
+			);
+
 		return vms_[id];
 	}
 
 
 	public: ::std::vector<virtual_machine_pointer> virtual_machines() const
 	{
-		return vms_;
+		typedef ::std::vector<virtual_machine_pointer> result_container;
+		typedef typename virtual_machine_container::const_iterator vm_iterator;
+
+		result_container vms;
+		vm_iterator end_it(vms_.end());
+		for (vm_iterator it = vms_.begin(); it != end_it; ++it)
+		{
+			virtual_machine_pointer ptr_vm(it->second);
+
+			// check: paranoid check
+			DCS_DEBUG_ASSERT( ptr_vm );
+
+			vms.push_back(ptr_vm);
+		}
+
+		return vms;
+	}
+
+
+	public: ::std::vector<virtual_machine_pointer> active_virtual_machines() const
+	{
+		typedef ::std::vector<virtual_machine_pointer> result_container;
+		typedef typename virtual_machine_container::const_iterator vm_iterator;
+
+		result_container vms;
+		vm_iterator end_it(vms_.end());
+		for (vm_iterator it = vms_.begin(); it != end_it; ++it)
+		{
+			virtual_machine_pointer ptr_vm(it->second);
+
+			// check: paranoid check
+			DCS_DEBUG_ASSERT( ptr_vm );
+
+			if (this->inhibited_virtual_machine(ptr_vm->id()))
+			{
+				continue;
+			}
+
+			vms.push_back(ptr_vm);
+		}
+
+		return vms;
 	}
 
 
@@ -462,11 +684,14 @@ class data_center
 			virtual_machine_identifier_type vm_id(*vm_it);
 
 			// check: make sure vm_id is a valid VM identifier.
-			DCS_DEBUG_ASSERT( vm_id < static_cast<virtual_machine_identifier_type>(vms_.size()) );
+			DCS_DEBUG_ASSERT( vms_.count(vm_id) > 0 );
+			// check: make sure vm_id refer to a valid VM
+			DCS_DEBUG_ASSERT( vms_.at(vm_id) );
 			// check: double check on VM identifier.
-			DCS_DEBUG_ASSERT( vms_[vm_id]->id() == vm_id );
+			DCS_DEBUG_ASSERT( vms_.at(vm_id)->id() == vm_id );
 
-			vms.push_back(vms_[vm_id]);
+
+			vms.push_back(vms_.at(vm_id));
 		}
 
 		return vms;
@@ -534,7 +759,6 @@ class data_center
 		{
 			ptr_pm->power_on();
 		}
-::std::cerr << "DATA CENTER MIGRATING VM: " << *ptr_vm << " FROM PM ID: " << ptr_vm->vmm().hosting_machine().id() << " TO PM ID: " << ptr_pm->id() << ::std::endl;
 		// Peform migration
 		if (ptr_vm->vmm().hosting_machine().id() != ptr_pm->id())
 		{
@@ -558,28 +782,32 @@ class data_center
 				DCS_EXCEPTION_THROW( ::std::invalid_argument, "Invalid VM pointer." )
 			);
 
-::std::cerr << "Displacing VM " << *ptr_vm << ::std::endl;//XXX
 		typedef typename virtual_machines_placement_type::const_iterator iterator;
 		iterator it = placement_.find(*ptr_vm);
 		if (it != placement_.end())
 		{
 			// safety-check: the identifier of the input VM must be the same of
 			//               the one of the retrieved VM.
-			DCS_DEBUG_ASSERT( ptr_vm->id() == it->first.first );
+			DCS_DEBUG_ASSERT( ptr_vm->id() == placement_.vm_id(it) );
 
 			if (power_off)
 			{
-::std::cerr << "Powering off" << ::std::endl;//XXX
-				physical_machine_identifier_type pm_id(it->first.second);
+				physical_machine_identifier_type pm_id(placement_.pm_id(it));
+
+				// paranoid-check: existence
+				DCS_DEBUG_ASSERT( pms_.count(pm_id) > 0 );
+
 				physical_machine_pointer ptr_pm(pms_[pm_id]);
+
+				// paranoid-check: null
+				DCS_DEBUG_ASSERT( ptr_pm );
 
 				ptr_pm->vmm().power_off(ptr_vm);
 				ptr_pm->vmm().destroy_domain(ptr_vm);
-::std::cerr << "Powered off" << ::std::endl;//XXX
 			}
+
 			placement_.displace(*ptr_vm);
 		}
-::std::cerr << "Displaced VM " << *ptr_vm << ::std::endl;//XXX
 	}
 
 
@@ -593,11 +821,26 @@ class data_center
 			{
 				virtual_machine_identifier_type vm_id(placement_.vm_id(it));
 				physical_machine_identifier_type pm_id(placement_.pm_id(it));
-				physical_machine_pointer ptr_pm(pms_[pm_id]);
-				virtual_machine_pointer ptr_vm(vms_[vm_id]);
 
-				pms_[pm_id]->vmm().power_off(ptr_vm);
-				pms_[pm_id]->vmm().destroy_domain(ptr_vm);
+				// paranoid-check: existence
+				DCS_DEBUG_ASSERT( pms_.count(pm_id) > 0 );
+				// paranoid-check: existence
+				DCS_DEBUG_ASSERT( vms_.count(vm_id) > 0 );
+
+				physical_machine_pointer ptr_pm(pms_.at(pm_id));
+				virtual_machine_pointer ptr_vm(vms_.at(vm_id));
+
+				// paranoid-check: null
+				DCS_DEBUG_ASSERT( ptr_pm );
+				// paranoid-check: double check
+				DCS_DEBUG_ASSERT( ptr_pm->id() == pm_id );
+				// paranoid-check: null
+				DCS_DEBUG_ASSERT( ptr_vm );
+				// paranoid-check: double check
+				DCS_DEBUG_ASSERT( ptr_vm->id() == vm_id );
+
+				ptr_pm->vmm().power_off(ptr_vm);
+				ptr_pm->vmm().destroy_domain(ptr_vm);
 //				placement_.displace(*ptr_vm);
 			}
 		}
@@ -619,24 +862,20 @@ class data_center
 
 		uint_type started_apps(0);
 
-::std::cerr << "[data_center>> Starting Apps" << ::std::endl;//XXX
 		app_iterator app_end_it(deployed_apps_.end());
 		for (app_iterator app_it(deployed_apps_.begin()); app_it != app_end_it; ++app_it)
 		{
 			application_identifier_type app_id(app_it->first);
-::std::cerr << "[data_center> Starting App: " << app_id << ::std::endl;//XXX
 
 			bool started;
 
 			started = start_application(app_id);
-::std::cerr << "[data_center> Started App? " << ::std::boolalpha << started << ::std::endl;//XXX
 
 			if (started)
 			{
 				++started_apps;
 			}
 		}
-::std::cerr << "[data_center>> Started Apps: " << started_apps << ::std::endl;//XXX
 
 		return started_apps;
 	}
@@ -644,44 +883,75 @@ class data_center
 
 	public: bool start_application(application_identifier_type app_id)
 	{
-		typedef typename deployed_application_container::const_iterator app_iterator;
-		typedef typename deployed_application_vm_container::const_iterator vm_iterator;
+		// pre: id must be a valid application identifier
+		DCS_ASSERT(
+				apps_.count(app_id) > 0,
+				DCS_EXCEPTION_THROW( ::std::invalid_argument, "Invalid application identifier" )
+			);
+		DCS_ASSERT(
+				deployed_apps_.count(app_id) > 0,
+				DCS_EXCEPTION_THROW( ::std::invalid_argument, "Invalid application identifier" )
+			);
 
-		app_iterator app_it(deployed_apps_.find(app_id));
-		if (app_it == deployed_apps_.end())
-		{
-			throw ::std::invalid_argument("[dcs::eesim::start_application] Invalid application identifier.");
-		}
-
+::std::cerr << "[data_center] BEGIN Start application: " << *(apps_.at(app_id)) << ::std::endl;//XXX
 		bool startable(true);
 
-		vm_iterator vm_end_it(app_it->second.end());
-		for (vm_iterator vm_it = app_it->second.begin(); startable && vm_it != vm_end_it; ++vm_it)
+		if (!this->inhibited_application(app_id))
 		{
-			startable = placement_.placed(*vm_it);
-		}
+			typedef typename deployed_application_container::const_iterator app_iterator;
+			typedef typename deployed_application_vm_container::const_iterator vm_iterator;
 
-		if (startable)
-		{
-			typedef typename virtual_machines_placement_type::const_iterator vm_placement_iterator;
-			::std::vector<virtual_machine_pointer> app_vms;
-			for (vm_iterator vm_it = app_it->second.begin(); vm_it != vm_end_it; ++vm_it)
+			app_iterator app_it(deployed_apps_.find(app_id));
+
+			vm_iterator vm_end_it(app_it->second.end());
+			for (vm_iterator vm_it = app_it->second.begin(); startable && vm_it != vm_end_it; ++vm_it)
 			{
-				vm_placement_iterator vm_place_it(placement_.find(*vm_it));
-				physical_machine_pointer ptr_pm(pms_[placement_.pm_id(vm_place_it)]);
-				virtual_machine_pointer ptr_vm(vms_[placement_.vm_id(vm_place_it)]);
-				ptr_pm->vmm().power_on(ptr_vm);
-//				virtual_machine_pointer ptr_vm(vms_[*vm_it]);
-//				ptr_vm->power_on();
-				app_vms.push_back(ptr_vm);
+				startable = placement_.placed(*vm_it);
 			}
-			this->application_ptr(app_id)->start(app_vms.begin(), app_vms.end());
+
+			if (startable)
+			{
+	//			this->inhibit_application(app_id, false);
+
+				typedef typename virtual_machines_placement_type::const_iterator vm_placement_iterator;
+				::std::vector<virtual_machine_pointer> app_vms;
+				for (vm_iterator vm_it = app_it->second.begin(); vm_it != vm_end_it; ++vm_it)
+				{
+					vm_placement_iterator vm_place_it(placement_.find(*vm_it));
+					physical_machine_pointer ptr_pm(pms_[placement_.pm_id(vm_place_it)]);
+					virtual_machine_pointer ptr_vm(vms_.at(placement_.vm_id(vm_place_it)));
+
+					// paranoid-check: null
+					DCS_DEBUG_ASSERT( ptr_pm );
+					// paranoid-check: null
+					DCS_DEBUG_ASSERT( ptr_vm );
+
+					ptr_pm->vmm().power_on(ptr_vm);
+//					virtual_machine_pointer ptr_vm(vms_[*vm_it]);
+//					ptr_vm->power_on();
+					app_vms.push_back(ptr_vm);
+				}
+				this->application_ptr(app_id)->start(app_vms.begin(), app_vms.end());
+			}
+			else
+			{
+				::std::ostringstream oss;
+				oss << "Application " << app_id << " '" << *(apps_.at(app_id)) << "' cannot be started: at least one VM has not been placed.";
+
+				log_warn(DCS_EESIM_LOGGING_AT, oss.str());
+			}
 		}
 		else
 		{
-			::std::clog << "[Warning] Application " << app_id << " '" << *(apps_[app_id]) << "' cannot be started: at least one VM has not been placed." << ::std::endl;
+			startable = false;
+
+			::std::ostringstream oss;
+			oss << "Application " << app_id << " '" << *(apps_.at(app_id)) << "' cannot be started because it has been inhibited.";
+
+			log_warn(DCS_EESIM_LOGGING_AT, oss.str());
 		}
 
+::std::cerr << "[data_center] END Start application: " << *(apps_.at(app_id)) << ::std::endl;//XXX
 		return startable;
 	}
 
@@ -714,38 +984,98 @@ class data_center
 
 	public: bool stop_application(application_identifier_type app_id)
 	{
-		typedef typename deployed_application_container::const_iterator app_iterator;
-		typedef typename deployed_application_vm_container::const_iterator vm_iterator;
+		// pre: id must be a valid application identifier
+		DCS_ASSERT(
+				apps_.count(app_id) > 0,
+				DCS_EXCEPTION_THROW( ::std::invalid_argument, "Invalid application identifier" )
+			);
+		DCS_ASSERT(
+				deployed_apps_.count(app_id) > 0,
+				DCS_EXCEPTION_THROW( ::std::invalid_argument, "Invalid application identifier" )
+			);
 
-		app_iterator app_it(deployed_apps_.find(app_id));
-		if (app_it == deployed_apps_.end())
-		{
-			throw ::std::invalid_argument("[dcs::eesim::stop_application] Invalid application identifier.");
-		}
-
+::std::cerr << "[data_center] BEGIN Stop application: " << *(apps_.at(app_id)) << ::std::endl;//XXX
 		bool stoppable(true);
 
-		vm_iterator vm_end_it(app_it->second.end());
-		for (vm_iterator vm_it = app_it->second.begin(); stoppable && vm_it != vm_end_it; ++vm_it)
+		if (!this->inhibited_application(app_id))
 		{
-			stoppable = placement_.placed(*vm_it);
-		}
+			typedef typename deployed_application_container::const_iterator app_iterator;
+			typedef typename deployed_application_vm_container::const_iterator vm_iterator;
 
-		if (stoppable)
-		{
-			typedef typename virtual_machines_placement_type::const_iterator vm_placement_iterator;
-			for (vm_iterator vm_it = app_it->second.begin(); vm_it != vm_end_it; ++vm_it)
+			app_iterator app_it(deployed_apps_.find(app_id));
+
+			vm_iterator vm_end_it(app_it->second.end());
+			for (vm_iterator vm_it = app_it->second.begin(); stoppable && vm_it != vm_end_it; ++vm_it)
 			{
-				vms_[*vm_it]->power_off();
+				stoppable = placement_.placed(*vm_it);
 			}
-			this->application_ptr(app_id)->stop();
+
+			if (stoppable)
+			{
+				typedef typename virtual_machines_placement_type::const_iterator vm_placement_iterator;
+				for (vm_iterator vm_it = app_it->second.begin(); vm_it != vm_end_it; ++vm_it)
+				{
+					// paranoid-check: existence
+					DCS_DEBUG_ASSERT( vms_.count(*vm_it) > 0 );
+
+					virtual_machine_pointer ptr_vm(vms_.at(*vm_it));
+
+					// paranoid-check: null
+					DCS_DEBUG_ASSERT( ptr_vm );
+
+					//vms_.at(*vm_it)->power_off();
+
+					ptr_vm->vmm().power_off(ptr_vm);
+				}
+				this->application_ptr(app_id)->stop();
+			}
+			else
+			{
+				::std::ostringstream oss;
+				oss << "Application " << app_id << " '" << *(apps_.at(app_id)) << "' cannot be stopped: at least one VM has not been placed.";
+
+				log_warn(DCS_EESIM_LOGGING_AT, oss.str());
+			}
 		}
 		else
 		{
-			::std::clog << "[Warning] Application " << app_id << " '" << *(apps_[app_id]) << "' cannot be stopped: at least one VM has not been placed." << ::std::endl;
+			stoppable = false;
+
+			::std::ostringstream oss;
+			oss << "Application " << app_id << " '" << *(apps_.at(app_id)) << "' cannot be stopped because it has been inhibited.";
+
+			log_warn(DCS_EESIM_LOGGING_AT, oss.str());
 		}
 
+::std::cerr << "[data_center] END Stop application: " << *(apps_.at(app_id)) << ::std::endl;//XXX
 		return stoppable;
+	}
+
+
+	public: void inhibit_application(application_identifier_type id, bool inhibit)
+	{
+		if (inhibit)
+		{
+			inhibited_apps_.insert(id);
+		}
+		else
+		{
+			inhibited_apps_.erase(id);
+		}
+		apps_[id]->simulation_model().enable(!inhibit);
+		app_ctrls_[id]->enable(!inhibit);
+	}
+
+
+	public: bool inhibited_application(application_identifier_type id) const
+	{
+		return inhibited_apps_.count(id) > 0;
+	}
+
+
+	private: bool inhibited_virtual_machine(virtual_machine_identifier_type id) const
+	{
+		return inhibited_apps_.count(vms_.at(id)->guest_system().application().id()) > 0;
 	}
 
 
@@ -794,13 +1124,25 @@ class data_center
 
 	protected: application_pointer application_ptr(application_identifier_type id)
 	{
+		// pre: id must be a valid application identifier
+		DCS_ASSERT(
+				apps_.count(id) > 0,
+				DCS_EXCEPTION_THROW( ::std::invalid_argument, "Invalid application identifier" )
+			);
+
 		return apps_[id];
 	}
 
 
 	protected: application_pointer application_ptr(application_identifier_type id) const
 	{
-		return apps_[id];
+		// pre: id must be a valid application identifier
+		DCS_ASSERT(
+				apps_.count(id) > 0,
+				DCS_EXCEPTION_THROW( ::std::invalid_argument, "Invalid application identifier" )
+			);
+
+		return apps_.at(id);
 	}
 
 
@@ -812,6 +1154,16 @@ class data_center
 								   bool power_on,
 								   bool update_placement)
 	{
+		// pre: ptr_vm must be a valid pointer
+		DCS_DEBUG_ASSERT( ptr_vm );
+		// pre: ptr_vm must refer to a valid VM
+		DCS_DEBUG_ASSERT( vms_.count(ptr_vm->id()) > 0 );
+		// pre: ptr_pm must be a valid pointer
+		DCS_DEBUG_ASSERT( ptr_pm );
+		// pre: ptr_pm must refer to a valid PM
+		DCS_DEBUG_ASSERT( pms_.count(ptr_pm->id()) > 0 );
+
+::std::cerr << "[data_center] BEGIN VM Placement>> VM: " << *ptr_vm << " - PM: " << *ptr_pm << " - SHARE: " << first_share->second << ::std::endl;//XXX
 		if (ptr_pm->power_state() != powered_on_power_status)
 		{
 			ptr_pm->power_on();
@@ -828,31 +1180,16 @@ class data_center
 		{
 			if (placement_.placed(*ptr_vm))
 			{
-				placement_.displace(*ptr_vm);
+				//placement_.displace(*ptr_vm);
+				placement_.replace(*ptr_vm, *ptr_pm, first_share, last_share);
 			}
-			placement_.place(*ptr_vm, *ptr_pm, first_share, last_share);
+			else
+			{
+				placement_.place(*ptr_vm, *ptr_pm, first_share, last_share);
+			}
 		}
-::std::cerr << "PLACEMENT>> VM: " << *ptr_vm << " - PM: " << *ptr_pm << " - SHARE: " << first_share->second << ::std::endl;//XXX
+::std::cerr << "[data_center] END VM Placement>> VM: " << *ptr_vm << " - PM: " << *ptr_pm << " - SHARE: " << first_share->second << ::std::endl;//XXX
 	}
-
-
-//	private: void start_applications()
-//	{
-//		typedef typename application_container::size_type size_type;
-//
-//		size_type n = apps_.size();
-//		for (size_type i = 0; i < n; ++i)
-//		{
-//			application_identifier_type app_id(i);
-//
-//			if (!deployed(app_id))
-//			{
-//				virtual_machine_pointer ptr_vm = deploy_application(app_id);
-//				provision_vm(ptr_vm);
-//				ptr_vm->power_on();
-//			}
-//		}
-//	}
 
 
 	private: application_container apps_;
@@ -862,6 +1199,7 @@ class data_center
 	private: virtual_machine_container vms_;
 	private: virtual_machines_placement_type placement_;
 	private: deployed_application_container deployed_apps_;
+	private: application_id_container inhibited_apps_;
 }; // data_center
 
 
