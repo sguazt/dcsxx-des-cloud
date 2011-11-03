@@ -29,6 +29,7 @@
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
+#include <dcs/des/entity.hpp>
 #include <dcs/eesim/multi_tier_application.hpp>
 #include <dcs/eesim/registry.hpp>
 #include <dcs/functional/bind.hpp>
@@ -40,7 +41,7 @@
 namespace dcs { namespace eesim {
 
 template <typename TraitsT>
-class base_application_controller
+class base_application_controller: public ::dcs::des::entity
 {
 	private: typedef base_application_controller<TraitsT> self_type;
 	public: typedef TraitsT traits_type;
@@ -103,7 +104,7 @@ class base_application_controller
 	{
 		if (this != &rhs)
 		{
-			this->disconnect_from_event_sources();
+			finit();
 
 			ptr_app_ = rhs.ptr_app_;
 			ts_ = rhs.ts_;
@@ -119,7 +120,7 @@ class base_application_controller
 	/// The destructor.
 	public: virtual ~base_application_controller()
 	{
-		this->disconnect_from_event_sources();
+		finit();
 	}
 
 
@@ -187,7 +188,19 @@ class base_application_controller
 
 	private: void init()
 	{
-		this->connect_to_event_sources();
+//		if (this->enabled())
+//		{
+			this->connect_to_event_sources();
+//		}
+	}
+
+
+	private: void finit()
+	{
+//		if (this->enabled())
+//		{
+			this->disconnect_from_event_sources();
+//		}
 	}
 
 
@@ -272,7 +285,10 @@ class base_application_controller
 
 	private: void process_sys_init(des_event_type const& evt, des_engine_context_type& ctx)
 	{
-		schedule_control();
+		if (this->enabled())
+		{
+			schedule_control();
+		}
 
 		do_process_sys_init(evt, ctx);
 	}
@@ -280,7 +296,10 @@ class base_application_controller
 
 	private: void process_control(des_event_type const& evt, des_engine_context_type& ctx)
 	{
-		schedule_control();
+		if (this->enabled())
+		{
+			schedule_control();
+		}
 
 		do_process_control(evt, ctx);
 	}
@@ -289,6 +308,33 @@ class base_application_controller
 
 
 	//@{ Interface Member Functions
+
+	protected: virtual void do_enable(bool flag)
+	{
+		ptr_control_evt_src_->enable(flag);
+
+//		if (flag)
+//		{
+//			if (!this->enabled())
+//			{
+//				connect_to_event_sources();
+//				schedule_control();
+//			}
+//		}
+//		else
+//		{
+//			if (this->enabled())
+//			{
+//				disconnect_from_event_sources();
+//			}
+//		}
+
+		if (flag && !this->enabled())
+		{
+			schedule_control();
+		}
+	}
+
 
 	protected: virtual void do_application(application_pointer const& ptr_app)
 	{
