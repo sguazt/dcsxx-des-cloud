@@ -44,7 +44,7 @@ class first_fit_initial_placement_strategy: public base_initial_placement_strate
 		typedef ::std::map<physical_resource_category,real_type> resource_utilization_map;
 
 		pm_container pms(dc.physical_machines());
-		vm_container vms(dc.virtual_machines());
+		vm_container vms(dc.active_virtual_machines());
 
 DCS_DEBUG_TRACE("BEGIN Initial Placement");//XXX
 DCS_DEBUG_TRACE("#Machines: " << pms.size());//XXX

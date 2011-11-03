@@ -46,7 +46,7 @@ class first_fit_scaleout_initial_placement_strategy: public base_initial_placeme
 		typedef ::std::map<physical_resource_category,real_type> resource_share_map;
 		typedef ::std::map<physical_resource_category,real_type> resource_utilization_map;
 
-		vm_container vms(dc.virtual_machines());
+		vm_container vms(dc.active_virtual_machines());
 
 		pm_container pms(dc.physical_machines());
 
