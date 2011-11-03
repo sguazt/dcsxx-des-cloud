@@ -44,7 +44,7 @@
 //#include <dcs/math/random/any_generator.hpp>
 #include <dcs/math/random.hpp>
 #include <dcs/memory.hpp>
-#ifdef // DCS_DEBUG
+#ifdef DCS_DEBUG
 # if __GNUC__
 #  include <execinfo.h>
 # endif // __GNUC__
@@ -134,6 +134,7 @@ typedef dcs::shared_ptr<des_engine_type> des_engine_pointer;
 typedef dcs::shared_ptr<random_generator_type> random_generator_pointer;
 typedef dcs::eesim::registry<traits_type> registry_type;
 typedef dcs::eesim::multi_tier_application<traits_type> application_type;
+typedef dcs::shared_ptr<application_type> application_pointer;
 typedef dcs::eesim::user_request<traits_type> user_request_type;
 typedef dcs::eesim::virtual_machine<traits_type> virtual_machine_type;
 typedef dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
@@ -1379,11 +1380,11 @@ class base_system_identificator
 	}
 
 
-	public: void identify(application_type& app, signal_generator_pointer const& ptr_sig_gen, uint_type max_num_obs, detail::filter_info<real_type> const& out_filter_info, ::std::vector<real_type> const& init_shares)
+	public: void identify(application_pointer const& ptr_app, signal_generator_pointer const& ptr_sig_gen, uint_type max_num_obs, detail::filter_info<real_type> const& out_filter_info, ::std::vector<real_type> const& init_shares)
 	{
 		// pre: size(init_shares) == number of shares
 		DCS_ASSERT(
-				init_shares.size() == app.num_tiers(),
+				init_shares.size() == ptr_app->num_tiers(),
 				throw ::std::invalid_argument("[base_system_identificator::identify] Wrong size for the initial shares vector.")
 			);
 
@@ -1392,7 +1393,7 @@ class base_system_identificator
 		::std::vector<physical_machine_pointer> pms;
 		::std::vector<virtual_machine_pointer> vms;
 
-		size_type num_tiers(app.num_tiers());
+		size_type num_tiers(ptr_app->num_tiers());
 
 		ptr_sysid_state = ::dcs::make_shared<sysid_state_type>();
 		ptr_sysid_state->num_arrs = uint_type/*zero*/();
@@ -1411,7 +1412,7 @@ class base_system_identificator
 					this,
 					::dcs::functional::placeholders::_1,
 					::dcs::functional::placeholders::_2,
-					app,
+					ptr_app,
 					ptr_sysid_state
 				)
 			);
@@ -1421,7 +1422,7 @@ class base_system_identificator
 					this,
 					::dcs::functional::placeholders::_1,
 					::dcs::functional::placeholders::_2,
-					app,
+					ptr_app,
 					ptr_sysid_state
 				)
 			);
@@ -1437,7 +1438,7 @@ class base_system_identificator
 			physical_machine_pointer ptr_pm;
 
 			::std::ostringstream oss;
-			oss << "Machine for " << app.tier(tier_id)->name();
+			oss << "Machine for " << ptr_app->tier(tier_id)->name();
 
 			ptr_pm = dcs::make_shared<physical_machine_type>(oss.str());
 			ptr_pm->id(pms.size());
@@ -1445,7 +1446,7 @@ class base_system_identificator
 
 			typedef std::vector<reference_resource_type> reference_resource_container;
 			typedef typename reference_resource_container::const_iterator reference_resource_iterator;
-			reference_resource_container reference_resources(app.reference_resources());
+			reference_resource_container reference_resources(ptr_app->reference_resources());
 			reference_resource_iterator ref_res_end_it(reference_resources.end());
 			for (reference_resource_iterator ref_res_it = reference_resources.begin(); ref_res_it != ref_res_end_it; ++ref_res_it)
 			{
@@ -1453,7 +1454,7 @@ class base_system_identificator
 
 				oss.str("");
 				oss.clear();
-				oss << "Reference resource for " << app.tier(tier_id)->name();
+				oss << "Reference resource for " << ptr_app->tier(tier_id)->name();
 
 				ptr_resource = dcs::make_shared<physical_resource_type>(
 								oss.str(),
@@ -1470,7 +1471,7 @@ class base_system_identificator
 
 			oss.str("");
 			oss.clear();
-			oss << "VM for " << app.tier(tier_id)->name();
+			oss << "VM for " << ptr_app->tier(tier_id)->name();
 
 			ptr_vm = dcs::make_shared<virtual_machine_type>(oss.str());
 
@@ -1478,8 +1479,8 @@ class base_system_identificator
 			DCS_DEBUG_ASSERT( ptr_vm );
 
 			ptr_vm->id(vms.size());
-			ptr_vm->guest_system(app.tier(tier_id));
-			app.simulation_model().tier_virtual_machine(ptr_vm);
+			ptr_vm->guest_system(ptr_app->tier(tier_id));
+			ptr_app->simulation_model().tier_virtual_machine(ptr_vm);
 			vms.push_back(ptr_vm);
 
 			// Place the virtual machine on the reference physical machine
@@ -1494,7 +1495,7 @@ class base_system_identificator
 			{
 				physical_resource_category_type category((*res_it)->category());
 
-//				real_type share(app.tier(tier_id)->resource_share(category));
+//				real_type share(ptr_app->tier(tier_id)->resource_share(category));
 //
 //				share = ::std::min(share, (*res_it)->utilization_threshold());
 //				share *= 0.5; // initial share is set to middle-capacity
@@ -1514,64 +1515,64 @@ class base_system_identificator
 			ptr_vm->power_on();
 
 			// Register some DES event hooks for this tier
-			app.simulation_model().request_tier_arrival_event_source(tier_id).connect(
+			ptr_app->simulation_model().request_tier_arrival_event_source(tier_id).connect(
 					::dcs::functional::bind(
 						&self_type::process_tier_request_arrival_event,
 						this,
 						::dcs::functional::placeholders::_1,
 						::dcs::functional::placeholders::_2,
 						tier_id,
-						app,
+						ptr_app,
 						ptr_sysid_state
 					)
 				);
-			app.simulation_model().request_tier_service_event_source(tier_id).connect(
+			ptr_app->simulation_model().request_tier_service_event_source(tier_id).connect(
 					::dcs::functional::bind(
 						&self_type::process_tier_request_service_event,
 						this,
 						::dcs::functional::placeholders::_1,
 						::dcs::functional::placeholders::_2,
 						tier_id,
-						app,
+						ptr_app,
 						ptr_sysid_state
 					)
 				);
-			app.simulation_model().request_tier_departure_event_source(tier_id).connect(
+			ptr_app->simulation_model().request_tier_departure_event_source(tier_id).connect(
 					::dcs::functional::bind(
 						&self_type::process_tier_request_departure_event,
 						this,
 						::dcs::functional::placeholders::_1,
 						::dcs::functional::placeholders::_2,
 						tier_id,
-						app,
+						ptr_app,
 						ptr_sysid_state
 					)
 				);
 		}
 
 		// Register some DES event hooks
-		app.simulation_model().request_arrival_event_source().connect(
+		ptr_app->simulation_model().request_arrival_event_source().connect(
 				::dcs::functional::bind(
 					&self_type::process_request_arrival_event,
 					this,
 					::dcs::functional::placeholders::_1,
 					::dcs::functional::placeholders::_2,
-					app,
+					ptr_app,
 					ptr_sysid_state
 				)
 			);
-		app.simulation_model().request_departure_event_source().connect(
+		ptr_app->simulation_model().request_departure_event_source().connect(
 				::dcs::functional::bind(
 					&self_type::process_request_departure_event,
 					this,
 					::dcs::functional::placeholders::_1,
 					::dcs::functional::placeholders::_2,
-					app,
+					ptr_app,
 					ptr_sysid_state
 				)
 			);
 
-		app.start(vms.begin(), vms.end());
+		ptr_app->start(vms.begin(), vms.end());
 
 		// Register the event for changing resource shares
 		ptr_excite_sys_evt_src_->connect(
@@ -1580,7 +1581,7 @@ class base_system_identificator
 					this,
 					::dcs::functional::placeholders::_1,
 					::dcs::functional::placeholders::_2,
-					app,
+					ptr_app,
 					ptr_sig_gen,
 					ptr_sysid_state
 				)
@@ -1595,59 +1596,59 @@ class base_system_identificator
 		{
 			//::dcs::shared_ptr<request_info_map> ptr_req_info_map(req_info_maps[tier_id]);
 
-			app.simulation_model().request_tier_arrival_event_source(tier_id).disconnect(
+			ptr_app->simulation_model().request_tier_arrival_event_source(tier_id).disconnect(
 					::dcs::functional::bind(
 						&self_type::process_tier_request_arrival_event,
 						this,
 						::dcs::functional::placeholders::_1,
 						::dcs::functional::placeholders::_2,
 						tier_id,
-						app,
+						ptr_app,
 						ptr_sysid_state
 					)
 				);
-			app.simulation_model().request_tier_service_event_source(tier_id).disconnect(
+			ptr_app->simulation_model().request_tier_service_event_source(tier_id).disconnect(
 					::dcs::functional::bind(
 						&self_type::process_tier_request_service_event,
 						this,
 						::dcs::functional::placeholders::_1,
 						::dcs::functional::placeholders::_2,
 						tier_id,
-						app,
+						ptr_app,
 						ptr_sysid_state
 					)
 				);
-			app.simulation_model().request_tier_departure_event_source(tier_id).disconnect(
+			ptr_app->simulation_model().request_tier_departure_event_source(tier_id).disconnect(
 					::dcs::functional::bind(
 						&self_type::process_tier_request_departure_event,
 						this,
 						::dcs::functional::placeholders::_1,
 						::dcs::functional::placeholders::_2,
 						tier_id,
-						app,
+						ptr_app,
 						ptr_sysid_state
 					)
 				);
 		}
 
 		// Deregister some global DES event hooks
-		app.simulation_model().request_arrival_event_source().disconnect(
+		ptr_app->simulation_model().request_arrival_event_source().disconnect(
 				::dcs::functional::bind(
 					&self_type::process_request_arrival_event,
 					this,
 					::dcs::functional::placeholders::_1,
 					::dcs::functional::placeholders::_2,
-					app,
+					ptr_app,
 					ptr_sysid_state
 				)
 			);
-		app.simulation_model().request_departure_event_source().disconnect(
+		ptr_app->simulation_model().request_departure_event_source().disconnect(
 				::dcs::functional::bind(
 					&self_type::process_request_departure_event,
 					this,
 					::dcs::functional::placeholders::_1,
 					::dcs::functional::placeholders::_2,
-					app,
+					ptr_app,
 					ptr_sysid_state
 				)
 			);
@@ -1696,11 +1697,11 @@ class base_system_identificator
 	//@{ Event Handlers
 
 
-	private: void process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_DEBUG_TRACE("BEGIN Process SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");
 
-		do_process_sys_init_event(evt, ctx, app, ptr_sysid_state);
+		do_process_sys_init_event(evt, ctx, ptr_app, ptr_sysid_state);
 
 		schedule_excite_system_event();
 
@@ -1708,35 +1709,35 @@ class base_system_identificator
 	}
 
 
-	private: void process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_DEBUG_TRACE("BEGIN Process SYSTEM-FINALIZATION (Clock: " << ctx.simulated_time() << ")");
 
-		do_process_sys_finit_event(evt, ctx, app, ptr_sysid_state);
+		do_process_sys_finit_event(evt, ctx, ptr_app, ptr_sysid_state);
 
 		DCS_DEBUG_TRACE("END Process SYSTEM-FINALIZATION (Clock: " << ctx.simulated_time() << ")");
 	}
 
 
-	private: void process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_DEBUG_TRACE("BEGIN Process REQUEST-ARRIVAL (Clock: " << ctx.simulated_time() << ")");
 
 		ptr_sysid_state->num_arrs += 1;
 
-		do_process_request_arrival_event(evt, ctx, app, ptr_sysid_state);
+		do_process_request_arrival_event(evt, ctx, ptr_app, ptr_sysid_state);
 
 		DCS_DEBUG_TRACE("END Process REQUEST-ARRIVAL (Clock: " << ctx.simulated_time() << ")");
 	}
 
 
-	private: void process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_DEBUG_TRACE("BEGIN Process REQUEST-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
 
 		ptr_sysid_state->num_deps += 1;
 
-		do_process_request_departure_event(evt, ctx, app, ptr_sysid_state);
+		do_process_request_departure_event(evt, ctx, ptr_app, ptr_sysid_state);
 
 //		if (ptr_sysid_state->num_deps == ptr_sysid_state->max_num_deps)
 //		{
@@ -1747,37 +1748,37 @@ class base_system_identificator
 	}
 
 
-	private: void process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_DEBUG_TRACE("BEGIN Process TIER-REQUEST-ARRIVAL (Clock: " << ctx.simulated_time() << ")");
 
-		do_process_tier_request_arrival_event(evt, ctx, tier_id, app, ptr_sysid_state);
+		do_process_tier_request_arrival_event(evt, ctx, tier_id, ptr_app, ptr_sysid_state);
 
 		DCS_DEBUG_TRACE("END Process TIER-REQUEST-ARRIVAL (Clock: " << ctx.simulated_time() << ")");
 	}
 
 
-	private: void process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_DEBUG_TRACE("BEGIN Process TIER-REQUEST-SERVICE (Clock: " << ctx.simulated_time() << ")");
 
-		do_process_tier_request_service_event(evt, ctx, tier_id, app, ptr_sysid_state);
+		do_process_tier_request_service_event(evt, ctx, tier_id, ptr_app, ptr_sysid_state);
 
 		DCS_DEBUG_TRACE("END Process TIER-REQUEST-SERVICE (Clock: " << ctx.simulated_time() << ")");
 	}
 
 
-	private: void process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_DEBUG_TRACE("BEGIN Process TIER-REQUEST-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
 
-		do_process_tier_request_departure_event(evt, ctx, tier_id, app, ptr_sysid_state);
+		do_process_tier_request_departure_event(evt, ctx, tier_id, ptr_app, ptr_sysid_state);
 
 		DCS_DEBUG_TRACE("END Process TIER-REQUEST-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
 	}
 
 
-	private: void process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_type& app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
+	private: void process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
@@ -1785,12 +1786,12 @@ class base_system_identificator
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Process EXCITE-SYSTEM-EVENT (Clock: " << ctx.simulated_time() << ")");
 
-		size_type num_tiers(app.num_tiers());
+		size_type num_tiers(ptr_app->num_tiers());
 
 		ublas::vector<real_type> u((*ptr_sig_gen)());
 		for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 		{
-			virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+			virtual_machine_pointer ptr_vm(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 
 			// check: paranoid check
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -1804,7 +1805,7 @@ class base_system_identificator
 			for (resource_iterator res_it = resources.begin(); res_it != res_end_it; ++res_it)
 			{
 				physical_resource_category_type category((*res_it)->category());
-				//real_type ref_share(app.tier(tier_id)->resource_share(category));
+				//real_type ref_share(ptr_app->tier(tier_id)->resource_share(category));
 				real_type new_share;
 
 				////FIXME: 0.5 is hard-coded
@@ -1821,7 +1822,7 @@ class base_system_identificator
 			}
 		}
 
-		do_process_excite_system_event(evt, ctx, app, ptr_sig_gen, ptr_sysid_state);
+		do_process_excite_system_event(evt, ctx, ptr_app, ptr_sig_gen, ptr_sysid_state);
 
 		// Reschedule this event
 		schedule_excite_system_event();
@@ -1836,28 +1837,28 @@ class base_system_identificator
 	//@{ Polymorphic Event Handlers
 
 
-	private: virtual void do_process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state) = 0;
+	private: virtual void do_process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state) = 0;
 
 
-	private: virtual void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state) = 0;
+	private: virtual void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state) = 0;
 
 
-	private: virtual void do_process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state) = 0;
+	private: virtual void do_process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state) = 0;
 
 
-	private: virtual void do_process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state) = 0;
+	private: virtual void do_process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state) = 0;
 
 
-	private: virtual void do_process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state) = 0;
+	private: virtual void do_process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state) = 0;
 
 
-	private: virtual void do_process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state) = 0;
+	private: virtual void do_process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state) = 0;
 
 
-	private: virtual void do_process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state) = 0;
+	private: virtual void do_process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state) = 0;
 
 
-	private: virtual void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_type& app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state) = 0;
+	private: virtual void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state) = 0;
 
 
 	//@} Polymorphic Event Handlers
@@ -1915,7 +1916,7 @@ class noagg_measure_noagg_share_siso_system_identificator: public base_system_id
 	}
 
 
-	private: void do_process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
@@ -1923,15 +1924,15 @@ class noagg_measure_noagg_share_siso_system_identificator: public base_system_id
 
 		// Output the preamble
 		::std::cout << "##" << ::std::endl
-					<< "## Application: " << app.name() << ::std::endl
-					<< "## Nr. Tiers: " << app.num_tiers() << ::std::endl
+					<< "## Application: " << ptr_app->name() << ::std::endl
+					<< "## Nr. Tiers: " << ptr_app->num_tiers() << ::std::endl
 					<< "##" << ::std::endl;
 
 		// Output the header
 		::std::cout << "\"tid\",\"rid\",\"arrtime\",\"deptime\"";
 		typedef ::std::vector<typename application_type::reference_physical_resource_type> resource_container;
 		typedef typename resource_container::const_iterator resource_iterator;
-		resource_container resources(app.reference_resources());
+		resource_container resources(ptr_app->reference_resources());
 		resource_iterator end_it(resources.end());
 		uint_type count(0);
 		for (resource_iterator it = resources.begin(); it != end_it; ++it)
@@ -1943,29 +1944,29 @@ class noagg_measure_noagg_share_siso_system_identificator: public base_system_id
 	}
 
 
-	private: void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state) 
+	private: void do_process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state) 
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		// Compute and output the response time and the application resource
 		// share.
@@ -1973,14 +1974,14 @@ class noagg_measure_noagg_share_siso_system_identificator: public base_system_id
 		// share assigned to each tier, where the weight is proportional to the
 		// residence time of the request in each tier.
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 		// - Compute the application-level share
 
 		//typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
 		typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
 
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 		resource_share_map app_share_map;
 
 		for (uint_type tier_id = 0; tier_id < num_tiers; ++tier_id)
@@ -2006,7 +2007,7 @@ class noagg_measure_noagg_share_siso_system_identificator: public base_system_id
 			typedef virtual_machine_type::resource_share_container resource_share_container;
 			typedef resource_share_container::const_iterator resource_share_iterator;
 
-			virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+			virtual_machine_pointer ptr_vm(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 
 			// check: paranoid check
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -2072,11 +2073,11 @@ class noagg_measure_noagg_share_siso_system_identificator: public base_system_id
 	}
 
 
-	private: void do_process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		// Initialize/Update some request info
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 		if (!ptr_sysid_state->req_info_maps[tier_id][req.id()])
 		{
@@ -2101,26 +2102,26 @@ class noagg_measure_noagg_share_siso_system_identificator: public base_system_id
 	}
 
 
-	private: void do_process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( tier_id );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 		// Update some request info and output
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 		sysid_request_info_pointer ptr_req_info(ptr_sysid_state->req_info_maps[tier_id][req.id()]);
 
@@ -2140,7 +2141,7 @@ class noagg_measure_noagg_share_siso_system_identificator: public base_system_id
 		typedef virtual_machine_type::resource_share_container resource_share_container;
 		typedef resource_share_container::const_iterator resource_share_iterator;
 
-		virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+		virtual_machine_pointer ptr_vm(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 
 		// check: paranoid check
 		DCS_DEBUG_ASSERT( ptr_vm );
@@ -2170,11 +2171,11 @@ class noagg_measure_noagg_share_siso_system_identificator: public base_system_id
 	}
 
 
-	private: void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_type& app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sig_gen );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
@@ -2225,7 +2226,7 @@ class noagg_measure_agg_mean_share_siso_system_identificator: public base_system
 	}
 
 
-	private: void do_process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
@@ -2233,15 +2234,15 @@ class noagg_measure_agg_mean_share_siso_system_identificator: public base_system
 
 		// Output the preamble
 		::std::cout << "##" << ::std::endl
-					<< "## Application: " << app.name() << ::std::endl
-					<< "## Nr. Tiers: " << app.num_tiers() << ::std::endl
+					<< "## Application: " << ptr_app->name() << ::std::endl
+					<< "## Nr. Tiers: " << ptr_app->num_tiers() << ::std::endl
 					<< "##" << ::std::endl;
 
 		// Output the header
 		::std::cout << "\"tid\",\"rid\",\"arrtime\",\"deptime\"";
 		typedef ::std::vector<typename application_type::reference_physical_resource_type> resource_container;
 		typedef typename resource_container::const_iterator resource_iterator;
-		resource_container resources(app.reference_resources());
+		resource_container resources(ptr_app->reference_resources());
 		resource_iterator end_it(resources.end());
 		uint_type count(0);
 		for (resource_iterator it = resources.begin(); it != end_it; ++it)
@@ -2253,29 +2254,29 @@ class noagg_measure_agg_mean_share_siso_system_identificator: public base_system
 	}
 
 
-	private: void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state) 
+	private: void do_process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state) 
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		// Compute and output the response time and the application resource
 		// share.
@@ -2283,14 +2284,14 @@ class noagg_measure_agg_mean_share_siso_system_identificator: public base_system
 		// share assigned to each tier, where the weight is proportional to the
 		// residence time of the request in each tier.
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 		// - Compute the application-level share
 
 //		typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
 		typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
 
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 		resource_share_map app_share_map;
 
 		for (uint_type tier_id = 0; tier_id < num_tiers; ++tier_id)
@@ -2316,7 +2317,7 @@ class noagg_measure_agg_mean_share_siso_system_identificator: public base_system
 			typedef virtual_machine_type::resource_share_container resource_share_container;
 			typedef resource_share_container::const_iterator resource_share_iterator;
 
-			virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+			virtual_machine_pointer ptr_vm(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 
 			// check: paranoid check
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -2382,11 +2383,11 @@ class noagg_measure_agg_mean_share_siso_system_identificator: public base_system
 	}
 
 
-	private: void do_process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		// Initialize/Update some request info
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 		if (!ptr_sysid_state->req_info_maps[tier_id][req.id()])
 		{
@@ -2416,7 +2417,7 @@ class noagg_measure_agg_mean_share_siso_system_identificator: public base_system
 		typedef virtual_machine_type::resource_share_container resource_share_container;
 		typedef resource_share_container::const_iterator resource_share_iterator;
 
-		virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+		virtual_machine_pointer ptr_vm(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 
 		// check: paranoid check
 		DCS_DEBUG_ASSERT( ptr_vm );
@@ -2430,26 +2431,26 @@ class noagg_measure_agg_mean_share_siso_system_identificator: public base_system
 	}
 
 
-	private: void do_process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( tier_id );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 		// Update some request info and output
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 		sysid_request_info_pointer ptr_req_info(ptr_sysid_state->req_info_maps[tier_id][req.id()]);
 
@@ -2469,7 +2470,7 @@ class noagg_measure_agg_mean_share_siso_system_identificator: public base_system
 		typedef virtual_machine_type::resource_share_container resource_share_container;
 		typedef resource_share_container::const_iterator resource_share_iterator;
 
-		virtual_machine_pointer ptr_vm = app.simulation_model().tier_virtual_machine(tier_id);
+		virtual_machine_pointer ptr_vm = ptr_app->simulation_model().tier_virtual_machine(tier_id);
 
 		// check: paranoid check
 		DCS_DEBUG_ASSERT( ptr_vm );
@@ -2495,7 +2496,7 @@ class noagg_measure_agg_mean_share_siso_system_identificator: public base_system
 	}
 
 
-	private: void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_type& app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
@@ -2511,10 +2512,10 @@ class noagg_measure_agg_mean_share_siso_system_identificator: public base_system
 		typedef virtual_machine_type::resource_share_container resource_share_container;
 		typedef resource_share_container::const_iterator resource_share_iterator;
 
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 		for (uint_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 		{
-			virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+			virtual_machine_pointer ptr_vm(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 
 			// check: paranoid check
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -2597,7 +2598,7 @@ class noagg_measure_agg_wmean_share_siso_system_identificator: public base_syste
 	}
 
 
-	private: void do_process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
@@ -2605,15 +2606,15 @@ class noagg_measure_agg_wmean_share_siso_system_identificator: public base_syste
 
 		// Output the preamble
 		::std::cout << "##" << ::std::endl
-					<< "## Application: " << app.name() << ::std::endl
-					<< "## Nr. Tiers: " << app.num_tiers() << ::std::endl
+					<< "## Application: " << ptr_app->name() << ::std::endl
+					<< "## Nr. Tiers: " << ptr_app->num_tiers() << ::std::endl
 					<< "##" << ::std::endl;
 
 		// Output the header
 		::std::cout << "\"tid\",\"rid\",\"arrtime\",\"deptime\"";
 		typedef ::std::vector<typename application_type::reference_physical_resource_type> resource_container;
 		typedef typename resource_container::const_iterator resource_iterator;
-		resource_container resources(app.reference_resources());
+		resource_container resources(ptr_app->reference_resources());
 		resource_iterator end_it(resources.end());
 		uint_type count(0);
 		for (resource_iterator it = resources.begin(); it != end_it; ++it)
@@ -2625,29 +2626,29 @@ class noagg_measure_agg_wmean_share_siso_system_identificator: public base_syste
 	}
 
 
-	private: void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state) 
+	private: void do_process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state) 
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		// Compute and output the response time and the application resource
 		// share.
@@ -2655,14 +2656,14 @@ class noagg_measure_agg_wmean_share_siso_system_identificator: public base_syste
 		// share assigned to each tier, where the weight is proportional to the
 		// residence time of the request in each tier.
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 		// - Compute the application-level share
 
 //		typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
 		typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
 
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 		resource_share_map app_share_map;
 
 		for (uint_type tier_id = 0; tier_id < num_tiers; ++tier_id)
@@ -2688,7 +2689,7 @@ class noagg_measure_agg_wmean_share_siso_system_identificator: public base_syste
 			typedef virtual_machine_type::resource_share_container resource_share_container;
 			typedef resource_share_container::const_iterator resource_share_iterator;
 
-			virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+			virtual_machine_pointer ptr_vm(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 
 			// check: paranoid check
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -2754,11 +2755,11 @@ class noagg_measure_agg_wmean_share_siso_system_identificator: public base_syste
 	}
 
 
-	private: void do_process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		// Initialize/Update some request info
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 		if (!ptr_sysid_state->req_info_maps[tier_id][req.id()])
 		{
@@ -2791,7 +2792,7 @@ class noagg_measure_agg_wmean_share_siso_system_identificator: public base_syste
 		typedef virtual_machine_type::resource_share_container resource_share_container;
 		typedef resource_share_container::const_iterator resource_share_iterator;
 
-		virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+		virtual_machine_pointer ptr_vm(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 
 		// check: paranoid check
 		DCS_DEBUG_ASSERT( ptr_vm );
@@ -2807,26 +2808,26 @@ class noagg_measure_agg_wmean_share_siso_system_identificator: public base_syste
 	}
 
 
-	private: void do_process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( tier_id );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 		// Update some request info and output
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 		sysid_request_info_pointer ptr_req_info(ptr_sysid_state->req_info_maps[tier_id][req.id()]);
 
@@ -2848,7 +2849,7 @@ class noagg_measure_agg_wmean_share_siso_system_identificator: public base_syste
 		typedef virtual_machine_type::resource_share_container resource_share_container;
 		typedef resource_share_container::const_iterator resource_share_iterator;
 
-		virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+		virtual_machine_pointer ptr_vm(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 
 		// check: paranoid check
 		DCS_DEBUG_ASSERT( ptr_vm );
@@ -2881,7 +2882,7 @@ class noagg_measure_agg_wmean_share_siso_system_identificator: public base_syste
 	}
 
 
-	private: void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_type& app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
@@ -2892,10 +2893,10 @@ class noagg_measure_agg_wmean_share_siso_system_identificator: public base_syste
 		typedef typename sysid_state_type::request_info_map request_info_map;
 		typedef typename request_info_map::iterator request_info_map_iterator;
 
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 		for (uint_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 		{
-			virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+			virtual_machine_pointer ptr_vm(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 
 			// check: paranoid check
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -2995,24 +2996,24 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 	}
 
 
-	private: void do_process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 
 		// Output the preamble
 		::std::cout << "##" << ::std::endl
-					<< "## Application: " << app.name() << ::std::endl
-					<< "## Nr. Tiers: " << app.num_tiers() << ::std::endl
+					<< "## Application: " << ptr_app->name() << ::std::endl
+					<< "## Nr. Tiers: " << ptr_app->num_tiers() << ::std::endl
 					<< "##" << ::std::endl;
 
 		// Output the header
 		::std::cout << "\"tid\",\"rid\",\"arrtime\",\"deptime\"";
 		typedef ::std::vector<typename application_type::reference_physical_resource_type> resource_container;
 		typedef typename resource_container::const_iterator resource_iterator;
-		resource_container resources(app.reference_resources());
+		resource_container resources(ptr_app->reference_resources());
 		resource_iterator end_it(resources.end());
 		uint_type count(0);
 		for (resource_iterator it = resources.begin(); it != end_it; ++it)
@@ -3033,42 +3034,42 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 	}
 
 
-	private: void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		//DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		//DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		//DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
-		print_data(ctx, app);
+		print_data(ctx, ptr_app);
 	}
 
 
-	private: void do_process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state) 
+	private: void do_process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state) 
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		// Compute the response time but don't print it.
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 
 		// - Compute the application-level response time
 
 		real_type rt(ctx.simulated_time()-req.arrival_time());
 
 		(avg_rt_[num_tiers])(rt);
-//::std::cerr << "[offline_sysid] APP '" << app.id() << " - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[num_tiers].estimate() << ")" << ::std::endl;//XXX
+//::std::cerr << "[offline_sysid] APP '" << ptr_app->id() << " - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[num_tiers].estimate() << ")" << ::std::endl;//XXX
 
 		// - Clean-up memory (this request info)
 
@@ -3085,11 +3086,11 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 	}
 
 
-	private: void do_process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		// Initialize/Update some request info
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 		if (!ptr_sysid_state->req_info_maps[tier_id][req.id()])
 		{
@@ -3110,26 +3111,26 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 	}
 
 
-	private: void do_process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( tier_id );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 		// Update some request info and output
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 		sysid_request_info_pointer ptr_req_info(ptr_sysid_state->req_info_maps[tier_id][req.id()]);
 
@@ -3147,11 +3148,11 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 		real_type rt(ctx.simulated_time()-ptr_req_info_impl->arr_time);
 
 		(avg_rt_[tier_id])(rt);
-//::std::cerr << "[offline_sysid] APP '" << app.id() << " - TIER '" << tier_id << "' - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[tier_id].estimate() << ")" << ::std::endl;//XXX
+//::std::cerr << "[offline_sysid] APP '" << ptr_app->id() << " - TIER '" << tier_id << "' - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[tier_id].estimate() << ")" << ::std::endl;//XXX
 	}
 
 
-	private: void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_type& app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 //		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
@@ -3159,7 +3160,7 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 //::std::cerr << "[offline_sysid] EXCITE SIGNAL [Clock: " << ctx.simulated_time() << "]" << ::std::endl;//XXX
-		print_data(ctx, app);
+		print_data(ctx, ptr_app);
 /*
 
 		//typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
@@ -3168,7 +3169,7 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 		//TODO: make-me a class member parameterizable by the user.
 		const real_type smooth_factor(1.0);
 
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 
 		resource_share_map app_share_map;
 
@@ -3189,7 +3190,7 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 			typedef virtual_machine_type::resource_share_container resource_share_container;
 			typedef resource_share_container::const_iterator resource_share_iterator;
 
-			virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+			virtual_machine_pointer ptr_vm(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 
 			// check: paranoid check
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -3241,7 +3242,7 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 		}
 */
 
-		avg_rt_ = measure_statistic_container(app.num_tiers()+1);
+		avg_rt_ = measure_statistic_container(ptr_app->num_tiers()+1);
 
 		// Update termination sentinel and check for termination condition
 
@@ -3254,13 +3255,13 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 	}
 
 
-	private: void print_data(des_engine_context_type const& ctx, application_type const& app)
+	private: void print_data(des_engine_context_type const& ctx, application_pointer const& ptr_app)
 	{
 		//typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
 		typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
 		typedef typename resource_share_map::const_iterator resource_share_iterator;
 
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 
 		resource_share_map app_share_map;
 
@@ -3393,7 +3394,7 @@ class agg_mean_measure_agg_mean_share_siso_system_identificator: public base_sys
 	}
 
 
-	private: void do_process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
@@ -3401,15 +3402,15 @@ class agg_mean_measure_agg_mean_share_siso_system_identificator: public base_sys
 
 		// Output the preamble
 		::std::cout << "##" << ::std::endl
-					<< "## Application: " << app.name() << ::std::endl
-					<< "## Nr. Tiers: " << app.num_tiers() << ::std::endl
+					<< "## Application: " << ptr_app->name() << ::std::endl
+					<< "## Nr. Tiers: " << ptr_app->num_tiers() << ::std::endl
 					<< "##" << ::std::endl;
 
 		// Output the header
 		::std::cout << "\"tid\",\"rid\",\"arrtime\",\"deptime\"";
 		typedef ::std::vector<typename application_type::reference_physical_resource_type> resource_container;
 		typedef typename resource_container::const_iterator resource_iterator;
-		resource_container resources(app.reference_resources());
+		resource_container resources(ptr_app->reference_resources());
 		resource_iterator end_it(resources.end());
 		uint_type count(0);
 		for (resource_iterator it = resources.begin(); it != end_it; ++it)
@@ -3419,41 +3420,41 @@ class agg_mean_measure_agg_mean_share_siso_system_identificator: public base_sys
 		}
 		::std::cout << ",\"rt\"" << ::std::endl;
 
-        avg_rt_ = measure_statistic_container(app.num_tiers()+1);
-        smooth_avg_rt_ = measure_container(app.num_tiers()+1, 0);
-		avg_shares_ = share_statistic_container(app.num_tiers()+1);
+        avg_rt_ = measure_statistic_container(ptr_app->num_tiers()+1);
+        smooth_avg_rt_ = measure_container(ptr_app->num_tiers()+1, 0);
+		avg_shares_ = share_statistic_container(ptr_app->num_tiers()+1);
 	}
 
 
-	private: void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state) 
+	private: void do_process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state) 
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		// Compute the response time but don't print it.
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 
 		// - Compute the application-level response time
 
@@ -3492,7 +3493,7 @@ class agg_mean_measure_agg_mean_share_siso_system_identificator: public base_sys
 			typedef virtual_machine_type::resource_share_container resource_share_container;
 			typedef resource_share_container::const_iterator resource_share_iterator;
 
-			virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+			virtual_machine_pointer ptr_vm(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 
 			// check: paranoid check
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -3529,11 +3530,11 @@ class agg_mean_measure_agg_mean_share_siso_system_identificator: public base_sys
 	}
 
 
-	private: void do_process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		// Initialize/Update some request info
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 		if (!ptr_sysid_state->req_info_maps[tier_id][req.id()])
 		{
@@ -3557,7 +3558,7 @@ class agg_mean_measure_agg_mean_share_siso_system_identificator: public base_sys
 
 		share_aggregation_info_impl_type& share_aggr_info(::boost::get<share_aggregation_info_impl_type>(ptr_req_info_impl->aggregation_info));
 
-		virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+		virtual_machine_pointer ptr_vm(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 
 		// check: paranoid check
 		DCS_DEBUG_ASSERT( ptr_vm );
@@ -3571,26 +3572,26 @@ class agg_mean_measure_agg_mean_share_siso_system_identificator: public base_sys
 	}
 
 
-	private: void do_process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( tier_id );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 		// Update some request info and output
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 		sysid_request_info_pointer ptr_req_info(ptr_sysid_state->req_info_maps[tier_id][req.id()]);
 
@@ -3618,7 +3619,7 @@ class agg_mean_measure_agg_mean_share_siso_system_identificator: public base_sys
 		typedef virtual_machine_type::resource_share_container resource_share_container;
 		typedef resource_share_container::const_iterator resource_share_iterator;
 
-		virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+		virtual_machine_pointer ptr_vm(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 
 		// check: paranoid check
 		DCS_DEBUG_ASSERT( ptr_vm );
@@ -3632,7 +3633,7 @@ class agg_mean_measure_agg_mean_share_siso_system_identificator: public base_sys
 	}
 
 
-	private: void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_type& app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
@@ -3643,7 +3644,7 @@ class agg_mean_measure_agg_mean_share_siso_system_identificator: public base_sys
 		const real_type smooth_factor(1.0);
 
 		// Output tier-level and application-level execution info
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 		for (uint_type tier_id = 0; tier_id <= num_tiers; ++tier_id)
 		{
 			if (avg_rt_[tier_id].size() == 0)
@@ -3750,7 +3751,7 @@ class agg_mean_measure_agg_wmean_share_siso_system_identificator: public base_sy
 	}
 
 
-	private: void do_process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
@@ -3758,15 +3759,15 @@ class agg_mean_measure_agg_wmean_share_siso_system_identificator: public base_sy
 
 		// Output the preamble
 		::std::cout << "##" << ::std::endl
-					<< "## Application: " << app.name() << ::std::endl
-					<< "## Nr. Tiers: " << app.num_tiers() << ::std::endl
+					<< "## Application: " << ptr_app->name() << ::std::endl
+					<< "## Nr. Tiers: " << ptr_app->num_tiers() << ::std::endl
 					<< "##" << ::std::endl;
 
 		// Output the header
 		::std::cout << "\"tid\",\"rid\",\"arrtime\",\"deptime\"";
 		typedef ::std::vector<typename application_type::reference_physical_resource_type> resource_container;
 		typedef typename resource_container::const_iterator resource_iterator;
-		resource_container resources(app.reference_resources());
+		resource_container resources(ptr_app->reference_resources());
 		resource_iterator end_it(resources.end());
 		uint_type count(0);
 		for (resource_iterator it = resources.begin(); it != end_it; ++it)
@@ -3776,41 +3777,41 @@ class agg_mean_measure_agg_wmean_share_siso_system_identificator: public base_sy
 		}
 		::std::cout << ",\"rt\"" << ::std::endl;
 
-        avg_rt_ = measure_statistic_container(app.num_tiers()+1);
-        smooth_avg_rt_ = measure_container(app.num_tiers()+1, 0);
-		avg_shares_ = share_statistic_container(app.num_tiers()+1);
+        avg_rt_ = measure_statistic_container(ptr_app->num_tiers()+1);
+        smooth_avg_rt_ = measure_container(ptr_app->num_tiers()+1, 0);
+		avg_shares_ = share_statistic_container(ptr_app->num_tiers()+1);
 	}
 
 
-	private: void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state) 
+	private: void do_process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state) 
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		// Compute the response time but don't print it.
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 
 		// - Compute the application-level response time
 
@@ -3849,7 +3850,7 @@ class agg_mean_measure_agg_wmean_share_siso_system_identificator: public base_sy
 //			typedef virtual_machine_type::resource_share_container resource_share_container;
 //			typedef resource_share_container::const_iterator resource_share_iterator;
 //
-//			virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+//			virtual_machine_pointer ptr_vm(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 //
 //			// check: paranoid check
 //			DCS_DEBUG_ASSERT( ptr_vm );
@@ -3897,11 +3898,11 @@ class agg_mean_measure_agg_wmean_share_siso_system_identificator: public base_sy
 	}
 
 
-	private: void do_process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		// Initialize/Update some request info
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 		if (!ptr_sysid_state->req_info_maps[tier_id][req.id()])
 		{
@@ -3930,7 +3931,7 @@ class agg_mean_measure_agg_wmean_share_siso_system_identificator: public base_sy
 
 		share_aggregation_info_impl_type& share_aggr_info(::boost::get<share_aggregation_info_impl_type>(ptr_req_info_impl->aggregation_info));
 
-		virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+		virtual_machine_pointer ptr_vm(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 
 		// check: paranoid check
 		DCS_DEBUG_ASSERT( ptr_vm );
@@ -3946,26 +3947,26 @@ class agg_mean_measure_agg_wmean_share_siso_system_identificator: public base_sy
 	}
 
 
-	private: void do_process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( tier_id );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 		// Update some request info and output
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 		sysid_request_info_pointer ptr_req_info(ptr_sysid_state->req_info_maps[tier_id][req.id()]);
 
@@ -3993,7 +3994,7 @@ class agg_mean_measure_agg_wmean_share_siso_system_identificator: public base_sy
 		typedef virtual_machine_type::resource_share_container resource_share_container;
 		typedef resource_share_container::const_iterator resource_share_iterator;
 
-		virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+		virtual_machine_pointer ptr_vm(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 
 		// check: paranoid check
 		DCS_DEBUG_ASSERT( ptr_vm );
@@ -4012,7 +4013,7 @@ class agg_mean_measure_agg_wmean_share_siso_system_identificator: public base_sy
 	}
 
 
-	private: void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_type& app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
@@ -4030,7 +4031,7 @@ class agg_mean_measure_agg_wmean_share_siso_system_identificator: public base_sy
 		typedef typename resource_share_map::const_iterator resource_share_iterator;
 
 		// Output tier-level and application-level execution info
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 		for (uint_type tier_id = 0; tier_id <= num_tiers; ++tier_id)
 		{
 			if (avg_rt_[tier_id].size() == 0)
@@ -4042,7 +4043,7 @@ class agg_mean_measure_agg_wmean_share_siso_system_identificator: public base_sy
 
 			if (tier_id < num_tiers)
 			{
-				virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+				virtual_machine_pointer ptr_vm(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 
 				// check: paranoid check
 				DCS_DEBUG_ASSERT( ptr_vm );
@@ -4182,17 +4183,17 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 	}
 
 
-	private: void do_process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 
 		// Output the preamble
 		::std::cout << "##" << ::std::endl
-					<< "## Application: " << app.name() << ::std::endl
+					<< "## Application: " << ptr_app->name() << ::std::endl
 					<< "## Nr. Tiers: " << num_tiers << ::std::endl
 					<< "##" << ::std::endl;
 
@@ -4200,7 +4201,7 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 		::std::cout << "\"tid\",\"rid\",\"arrtime\",\"deptime\"";
 		typedef ::std::vector<typename application_type::reference_physical_resource_type> resource_container;
 		typedef typename resource_container::const_iterator resource_iterator;
-		resource_container resources(app.reference_resources());
+		resource_container resources(ptr_app->reference_resources());
 		resource_iterator end_it(resources.end());
 		uint_type count(0);
 		for (resource_iterator it = resources.begin(); it != end_it; ++it)
@@ -4216,8 +4217,8 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 		}
 		::std::cout << ",\"rt\"" << ::std::endl;
 
-        avg_rt_ = measure_statistic_container(app.num_tiers()+1);
-        //smooth_avg_rt_ = measure_container(app.num_tiers()+1, 0);
+        avg_rt_ = measure_statistic_container(ptr_app->num_tiers()+1);
+        //smooth_avg_rt_ = measure_container(ptr_app->num_tiers()+1, 0);
 		filter_avg_rt_ = filter_container(num_tiers+1);
 		for (uint_type tid = 0; tid <= num_tiers; ++tid)
 		{
@@ -4226,42 +4227,42 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 	}
 
 
-	private: void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		//DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		//DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		//DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
-		print_data(ctx, app);
+		print_data(ctx, ptr_app);
 	}
 
 
-	private: void do_process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state) 
+	private: void do_process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state) 
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		// Compute the response time but don't print it.
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 
 		// - Compute the application-level response time
 
 		real_type rt(ctx.simulated_time()-req.arrival_time());
 
 		(avg_rt_[num_tiers])(rt);
-//::std::cerr << "[offline_sysid] APP '" << app.id() << " - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[num_tiers].estimate() << ")" << ::std::endl;//XXX
+//::std::cerr << "[offline_sysid] APP '" << ptr_app->id() << " - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[num_tiers].estimate() << ")" << ::std::endl;//XXX
 
 
 		// - Clean-up memory (this request info)
@@ -4279,11 +4280,11 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 	}
 
 
-	private: void do_process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		// Initialize/Update some request info
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 		if (!ptr_sysid_state->req_info_maps[tier_id][req.id()])
 		{
@@ -4304,26 +4305,26 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 	}
 
 
-	private: void do_process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( tier_id );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 		// Update some request info and output
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 		sysid_request_info_pointer ptr_req_info(ptr_sysid_state->req_info_maps[tier_id][req.id()]);
 
@@ -4341,25 +4342,25 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 		real_type rt(ctx.simulated_time()-ptr_req_info_impl->arr_time);
 
 		(avg_rt_[tier_id])(rt);
-//::std::cerr << "[offline_sysid] APP '" << app.id() << " - TIER '" << tier_id << "' - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[tier_id].estimate() << ")" << ::std::endl;//XXX
+//::std::cerr << "[offline_sysid] APP '" << ptr_app->id() << " - TIER '" << tier_id << "' - Request '" << req.id() << "' --> " << rt << " (" << avg_rt_[tier_id].estimate() << ")" << ::std::endl;//XXX
 	}
 
 
-	private: void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_type& app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 //		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sig_gen );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
-		print_data(ctx, app);
+		print_data(ctx, ptr_app);
 /*
 		typedef ::std::map< ::dcs::eesim::physical_resource_category, ::std::vector<real_type> > resource_share_map;
 
 		//TODO: make-me a class member parameterizable by the user.
 		const real_type smooth_factor(1.0);
 
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 
 		resource_share_map share_map;
 
@@ -4375,7 +4376,7 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 			typedef virtual_machine_type::resource_share_container resource_share_container;
 			typedef resource_share_container::const_iterator resource_share_iterator;
 
-			virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+			virtual_machine_pointer ptr_vm(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 
 			// check: paranoid check
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -4397,7 +4398,7 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 						}
 						else
 						{
-							virtual_machine_pointer ptr_vm2(app.simulation_model().tier_virtual_machine(tier_id));
+							virtual_machine_pointer ptr_vm2(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 
 							// check: paranoid check
 							DCS_DEBUG_ASSERT( ptr_vm2 );
@@ -4454,11 +4455,11 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 */
 
 //::std::cerr << "[offline_sysid] Erasing..." << ::std::endl;//XXX
-//::std::cerr << "[offline_sysid] APP '" << app.id() << " - TIER '" << 0 << "' --> " << avg_rt_[0].estimate() << ::std::endl;//XXX
-//::std::cerr << "[offline_sysid] APP '" << app.id() << " - TIER '" << 1 << "' --> " << avg_rt_[1].estimate() << ::std::endl;//XXX
-//::std::cerr << "[offline_sysid] APP '" << app.id() << " - TIER '" << 2 << "' --> " << avg_rt_[2].estimate() << ::std::endl;//XXX
-//::std::cerr << "[offline_sysid] APP '" << app.id() << " --> " << avg_rt_[3].estimate() << ::std::endl;//XXX
-		avg_rt_ = measure_statistic_container(app.num_tiers()+1);
+//::std::cerr << "[offline_sysid] APP '" << ptr_app->id() << " - TIER '" << 0 << "' --> " << avg_rt_[0].estimate() << ::std::endl;//XXX
+//::std::cerr << "[offline_sysid] APP '" << ptr_app->id() << " - TIER '" << 1 << "' --> " << avg_rt_[1].estimate() << ::std::endl;//XXX
+//::std::cerr << "[offline_sysid] APP '" << ptr_app->id() << " - TIER '" << 2 << "' --> " << avg_rt_[2].estimate() << ::std::endl;//XXX
+//::std::cerr << "[offline_sysid] APP '" << ptr_app->id() << " --> " << avg_rt_[3].estimate() << ::std::endl;//XXX
+		avg_rt_ = measure_statistic_container(ptr_app->num_tiers()+1);
 
 		// Update termination sentinel and check for termination condition
 
@@ -4471,9 +4472,9 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 	}
 
 
-    private: void print_data(des_engine_context_type const& ctx, application_type const& app)
+    private: void print_data(des_engine_context_type const& ctx, application_pointer const& ptr_app)
     {
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 
 		for (uint_type tier_id = 0; tier_id <= num_tiers; ++tier_id)
 		{
@@ -4586,22 +4587,22 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 	}
 
 
-	private: void do_process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app)
+	private: void do_process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 		// Output the preamble
 		::std::cout << "##" << ::std::endl
-					<< "## Application: " << app.name() << ::std::endl
-					<< "## Nr. Tiers: " << app.num_tiers() << ::std::endl
+					<< "## Application: " << ptr_app->name() << ::std::endl
+					<< "## Nr. Tiers: " << ptr_app->num_tiers() << ::std::endl
 					<< "##" << ::std::endl;
 
 		// Output the header
 		::std::cout << "\"tid\",\"rid\",\"arrtime\",\"deptime\"";
 		typedef ::std::vector<typename application_type::reference_physical_resource_type> resource_container;
 		typedef typename resource_container::const_iterator resource_iterator;
-		resource_container resources(app.reference_resources());
+		resource_container resources(ptr_app->reference_resources());
 		resource_iterator end_it(resources.end());
 		uint_type count(0);
 		for (resource_iterator it = resources.begin(); it != end_it; ++it)
@@ -4612,37 +4613,37 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 		::std::cout << ",\"rt\"" << ::std::endl;
 
 #if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
-		avg_rt_ = measure_statistic_container(app.num_tiers()+1);
-		aggavg_rt_ = measure_container(app.num_tiers(), 0);//FIXME: what is the right size: num_tiers or (num_tiers+1)?
+		avg_rt_ = measure_statistic_container(ptr_app->num_tiers()+1);
+		aggavg_rt_ = measure_container(ptr_app->num_tiers(), 0);//FIXME: what is the right size: num_tiers or (num_tiers+1)?
 # if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
-		avg_shares_ = share_statistic_container(app.num_tiers()+1);
+		avg_shares_ = share_statistic_container(ptr_app->num_tiers()+1);
 # endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
 #endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
 	}
 
 
-	private: void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app)
+	private: void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 
 		// empty
 	}
 
 
-	private: void do_process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state) 
+	private: void do_process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state) 
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		// Cases:
 		// - Non-aggregated Measures / Non-aggregated Shares: output the application-level execution info for this request.
@@ -4652,7 +4653,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 
 		// Log the response time of the overall application.
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 #if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
 		::std::cout << "-1" // Fake tier-id representing the entire application
@@ -4663,7 +4664,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 
 		typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
 
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 		resource_share_map app_share_map;
 
 		for (uint_type tier_id = 0; tier_id < num_tiers; ++tier_id)
@@ -4683,7 +4684,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 			typedef virtual_machine_type::resource_share_container resource_share_container;
 			typedef resource_share_container::const_iterator resource_share_iterator;
 
-			virtual_machine_pointer ptr_vm = app.simulation_model().tier_virtual_machine(tier_id);
+			virtual_machine_pointer ptr_vm = ptr_app->simulation_model().tier_virtual_machine(tier_id);
 
 			// check: paranoid check
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -4771,9 +4772,9 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 	}
 
 
-	private: void do_process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 		if (!ptr_sysid_state->req_info_maps[tier_id][req.id()])
 		{
@@ -4787,7 +4788,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 		typedef resource_share_container::const_iterator resource_share_iterator;
 
 		sysid_request_info_impl_pointer ptr_req_info_impl(::dcs::dynamic_pointer_cast<sysid_request_info_impl_type>(ptr_req_info));
-		virtual_machine_pointer ptr_vm = app.simulation_model().tier_virtual_machine(tier_id);
+		virtual_machine_pointer ptr_vm = ptr_app->simulation_model().tier_virtual_machine(tier_id);
 
 		// check: paranoid check
 		DCS_DEBUG_ASSERT( ptr_vm );
@@ -4815,7 +4816,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 	}
 
 
-	private: void do_process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
@@ -4826,11 +4827,11 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 		typedef virtual_machine_type::resource_share_container resource_share_container;
 		typedef resource_share_container::const_iterator resource_share_iterator;
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 		sysid_request_info_pointer ptr_req_info(ptr_sysid_state->req_info_maps[tier_id][req.id()]);
 		sysid_request_info_impl_pointer ptr_req_info_impl(::dcs::dynamic_pointer_cast<sysid_request_info_impl_type>(ptr_req_info));
-		virtual_machine_pointer ptr_vm = app.simulation_model().tier_virtual_machine(tier_id);
+		virtual_machine_pointer ptr_vm = ptr_app->simulation_model().tier_virtual_machine(tier_id);
 
 		// check: paranoid check
 		DCS_DEBUG_ASSERT( ptr_vm );
@@ -4843,7 +4844,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 		}
 #else
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( tier_id );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// Aggregated shares are updated later (see TIER-REQUEST-DEPARTURE event handler)
@@ -4851,7 +4852,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 	}
 
 
-	private: void do_process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
@@ -4862,7 +4863,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 		// - Aggregate Measures / Non-aggregated Shares: update aggregated measure value.
 		// - Aggregate Measures / Aggregated Shares: update aggregated measure and share values.
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 #if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
 		// Output execution info for this request
@@ -4889,7 +4890,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 		typedef virtual_machine_type::resource_share_container resource_share_container;
 		typedef resource_share_container::const_iterator resource_share_iterator;
 
-		virtual_machine_pointer ptr_vm = app.simulation_model().tier_virtual_machine(tier_id);
+		virtual_machine_pointer ptr_vm = ptr_app->simulation_model().tier_virtual_machine(tier_id);
 
 		// check: paranoid check
 		DCS_DEBUG_ASSERT( ptr_vm );
@@ -4982,7 +4983,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 	}
 
 
-	private: void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_type& app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
 	{
 		// Cases:
 		// - Non-aggregated Measures / Non-aggregated Shares: do nothing
@@ -5003,10 +5004,10 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 		typedef virtual_machine_type::resource_share_container resource_share_container;
 		typedef resource_share_container::const_iterator resource_share_iterator;
 
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 		for (uint_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 		{
-			virtual_machine_pointer ptr_vm = app.simulation_model().tier_virtual_machine(tier_id);
+			virtual_machine_pointer ptr_vm = ptr_app->simulation_model().tier_virtual_machine(tier_id);
 
 			// check: paranoid check
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -5060,7 +5061,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 #endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
 
 #if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
-		for (::std::size_t tier_id = 0; tier_id < app.num_tiers(); ++tier_id)
+		for (::std::size_t tier_id = 0; tier_id < ptr_app->num_tiers(); ++tier_id)
 		{
 			if (avg_rt_[tier_id].size() == 0)
 			{
@@ -5075,7 +5076,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 			typedef virtual_machine_type::resource_share_container resource_share_container;
 			typedef resource_share_container::const_iterator resource_share_iterator;
 
-			virtual_machine_pointer ptr_vm = app.simulation_model().tier_virtual_machine(tier_id);
+			virtual_machine_pointer ptr_vm = ptr_app->simulation_model().tier_virtual_machine(tier_id);
 
 			// check: paranoid check
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -5102,14 +5103,14 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 						<< ::std::endl;
 		}
 
-		avg_rt_ = measure_statistic_container(app.num_tiers()+1);
+		avg_rt_ = measure_statistic_container(ptr_app->num_tiers()+1);
 # if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
-		avg_shares_ = share_statistic_container(app.num_tiers()+1);
+		avg_shares_ = share_statistic_container(ptr_app->num_tiers()+1);
 # endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
 #else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sig_gen );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 #endif// DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
@@ -5178,25 +5179,25 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 	}
 
 
-	private: void do_process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app)
+	private: void do_process_sys_init_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 		// Output the preamble
 		::std::cout << "##" << ::std::endl
-					<< "## Application: " << app.name() << ::std::endl
-					<< "## Nr. Tiers: " << app.num_tiers() << ::std::endl
+					<< "## Application: " << ptr_app->name() << ::std::endl
+					<< "## Nr. Tiers: " << ptr_app->num_tiers() << ::std::endl
 					<< "##" << ::std::endl;
 
 		// Output the header
 		::std::cout << "\"tid\",\"rid\",\"arrtime\",\"deptime\"";
 		typedef ::std::vector<typename application_type::reference_physical_resource_type> resource_container;
 		typedef typename resource_container::const_iterator resource_iterator;
-		resource_container resources(app.reference_resources());
+		resource_container resources(ptr_app->reference_resources());
 		resource_iterator end_it(resources.end());
 		uint_type count(0);
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 		for (resource_iterator it = resources.begin(); it != end_it; ++it)
 		{
 			::std::cout << ",\"category_" << count << "\"";
@@ -5218,32 +5219,32 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 	}
 
 
-	private: void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app)
+	private: void do_process_sys_finit_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 
 		// empty
 	}
 
 
-	private: void do_process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state) 
+	private: void do_process_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state) 
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// empty
 	}
 
 
-	private: void do_process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// Cases:
@@ -5254,7 +5255,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 
 		// Log the response time of the overall application.
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 //		uint_type front_tid(0);// We take shares and arrival time referred to the first tier
 #if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
@@ -5267,7 +5268,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		typedef ::std::map<uint_type,real_type> tier_share_map; // tier => share
 		typedef ::std::map< ::dcs::eesim::physical_resource_category, tier_share_map > resource_tier_share_map; // category => {tier => share}
 
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 		resource_tier_share_map app_share_map;
 
 		for (uint_type tier_id = 0; tier_id < num_tiers; ++tier_id)
@@ -5287,7 +5288,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 			typedef virtual_machine_type::resource_share_container resource_share_container;
 			typedef resource_share_container::const_iterator resource_share_iterator;
 
-			virtual_machine_pointer ptr_vm = app.simulation_model().tier_virtual_machine(tier_id);
+			virtual_machine_pointer ptr_vm = ptr_app->simulation_model().tier_virtual_machine(tier_id);
 
 			// check: paranoid check
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -5387,7 +5388,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 //		typedef virtual_machine_type::resource_share_container resource_share_container;
 //		typedef resource_share_container::const_iterator resource_share_iterator;
 //
-//		eirtual_machine_p inter ptr_vm = app.simulation_model().tier_virtual_machine(front_tid);
+//		eirtual_machine_p inter ptr_vm = ptr_app->simulation_model().tier_virtual_machine(front_tid);
 //
 //		// check: paranoid check
 //		DCS_DEBUG_ASSERT( ptr_vm );
@@ -5420,7 +5421,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 //		typedef virtual_machine_type::resource_share_container resource_share_container;
 //		typedef resource_share_container::const_iterator resource_share_iterator;
 //
-//		virtual_machine_pointer ptr_vm = app.simulation_model().tier_virtual_machine(front_tid);
+//		virtual_machine_pointer ptr_vm = ptr_app->simulation_model().tier_virtual_machine(front_tid);
 //
 //		// check: paranoid check
 //		DCS_DEBUG_ASSERT( ptr_vm );
@@ -5453,9 +5454,9 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 	}
 
 
-	private: void do_process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_arrival_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 		if (!ptr_sysid_state->req_info_maps[tier_id][req.id()])
 		{
@@ -5472,10 +5473,10 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		sysid_request_info_impl_pointer ptr_req_info_impl(::dcs::dynamic_pointer_cast<sysid_request_info_impl_type>(ptr_req_info));
 
 		// Update the share stats of each tier for this request
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 		for (uint_type tid = 0; tid < num_tiers; ++tid)
 		{
-			virtual_machine_pointer ptr_vm = app.simulation_model().tier_virtual_machine(tid);
+			virtual_machine_pointer ptr_vm = ptr_app->simulation_model().tier_virtual_machine(tid);
 
 			// check: paranoid check
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -5505,7 +5506,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 	}
 
 
-	private: void do_process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_service_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
@@ -5514,15 +5515,15 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		typedef virtual_machine_type::resource_share_container resource_share_container;
 		typedef resource_share_container::const_iterator resource_share_iterator;
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 		for (uint_type tid = 0; tid < num_tiers; ++tid)
 		{
 			typedef virtual_machine_type::resource_share_container resource_share_container;
 			typedef resource_share_container::const_iterator resource_share_iterator;
 
-			virtual_machine_pointer ptr_vm = app.simulation_model().tier_virtual_machine(tid);
+			virtual_machine_pointer ptr_vm = ptr_app->simulation_model().tier_virtual_machine(tid);
 
 			// check: paranoid check
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -5537,7 +5538,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		}
 #else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( tier_id );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// Aggregated shares are updated later (see TIER-REQUEST-DEPARTURE event handler)
@@ -5545,7 +5546,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 	}
 
 
-	private: void do_process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_type const& app, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_tier_request_departure_event(des_event_type const& evt, des_engine_context_type& ctx, uint_type tier_id, application_pointer const& ptr_app, sysid_state_pointer const& ptr_sysid_state)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
@@ -5556,7 +5557,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		// - Aggregate Measures / Non-aggregated Shares: update aggregated measure value.
 		// - Aggregate Measures / Aggregated Shares: update aggregated measure and share values.
 
-		user_request_type req = app.simulation_model().request_state(evt);
+		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 #if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
 		::std::cout << tier_id
@@ -5581,7 +5582,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		typedef virtual_machine_type::resource_share_container resource_share_container;
 		typedef resource_share_container::const_iterator resource_share_iterator;
 
-		virtual_machine_pointer ptr_vm(app.simulation_model().tier_virtual_machine(tier_id));
+		virtual_machine_pointer ptr_vm(ptr_app->simulation_model().tier_virtual_machine(tier_id));
 
 		// check: paranoid check
 		DCS_DEBUG_ASSERT( ptr_vm );
@@ -5589,7 +5590,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		resource_share_container resource_shares(ptr_vm->resource_shares());
 		resource_share_iterator res_end_it(resource_shares.end());
 #if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES) || defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 #endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
 #if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
 # if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
@@ -5602,7 +5603,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 # if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 			for (uint_type tid = 0; tid < num_tiers; ++tid)
 			{
-				virtual_machine_pointer ptr_vm2(app.simulation_model().tier_virtual_machine(tid));
+				virtual_machine_pointer ptr_vm2(ptr_app->simulation_model().tier_virtual_machine(tid));
 
 				// check: paranoid check
 				DCS_DEBUG_ASSERT( ptr_vm2 );
@@ -5649,12 +5650,12 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 //		{
 //			// Treat the other tiers as a M/M/1 queue
 //			::std::cout << "," << rt
-//						<< "," << detail::relative_deviation(rt, app.performance_model().tier_measure(tier_id, ::dcs::eesim::response_time_performance_measure))
+//						<< "," << detail::relative_deviation(rt, ptr_app->performance_model().tier_measure(tier_id, ::dcs::eesim::response_time_performance_measure))
 //						<< ::std::endl;
 //		}
 //#else
 //		::std::cout << "," << rt
-//					<< "," << detail::relative_deviation(rt, app.performance_model().tier_measure(tier_id, ::dcs::eesim::response_time_performance_measure))
+//					<< "," << detail::relative_deviation(rt, ptr_app->performance_model().tier_measure(tier_id, ::dcs::eesim::response_time_performance_measure))
 //					<< ::std::endl;
 //#endif
 		::std::cout << "," << rt << ::std::endl;
@@ -5715,7 +5716,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 	}
 
 
-	private: void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_type& app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
+	private: void do_process_excite_system_event(des_event_type const& evt, des_engine_context_type& ctx, application_pointer const& ptr_app, signal_generator_pointer const& ptr_sig_gen, sysid_state_pointer const& ptr_sysid_state)
 	{
 		// Cases:
 		// - Non-aggregated Measures / Non-aggregated Shares: do nothing
@@ -5724,7 +5725,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		// - Aggregated Measures / Aggregated Shares: update state information of each running request
 
 #if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES) || defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
-		uint_type num_tiers(app.num_tiers());
+		uint_type num_tiers(ptr_app->num_tiers());
 #endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
 
 #if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
@@ -5743,7 +5744,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		// Iterate over all tiers
 		for (uint_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 		{
-			virtual_machine_pointer ptr_vm = app.simulation_model().tier_virtual_machine(tier_id);
+			virtual_machine_pointer ptr_vm = ptr_app->simulation_model().tier_virtual_machine(tier_id);
 
 			// check: paranoid check
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -5820,7 +5821,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 			typedef virtual_machine_type::resource_share_container resource_share_container;
 			typedef resource_share_container::const_iterator resource_share_iterator;
 
-			virtual_machine_pointer ptr_vm = app.simulation_model().tier_virtual_machine(tier_id);
+			virtual_machine_pointer ptr_vm = ptr_app->simulation_model().tier_virtual_machine(tier_id);
 
 			// check: paranoid check
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -5854,7 +5855,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 #else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( app );
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sig_gen );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 #endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
@@ -6022,7 +6023,7 @@ int main(int argc, char* argv[])
 	app_iterator app_end_it = ptr_conf->data_center().applications().end();
 	for (app_iterator app_it = ptr_conf->data_center().applications().begin(); app_it != app_end_it; ++app_it)
 	{
-		dcs::shared_ptr<application_type> ptr_app;
+		application_pointer ptr_app;
 		dcs::shared_ptr< detail::base_signal_generator<real_type> > ptr_sig_gen;
 
 		// Build the simulator
@@ -6030,7 +6031,7 @@ int main(int argc, char* argv[])
 		// - Create DES engine from configuration
 		ptr_des_eng = detail::make_des_engine<traits_type>();
 		// - Remove all statistics (we don't care of statistics)
-		ptr_des_eng->ignore_statistics();
+		ptr_des_eng->remove_statistics();
 		// - Register to the registry
 		reg.des_engine(ptr_des_eng);
 
@@ -6245,7 +6246,7 @@ int main(int argc, char* argv[])
 
 //		sysid->des_engine(ptr_des_eng);
 //		sysid->uniform_random_generator(ptr_rng);
-		ptr_sysid->identify(*ptr_app, ptr_sig_gen, num_obs, out_filter_info, init_shares);
+		ptr_sysid->identify(ptr_app, ptr_sig_gen, num_obs, out_filter_info, init_shares);
 
 		//// Report statistics
 		//detail::report_stats(::std::cout, ptr_dc);
