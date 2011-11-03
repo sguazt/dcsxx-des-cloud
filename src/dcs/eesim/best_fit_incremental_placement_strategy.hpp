@@ -82,7 +82,6 @@ class best_fit_incremental_placement_strategy: public base_incremental_placement
 		}
 		pms.clear();
 
-::std::cerr << "BEGIN Incremental Placement" << ::std::endl;//XXX
 DCS_DEBUG_TRACE("BEGIN Incremental Placement");//XXX
 DCS_DEBUG_TRACE("#Machines: " << sorted_pms.size());//XXX
 DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
@@ -178,7 +177,6 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 											  utils.end(),
 											  dc);
 DCS_DEBUG_TRACE("Placed: VM(" << ptr_vm->id() << ") -> PM(" << ptr_pm->id() << ") ==> OK? " <<  std::boolalpha << placed);///XXX
-::std::cerr << "Evaluating Placement of VM(" << ptr_vm->id() << ") over PM(" << ptr_pm->id() << ") ==> " <<  (placed ? "YES" : "NO") << ::std::endl;///XXX
 			}
 		}
 
