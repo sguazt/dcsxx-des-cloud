@@ -122,10 +122,10 @@ class virtual_machines_placement
 				// Iterate over each VM deployed on this machine (but the one we
 				// currently want to place)
 
-				vm_pm_pair_type key(make_vm_pm_pair(*pm_vm_it, pm_id));
-
 				if (*pm_vm_it != vm_id)
 				{
+					vm_pm_pair_type key(make_vm_pm_pair(*pm_vm_it, pm_id));
+
 					share_iterator share_end_it(placements_.at(key).end());
 					for (share_iterator share_it = placements_.at(key).begin(); share_it != share_end_it; ++share_it)
 					{
@@ -208,6 +208,11 @@ class virtual_machines_placement
 		physical_machine_identifier_type pm_id(pm.id());
 		virtual_machine_identifier_type vm_id(vm.id());
 
+		if (!placement_need_update(vm, pm, first_share, last_share))
+		{
+			return true;
+		}
+
 		if (!placeable(vm, pm, first_share, last_share, first_util, last_util, dc))
 		{
 			return false;
@@ -278,6 +283,45 @@ class virtual_machines_placement
 	}
 
 
+	public: template <typename ForwardShareIterT, typename ForwardUtilIterT>
+		void replace(virtual_machine_type& vm,
+					 physical_machine_type& pm,
+					 ForwardShareIterT first_share, // <category,share> pair
+					 ForwardShareIterT last_share, // <category,share> pair
+					 ForwardUtilIterT first_util, // <category,utilization> pair
+					 ForwardUtilIterT last_util, // <category,utilization> pair
+					 data_center_type const& dc)
+	{
+		if (!placement_need_update(vm, pm, first_share, last_share))
+		{
+			return;
+		}
+
+		displace(vm);
+
+		if (!try_place(vm, pm, first_share, last_share, first_util, last_util, dc))
+		{
+			throw ::std::runtime_error("[dcs::eesim::virtual_machines_placement::replace] Tried to place an unplaceable VM.");
+		}
+	}
+
+
+	public: template <typename ForwardIterT>
+		void replace(virtual_machine_type& vm,
+					 physical_machine_type& pm,
+					 ForwardIterT first_share, // <category,share> pair
+					 ForwardIterT last_share) // <category,share> pair
+	{
+		resource_utilization_map utils_map;
+		replace(vm, pm,
+				first_share,
+				last_share,
+				utils_map.begin(),
+				utils_map.end(),
+				data_center_type());
+	}
+
+
 	public: void displace(virtual_machine_type const& vm)
 	{
 //		// precondition: virtual machine pointer must be a valid pointer
@@ -297,7 +341,7 @@ class virtual_machines_placement
 		//placements_.erase(::std::make_pair(vm_id, pm_id));
 		placements_.erase(make_vm_pm_pair(vm_id, pm_id));
 		by_vm_idx_.erase(vm_id);
-		by_pm_idx_.erase(pm_id);
+		by_pm_idx_[pm_id].erase(vm_id);
 	}
 
 
@@ -385,28 +429,44 @@ class virtual_machines_placement
 
 	public: iterator find(virtual_machine_identifier_type vm_id)
 	{
-		//return placements_.find(::std::make_pair(vm_id, by_vm_idx_[vm_id]));
+		if (!placed(vm_id))
+		{
+			return placements_.end();
+		}
+
 		return placements_.find(make_vm_pm_pair_by_vm(vm_id));
 	}
 
 
 	public: const_iterator find(virtual_machine_identifier_type vm_id) const
 	{
-		//return placements_.find(::std::make_pair(vm_id, by_vm_idx_[vm_id]));
+		if (!placed(vm_id))
+		{
+			return placements_.end();
+		}
+
 		return placements_.find(make_vm_pm_pair_by_vm(vm_id));
 	}
 
 
 	public: iterator find(virtual_machine_type const& vm)
 	{
-		//return placements_.find(::std::make_pair(vm.id(), by_vm_idx_[vm.id()]));
+		if (!placed(vm))
+		{
+			return placements_.end();
+		}
+
 		return placements_.find(make_vm_pm_pair_by_vm(vm.id()));
 	}
 
 
 	public: const_iterator find(virtual_machine_type const& vm) const
 	{
-		//return placements_.find(::std::make_pair(vm.id(), by_vm_idx_[vm.id()]));
+		if (!placed(vm))
+		{
+			return placements_.end();
+		}
+
 		return placements_.find(make_vm_pm_pair_by_vm(vm.id()));
 	}
 
@@ -507,9 +567,40 @@ class virtual_machines_placement
 	}
 
 
-	private: vm_pm_pair_type make_vm_pm_pair_by_pm(physical_machine_identifier_type pm_id) const
+//[XXX] NO: there is zero or more VMs for a given PM
+//	private: vm_pm_pair_type make_vm_pm_pair_by_pm(physical_machine_identifier_type pm_id) const
+//	{
+//		return ::std::make_pair(by_pm_idx_.at(pm_id), pm_id);
+//	}
+//[/XXX]
+
+
+	private: template <typename ForwardShareIterT>
+		bool placement_need_update(virtual_machine_type& vm,
+								   physical_machine_type& pm,
+								   ForwardShareIterT first_share, // <category,share> pair
+								   ForwardShareIterT last_share) // <category,share> pair
 	{
-		return ::std::make_pair(by_pm_idx_.at(pm_id), pm_id);
+		if (!placed(vm, pm))
+		{
+			return true;
+		}
+
+		vm_pm_pair_type key(make_vm_pm_pair(vm.id(), pm.id()));
+
+		for (ForwardShareIterT share_it = first_share; share_it != last_share; ++share_it)
+		{
+			physical_resource_category category(share_it->first);
+
+			real_type old_share(placements_.at(key).at(category));
+			real_type new_share(share_it->second);
+			if (!::dcs::math::float_traits<real_type>::approximately_equal(old_share, new_share, 1.0e-5))
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 
