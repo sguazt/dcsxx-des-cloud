@@ -4,8 +4,10 @@
 
 #include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
+#include <dcs/des/entity.hpp>
 #include <dcs/eesim/physical_machine.hpp>
 #include <dcs/eesim/virtual_machine.hpp>
+#include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
 
 
@@ -29,7 +31,7 @@ struct virtual_machine_migration_context
 
 
 template <typename TraitsT>
-class base_physical_machine_simulation_model
+class base_physical_machine_simulation_model: public ::dcs::des::entity
 {
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::real_type real_type;
@@ -85,12 +87,16 @@ class base_physical_machine_simulation_model
 	public: void power_on()
 	{
 		do_power_on();
+
+		this->enable(true);
 	}
 
 
 	public: void power_off()
 	{
 		do_power_off();
+
+		this->enable(false);
 	}
 
 
@@ -109,6 +115,18 @@ class base_physical_machine_simulation_model
 	public: void vm_power_off(virtual_machine_pointer const& ptr_vm)
 	{
 		do_vm_power_off(ptr_vm);
+	}
+
+
+	public: void vm_suspend(virtual_machine_pointer const& ptr_vm)
+	{
+		do_vm_suspend(ptr_vm);
+	}
+
+
+	public: void vm_resume(virtual_machine_pointer const& ptr_vm)
+	{
+		do_vm_resume(ptr_vm);
 	}
 
 
@@ -166,6 +184,36 @@ class base_physical_machine_simulation_model
 	}
 
 
+	public: des_event_source_type& vm_suspend_event_source()
+	{
+		return do_vm_suspend_event_source();
+	}
+
+
+	public: des_event_source_type const& vm_suspend_event_source() const
+	{
+		return do_vm_suspend_event_source();
+	}
+
+
+	public: des_event_source_type& vm_resume_event_source()
+	{
+		return do_vm_resume_event_source();
+	}
+
+
+	public: des_event_source_type const& vm_resume_event_source() const
+	{
+		return do_vm_resume_event_source();
+	}
+
+
+	public: des_event_source_type& vm_migrate_event_source()
+	{
+		return do_vm_migrate_event_source();
+	}
+
+
 	public: des_event_source_type const& vm_migrate_event_source() const
 	{
 		return do_vm_migrate_event_source();
@@ -190,6 +238,11 @@ class base_physical_machine_simulation_model
 	}
 
 
+	protected: virtual void do_enable(bool flag)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(flag);
+	}
+
 	private: virtual power_status do_power_state() const = 0;
 
 
@@ -206,6 +259,12 @@ class base_physical_machine_simulation_model
 
 
 	private: virtual void do_vm_power_off(virtual_machine_pointer const& ptr_vm) = 0;
+
+
+	private: virtual void do_vm_suspend(virtual_machine_pointer const& ptr_vm) = 0;
+
+
+	private: virtual void do_vm_resume(virtual_machine_pointer const& ptr_vm) = 0;
 
 
 	private: virtual void do_vm_migrate(virtual_machine_pointer const& ptr_vm, physical_machine_type& pm, bool pm_is_source) = 0;
@@ -233,6 +292,18 @@ class base_physical_machine_simulation_model
 
 
 	private: virtual des_event_source_type const& do_vm_power_off_event_source() const = 0;
+
+
+	private: virtual des_event_source_type& do_vm_suspend_event_source() = 0;
+
+
+	private: virtual des_event_source_type const& do_vm_suspend_event_source() const = 0;
+
+
+	private: virtual des_event_source_type& do_vm_resume_event_source() = 0;
+
+
+	private: virtual des_event_source_type const& do_vm_resume_event_source() const = 0;
 
 
 	private: virtual des_event_source_type& do_vm_migrate_event_source() = 0;
