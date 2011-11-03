@@ -325,11 +325,6 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<
 
 		os << ::std::endl << "-- Virtual Machines --" << ::std::endl;
 
-		os << indent
-		   << "# Migrations: " << ::std::endl;
-		os << indent << indent
-		   << sys.data_center_manager().migration_controller().num_migrations().name() << ": " << sys.data_center_manager().migration_controller().num_migrations() << ::std::endl;
-
 		virtual_machine_container vms = dc.virtual_machines();
 		virtual_machine_iterator vm_end_it = vms.end();
 		for (virtual_machine_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
@@ -532,6 +527,8 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<
 		   << "Consumed Energy: " << tot_energy << ::std::endl;
 		os << indent
 		   << "# VM Migrations: " << sys.data_center_manager().migration_controller().num_migrations() << ::std::endl;
+		os << indent
+		   << "VM Migration Ratio: " << sys.data_center_manager().migration_controller().migration_rate() << ::std::endl;
 	}
 }
 
