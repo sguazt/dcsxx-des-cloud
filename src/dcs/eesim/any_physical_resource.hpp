@@ -29,9 +29,12 @@
 #include <dcs/eesim/base_physical_resource.hpp>
 #include <dcs/eesim/physical_resource_adaptor.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
+#include <dcs/exception.hpp>
+#include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
 #include <dcs/util/holder.hpp>
 #include <iostream>
+#include <stdexcept>
 
 
 namespace dcs { namespace eesim {
@@ -43,6 +46,7 @@ class any_physical_resource
 	public: typedef typename traits_type::real_type real_type;
 
 
+	/// Default constructor.
 	public: any_physical_resource()
 	{
 	}
@@ -59,6 +63,26 @@ class any_physical_resource
 		explicit any_physical_resource(::dcs::util::holder<PhysicalResourceT> const& wrap_resource)
 		: ptr_resource_(new physical_resource_adaptor<PhysicalResourceT>(wrap_resource.get()))
 	{
+	}
+
+
+	/// Copy constructor.
+	private: any_physical_resource(any_physical_resource const& that)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(that);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-constructor not yet implemented." );
+	}
+
+
+	/// Copy assignment.
+	private: any_physical_resource& operator=(any_physical_resource const& rhs)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(rhs);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-assigment not yet implemented." );
 	}
 
 

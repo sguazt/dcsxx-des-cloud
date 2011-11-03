@@ -29,9 +29,12 @@
 #include <dcs/eesim/base_virtual_machine_monitor.hpp>
 #include <dcs/eesim/virtual_machine_monitor_adaptor.hpp>
 #include <dcs/eesim/virtual_machine.hpp>
+#include <dcs/exception.hpp>
+#include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
 #include <dcs/util/holder.hpp>
 #include <iostream>
+#include <stdexcept>
 
 
 namespace dcs { namespace eesim {
@@ -47,6 +50,7 @@ class any_virtual_machine_monitor
 	private: typedef base_virtual_machine_monitor<traits_type> base_virtual_machine_monitor_type;
 
 
+	/// Default constructor.
 	public: any_virtual_machine_monitor()
 	{
 	}
@@ -63,6 +67,26 @@ class any_virtual_machine_monitor
 		any_virtual_machine_monitor(::dcs::util::holder<VirtualMachineMonitorT> const& wrap_vmm)
 		: ptr_vmm_(new virtual_machine_monitor_adaptor<VirtualMachineMonitorT>(wrap_vmm.get()))
 	{
+	}
+
+
+	/// Copy constructor.
+	private: any_virtual_machine_monitor(any_virtual_machine_monitor const& that)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(that);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-constructor not yet implemented." );
+	}
+
+
+	/// Copy assignment.
+	private: any_virtual_machine_monitor& operator=(any_virtual_machine_monitor const& rhs)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(rhs);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-assigment not yet implemented." );
 	}
 
 

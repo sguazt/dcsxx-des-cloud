@@ -34,11 +34,15 @@ class application_controller_triggers
 	public: typedef TraitsT traits_type;
 
 
+	/// Default constructor
 	public: application_controller_triggers()
 	: actual_sla_ko_(false),
 	  predicted_sla_ko_(false)
 	{
 	}
+
+
+	// Compiler-generated copy-constructor/assignment and destructor are fine.
 
 
 	public: void actual_value_sla_ko(bool value)

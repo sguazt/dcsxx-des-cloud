@@ -4,7 +4,10 @@
 
 #include <dcs/eesim/base_application_controller.hpp>
 #include <dcs/eesim/multi_tier_application.hpp>
+#include <dcs/exception.hpp>
+#include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
+#include <stdexcept>
 
 
 namespace dcs { namespace eesim {
@@ -29,6 +32,26 @@ class application_instance
 	  start_time_(start_time),
 	  stop_time_(start_time+run_time)
 	{
+	}
+
+
+	/// Copy constructor.
+	private: application_instance(application_instance<traits_type> const& that)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(that);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-constructor not yet implemented." );
+	}
+
+
+	/// Copy assignment.
+	private: application_instance<traits_type>& operator=(application_instance<traits_type> const& rhs)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(rhs);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-assignment not yet implemented." );
 	}
 
 

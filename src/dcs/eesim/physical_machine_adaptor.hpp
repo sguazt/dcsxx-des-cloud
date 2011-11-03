@@ -30,9 +30,12 @@
 #include <dcs/eesim/base_physical_machine.hpp>
 #include <dcs/eesim/physical_resource.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
+#include <dcs/exception.hpp>
+#include <dcs/macro.hpp>
 #include <dcs/type_traits/add_reference.hpp>
 #include <dcs/type_traits/add_const.hpp>
 #include <dcs/type_traits/remove_reference.hpp>
+#include <stdexcept>
 #include <vector>
 
 
@@ -79,6 +82,26 @@ class physical_machine_adaptor: public base_physical_machine<
 			)
 		  )
 	{
+	}
+
+
+	/// Copy constructor.
+	private: physical_machine_adaptor(physical_machine_adaptor const& that)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(that);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-constructor not yet implemented." );
+	}
+
+
+	/// Copy assignment.
+	private: physical_machine_adaptor& operator=(physical_machine_adaptor const& rhs)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(rhs);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-assigment not yet implemented." );
 	}
 
 

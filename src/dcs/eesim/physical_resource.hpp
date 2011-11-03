@@ -30,8 +30,11 @@
 #include <dcs/perfeval/energy/constant_model.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/physical_resource_view.hpp>
+#include <dcs/exception.hpp>
+#include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
-#include <iostream>
+#include <iosfwd>
+#include <stdexcept>
 #include <string>
 
 
@@ -48,6 +51,7 @@ class physical_resource: public physical_resource_view<TraitsT>
 	public: typedef ::dcs::shared_ptr<energy_model_type> energy_model_pointer;
 
 
+	/// Default constructor
 	public: physical_resource()
 	: base_type(),
 	  name_("Unnamed Resource"),
@@ -76,6 +80,26 @@ class physical_resource: public physical_resource_view<TraitsT>
 		  name_(name),
 		  ptr_energy_(ptr_energy_model)
 	{
+	}
+
+
+	/// Copy constructor.
+	private: physical_resource(physical_resource const& that)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(that);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-constructor not yet implemented." );
+	}
+
+
+	/// Copy assignment.
+	private: physical_resource& operator=(physical_resource const& rhs)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(rhs);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-assigment not yet implemented." );
 	}
 
 
