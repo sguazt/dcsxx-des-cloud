@@ -51,6 +51,7 @@ class dummy_migration_controller: public base_migration_controller<TraitsT>
 
 
 	private: static statistic_impl_type dummy_num_migrations_stat;
+	private: static statistic_impl_type dummy_migration_rate_stat;
 
 
 	public: dummy_migration_controller()
@@ -78,10 +79,19 @@ class dummy_migration_controller: public base_migration_controller<TraitsT>
 	{
 		return dummy_num_migrations_stat;
 	}
+
+
+	private: statistic_type const& do_migration_rate() const
+	{
+		return dummy_migration_rate_stat;
+	}
 };
 
 template <typename TraitsT>
 typename dummy_migration_controller<TraitsT>::statistic_impl_type dummy_migration_controller<TraitsT>::dummy_num_migrations_stat;
+
+template <typename TraitsT>
+typename dummy_migration_controller<TraitsT>::statistic_impl_type dummy_migration_controller<TraitsT>::dummy_migration_rate_stat;
 
 }} // Namespace dcs::eesim
 
