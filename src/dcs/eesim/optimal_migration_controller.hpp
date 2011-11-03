@@ -37,10 +37,13 @@
 //#include <dcs/eesim/detail/couenne/vm_placement_minlp_solver.hpp>
 //#include <dcs/eesim/detail/neos/vm_placement_minlp_solver.hpp>
 #include <dcs/eesim/detail/vm_placement_optimal_solvers.hpp>
+#include <dcs/eesim/logging.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/power_status.hpp>
+#include <dcs/exception.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
+#include <limits>
 #include <map>
 #include <stdexcept>
 #include <utility>
@@ -98,9 +101,12 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 	  count_(0),
 	  fail_count_(0),
 	  migr_count_(0),
+	  migr_rate_num_(0),
+	  migr_rate_den_(0),
 	  ptr_cost_(new statistic_impl_type()),
 	  ptr_num_migr_(new statistic_impl_type()),
-	  ptr_solver_(/*detail::make_vm_placement_optimal_solver(solver_params)*/)
+	  ptr_migr_rate_(new statistic_impl_type()),
+	  ptr_solver_()
 	{
 //		init();
 	}
@@ -121,11 +127,30 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 	  count_(0),
 	  fail_count_(0),
 	  migr_count_(0),
+	  migr_rate_num_(0),
+	  migr_rate_den_(0),
 	  ptr_cost_(new statistic_impl_type()),
 	  ptr_num_migr_(new statistic_impl_type()),
+	  ptr_migr_rate_(new statistic_impl_type()),
 	  ptr_solver_(detail::make_vm_placement_optimal_solver(solver_params))
 	{
 //		init();
+	}
+
+
+	/// Copy constructor.
+	private: optimal_migration_controller(optimal_migration_controller const& that)
+	{
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-constructor not yet implemented." );
+	}
+
+
+	/// Copy assignment.
+	private: optimal_migration_controller& operator=(optimal_migration_controller const& rhs)
+	{
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-assigment not yet implemented." );
 	}
 
 
@@ -150,6 +175,7 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 
 		ptr_cost_->reset();
 		ptr_num_migr_->reset();
+		ptr_migr_rate_->reset();
 
 		DCS_DEBUG_TRACE("(" << this << ") END Do Process BEGIN-OF-SIMULATION event (Clock: " << ctx.simulated_time() << ")");
 	}
@@ -164,6 +190,8 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 
 		count_ = fail_count_
 			   = migr_count_
+			   = migr_rate_num_
+			   = migr_rate_den_
 			   = uint_type(0);
 		vm_util_map_.clear();
 
@@ -179,6 +207,8 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process SYSTEM-FINALIZATION event (Clock: " << ctx.simulated_time() << ")");
 
 		(*ptr_num_migr_)(migr_count_);
+		// For migration rate, use the weighted harmonic mean (see the "Workload Book" by Feitelson)
+		(*ptr_migr_rate_)(static_cast<real_type>(migr_rate_num_)/static_cast<real_type>(migr_rate_den_));
 
 		DCS_DEBUG_TRACE("(" << this << ") END Do Process SYSTEM-FINALIZATION event (Clock: " << ctx.simulated_time() << ")");
 	}
@@ -203,10 +233,12 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 		typedef typename physical_machine_container::const_iterator physical_machine_iterator;
 		typedef ::std::map<physical_machine_identifier_type,physical_machine_pointer> physical_machine_id_map;
 		typedef typename physical_machine_id_map::iterator physical_machine_id_iterator;
+		typedef typename base_type::virtual_machines_placement_type virtual_machines_placement_type;
 
 		++count_;
 
 		data_center_type& dc(this->controlled_data_center());
+		uint_type num_vms(0);
 
 		// Update VMs utilization stats
 		{
@@ -215,11 +247,23 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 //			typedef ::std::vector<statistic_pointer> statistic_container;
 //			typedef typename statistic_container::const_iterator statistic_iterator;
 
-			virtual_machine_container vms(dc.virtual_machines());
+			virtual_machine_container vms(dc.active_virtual_machines());
 			virtual_machine_iterator vm_end_it(vms.end());
 			for (virtual_machine_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
 			{
 				virtual_machine_pointer ptr_vm(*vm_it);
+
+				// check: paranoid check
+				DCS_DEBUG_ASSERT( ptr_vm );
+
+				if (ptr_vm->power_state() != powered_on_power_status)
+				{
+					// Non active VMs should not occupy resources
+					dc.displace_virtual_machine(ptr_vm, false);
+					continue;
+				}
+
+				++num_vms;
 
 //				statistic_container ustats;
 //				ustats = ptr_vm->guest_system().application().simulation_model().tier_statistic(
@@ -282,68 +326,103 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 		{
 			(*ptr_cost_)(ptr_solver_->result().cost());
 
-			physical_machine_id_map inactive_pms;
+			virtual_machines_placement_type deployment;
 
-			// Populate the inactive PMs container with all powered-on machines
+			physical_virtual_machine_map pm_vm_map(ptr_solver_->result().placement());
+			physical_virtual_machine_iterator pm_vm_end_it(pm_vm_map.end());
+			for (physical_virtual_machine_iterator pm_vm_it = pm_vm_map.begin(); pm_vm_it != pm_vm_end_it; ++pm_vm_it)
 			{
-				physical_machine_container active_pms(dc.physical_machines(powered_on_power_status));
-				physical_machine_iterator pm_end_it(active_pms.end());
-				for (physical_machine_iterator pm_it = active_pms.begin(); pm_it != pm_end_it; ++pm_it)
-				{
-					physical_machine_pointer ptr_pm(*pm_it);
+				physical_machine_pointer ptr_pm(dc.physical_machine_ptr(pm_vm_it->first.first));
+				virtual_machine_pointer ptr_vm(dc.virtual_machine_ptr(pm_vm_it->first.second));
+				resource_share_container const& shares(pm_vm_it->second);
 
-					inactive_pms[ptr_pm->id()] = ptr_pm;
-				}
+				// check: paranoid check
+				DCS_DEBUG_ASSERT( ptr_pm );
+				// check: paranoid check
+				DCS_DEBUG_ASSERT( ptr_vm );
+
+				deployment.place(*ptr_vm,
+								 *ptr_pm,
+								 shares.begin(),
+								 shares.end());
 			}
 
-			// Migrate VMs
-			{
-				dc.displace_virtual_machines(false);
+			uint_type num_migrs(0);
 
-				physical_virtual_machine_map pm_vm_map(ptr_solver_->result().placement());
-//[XXX]
-::std::cerr << "CHECK SOLVER PLACEMENT" << ::std::endl;//XXX
-for (typename physical_virtual_machine_map::const_iterator it = ptr_solver_->result().placement().begin(); it != ptr_solver_->result().placement().end(); ++it)//XXX
-{//XXX
-::std::cerr << "VM ID: " << (it->first.second) << " placed on PM ID: " << (it->first.first) << " with SHARE: " << ((it->second)[0].second) << ::std::endl;//XXX
-}//XXX
-//[/XXX]
-				physical_virtual_machine_iterator pm_vm_end_it(pm_vm_map.end());
-				for (physical_virtual_machine_iterator pm_vm_it = pm_vm_map.begin(); pm_vm_it != pm_vm_end_it; ++pm_vm_it)
-				{
-					physical_machine_pointer ptr_pm(dc.physical_machine_ptr(pm_vm_it->first.first));
-					virtual_machine_pointer ptr_vm(dc.virtual_machine_ptr(pm_vm_it->first.second));
-					resource_share_container shares(pm_vm_it->second);
+			num_migrs = this->migrate(deployment);
 
-//::std::cerr << "Going to migrate VM (" << pm_vm_it->first.second << "): " << *ptr_vm << " into PM (" << pm_vm_it->first.first << "): " << *ptr_pm << ::std::endl; //XXX
-					if (ptr_vm->vmm().hosting_machine().id() != ptr_pm->id())
-					{
-						++migr_count_;
-					}
+			migr_count_ += num_migrs;
+			// For migration rate, use the weighted harmonic mean (see the "Workload Book" by Feitelson)
+			migr_rate_num_ += num_vms;
+			migr_rate_den_ += num_migrs;
 
-					dc.migrate_virtual_machine(ptr_vm, ptr_pm, shares.begin(), shares.end());
-
-					if (inactive_pms.count(ptr_pm->id()) > 0)
-					{
-						inactive_pms.erase(ptr_pm->id());
-					}
-				}
-			}
-
-			// Turn off unused PMs
-			{
-				physical_machine_id_iterator pm_id_end_it(inactive_pms.end());
-				for (physical_machine_id_iterator pm_id_it = inactive_pms.begin(); pm_id_it != pm_id_end_it; ++pm_id_it)
-				{
-					physical_machine_pointer ptr_pm(pm_id_it->second);
-
-					ptr_pm->power_off();
-				}
-			}
+//			physical_machine_id_map inactive_pms;
+//
+//			// Populate the inactive PMs container with all powered-on machines
+//			{
+//				physical_machine_container active_pms(dc.physical_machines(powered_on_power_status));
+//				physical_machine_iterator pm_end_it(active_pms.end());
+//				for (physical_machine_iterator pm_it = active_pms.begin(); pm_it != pm_end_it; ++pm_it)
+//				{
+//					physical_machine_pointer ptr_pm(*pm_it);
+//
+//					inactive_pms[ptr_pm->id()] = ptr_pm;
+//				}
+//			}
+//
+//			// Migrate VMs
+//			{
+////				dc.displace_active_virtual_machines(false);
+//
+//				physical_virtual_machine_map pm_vm_map(ptr_solver_->result().placement());
+////[XXX]
+//::std::cerr << "CHECK SOLVER PLACEMENT" << ::std::endl;//XXX
+//for (typename physical_virtual_machine_map::const_iterator it = ptr_solver_->result().placement().begin(); it != ptr_solver_->result().placement().end(); ++it)//XXX
+//{//XXX
+//::std::cerr << "VM ID: " << (it->first.second) << " placed on PM ID: " << (it->first.first) << " with SHARE: " << ((it->second)[0].second) << ::std::endl;//XXX
+//}//XXX
+////[/XXX]
+//				physical_virtual_machine_iterator pm_vm_end_it(pm_vm_map.end());
+//				for (physical_virtual_machine_iterator pm_vm_it = pm_vm_map.begin(); pm_vm_it != pm_vm_end_it; ++pm_vm_it)
+//				{
+//					physical_machine_pointer ptr_pm(dc.physical_machine_ptr(pm_vm_it->first.first));
+//					virtual_machine_pointer ptr_vm(dc.virtual_machine_ptr(pm_vm_it->first.second));
+//					resource_share_container shares(pm_vm_it->second);
+//
+//					// check: paranoid check
+//					DCS_DEBUG_ASSERT( ptr_pm );
+//					// check: paranoid check
+//					DCS_DEBUG_ASSERT( ptr_vm );
+//
+////::std::cerr << "Going to migrate VM (" << pm_vm_it->first.second << "): " << *ptr_vm << " into PM (" << pm_vm_it->first.first << "): " << *ptr_pm << ::std::endl; //XXX
+//					if (ptr_vm->vmm().hosting_machine().id() != ptr_pm->id())
+//					{
+//						++migr_count_;
+//					}
+//
+//					dc.migrate_virtual_machine(ptr_vm, ptr_pm, shares.begin(), shares.end());
+//
+//					if (inactive_pms.count(ptr_pm->id()) > 0)
+//					{
+//						inactive_pms.erase(ptr_pm->id());
+//					}
+//				}
+//			}
+//
+//			// Turn off unused PMs
+//			{
+//				physical_machine_id_iterator pm_id_end_it(inactive_pms.end());
+//				for (physical_machine_id_iterator pm_id_it = inactive_pms.begin(); pm_id_it != pm_id_end_it; ++pm_id_it)
+//				{
+//					physical_machine_pointer ptr_pm(pm_id_it->second);
+//
+//					ptr_pm->power_off();
+//				}
+//			}
 		}
 		else
 		{
-			::std::clog << "[Warning:optim_migr_ctrl] Failed to solve optimization problem." << ::std::endl;
+			log_warn(DCS_EESIM_LOGGING_AT, "Failed to solve optimization problem. Skip migration.");
 			++fail_count_;
 		}
 
@@ -361,6 +440,12 @@ for (typename physical_virtual_machine_map::const_iterator it = ptr_solver_->res
 		return *ptr_num_migr_;
 	}
 
+
+	private: statistic_type const& do_migration_rate() const
+	{
+		return *ptr_migr_rate_;
+	}
+
 	//@} Interface Member Functions
 
 
@@ -372,8 +457,11 @@ for (typename physical_virtual_machine_map::const_iterator it = ptr_solver_->res
 	private: uint_type count_;
 	private: uint_type fail_count_;
 	private: uint_type migr_count_;
+	private: uint_type migr_rate_num_;
+	private: uint_type migr_rate_den_;
 	private: statistic_pointer ptr_cost_;
 	private: statistic_pointer ptr_num_migr_;
+	private: statistic_pointer ptr_migr_rate_;
 	private: optimal_solver_pointer ptr_solver_;
 	private: virtual_machine_utilization_map vm_util_map_;
 }; // optimal_migration_controller
@@ -388,7 +476,7 @@ template <typename TraitsT>
 const typename optimal_migration_controller<TraitsT>::real_type optimal_migration_controller<TraitsT>::default_sla_cost_weight(1);
 
 template <typename TraitsT>
-const typename optimal_migration_controller<TraitsT>::real_type optimal_migration_controller<TraitsT>::default_ewma_smoothing_factor(0.70);
+const typename optimal_migration_controller<TraitsT>::real_type optimal_migration_controller<TraitsT>::default_ewma_smoothing_factor(0.90);
 
 }} // Namespace dcs::eesim
 

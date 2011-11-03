@@ -57,6 +57,7 @@
 #endif // DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
 
 #include <dcs/eesim/config/configuration.hpp>
+#include <dcs/eesim/identifier_generator.hpp>
 #include <dcs/memory.hpp>
 
 
@@ -152,6 +153,12 @@ class registry: public detail::singleton< registry<TraitsT> >
 	public: typedef ::dcs::shared_ptr<uniform_random_generator_type> uniform_random_generator_pointer;
 	public: typedef typename traits_type::configuration_type configuration_type;
 	public: typedef ::dcs::shared_ptr<configuration_type> configuration_pointer;
+	public: typedef typename traits_type::application_identifier_type application_identifier_type;
+	public: typedef typename traits_type::physical_machine_identifier_type physical_machine_identifier_type;
+	public: typedef typename traits_type::virtual_machine_identifier_type virtual_machine_identifier_type;
+	public: typedef identifier_generator<application_identifier_type> application_id_generator_type;
+	public: typedef identifier_generator<physical_machine_identifier_type> physical_machine_id_generator_type;
+	public: typedef identifier_generator<virtual_machine_identifier_type> virtual_machine_id_generator_type;
 
 
 	public: static registry& instance()
@@ -274,12 +281,57 @@ class registry: public detail::singleton< registry<TraitsT> >
 	}
 
 
-	protected: registry() { }
+	public: application_id_generator_type& application_id_generator()
+	{
+		return app_id_gen_;
+	}
+
+
+	public: application_id_generator_type const& application_id_generator() const
+	{
+		return app_id_gen_;
+	}
+
+
+	public: physical_machine_id_generator_type& physical_machine_id_generator()
+	{
+		return pm_id_gen_;
+	}
+
+
+	public: physical_machine_id_generator_type const& physical_machine_id_generator() const
+	{
+		return pm_id_gen_;
+	}
+
+
+	public: virtual_machine_id_generator_type& virtual_machine_id_generator()
+	{
+		return vm_id_gen_;
+	}
+
+
+	public: virtual_machine_id_generator_type const& virtual_machine_id_generator() const
+	{
+		return vm_id_gen_;
+	}
+
+
+	/// Default constructor
+	protected: registry()
+	: app_id_gen_(0),
+	  pm_id_gen_(0),
+	  vm_id_gen_(0)
+	{
+	}
 
 
 	private: des_engine_pointer ptr_des_eng_;
 	private: uniform_random_generator_pointer ptr_rng_;
 	private: configuration_pointer ptr_conf_;
+	private: application_id_generator_type app_id_gen_;
+	private: physical_machine_id_generator_type pm_id_gen_;
+	private: virtual_machine_id_generator_type vm_id_gen_;
 };
 
 }} // Namespace dcs::eesim

@@ -30,18 +30,22 @@
 #include <dcs/debug.hpp>
 #include <dcs/des/base_statistic.hpp>
 #include <dcs/des/engine_traits.hpp>
+#include <dcs/des/entity.hpp>
 #include <dcs/eesim/data_center.hpp>
+#include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/registry.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
+#include <map>
 #include <string>
+#include <vector>
 
 
 namespace dcs { namespace eesim {
 
 template <typename TraitsT>
-class base_migration_controller
+class base_migration_controller: public ::dcs::des::entity
 {
 	private: typedef base_migration_controller<TraitsT> self_type;
 	public: typedef TraitsT traits_type;
@@ -55,6 +59,12 @@ class base_migration_controller
 	private: typedef typename ::dcs::des::engine_traits<des_engine_type>::event_source_type des_event_source_type;
 	public: typedef ::dcs::shared_ptr<des_event_source_type> des_event_source_pointer;
 	public: typedef ::dcs::des::base_statistic<real_type,uint_type> statistic_type;
+	protected: typedef virtual_machines_placement<traits_type> virtual_machines_placement_type;
+//	protected: typedef typename traits_type::physical_machine_identifier_type physical_machine_identifier_type;
+//	protected: typedef typename traits_type::virtual_machine_identifier_type virtual_machine_identifier_type;
+//	protected: typedef ::std::map<physical_resource_category,real_type> resource_share_container;
+//	protected: typedef ::std::pair<virtual_machine_identifier_type,physical_machine_identifier_type> physical_virtual_machine_pair;
+//	protected: typedef ::std::map<physical_virtual_machine_pair,resource_share_container> physical_virtual_machine_map;
 	private: typedef registry<traits_type> registry_type;
 
 
@@ -106,7 +116,7 @@ class base_migration_controller
 	{
 		if (this != &rhs)
 		{
-			this->disconnect_from_event_sources();
+			finit();
 
 			ptr_dc_ = rhs.ptr_dc_;
 			ts_ = rhs.ts_;
@@ -122,7 +132,7 @@ class base_migration_controller
 	/// The destructor.
 	public: virtual ~base_migration_controller()
 	{
-		this->disconnect_from_event_sources();
+		finit();
 	}
 
 
@@ -182,6 +192,12 @@ class base_migration_controller
 	}
 
 
+	public: statistic_type const& migration_rate() const
+	{
+		return do_migration_rate();
+	}
+
+
 	protected: data_center_pointer controlled_data_center_ptr() const
 	{
 		return ptr_dc_;
@@ -194,9 +210,120 @@ class base_migration_controller
 	}
 
 
+	protected: uint_type migrate(virtual_machines_placement_type const& placement)
+	{
+		typedef typename traits_type::physical_machine_identifier_type pm_identifier_type;
+		typedef typename traits_type::virtual_machine_identifier_type vm_identifier_type;
+		typedef typename data_center_type::physical_machine_pointer pm_pointer;
+		typedef typename data_center_type::virtual_machine_pointer vm_pointer;
+		typedef ::std::vector<pm_pointer> pm_container;
+		typedef typename pm_container::const_iterator pm_iterator;
+		typedef ::std::map<pm_identifier_type,pm_pointer> pm_id_map;
+		typedef typename pm_id_map::iterator pm_id_iterator;
+//		typedef typename physical_virtual_machine_map::const_iterator physical_virtual_machine_iterator;
+		typedef typename virtual_machines_placement_type::const_iterator vm_placement_iterator;
+
+		if (placement.empty())
+		{
+			return 0;
+		}
+
+		pm_id_map inactive_pms;
+		uint_type num_migrs(0);
+
+		// Populate the inactive PMs container with all powered-on machines
+		{
+			pm_container active_pms(ptr_dc_->physical_machines(powered_on_power_status));
+			pm_iterator pm_end_it(active_pms.end());
+			for (pm_iterator pm_it = active_pms.begin(); pm_it != pm_end_it; ++pm_it)
+			{
+				pm_pointer ptr_pm(*pm_it);
+
+				inactive_pms[ptr_pm->id()] = ptr_pm;
+			}
+		}
+
+		// Migrate VMs
+		{
+			//NOTE: we cannot use directly the method data_center::migrate for
+			//      the following reason.
+			//      Suppose the VM1 on PM1 is to be migrated on PM2 and that VM2
+			//      on PM2 is to be migrated on PM1.
+			//      If there is not enough space on PM1 (PM2), we cannot move
+			//      VM2 (VM1) on it, without before powering-off VM1 (VM2).
+			//      The situation complicates when there are more than one VMs
+			//      involved in this circular dependencies.
+			//      So to solve we first power-off and displace all VMs, and
+			//      then place them on the new positions.
+			//      The drawback of this is that this does not mimic the true VM
+			//      live-migration since VMs are first powered-off and then
+			//      powered-on (just like a cold migration).
+
+			vm_placement_iterator pm_vm_end_it(placement.end());
+
+			// Displace
+			for (vm_placement_iterator pm_vm_it = placement.begin(); pm_vm_it != pm_vm_end_it; ++pm_vm_it)
+			{
+				pm_pointer ptr_pm(ptr_dc_->physical_machine_ptr(placement.pm_id(pm_vm_it)));
+				vm_pointer ptr_vm(ptr_dc_->virtual_machine_ptr(placement.vm_id(pm_vm_it)));
+
+				// check: paranoid check
+				DCS_DEBUG_ASSERT( ptr_pm );
+				// check: paranoid check
+				DCS_DEBUG_ASSERT( ptr_vm );
+
+				if (ptr_vm->vmm().hosting_machine().id() != ptr_pm->id())
+				{
+					++num_migrs;
+				}
+
+				// Power-off and displace
+				ptr_dc_->displace_virtual_machine(ptr_vm, true);
+			}
+
+			for (vm_placement_iterator pm_vm_it = placement.begin(); pm_vm_it != pm_vm_end_it; ++pm_vm_it)
+			{
+				pm_pointer ptr_pm(ptr_dc_->physical_machine_ptr(placement.pm_id(pm_vm_it)));
+				vm_pointer ptr_vm(ptr_dc_->virtual_machine_ptr(placement.vm_id(pm_vm_it)));
+
+				// check: paranoid check
+				DCS_DEBUG_ASSERT( ptr_pm );
+				// check: paranoid check
+				DCS_DEBUG_ASSERT( ptr_vm );
+
+				ptr_dc_->place_virtual_machine(ptr_vm, ptr_pm, placement.shares_begin(pm_vm_it), placement.shares_end(pm_vm_it));
+
+				if (inactive_pms.count(ptr_pm->id()) > 0)
+				{
+					inactive_pms.erase(ptr_pm->id());
+				}
+			}
+		}
+
+		// Turn off unused PMs
+		{
+			pm_id_iterator pm_id_end_it(inactive_pms.end());
+			for (pm_id_iterator pm_id_it = inactive_pms.begin(); pm_id_it != pm_id_end_it; ++pm_id_it)
+			{
+				pm_pointer ptr_pm(pm_id_it->second);
+
+				ptr_pm->power_off();
+			}
+		}
+
+		return num_migrs;
+	}
+
+
 	private: void init()
 	{
 		this->connect_to_event_sources();
+	}
+
+
+	private: void finit()
+	{
+		this->disconnect_from_event_sources();
 	}
 
 
@@ -319,7 +446,10 @@ class base_migration_controller
 
 	private: void process_sys_init(des_event_type const& evt, des_engine_context_type& ctx)
 	{
-		schedule_control();
+		if (this->enabled())
+		{
+			schedule_control();
+		}
 
 		do_process_sys_init(evt, ctx);
 	}
@@ -333,7 +463,10 @@ class base_migration_controller
 
 	private: void process_control(des_event_type const& evt, des_engine_context_type& ctx)
 	{
-		schedule_control();
+		if (this->enabled())
+		{
+			schedule_control();
+		}
 
 		do_process_control(evt, ctx);
 	}
@@ -384,11 +517,24 @@ class base_migration_controller
 	}
 
 
+	protected: virtual void do_enable(bool flag)
+	{
+		ptr_control_evt_src_->enable(flag);
+
+		if (flag && !this->enabled())
+		{
+			schedule_control();
+		}
+	}
+
+
 	private: virtual void do_process_control(des_event_type const& evt, des_engine_context_type& ctx) = 0;
 
 
 	private: virtual statistic_type const& do_num_migrations() const = 0;
 
+
+	private: virtual statistic_type const& do_migration_rate() const = 0;
 
 	//@} Interface Member Functions
 
