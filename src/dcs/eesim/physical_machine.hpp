@@ -32,6 +32,8 @@
 #include <dcs/eesim/physical_resource.hpp>
 #include <dcs/eesim/power_status.hpp>
 #include <dcs/eesim/virtual_machine_monitor.hpp>
+#include <dcs/exception.hpp>
+#include <dcs/macro.hpp>
 #include <iostream>
 #include <map>
 #include <stdexcept>
@@ -75,6 +77,7 @@ class physical_machine
 	private: typedef typename resource_container::const_iterator resource_const_iterator;
 
 
+	/// Default constructor.
 	public: explicit physical_machine(::std::string const& name = "Unnamed Physical Machine")
 		: id_(traits_type::invalid_physical_machine_id),
 		  name_(name),
@@ -88,6 +91,26 @@ class physical_machine
 		simulation_model_pointer ptr_sim_model(new default_physical_machine_simulation_model<traits_type>());
 		this->simulation_model(ptr_sim_model);
 		ptr_vmm_->hosting_machine(this);
+	}
+
+
+	/// Copy constructor.
+	private: physical_machine(physical_machine const& that)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(that);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-constructor not yet implemented." );
+	}
+
+
+	/// Copy assignment.
+	private: physical_machine& operator=(physical_machine const& rhs)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(rhs);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-assigment not yet implemented." );
 	}
 
 
@@ -240,6 +263,12 @@ class physical_machine
 	public: vmm_type& vmm()
 	{
 		return *ptr_vmm_;
+	}
+
+
+	public: bool has_vmm() const
+	{
+		return ptr_vmm_;
 	}
 
 
