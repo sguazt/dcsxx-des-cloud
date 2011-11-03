@@ -33,18 +33,14 @@
 #include <dcs/eesim/application_tier.hpp>
 #include <dcs/eesim/base_application_performance_model.hpp>
 #include <dcs/eesim/base_application_simulation_model.hpp>
-//#include <dcs/eesim/data_center.hpp>//[sguazt] EXP
-//#include <dcs/eesim/performance_measure.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
-//#include <dcs/eesim/physical_resource.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/physical_resource_view.hpp>
 #include <dcs/eesim/registry.hpp>
 #include <dcs/eesim/user_request.hpp>
+#include <dcs/exception.hpp>
 #include <dcs/functional/bind.hpp>
-//#include <dcs/perfeval/workload/enterprise/any_model.hpp>
-//#include <dcs/perfeval/workload/enterprise/user_request.hpp>
-//#include <dcs/perfeval/workload/generator.hpp>
+#include <dcs/macro.hpp>
 #include <dcs/math/stats/function/rand.hpp>
 #include <dcs/memory.hpp>
 #include <dcs/perfeval/sla/any_cost_model.hpp>
@@ -94,10 +90,6 @@ class base_application_simulation_model;
 template <typename TraitsT>
 class multi_tier_application
 {
-//	private: struct request_state;
-//	public: class reference_physical_resource;
-
-
 	private: typedef multi_tier_application<TraitsT> self_type;
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::real_type real_type;
@@ -106,96 +98,78 @@ class multi_tier_application
 	public: typedef typename traits_type::application_identifier_type identifier_type;
 	public: typedef application_tier<traits_type> application_tier_type;
 	public: typedef ::dcs::shared_ptr<application_tier_type> application_tier_pointer;
-	public: typedef data_center<traits_type> data_center_type;//[sguazt] EXP
-	public: typedef data_center_type* data_center_pointer;//[sguazt] EXP
-//	public: typedef physical_resource<traits_type> physical_resource_type;
-//	public: typedef ::dcs::shared_ptr<physical_resource_type> physical_resource_pointer;
-//	public: typedef ::dcs::perfeval::workload::enterprise::any_model<int_type,real_type> workload_model_type;
+	public: typedef data_center<traits_type> data_center_type;
+	public: typedef data_center_type* data_center_pointer;
 	public: typedef ::dcs::perfeval::sla::any_cost_model<performance_measure_category,real_type,real_type> sla_cost_model_type;
 	public: typedef base_application_performance_model<traits_type> performance_model_type;
 	public: typedef ::dcs::shared_ptr<performance_model_type> performance_model_pointer;
-//	public: typedef performance_measure<traits_type> performance_measure_type;
 	public: typedef base_application_simulation_model<traits_type> simulation_model_type;
 	public: typedef ::dcs::shared_ptr<simulation_model_type> simulation_model_pointer;
-//	private: typedef ::std::map<
-//						physical_resource_category,
-//						physical_resource_pointer
-//				> resource_container;
 	public: typedef physical_resource_view<traits_type> reference_physical_resource_type;
 	private: typedef ::std::map<
 						physical_resource_category,
 						reference_physical_resource_type
 				> resource_container;
 	private: typedef ::std::vector<application_tier_pointer> tier_container;
-//	private: typedef ::std::map<
-//						performance_measure_category,
-//						performance_measure_type
-//				> performance_measure_container;
 	private: typedef typename traits_type::des_engine_type des_engine_type;
 	private: typedef typename des_engine_type::engine_context_type des_engine_context_type;
 	private: typedef typename des_engine_type::event_type des_event_type;
-//	private: typedef typename des_engine_type::event_source_type des_event_source_type;
-//	private: typedef ::dcs::shared_ptr<des_engine_type> des_engine_pointer;
-//	private: typedef ::dcs::shared_ptr<des_event_source_type> des_event_source_pointer;
-//	private: typedef typename traits_type::uniform_random_generator_type uniform_random_generator_type;
-//	private: typedef ::dcs::shared_ptr<uniform_random_generator_type> uniform_random_generator_pointer;
 	private: typedef ::std::size_t size_type;
 	private: typedef user_request<real_type> user_request_type;
 	public: typedef ::dcs::des::base_statistic<real_type,uint_type> output_statistic_type;
 	public: typedef ::dcs::shared_ptr<output_statistic_type> output_statistic_pointer;
 
 
-
-//	public: struct reference_physical_resource
-//	{
-//		public: reference_physical_resource()
-//			: category_(),
-//			  capacity_(0),
-//			  threshold_(0)
-//		{
-//		}
-//
-//
-//		public: reference_physical_resource(physical_resource_category category, real_type capacity, real_type threshold)
-//			: category_(category),
-//			  capacity_(capacity),
-//			  threshold_(threshold)
-//		{
-//		}
-//
-//
-//		public: physical_resource_category category() const
-//		{
-//			return category_;
-//		}
-//
-//
-//		public: real_type capacity() const
-//		{
-//			return capacity_;
-//		}
-//
-//
-//		public: real_type utilization_threshold() const
-//		{
-//			return threshold_;
-//		}
-//
-//
-//		private: physical_resource_category category_;
-//		private: real_type capacity_;
-//		private: real_type threshold_;
-//	};
-
-
-	public: multi_tier_application(/*uint_type priority = 0*/)
-		: id_(traits_type::invalid_application_id),
-		  name_("Unnamed App")
-//		  ptr_request_evt_src_(new des_event_source_type()),
-//		  ptr_response_evt_src_(new des_event_source_type()),
-//		  priority_(priority),
+	/// Default constructor.
+	public: multi_tier_application()
+	: id_(traits_type::invalid_application_id),
+	  name_("Unnamed App")
 	{
-		init();
+	}
+
+
+	/// Copy contructor
+	private: multi_tier_application(multi_tier_application<traits_type> const& that)
+/*
+	: id_(traits_type::invalid_application_id),
+	  name_(that.name_),
+	  tiers_(that.tiers_),
+	  sla_cost_model_(that.sla_cost_model_),
+	  ref_resources_(that.ref_resources_),
+	  ptr_perf_model_(that.ptr_perf_model_->clone()),
+	  ptr_sim_model_(that.ptr_perf_model_->clone()),
+	  ptr_dc_(that.ptr_dc_)
+*/
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(that);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy constructor not yet implemented." );
+	}
+
+
+	/// Copy assignment
+	private: multi_tier_application<traits_type>& operator=(multi_tier_application<traits_type> const& rhs)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(rhs);
+
+/*
+		if (&rhs != this)
+		{
+			id_ = traits_type::invalid_application_id;
+			name_ = rhs.name_;
+			tiers_ = rhs.tiers_;
+			sla_cost_model_ = rhs.sla_cost_model_;
+			ref_resources_ = rhs.ref_resources_;
+			ptr_perf_model_ = rhs.ptr_perf_model_->clone();
+			ptr_sim_model_ = rhs.ptr_sim_model_->clone();
+			ptr_dc_ = rhs.ptr_dc_;
+		}
+
+		return this;
+*/
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy assignment not yet implemented." );
 	}
 
 
@@ -304,13 +278,6 @@ class multi_tier_application
 	}
 
 
-//	public: template <typename EnterpriseWorkloadModelT>
-//		void workload_model(EnterpriseWorkloadModelT const& model)
-//	{
-//		workload_ = ::dcs::perfeval::workload::enterprise::make_any_model<EnterpriseWorkloadModelT>(model);
-//	}
-
-
 	public: template <typename SlaCostModelT>
 		void sla_cost_model(SlaCostModelT const& model)
 	{
@@ -328,18 +295,6 @@ class multi_tier_application
 	{
 		return sla_cost_model_;
 	}
-
-
-//	public: void priority(uint_type value)
-//	{
-//		priority_ = value;
-//	}
-
-
-//	public: uint_type priority() const
-//	{
-//		return priority_;
-//	}
 
 
 	public: uint_type num_tiers() const
@@ -388,49 +343,6 @@ class multi_tier_application
 	}
 
 
-//	public: void controller(controller_type const& ctrl)
-//	{
-//		controller_ = ctrl;
-//	}
-
-
-//	//FIXME: instead of passing a pointer we maybe should pass a const&
-//	public: void add_reference_resource(physical_resource_pointer const& ptr_resource)
-//	{
-//		ref_resources_.insert(::std::make_pair(ptr_resource->category(), ptr_resource));
-//	}
-//
-//
-//	public: physical_resource_pointer const& reference_resource(physical_resource_category category) const
-//	{
-//		typename resource_container::const_iterator it;
-//
-//		it = ref_resources_.find(category);
-//
-//		// safety check
-//		DCS_DEBUG_ASSERT( it != ref_resources_.end() );
-//
-//		return it->second;
-//	}
-//
-//
-//	public: ::std::vector<physical_resource_pointer> reference_resources() const
-//	{
-//		::std::vector<physical_resource_pointer> resources;
-//
-//		typename resource_container::const_iterator end_it = ref_resources_.end();
-//
-//		for (typename resource_container::const_iterator it = ref_resources_.begin();
-//			 it != end_it;
-//			 ++it)
-//		{
-//			resources.push_back(it->second);
-//		}
-//
-//		return resources;
-//	}
-
-
 	public: void reference_resource(physical_resource_category category, real_type capacity, real_type threshold = real_type(1))
 	{
 		// pre: capacity > 0
@@ -477,55 +389,6 @@ class multi_tier_application
 	}
 
 
-//	/**
-//	 * \brief Set the application-level reference performance measures.
-//	 *
-//	 * Each element pointed by the iterator must be a pair of
-//	 *   <category,value>
-//	 * Each performance measure represents the aggregated performance measure
-//	 * from each tier.
-//	 */
-//	public: void add_reference_performance_measure(performance_measure_type const& measure)
-//	{
-//		ref_measures_[measure.category()] = measure;
-//	}
-//
-//
-//	public: ::std::vector<performance_measure_type> reference_performance_measures() const
-//	{
-//		typedef typename performance_measure_container::const_iterator iterator;
-//
-//		::std::vector<performance_measure_type> measures;
-//
-//		iterator end_it = ref_measures_.end();
-//		for (iterator it = ref_measures_.begin(); it != end_it; ++it)
-//		{
-//			measures.push_back(it->second);
-//		}
-//
-//		return measures;
-//	}
-
-
-	/**
-	 * \brief Set the reference performance measures for each application tier.
-	 *
-	 * The first performance measure is related to the front-end tier, the
-	 * second one to the second tier, and so on.
-	 */
-//	public: template <typename ForwardIteratorT>
-//		void reference_tier_performance_measure(application_statistics_category category, ForwardIteratorT first, ForwardIteratorT last)
-//	{
-//		ref_tier_measures_[category] = ::std::vector<real_type>(first, last);
-//	}
-
-
-//	public: ::std::vector<real_type> reference_tier_performance_measure() const
-//	{
-//		return ref_tier_measures_;
-//	}
-
-
 	public: template <typename VMForwardIterT>
 		void start(VMForwardIterT first, VMForwardIterT last)
 	{
@@ -534,39 +397,11 @@ class multi_tier_application
 		// check: pointer to simulation model is a valid pointer
 		DCS_DEBUG_ASSERT( ptr_sim_model_ );
 
-//		// Connect to some simulation event sources
-//		ptr_sim_model_->request_departure_event_source().connect(
-//			::dcs::functional::bind(
-//				&self_type::process_request_departure,
-//				this,
-//				::dcs::functional::placeholders::_1,
-//				::dcs::functional::placeholders::_2
-//			)
-//		);
-
 		ptr_sim_model_->tier_virtual_machines(first, last);
 		ptr_sim_model_->start_application();
 
 		DCS_DEBUG_TRACE("END Starting Application: '" << name_ << "'");
 	}
-
-
-//	public: void restart()
-//	{
-//		DCS_DEBUG_TRACE("BEGIN Restarting Application: '" << name_ << "'");
-//
-//		// check: pointer to simulation model is a valid pointer
-//		DCS_DEBUG_ASSERT( ptr_sim_model_ );
-//
-//		DCS_ASSERT(
-//			ptr_sim_model_->enabled(),
-//			throw ::std::logic_error("[dcs::eesim::multi_tier_application::restart] Application not started.")
-//		);
-//
-//		ptr_sim_model_->enabled(true);
-//
-//		DCS_DEBUG_TRACE("END Restarting Application: '" << name_ << "'");
-//	}
 
 
 	public: void stop()
@@ -578,304 +413,8 @@ class multi_tier_application
 
 		ptr_sim_model_->stop_application();
 
-//		// Disconnect from previously registered simulation event sources
-//		ptr_sim_model_->request_departure_event_source().disconnect(
-//			::dcs::functional::bind(
-//				&self_type::process_request_departure,
-//				this,
-//				::dcs::functional::placeholders::_1,
-//				::dcs::functional::placeholders::_2
-//			)
-//		);
-
 		DCS_DEBUG_TRACE("END Stopping Application: '" << name_ << "'");
 	}
-
-
-	private: void init()
-	{
-//		ptr_request_evt_src_->connect(
-//			::dcs::functional::bind(
-//				&self_type::process_request,
-//				this,
-//				::dcs::functional::placeholders::_1,
-//				::dcs::functional::placeholders::_2
-//			)
-//		);
-//		ptr_response_evt_src_->connect(
-//			::dcs::functional::bind(
-//				&self_type::process_response,
-//				this,
-//				::dcs::functional::placeholders::_1,
-//				::dcs::functional::placeholders::_2
-//			)
-//		);
-//		ptr_control_evt_src_->connect(
-//			::dcs::functional::bind(
-//				&self_type::process_control,
-//				this,
-//				::dcs::functional::placeholders::_1,
-//				::dcs::functional::placeholders::_2
-//			)
-//		);
-	}
-
-
-/*
-	private: void prepare_run()
-	{
-		size_type num_tiers = tiers_.size();
-
-		for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
-		{
-			ptr_tier_request_evt_srcs_[tier_id]->connect(
-				::dcs::functional::bind(
-					&self_type::process_request,
-					this,
-					::dcs::functional::placeholders::_1,
-					::dcs::functional::placeholders::_2,
-					tier_id
-				)
-			);
-			ptr_tier_response_evt_srcs_[tier_id]->connect(
-				::dcs::functional::bind(
-					&self_type::process_response,
-					this,
-					::dcs::functional::placeholders::_1,
-					::dcs::functional::placeholders::_2,
-					tier_id
-				)
-			);
-		}
-
-		schedule_request();
-	}
-
-
-	private: void process_request(des_event_type const& evt, des_engine_context_type& ctx)
-	{
-		// Send request to the front-end tier
-		process_request(evt, ctx, 0);
-	}
-
-
-	private: void process_request(des_event_type const& evt, des_engine_context_type& ctx, size_type tier_id)
-	{
-		uniform_random_generator_pointer ptr_urng = registry<traits_type>::instance().uniform_random_generator_ptr();
-		des_engine_pointer ptr_des_engine = registry<traits_type>::instance().des_engine_ptr();
-
-		application_tier_pointer tier = tiers_.at(tier_id);
-
-//		// Generate service time for this tier
-//		real_type svc_time(0);
-
-//		// This loop is needed for coping with distributions
-//		// that can take non-positive values
-//		do
-//		{
-//			svc_time = ::dcs::math::stats::rand(
-//					tier->service_distribution(),
-//					*ptr_urng
-//				);
-//		}
-//		while (svc_time < 0);
-//
-//		// Save service time for this tier
-//		request_state request_info = evt.template unfolded_state<request_state>();
-//		request_info.svctimes[tier_id] = svc_time;
-
-		if (tier_id == (tiers_.size()-1))
-		{
-			// The last (back-end) tier
-
-			// Generate service time for this tier
-			real_type svc_time(0);
-			// This loop is needed for coping with distributions
-			// that can take non-positive values
-			do
-			{
-				svc_time = ::dcs::math::stats::rand(
-						tier->service_distribution(),
-						*ptr_urng
-					);
-			}
-			while (svc_time < 0);
-
-			// Save the service time of this tier
-			request_info.svctimes.resize(tiers_.size());
-			request_info.svctimes[tier_id] = svc_time;
-
-			// Begin the response chain
-			des_engine->schedule_event(
-				ptr_tier_response_evt_srcs_[tier_id-1],
-				ptr_des_engine->sim_time() + svc_time,
-				request_info
-			);
-		}
-		else
-		{
-			// Propagate the request to the next tier
-			des_engine->schedule_event(
-				ptr_tier_request_evt_srcs_[tier_id+1],
-//				ptr_des_engine->sim_time() + svc_time,
-				ptr_des_engine->sim_time(),
-				request_info
-			);
-		}
-
-		// forward the incoming request to each tier by generating many
-		// sub-requests (one for each tier).
-
-//		typename tier_container::iterator it_begin = tiers_.begin();
-//		typename tier_container::iterator it_end = tiers_.end();
-//		typename tier_container::iterator it_prev = tiers_.begin();
-//		for (
-//			typename tier_container::iterator it = it_begin;
-//			it != it_end;
-//			++it
-//		) {
-//			if (it == it_begin)
-//			{
-//				it->request_event_source(*ptr_request_evt_src_);
-//				ptr_response_evt_src_(it->response_event_source());
-//			}
-////			else if (it == it_end)
-////			{
-////				response_event_source(it->response_event_source());
-////			}
-//			else
-//			{
-//				it->request_event_source(it_prev->response_event_source());
-//				it_prev->response_event_source(it->response_event_source());
-//			}
-//			it_prev = it;
-//		}
-	}
-
-
-	private: void process_response(des_event_type const& evt, des_engine_context_type& ctx)
-	{
-		request_state request_info = evt.template unfolded_state<request_state>();
-
-		DCS_DEBUG_TRACE("REQUEST FINISHED: " << request_info);
-
-		// Schedule a new request
-		schedule_request();
-	}
-
-
-	private: void process_response(des_event_type const& evt, des_engine_context_type& ctx, size_type tier_id)
-	{
-		uniform_random_generator_pointer ptr_urng = registry<traits_type>::instance().uniform_random_generator_ptr();
-		des_engine_pointer ptr_des_engine = registry<traits_type>::instance().des_engine_ptr();
-
-		application_tier_pointer tier = tiers_.at(tier_id);
-
-		real_type svc_time(0);
-
-		// This loop is needed for coping with distributions
-		// that can take non-positive values
-		do
-		{
-			svc_time = ::dcs::math::stats::rand(
-					tier->service_distribution(),
-					*ptr_urng
-				);
-		}
-		while (svc_time < 0);
-
-		request_state request_info = evt.template unfolded_state<request_state>();
-
-		// Save the service time of this tier
-		request_info.svctimes[tier_id] = svc_time;
-		if (tier_id < (tiers_.size()-1))
-		{
-			// Not in the last tier: the service time of tier k is the sum of service time of tiers k,k+1,..N
-			request_info.svctimes[tier_id] += request_info.svctimes[tier_id+1];
-		}
-
-		if (tier_id == 0)
-		{
-			// The first (front-end) tier
-
-			// Finishes the request-reponse process
-			ptr_des_engine->schedule_event(
-				ptr_response_evt_src_,
-				ptr_des_engine->sim_time() + svc_time,
-				request_info
-			);
-		}
-		else
-		{
-			// Propagate the response to the previous tier
-			ptr_des_engine->schedule_event(
-				ptr_tier_response_evt_srcs_[tier_id-1],
-				ptr_des_engine->sim_time() + svc_time,
-				request_info
-			);
-		}
-
-	}
-
-
-//	private: void process_control(des_event_type const& evt, des_engine_context_type& ctx)
-//	{
-//	}
-
-
-	private: struct request_state
-	{
-		real_type iatime; ///< Arrival time to the first tier.
-		int_type category; ///< Request category.
-		::std::vector<real_type> svctimes; ///< Service time at each tier (i-th element refers to the i-th tier).
-
-		template <typename CharT, typename CharTraitsT>
-		friend ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, request_state const& state)
-		{
-			os << "<"
-			   << "Arrival: " << state.iatime
-			   << ", Category: " << state.category
-			   << ", Service Times: ";
-
-			for (size_type i = 0; i < state.svctimes.size(); ++i)
-			{
-				if (i > 0)
-				{
-					os << ", ";
-				}
-				os << state.svctimes[i];
-			}
-
-			os << ">";
-
-			return os;
-		}
-	};
-*/
-
-//	private: void process_request_departure(des_event_type const& evt, des_engine_context_type& ctx)
-//	{
-//		user_request_type req = ptr_sim_model_->request_state(evt);
-//
-//		check_sla(req);
-//	}
-
-
-//	private: void check_sla(user_request_type const& req) const
-//	{
-//		real_type perf_meas(0);
-//
-//		switch ()
-//		{
-//			case
-//				perf_meas = req.departure_time()-req.arrival_time();
-//				break;
-//		}
-//
-//		if (sla_cost_.satisfied(perf_meas))
-//		{
-//		}
-//	}
 
 
 	private: identifier_type id_;
@@ -894,8 +433,8 @@ class multi_tier_application
 //	private: ::std::vector<des_event_source_pointer> ptr_tier_response_evt_srcs_;
 //	private: des_event_source_pointer ptr_control_evt_src_;
 //	private: uint_type priority_;
-	private: data_center_pointer ptr_dc_;//[sguazt] EXP
-};
+	private: data_center_pointer ptr_dc_;
+}; // multi_tier_application
 
 
 template <
@@ -906,7 +445,8 @@ template <
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, multi_tier_application<TraitsT> const& app)
 {
 	return os << "<"
-			  << app.name()
+			  << "ID: " << app.id()
+			  << ", Name: " << app.name()
 			  << ">";
 }
 
