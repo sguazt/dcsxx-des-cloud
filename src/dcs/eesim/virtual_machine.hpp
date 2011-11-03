@@ -37,6 +37,7 @@
 #include <dcs/math/stats/function/rand.hpp>
 #include <dcs/eesim/application_tier.hpp>
 #include <dcs/eesim/fwd.hpp>
+#include <dcs/eesim/logging.hpp>
 #include <dcs/eesim/physical_machine.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/physical_resource_view.hpp>
@@ -44,10 +45,13 @@
 #include <dcs/eesim/registry.hpp>
 #include <dcs/eesim/utility.hpp>
 #include <dcs/eesim/virtual_machine_monitor.hpp>
+#include <dcs/exception.hpp>
+#include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
 #include <iomanip>
 #include <iosfwd>
 #include <map>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -94,6 +98,7 @@ class virtual_machine
 	private: typedef ::std::map<physical_resource_category,statistic_container> resource_share_stat_impl_container;
 
 
+	/// Default constructor.
 	public: explicit virtual_machine(std::string const& name="Unnamed VM")
 		: id_(traits_type::invalid_virtual_machine_id),
 		  name_(name),
@@ -101,6 +106,26 @@ class virtual_machine
 		  ptr_vmm_(0)
 	{
 		// empty
+	}
+
+
+	/// Copy constructor.
+	private: virtual_machine(virtual_machine const& that)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(that);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-constructor not yet implemented." );
+	}
+
+
+	/// Copy assignment.
+	private: virtual_machine& operator=(virtual_machine const& rhs)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(rhs);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-assigment not yet implemented." );
 	}
 
 
@@ -138,6 +163,12 @@ class virtual_machine
 //	{
 //		ptr_app_ = ptr_app;
 //	}
+
+
+	public: bool assigned() const
+	{
+		return ptr_tier_;
+	}
 
 
 	public: bool deployed() const
@@ -333,7 +364,9 @@ class virtual_machine
 		{
 			// Issue a warning. This is not an error since we may call this
 			// method when a VM is still to be deployed.
-			::std::clog << "[Warning] VM " << id_ << " (" << name_ << ") not correctly deployed." << ::std::endl;
+			::std::ostringstream oss;
+			oss << "Virtual Machine " << *this << " not correctly deployed.";
+			log_warn(DCS_EESIM_LOGGING_AT, oss.str());
 		}
 	}
 
@@ -536,6 +569,15 @@ class virtual_machine
 //					value
 //				)
 //			);
+
+		// Express the input (actual) share value wrt reference machine
+		if (ptr_tier_ && ptr_vmm_)
+		{
+			value = scale_resource_share(ptr_vmm_->hosting_machine().resource(category)->capacity(),
+										 ptr_tier_->application().reference_resource(category).capacity(),
+										 value);
+		}
+
 		typedef typename statistic_container::iterator iterator;
 		iterator end_it(wanted_res_shares_stats_[category].end());
 		for (iterator it = wanted_res_shares_stats_[category].begin(); it != end_it; ++it)
@@ -601,6 +643,14 @@ class virtual_machine
 		if (!res_shares_stats_.count(category))
 		{
 			create_share_stats(category);
+		}
+
+		// Express the input (actual) share value wrt reference machine
+		if (ptr_tier_ && ptr_vmm_)
+		{
+			value = scale_resource_share(ptr_vmm_->hosting_machine().resource(category)->capacity(),
+										 ptr_tier_->application().reference_resource(category).capacity(),
+										 value);
 		}
 
 		::std::for_each(
@@ -679,9 +729,16 @@ template <typename CharT, typename CharTraitsT, typename TraitsT>
 {
 	os << "<"
 	   <<   "ID: " << vm.id()
-	   << ", Name: " << vm.name()
-	   << ", Guest: " << vm.guest_system().id()
-	   << ", Deployed: " << ::std::boolalpha << vm.deployed()
+	   << ", Name: " << vm.name();
+	if (vm.assigned())
+	{
+	   os << ", Guest: " << vm.guest_system().id();
+	}
+	else
+	{
+	   os << ", Guest: <Not Assigned>";
+	}
+	os << ", Deployed: " << ::std::boolalpha << vm.deployed()
 	   << ", Power Status: " << vm.power_state()
 	   << ">";
 
