@@ -15,8 +15,14 @@ namespace dcs { namespace eesim { namespace config {
 
 enum migration_controller_category
 {
+	best_fit_decreasing_migration_controller,
 	dummy_migration_controller,
 	optimal_migration_controller
+};
+
+
+struct best_fit_decreasing_migration_controller_config
+{
 };
 
 
@@ -44,12 +50,14 @@ template <typename RealT>
 struct migration_controller_config
 {
 	typedef RealT real_type;
+	typedef best_fit_decreasing_migration_controller_config best_fit_decreasing_migration_controller_config_type;
 	typedef dummy_migration_controller_config dummy_migration_controller_config_type;
 	typedef optimal_migration_controller_config<real_type> optimal_migration_controller_config_type;
 
 	real_type sampling_time;
 	migration_controller_category category;
-	::boost::variant<dummy_migration_controller_config_type,
+	::boost::variant<best_fit_decreasing_migration_controller_config_type,
+					 dummy_migration_controller_config_type,
 					 optimal_migration_controller_config_type> category_conf;
 };
 
@@ -59,6 +67,9 @@ template <typename CharT, typename CharTraitsT>
 {
 	switch (category)
 	{
+		case best_fit_decreasing_migration_controller:
+			os << "best-fit-decreasing";
+			break;
 		case dummy_migration_controller:
 			os << "dummy";
 			break;
@@ -66,6 +77,17 @@ template <typename CharT, typename CharTraitsT>
 			os << "optimal";
 			break;
 	}
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, best_fit_decreasing_migration_controller_config const& conf)
+{
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( conf );
+
+	os << "<(best-fit-decreasing-migration-controller)>";
 
 	return os;
 }

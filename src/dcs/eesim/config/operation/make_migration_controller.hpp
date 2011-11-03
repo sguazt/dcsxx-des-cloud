@@ -4,6 +4,7 @@
 
 //#include <boost/variant.hpp>
 #include <dcs/eesim/base_migration_controller.hpp>
+#include <dcs/eesim/best_fit_decreasing_migration_controller.hpp>
 #include <dcs/eesim/config/migration_controller.hpp>
 #include <dcs/eesim/data_center.hpp>
 #include <dcs/eesim/optimal_solver_params.hpp>
@@ -29,6 +30,17 @@ template <typename TraitsT, typename RealT>
 
 	switch (controller_conf.category)
 	{
+		case best_fit_decreasing_migration_controller:
+			{
+				typedef typename controller_config_type::best_fit_decreasing_migration_controller_config_type controller_config_impl_type;
+				typedef ::dcs::eesim::best_fit_decreasing_migration_controller<traits_type> controller_impl_type;
+
+				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
+
+				ptr_controller = ::dcs::make_shared<controller_impl_type>(ptr_dc,
+																		  controller_conf.sampling_time);
+			}
+			break;
 		case optimal_migration_controller:
 			{
 				typedef typename controller_config_type::optimal_migration_controller_config_type controller_config_impl_type;

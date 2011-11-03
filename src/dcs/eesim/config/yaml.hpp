@@ -404,6 +404,10 @@ initial_placement_strategy_category text_to_initial_placement_strategy_category(
 	{
 		return best_fit_initial_placement_strategy;
 	}
+	if (!istr.compare("best-fit-decreasing"))
+	{
+		return best_fit_decreasing_initial_placement_strategy;
+	}
 	if (!istr.compare("first-fit"))
 	{
 		return first_fit_initial_placement_strategy;
@@ -442,6 +446,10 @@ migration_controller_category text_to_migration_controller_category(::std::strin
 {
 	::std::string istr = ::dcs::string::to_lower_copy(str);
 
+	if (!istr.compare("best-fit-decreasing"))
+	{
+		return best_fit_decreasing_migration_controller;
+	}
 	if (!istr.compare("optimal"))
 	{
 		return optimal_migration_controller;
@@ -3171,6 +3179,15 @@ void operator>>(::YAML::Node const& node, initial_placement_strategy_config<Real
 				strategy_conf.category_conf = strategy_conf_impl;
 			}
 			break;
+		case best_fit_decreasing_initial_placement_strategy:
+			{
+				typedef typename strategy_config_type::best_fit_decreasing_initial_placement_strategy_config_type strategy_config_impl_type;
+
+				strategy_config_impl_type strategy_conf_impl;
+
+				strategy_conf.category_conf = strategy_conf_impl;
+			}
+			break;
 		case first_fit_initial_placement_strategy:
 			{
 				typedef typename strategy_config_type::first_fit_initial_placement_strategy_config_type strategy_config_impl_type;
@@ -3303,6 +3320,15 @@ void operator>>(::YAML::Node const& node, migration_controller_config<RealT>& co
 
 	switch (controller_conf.category)
 	{
+		case best_fit_decreasing_migration_controller:
+			{
+				typedef typename controller_config_type::best_fit_decreasing_migration_controller_config_type controller_config_impl_type;
+
+				controller_config_impl_type controller_conf_impl;
+
+				controller_conf.category_conf = controller_conf_impl;
+			}
+			break;
 		case optimal_migration_controller:
 			{
 				typedef typename controller_config_type::optimal_migration_controller_config_type controller_config_impl_type;
@@ -3519,6 +3545,7 @@ class yaml_reader
 				dc.initial_placement_strategy(strategy);
 			}
 			// Incremental placement
+			if (node.FindValue("incremental-placement-strategy"))
 			{
 				typedef typename data_center_config_type::incremental_placement_strategy_config_type incremental_placement_strategy_config_type;
 
