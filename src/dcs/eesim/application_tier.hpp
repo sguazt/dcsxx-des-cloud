@@ -65,7 +65,7 @@ class application_tier
 //	public: typedef ::dcs::shared_ptr<des_event_source_type> des_event_source_pointer;
 //	public: typedef ::dcs::math::stats::any_distribution<real_type> random_distribution_type;
 	private: typedef ::std::map<physical_resource_category,real_type> resource_share_impl_container;
-	private: typedef ::std::pair<physical_resource_category,real_type> resource_share_type;
+	public: typedef ::std::pair<physical_resource_category,real_type> resource_share_type;
 	public: typedef ::std::vector<resource_share_type> resource_share_container;
 	public: typedef uint_type identifier_type;
 
