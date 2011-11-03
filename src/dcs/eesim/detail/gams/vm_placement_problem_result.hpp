@@ -152,6 +152,12 @@ class vm_placement_problem_result
 			}
 //::std::cerr << "Read-GAMS>> " << line << " (new state: " << state << ")" <<::std::endl;//XXX
 		}
+
+//		if (ok && (model_result_ != optimal_model_result || model_result_ != locally_optimal_model_result))
+//		{
+//			// Do not trust the cost value returned by GAMS
+//			cost_ = ...
+//		}
 	}
 
 
