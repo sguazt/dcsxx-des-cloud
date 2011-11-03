@@ -70,7 +70,7 @@ template <typename TraitsT>
 	::std::size_t n_pms(pms.size());
 
 	// Create the set of all virtual machines
-	vm_container vms(dc.virtual_machines());
+	vm_container vms(dc.active_virtual_machines());
 
 	::std::size_t n_vms(vms.size());
 
