@@ -31,6 +31,8 @@
 #include <dcs/eesim/physical_machine.hpp>
 #include <dcs/eesim/power_status.hpp>
 #include <dcs/eesim/virtual_machine.hpp>
+#include <dcs/exception.hpp>
+#include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
 //#include <map>
 #include <stdexcept>
@@ -68,6 +70,26 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 	: ptr_pm_(0)
 //		: vms_counter_(0)
 	{
+	}
+
+
+	/// Copy constructor.
+	private: virtual_machine_monitor(virtual_machine_monitor const& that)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(that);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-constructor not yet implemented." );
+	}
+
+
+	/// Copy assignment.
+	private: virtual_machine_monitor& operator=(virtual_machine_monitor const& rhs)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(rhs);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-assigment not yet implemented." );
 	}
 
 
@@ -119,6 +141,11 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 			vms_.count(ptr_vm->id()) > 0,
 			throw ::std::runtime_error("[dcs::eesim::virtual_machine_monitor::destroy_domain] Unknown virtual machine.")
 		);
+
+		if (ptr_vm->power_state() == powered_on_power_status)
+		{
+			this->power_off(ptr_vm);
+		}
 
 		ptr_vm->vmm(0);
 		vms_.erase(ptr_vm->id());
@@ -226,11 +253,7 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 		);
 		DCS_DEBUG_ASSERT( ptr_pm_ );
 
-////		ptr_vm->suspend();
-
-//FIXME: uncomment this below
-//		ptr_pm_->simulation_model().vm_suspend(ptr_vm);
-		throw ::std::runtime_error("To Be Implemented.");
+		ptr_pm_->simulation_model().vm_suspend(ptr_vm);
 	}
 
 
@@ -243,11 +266,7 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 		);
 		DCS_DEBUG_ASSERT( ptr_pm_ );
 
-////		ptr_vm->resume();
-
-//FIXME: uncomment this below
-//		ptr_pm_->simulation_model().vm_resume(ptr_vm);
-		throw ::std::runtime_error("To Be Implemented.");
+		ptr_pm_->simulation_model().vm_resume(ptr_vm);
 	}
 
 
