@@ -9,6 +9,7 @@
 #include <dcs/eesim/base_application_simulation_model.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
 #include <dcs/eesim/registry.hpp>
+#include <dcs/exception.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 //#include <map>
@@ -65,10 +66,30 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 	}
 
 
+	/// Copy constructor.
+	private: application_simulation_model_adaptor(application_simulation_model_adaptor<TraitsT,ModelT,ModelTraitsT> const& that)
+	{
+		DCS_MACRO_SUPPRES_UNUSED_VARIABLE_WARNING(that);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-constructor not yet implemented." );
+	}
+
+
+	/// Copy assignment.
+	private: application_simulation_model_adaptor<TraitsT,ModelT,ModelTraitsT>& operator=(application_simulation_model_adaptor<TraitsT,ModelT,ModelTraitsT> const& rhs)
+	{
+		DCS_MACRO_SUPPRES_UNUSED_VARIABLE_WARNING(rhs);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-assigment not yet implemented." );
+	}
+
+
 	/// The destructor.
 	public: ~application_simulation_model_adaptor()
 	{
-		disconnect_from_event_sources();
+		finit();
 	}
 
 
@@ -91,7 +112,19 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 
 	private: void init()
 	{
-		connect_to_event_sources();
+//		if (this->enabled())
+//		{
+			connect_to_event_sources();
+//		}
+	}
+
+
+	private: void finit()
+	{
+//		if (this->enabled())
+//		{
+			disconnect_from_event_sources();
+//		}
 	}
 
 
@@ -177,22 +210,53 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 
 	private: void do_enable(bool flag)
 	{
+		base_type::do_enable(flag);
+
 		model_traits_type::enable(model_, flag);
 
-		if (flag)
+		typedef typename output_statistic_container::iterator stat_iterator;
+
+		ptr_num_arrs_stat_->enabled(flag);
+		ptr_num_deps_stat_->enabled(flag);
+		ptr_num_sla_viols_stat_->enabled(flag);
+
+		stat_iterator end_stat_it;
+
+		end_stat_it = tier_num_arrs_stats_.end();
+		for (stat_iterator stat_it = tier_num_arrs_stats_.begin(); stat_it != end_stat_it; ++stat_it)
 		{
-			if (!this->enabled())
-			{
-				connect_to_event_sources();
-			}
+			output_statistic_pointer ptr_stat(*stat_it);
+
+			// check: paranoid check
+			DCS_DEBUG_ASSERT( ptr_stat );
+
+			ptr_stat->enable(flag);
 		}
-		else
+		end_stat_it = tier_num_deps_stats_.end();
+		for (stat_iterator stat_it = tier_num_deps_stats_.begin(); stat_it != end_stat_it; ++stat_it)
 		{
-			if (this->enabled())
-			{
-				disconnect_from_event_sources();
-			}
+			output_statistic_pointer ptr_stat(*stat_it);
+
+			// check: paranoid check
+			DCS_DEBUG_ASSERT( ptr_stat );
+
+			ptr_stat->enable(flag);
 		}
+
+//		if (flag)
+//		{
+//			if (!this->enabled())
+//			{
+//				connect_to_event_sources();
+//			}
+//		}
+//		else
+//		{
+//			if (this->enabled())
+//			{
+//				disconnect_from_event_sources();
+//			}
+//		}
 	}
 
 

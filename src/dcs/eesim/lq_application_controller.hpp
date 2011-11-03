@@ -68,6 +68,7 @@
 #include <dcs/eesim/registry.hpp>
 #include <dcs/eesim/system_identification_strategy_params.hpp>
 #include <dcs/eesim/utility.hpp>
+#include <dcs/exception.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
@@ -367,9 +368,30 @@ class lq_application_controller: public base_application_controller<TraitsT>
 	}
 
 
+	/// Copy constructor.
+	private: lq_application_controller(lq_application_controller const& that)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(that);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-constructor not yet implemented." );
+	}
+
+
+	/// Copy assignment.
+	private: lq_application_controller& operator=(lq_application_controller const& rhs)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(rhs);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-assigment not yet implemented." );
+	}
+
+
+	/// Destructor
 	public: virtual ~lq_application_controller()
 	{
-		this->disconnect_from_event_sources();
+		finit();
 	}
 
 
@@ -378,6 +400,12 @@ class lq_application_controller: public base_application_controller<TraitsT>
 		init_measures();
 
 		connect_to_event_sources();
+	}
+
+
+	private: void finit()
+	{
+		this->disconnect_from_event_sources();
 	}
 
 
@@ -1695,7 +1723,7 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 		reset_measures();
 
 		DCS_DEBUG_TRACE("APP: " << app.id() << " - Control stats: Count: " << count_ << " - Identification Failure Count: " << ident_fail_count_ << " - Control Failures Count: " << ctrl_fail_count_);
-if ((count_ % 1000) == 0)//XXX
+if (((count_-1) % 1000) == 0)//XXX
 {//XXX
 ::std::cerr << "APP: " << app.id() << " - Control stats: Count: " << count_ << " - Identification Failure Count: " << ident_fail_count_ << " - Control Failures Count: " << ctrl_fail_count_ << ::std::endl;//XXX
 ::std::cerr << "APP: " << this->application().id() << " - END Process CONTROL event -- Actual Output: " << measures_.at(response_time_performance_measure)->estimate() << " (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")" << ::std::endl;//XXX
