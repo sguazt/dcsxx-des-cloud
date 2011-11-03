@@ -18,6 +18,7 @@
 #include <dcs/eesim/registry.hpp>
 #include <dcs/eesim/user_request.hpp>
 #include <dcs/eesim/utility.hpp>
+#include <dcs/exception.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
@@ -227,6 +228,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 	private: typedef ::dcs::des::mean_estimator<real_type,uint_type> mean_estimator_statistic_type;
 	private: typedef ::std::vector<output_statistic_pointer> output_statistic_container;
 	private: typedef typename base_type::virtual_machine_type virtual_machine_type;
+	private: typedef typename base_type::virtual_machine_pointer virtual_machine_pointer;
 	private: typedef typename qn_model_type::customer_type customer_type;
 	private: typedef ::dcs::shared_ptr<customer_type> customer_pointer;
 
@@ -238,18 +240,38 @@ class qn_application_simulation_model: public base_application_simulation_model<
 	  model_(model),
 	  tier_node_map_(),
 	  num_sla_viols_(0),
-	  ptr_num_arrs_stat_(new mean_estimator_statistic_type()),//FIXME: this should be forwarded to the adaptee object
-	  ptr_num_deps_stat_(new mean_estimator_statistic_type()),//FIXME: this should be forwarded to the adaptee object
+	  ptr_num_arrs_stat_(new mean_estimator_statistic_type()),//FIXME: this should be forwarded to the qn_model_type object
+	  ptr_num_deps_stat_(new mean_estimator_statistic_type()),//FIXME: this should be forwarded to the qn_model_type object
 	  ptr_num_sla_viols_stat_(new mean_estimator_statistic_type())
 	{
 		init();
 	}
 
 
+	/// Copy constructor.
+	private: qn_application_simulation_model(qn_application_simulation_model const& that)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(that);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-constructor not yet implemented." );
+	}
+
+
+	/// Copy assignment.
+	private: qn_application_simulation_model& operator=(qn_application_simulation_model const& rhs)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(rhs);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-assigment not yet implemented." );
+	}
+
+
 	/// The destructor.
 	public: ~qn_application_simulation_model()
 	{
-		disconnect_from_event_sources();
+		finit();
 	}
 
 
@@ -273,7 +295,19 @@ class qn_application_simulation_model: public base_application_simulation_model<
 
 	private: void init()
 	{
-		connect_to_event_sources();
+//		if (this->enabled())
+//		{
+			connect_to_event_sources();
+//		}
+	}
+
+
+	private: void finit()
+	{
+//		if (this->enabled())
+//		{
+			disconnect_from_event_sources();
+//		}
 	}
 
 
@@ -399,31 +433,52 @@ class qn_application_simulation_model: public base_application_simulation_model<
 
 	//@{ Interface Member Functions
 
-	private: void do_enable(bool flag)
+	protected: void do_enable(bool flag)
 	{
+		base_type::do_enable(flag);
+
 		model_.enable(flag);
 
-		if (flag)
+		// enable/disable statistics
+		typedef typename output_statistic_container::iterator stat_iterator;
+
+		ptr_num_arrs_stat_->enable(flag);
+		ptr_num_deps_stat_->enable(flag);
+		ptr_num_sla_viols_stat_->enable(flag);
+
+		stat_iterator stat_end_it;
+		stat_end_it = tier_num_arrs_stats_.end();
+		for (stat_iterator stat_it = tier_num_arrs_stats_.begin(); stat_it != stat_end_it; ++stat_it)
 		{
-			if (!this->enabled())
-			{
-				connect_to_event_sources();
-			}
+			(*stat_it)->enable(flag);
 		}
-		else
+		stat_end_it = tier_num_deps_stats_.end();
+		for (stat_iterator stat_it = tier_num_deps_stats_.begin(); stat_it != stat_end_it; ++stat_it)
 		{
-			if (this->enabled())
-			{
-				disconnect_from_event_sources();
-			}
+			(*stat_it)->enable(flag);
 		}
+
+//		if (flag)
+//		{
+//			if (!this->enabled())
+//			{
+//				connect_to_event_sources();
+//			}
+//		}
+//		else
+//		{
+//			if (this->enabled())
+//			{
+//				disconnect_from_event_sources();
+//			}
+//		}
 	}
 
 
-	private: bool do_enabled() const
-	{
-		return model_.enabled();
-	}
+//	private: bool do_enabled() const
+//	{
+//		return model_.enabled();
+//	}
 
 
 	private: uint_type do_actual_num_arrivals() const
@@ -985,6 +1040,7 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 		return make_request(ptr_customer);
 	}
 
+
 	private: user_request_type make_request(customer_pointer const& ptr_customer) const
 	{
 //		typedef typename qn_model_type::customer_type customer_type;
@@ -1015,6 +1071,16 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 		{
 			uint_type tier_id(it->first);
 			node_identifier_type node_id(it->second);
+			virtual_machine_pointer ptr_vm(this->tier_virtual_machine(tier_id));
+
+			// check: paranoid-check
+			DCS_DEBUG_ASSERT( ptr_vm );
+
+			// It is possible that the VM for this tier has already been displaced or it is not powered-on
+			if (!ptr_vm->deployed() || ptr_vm->power_state() != powered_on_power_status)
+			{
+				continue;
+			}
 
 			::std::vector<real_type> arr_times;
 			::std::vector<real_type> dep_times;
@@ -1079,7 +1145,7 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 	private: output_statistic_container tier_num_deps_stats_;
 
 	//@} Data Members
-};
+}; // qn_application_simulation_model
 
 }} // Namespace dcs::eesim
 
