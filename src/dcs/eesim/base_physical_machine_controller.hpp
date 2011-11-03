@@ -5,6 +5,7 @@
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
+#include <dcs/des/entity.hpp>
 #include <dcs/eesim/physical_machine.hpp>
 #include <dcs/eesim/registry.hpp>
 #include <dcs/functional/bind.hpp>
@@ -16,7 +17,7 @@
 namespace dcs { namespace eesim {
 
 template <typename TraitsT>
-class base_physical_machine_controller
+class base_physical_machine_controller: public ::dcs::des::entity
 {
 	private: typedef base_physical_machine_controller<TraitsT> self_type;
 	public: typedef TraitsT traits_type;
@@ -73,7 +74,7 @@ class base_physical_machine_controller
 	{
 		if (this != &rhs)
 		{
-			this->disconnect_from_event_sources();
+			finit();
 
 			ptr_mach_ = rhs.ptr_mach_;
 			ts_ = rhs.ts_;
@@ -97,7 +98,7 @@ class base_physical_machine_controller
 	/// The destructor.
 	public: virtual ~base_physical_machine_controller()
 	{
-		this->disconnect_from_event_sources();
+		finit();
 	}
 
 
@@ -184,6 +185,12 @@ class base_physical_machine_controller
 	private: void init()
 	{
 		this->connect_to_event_sources();
+	}
+
+
+	private: void finit()
+	{
+		this->disconnect_from_event_sources();
 	}
 
 
@@ -274,7 +281,10 @@ class base_physical_machine_controller
 
 	private: void process_sys_init(des_event_type const& evt, des_engine_context_type& ctx)
 	{
-		schedule_control();
+		if (this->enabled())
+		{
+			schedule_control();
+		}
 
 		do_process_sys_init(evt, ctx);
 	}
@@ -287,7 +297,10 @@ class base_physical_machine_controller
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing CONTROL (Clock: " << ctx.simulated_time() << ")");//XXX
 
-		schedule_control();
+		if (this->enabled())
+		{
+			schedule_control();
+		}
 
 //		do_process_control(evt, ctx);
 		control();
@@ -317,16 +330,27 @@ class base_physical_machine_controller
 	}
 
 
-	private: virtual void do_control() = 0;
-
-
-//	private: virtual void do_process_control(des_event_type const& evt, des_engine_context_type& ctx) = 0;
-
-
 	protected: virtual void do_schedule_control()
 	{
 		// empty
 	}
+
+
+	protected: virtual void do_enable(bool flag)
+	{
+		ptr_control_evt_src_->enable(flag);
+
+		if (flag && !this->enabled())
+		{
+			schedule_control();
+		}
+	}
+
+
+	private: virtual void do_control() = 0;
+
+
+//	private: virtual void do_process_control(des_event_type const& evt, des_engine_context_type& ctx) = 0;
 
 	//@} Interface Member Functions
 
