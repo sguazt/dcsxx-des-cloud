@@ -33,6 +33,8 @@
 #include <dcs/eesim/detail/initial_vm_placement_optimal_solvers.hpp>
 #include <dcs/eesim/performance_measure_category.hpp>
 #include <dcs/eesim/virtual_machines_placement.hpp>
+#include <dcs/exception.hpp>
+#include <dcs/macro.hpp>
 ///#include <dcs/memory.hpp>
 #include <map>
 #include <stdexcept>
@@ -71,6 +73,26 @@ class optimal_initial_placement_strategy: public base_initial_placement_strategy
 	}
 
 
+	/// Copy constructor.
+	private: optimal_initial_placement_strategy(optimal_initial_placement_strategy const& that)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(that);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-constructor not yet implemented." );
+	}
+
+
+	/// Copy assignment.
+	private: optimal_initial_placement_strategy& operator=(optimal_initial_placement_strategy const& rhs)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(rhs);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-assigment not yet implemented." );
+	}
+
+
 	private: virtual_machines_placement<traits_type> do_placement(data_center_type const& dc)
 	{
 DCS_DEBUG_TRACE("BEGIN Initial Placement");//XXX
@@ -93,7 +115,7 @@ DCS_DEBUG_TRACE("BEGIN Initial Placement");//XXX
             typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
             typedef typename virtual_machine_container::const_iterator virtual_machine_iterator;
 
-            virtual_machine_container vms(dc.virtual_machines());
+            virtual_machine_container vms(dc.active_virtual_machines());
             virtual_machine_iterator vm_end_it(vms.end());
             for (virtual_machine_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
             {
