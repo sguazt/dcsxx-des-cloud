@@ -81,13 +81,12 @@ class best_fit_decreasing_incremental_placement_strategy: public base_incrementa
 		}
 		pms.clear();
 
-		/// Sort virtual machines according to their shares
+		// Sort virtual machines according to their shares
 		vm_container sorted_vms(vms);
 		::std::sort(sorted_vms.begin(),
 					sorted_vms.end(),
 					detail::ptr_virtual_machine_greater_comparator<vm_type>());
 
-::std::cerr << "BEGIN Incremental Placement" << ::std::endl;//XXX
 DCS_DEBUG_TRACE("BEGIN Incremental Placement");//XXX
 DCS_DEBUG_TRACE("#Machines: " << sorted_pms.size());//XXX
 DCS_DEBUG_TRACE("#VMs: " << sorted_vms.size());//XXX
@@ -183,7 +182,6 @@ DCS_DEBUG_TRACE("#VMs: " << sorted_vms.size());//XXX
 											  utils.end(),
 											  dc);
 DCS_DEBUG_TRACE("Placed: VM(" << ptr_vm->id() << ") -> PM(" << ptr_pm->id() << ") ==> OK? " <<  std::boolalpha << placed);///XXX
-::std::cerr << "Evaluating Placement of VM(" << ptr_vm->id() << ") over PM(" << ptr_pm->id() << ") ==> " <<  (placed ? "YES" : "NO") << ::std::endl;///XXX
 			}
 		}
 
