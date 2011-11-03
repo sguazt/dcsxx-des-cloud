@@ -39,9 +39,11 @@
 #include <dcs/eesim/registry.hpp>
 #include <dcs/eesim/resource_utilization_profile.hpp>
 #include <dcs/eesim/user_request.hpp>
+#include <dcs/exception.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -77,6 +79,11 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 
 	private: static const ::std::string poweron_event_source_name;
 	private: static const ::std::string poweroff_event_source_name;
+	private: static const ::std::string vm_poweron_event_source_name;
+	private: static const ::std::string vm_poweroff_event_source_name;
+	private: static const ::std::string vm_suspend_event_source_name;
+	private: static const ::std::string vm_resume_event_source_name;
+	private: static const ::std::string vm_migration_event_source_name;
 
 
 	public: default_physical_machine_simulation_model()
@@ -87,9 +94,11 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	  last_pwron_time_(0),
 	  ptr_pwron_evt_src_(new des_event_source_type(poweron_event_source_name)),
 	  ptr_pwroff_evt_src_(new des_event_source_type(poweroff_event_source_name)),
-	  ptr_vm_pwron_evt_src_(new des_event_source_type(poweron_event_source_name)),
-	  ptr_vm_pwroff_evt_src_(new des_event_source_type(poweroff_event_source_name)),
-	  ptr_vm_migr_evt_src_(new des_event_source_type(poweroff_event_source_name)),
+	  ptr_vm_pwron_evt_src_(new des_event_source_type(vm_poweron_event_source_name)),
+	  ptr_vm_pwroff_evt_src_(new des_event_source_type(vm_poweroff_event_source_name)),
+	  ptr_vm_suspend_evt_src_(new des_event_source_type(vm_suspend_event_source_name)),
+	  ptr_vm_resume_evt_src_(new des_event_source_type(vm_resume_event_source_name)),
+	  ptr_vm_migr_evt_src_(new des_event_source_type(vm_migration_event_source_name)),
 	  ptr_energy_stat_(new mean_estimator_statistic_type()), //FIXME: statistic type (mean) is hard-coded
 	  ptr_uptime_stat_(new mean_estimator_statistic_type()), //FIXME: statistic type (mean) is hard-coded
 	  ptr_util_stat_(new mean_estimator_statistic_type()) //FIXME: statistic type (mean) is hard-coded
@@ -98,16 +107,48 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	}
 
 
+	/// Copy constructor.
+	private: default_physical_machine_simulation_model(default_physical_machine_simulation_model const& that)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(that);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-constructor not yet implemented." );
+	}
+
+
+	/// Copy assignment.
+	private: default_physical_machine_simulation_model& operator=(default_physical_machine_simulation_model const& rhs)
+	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(rhs);
+
+		//TODO
+		DCS_EXCEPTION_THROW( ::std::runtime_error, "Copy-assigment not yet implemented." );
+	}
+
+
 	/// The destructor
 	public: ~default_physical_machine_simulation_model()
 	{
-		disconnect_from_event_sources();
+		finit();
 	}
 
 
 	private: void init()
 	{
-		connect_to_event_sources();
+//		if (this->enabled())
+//		{
+			connect_to_event_sources();
+//		}
+	}
+
+
+	private: void finit()
+	{
+//		if (this->enabled())
+//		{
+			disconnect_from_event_sources();
+//		}
 	}
 
 
@@ -140,24 +181,6 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 				::dcs::functional::placeholders::_2
 			)
 		);
-
-//		// Connect to local event sources
-//		ptr_pwron_evt_src_->connect(
-//			::dcs::functional::bind(
-//				&self_type::process_power_on,
-//				this,
-//				::dcs::functional::placeholders::_1,
-//				::dcs::functional::placeholders::_2
-//			)
-//		);
-//		ptr_pwroff_evt_src_->connect(
-//			::dcs::functional::bind(
-//				&self_type::process_power_off,
-//				this,
-//				::dcs::functional::placeholders::_1,
-//				::dcs::functional::placeholders::_2
-//			)
-//		);
 	}
 
 
@@ -323,6 +346,8 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 
 	private: void update_utilization_profile(virtual_machine_pointer const& ptr_vm)
 	{
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Updating Utilization Profile (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+
 		DCS_DEBUG_ASSERT( ptr_vm );
 
 		DCS_DEBUG_ASSERT( vm_host_time_map_.count(ptr_vm->id()) > 0 );
@@ -366,13 +391,18 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			}
 */
 		}
+
+		DCS_DEBUG_TRACE("(" << this << ") END Updating Utilization Profile (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 	}
 
 
 	private: void update_utilization_profile(virtual_machine_pointer const& ptr_vm, user_request<traits_type> const& req)
 	{
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Updating Utilization Profile (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+
 		DCS_DEBUG_ASSERT( ptr_vm );
 
+//::std::cerr << "[default_physical_machine_simulation_model] (" << this << ") Update Utilization Profile - PM: " << this->machine() << " - VM: " << *ptr_vm << ::std::endl;//XXX
 		DCS_DEBUG_ASSERT( vm_host_time_map_.count(ptr_vm->id()) > 0 );
 		DCS_DEBUG_ASSERT( vm_host_time_map_.at(ptr_vm->id()).size() > 0 );
 
@@ -401,10 +431,43 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 				res_profile_map_[category](*profile_it);
 			}
 		}
+
+		DCS_DEBUG_TRACE("(" << this << ") END Updating Utilization Profile (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 	}
 
 
 	//@{ Interface Member Functions
+
+	protected: void do_enable(bool flag)
+	{
+		base_type::do_enable(flag);
+
+		ptr_energy_stat_->enable(flag);
+		ptr_uptime_stat_->enable(flag);
+		ptr_util_stat_->enable(flag);
+
+		ptr_pwron_evt_src_->enable(flag);
+		ptr_pwroff_evt_src_->enable(flag);
+		ptr_vm_pwron_evt_src_->enable(flag);
+		ptr_vm_pwroff_evt_src_->enable(flag);
+		ptr_vm_migr_evt_src_->enable(flag);
+
+//		if (flag)
+//		{
+//			if (!this->enabled())
+//			{
+//				connect_to_event_sources();
+//			}
+//		}
+//		else
+//		{
+//			if (this->enabled())
+//			{
+//				disconnect_from_event_sources();
+//			}
+//		}
+	}
+
 
 	private: power_status do_power_state() const
 	{
@@ -415,6 +478,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	private: void do_power_on()
 	{
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Power-On physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+//::std::cerr << "[default_physical_machine_simulation] (" << this << ") BEGIN Do Power-On physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")" << ::std::endl;//XXX
 
 		if (pwr_state_ == powered_off_power_status)
 		{
@@ -438,6 +502,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			log_warn(DCS_EESIM_LOGGING_AT, "Cannot power-on a non powered-off physical machine.");
 		}
 
+//::std::cerr << "[default_physical_machine_simulation] (" << this << ") END Do Power-On physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")" << ::std::endl;//XXX
 		DCS_DEBUG_TRACE("(" << this << ") END Do Power-On physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 	}
 
@@ -445,6 +510,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	private: void do_power_off()
 	{
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Power-Off physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+//::std::cerr << "[default_physical_machine_simulation] (" << this << ") BEGIN Do Power-Off physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")" << ::std::endl;//XXX
 
 		if (pwr_state_ != powered_off_power_status)
 		{
@@ -467,6 +533,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			real_type cur_time(reg.des_engine().simulated_time());
 
 			// Update the uptime
+//::std::cerr << "Update UPTIME - old: " << uptime_ << " - new: " << (uptime_+(cur_time-last_pwron_time_)) << ::std::endl;//XXX
 			uptime_ += cur_time - last_pwron_time_;
 
 			// Fire the power-off event
@@ -480,6 +547,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			log_warn(DCS_EESIM_LOGGING_AT, "Cannot power-off an already powered-off physical machine.");
 		}
 
+//::std::cerr << "[default_physical_machine_simulation] (" << this << ") END Do Power-Off physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")" << ::std::endl;//XXX
 		DCS_DEBUG_TRACE("(" << this << ") END Do Power-Off physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 	}
 
@@ -497,6 +565,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		DCS_DEBUG_ASSERT( ptr_vm );
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Power-On virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+//::std::cerr << "[default_physical_machine_simulation_model] (" << this << ") BEGIN Do Power-On virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")" << ::std::endl;//XXX
 
 		if (ptr_vm->power_state() == powered_off_power_status)
 		{
@@ -529,6 +598,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			log_warn(DCS_EESIM_LOGGING_AT, "Cannot power-on a non powered-off virtual machine.");
 		}
 
+//::std::cerr << "[default_physical_machine_simulation_model] (" << this << ") END Do Power-On virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")" << ::std::endl;//XXX
 		DCS_DEBUG_TRACE("(" << this << ") END Do Power-On virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 	}
 
@@ -538,6 +608,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		DCS_DEBUG_ASSERT( ptr_vm );
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Power-Off virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+//::std::cerr << "[default_physical_machine_simulation_model] (" << this << ") BEGIN Do Power-Off virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")" << ::std::endl;///XXX
 
 		if (ptr_vm->power_state() != powered_off_power_status)
 		{
@@ -575,7 +646,98 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			log_warn(DCS_EESIM_LOGGING_AT, "Cannot power-off an already powered-off virtual machine.");
 		}
 
-		DCS_DEBUG_TRACE("(" << this << ") END Do Power-Off virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+//::std::cerr << "(" << this << ") END Do Power-Off virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")" << ::std::endl;///XXX
+		DCS_DEBUG_TRACE("[default_physical_machine_simulation_model] (" << this << ") END Do Power-Off virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+	}
+
+
+	private: void do_vm_suspend(virtual_machine_pointer const& ptr_vm)
+	{
+		DCS_DEBUG_ASSERT( ptr_vm );
+
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Suspend virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+
+		if (ptr_vm->power_state() == powered_on_power_status)
+		{
+			registry_type& reg(registry_type::instance());
+
+			real_type cur_time(reg.des_engine().simulated_time());
+
+			DCS_DEBUG_ASSERT( vm_host_time_map_.count(ptr_vm->id()) > 0 );
+			DCS_DEBUG_ASSERT( vm_host_time_map_.at(ptr_vm->id()).size() > 0 );
+
+			vm_host_time_map_[ptr_vm->id()].back().second = cur_time;
+
+			update_utilization_profile(ptr_vm);
+
+			ptr_vm->suspend();
+
+			reg.des_engine().schedule_event(
+					ptr_vm_suspend_evt_src_,
+					cur_time,
+					ptr_vm
+				);
+
+			ptr_vm->guest_system().application().simulation_model().request_tier_service_event_source(ptr_vm->guest_system().id()).disconnect(
+					::dcs::functional::bind(
+							&self_type::process_vm_request_service,
+							this,
+							::dcs::functional::placeholders::_1,
+							::dcs::functional::placeholders::_2,
+							ptr_vm
+						)
+				);
+		}
+		else
+		{
+			log_warn(DCS_EESIM_LOGGING_AT, "Cannot suspend an non powered-on virtual machine.");
+		}
+
+		DCS_DEBUG_TRACE("(" << this << ") END Do Suspend virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+	}
+
+
+	private: void do_vm_resume(virtual_machine_pointer const& ptr_vm)
+	{
+		DCS_DEBUG_ASSERT( ptr_vm );
+
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Resume virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+
+		if (ptr_vm->power_state() == suspended_power_status)
+		{
+			registry_type& reg(registry_type::instance());
+
+			real_type cur_time(reg.des_engine().simulated_time());
+
+			DCS_DEBUG_ASSERT( vm_host_time_map_.count(ptr_vm->id()) > 0 );
+			DCS_DEBUG_ASSERT( vm_host_time_map_.at(ptr_vm->id()).size() > 0 );
+
+			vm_host_time_map_[ptr_vm->id()].push_back(::std::make_pair(cur_time, ::std::numeric_limits<real_type>::infinity()));
+
+			ptr_vm->resume();
+
+			reg.des_engine().schedule_event(
+					ptr_vm_suspend_evt_src_,
+					cur_time,
+					ptr_vm
+				);
+
+			ptr_vm->guest_system().application().simulation_model().request_tier_service_event_source(ptr_vm->guest_system().id()).connect(
+					::dcs::functional::bind(
+							&self_type::process_vm_request_service,
+							this,
+							::dcs::functional::placeholders::_1,
+							::dcs::functional::placeholders::_2,
+							ptr_vm
+						)
+				);
+		}
+		else
+		{
+			log_warn(DCS_EESIM_LOGGING_AT, "Cannot resume an non suspended-on virtual machine.");
+		}
+
+		DCS_DEBUG_TRACE("(" << this << ") END Do Resume virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 	}
 
 
@@ -693,6 +855,30 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	}
 
 
+	private: des_event_source_type& do_vm_suspend_event_source()
+	{
+		return *ptr_vm_suspend_evt_src_;
+	}
+
+
+	private: des_event_source_type const& do_vm_suspend_event_source() const
+	{
+		return *ptr_vm_suspend_evt_src_;
+	}
+
+
+	private: des_event_source_type& do_vm_resume_event_source()
+	{
+		return *ptr_vm_resume_evt_src_;
+	}
+
+
+	private: des_event_source_type const& do_vm_resume_event_source() const
+	{
+		return *ptr_vm_resume_evt_src_;
+	}
+
+
 	private: des_event_source_type& do_vm_migrate_event_source()
 	{
 		return *ptr_vm_migr_evt_src_;
@@ -749,15 +935,19 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");
+//::std::cerr << "(" << this << ") BEGIN Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")" << ::std::endl;///XXX
 
 		// Reset per-experiment stats
 //		energy_ = uptime_
-		uptime_ = real_type/*zero*/();
+		uptime_ = last_pwron_time_
+				= real_type/*zero*/();
 
 		pwr_state_ = powered_off_power_status;
 
 		res_profile_map_.clear();
+		vm_host_time_map_.clear();
 
+//::std::cerr << "(" << this << ") END Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")" << ::std::endl;///XXX
 		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-INITIALIZATION (Clock: " << ctx.simulated_time() << ")");
 	}
 
@@ -768,6 +958,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing SYSTEM-FINALIZATION (Clock: " << ctx.simulated_time() << ")");
+//::std::cerr << "[default_physical_machine_simulation_model] (" << this << ") BEGIN Processing SYSTEM-FINALIZATION -- PM: " << this->machine() << " (Clock: " << ctx.simulated_time() << ")" << ::std::endl;///XXX
 
 		// Update experiment-level stats only if the machine is currently
 		// powered-on (because, in the other case, stats should have already
@@ -846,6 +1037,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		}
 		energy += idle_energy*uptime_;
 
+//::std::cerr << "[default_physical_machine_simulation] PM: " << this->machine() << " - BUSY-TIME: " << busy_time << " - UPTIME: " << uptime_ << ::std::endl;//XXX
 		// check: machine cannot be busy more than is up (paranoid check)
 		DCS_DEBUG_ASSERT( ::dcs::math::float_traits<real_type>::definitely_less_equal(busy_time, uptime_) );
 
@@ -863,6 +1055,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			(*ptr_util_stat_)(0);
 		}
 
+//::std::cerr << "[default_physical_machine_simulation_model] (" << this << ") END Processing SYSTEM-FINALIZATION -- PM: " << this->machine() << " (Clock: " << ctx.simulated_time() << ")" << ::std::endl;///XXX
 		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-FINALIZATION (Clock: " << ctx.simulated_time() << ")");
 	}
 
@@ -900,6 +1093,8 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(ctx);
 
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Processing VM-REQUEST-SERVICE (Clock: " << ctx.simulated_time() << ")");
+
 		// pre: virtual machine pointer must be a valid pointer
 		DCS_DEBUG_ASSERT( ptr_vm );
 
@@ -907,6 +1102,8 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 				ptr_vm,
 				ptr_vm->guest_system().application().simulation_model().request_state(evt)
 			);
+
+		DCS_DEBUG_TRACE("(" << this << ") END Processing VM-REQUEST-SERVICE (Clock: " << ctx.simulated_time() << ")");
 	}
 
 
@@ -921,19 +1118,36 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	private: des_event_source_pointer ptr_pwroff_evt_src_;
 	private: des_event_source_pointer ptr_vm_pwron_evt_src_;
 	private: des_event_source_pointer ptr_vm_pwroff_evt_src_;
+	private: des_event_source_pointer ptr_vm_suspend_evt_src_;
+	private: des_event_source_pointer ptr_vm_resume_evt_src_;
 	private: des_event_source_pointer ptr_vm_migr_evt_src_;
 	private: output_statistic_pointer ptr_energy_stat_;
 	private: output_statistic_pointer ptr_uptime_stat_;
 	private: output_statistic_pointer ptr_util_stat_;
 	private: ::std::map<physical_resource_category,utilization_profile_type> res_profile_map_;
 	private: virtual_machine_hosting_time_map vm_host_time_map_;
-};
+}; // default_physical_machine_simulation_model: public base_physical_machine_simulation_model<TraitsT>
 
 template <typename TraitsT>
-const ::std::string default_physical_machine_simulation_model<TraitsT>::poweron_event_source_name("Machine Power-on");
+const ::std::string default_physical_machine_simulation_model<TraitsT>::poweron_event_source_name("Physical Machine Power-on");
 
 template <typename TraitsT>
-const ::std::string default_physical_machine_simulation_model<TraitsT>::poweroff_event_source_name("Machine Power-off");
+const ::std::string default_physical_machine_simulation_model<TraitsT>::poweroff_event_source_name("Physical Machine Power-off");
+
+template <typename TraitsT>
+const ::std::string default_physical_machine_simulation_model<TraitsT>::vm_poweron_event_source_name("Virtual Machine Power-on");
+
+template <typename TraitsT>
+const ::std::string default_physical_machine_simulation_model<TraitsT>::vm_poweroff_event_source_name("Virtual Machine Power-off");
+
+template <typename TraitsT>
+const ::std::string default_physical_machine_simulation_model<TraitsT>::vm_suspend_event_source_name("Virtual Machine Suspend");
+
+template <typename TraitsT>
+const ::std::string default_physical_machine_simulation_model<TraitsT>::vm_resume_event_source_name("Virtual Machine Resume");
+
+template <typename TraitsT>
+const ::std::string default_physical_machine_simulation_model<TraitsT>::vm_migration_event_source_name("Virtual Machine Migration");
 
 }} // Namespace dcs::eesim
 
