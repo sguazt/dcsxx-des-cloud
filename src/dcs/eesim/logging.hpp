@@ -77,11 +77,11 @@ void log(::std::string const& type, ::std::string const& at, ::std::string const
 
 	if (pos != ::std::string::npos)
 	{
-		::std::clog << "[" << type << ":" << at.substr(pos+1) << "]" << msg << ::std::endl;
+		::std::clog << "[" << type << ":" << at.substr(pos+1) << "] " << msg << ::std::endl;
 	}
 	else
 	{
-		::std::clog << "[" << type << ":" << at << "]" << msg << ::std::endl;
+		::std::clog << "[" << type << ":" << at << "] " << msg << ::std::endl;
 	}
 }
 
@@ -106,6 +106,6 @@ void log_error(::std::string const& at, ::std::string const& msg)
 	detail::logging::log("E", at, msg);
 }
 
-}} // Namespace dcs::esim
+}} // Namespace dcs::eesim
 
 #endif // DCS_EESIM_LOGGING_HPP
