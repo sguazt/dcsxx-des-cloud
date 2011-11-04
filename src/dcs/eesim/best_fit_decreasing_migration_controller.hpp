@@ -27,6 +27,7 @@
 
 
 #include <algorithm>
+#include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/des/base_statistic.hpp>
 #include <dcs/des/engine_traits.hpp>
@@ -63,7 +64,8 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 	private: typedef ::dcs::des::mean_estimator<real_type,uint_type> statistic_impl_type;
 	private: typedef ::dcs::shared_ptr<statistic_type> statistic_pointer;
 	private: typedef typename traits_type::virtual_machine_identifier_type virtual_machine_identifier_type;
-	private: typedef ::std::map<virtual_machine_identifier_type,real_type> virtual_machine_utilization_map;
+	private: typedef ::std::map<physical_resource_category,real_type> resource_utilization_map;
+	private: typedef ::std::map<virtual_machine_identifier_type,resource_utilization_map> virtual_machine_utilization_map;
 
 
 	private: static const ::dcs::des::statistic_category utilization_statistic_category = ::dcs::des::mean_statistic;
@@ -212,6 +214,9 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 		typedef ::std::map<physical_resource_category,real_type> resource_share_map;
 		typedef ::std::map<physical_resource_category,real_type> resource_utilization_map;
 		typedef typename base_type::virtual_machines_placement_type virtual_machines_placement_type;
+		typedef typename application_type::reference_physical_resource_type ref_resource_type;
+		typedef typename application_type::reference_physical_resource_container ref_resource_container;
+		typedef typename ref_resource_container::const_iterator ref_resource_iterator;
 
 		++count_;
 
@@ -255,53 +260,50 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 
 		virtual_machines_placement_type deployment;
 
-		// Update VMs utilization stats
-		{
-			vm_iterator vm_end_it(sorted_vms.end());
-			for (vm_iterator vm_it = sorted_vms.begin(); vm_it != vm_end_it; ++vm_it)
-			{
-				vm_pointer ptr_vm(*vm_it);
+		vm_iterator vm_end_it(sorted_vms.end());
 
-				// check: paranoid check
-				DCS_DEBUG_ASSERT( ptr_vm );
-
-				if (ptr_vm->power_state() != powered_on_power_status)
-				{
-					// Non active VMs should not occupy resources
-					dc.displace_virtual_machine(ptr_vm, false);
-					continue;
-				}
-
-				++num_vms;
-
-				real_type new_value(0);
-
-				// Retrieve current resource utilization
-				new_value =  ptr_vm->guest_system().application().simulation_model().actual_tier_utilization(
-								ptr_vm->guest_system().id()
-					);
-				// Scale in terms of reference machine
-				new_value = scale_resource_utilization(
-								ptr_vm->vmm().hosting_machine().resource(cpu_resource_category)->capacity(),
-								ptr_vm->guest_system().application().reference_resource(cpu_resource_category).capacity(),
-								new_value,
-								ptr_vm->guest_system().application().reference_resource(cpu_resource_category).utilization_threshold()
-					);
-
-				if (count_ > 1)
-				{
-					vm_util_map_[ptr_vm->id()] = ewma_smooth_*new_value + (1-ewma_smooth_)*vm_util_map_.at(ptr_vm->id());
-				}
-				else
-				{
-					vm_util_map_[ptr_vm->id()] = new_value;
-				}
-			}
-		}
+//		// Update VMs utilization stats
+//		for (vm_iterator vm_it = sorted_vms.begin(); vm_it != vm_end_it; ++vm_it)
+//		{
+//			vm_pointer ptr_vm(*vm_it);
+//
+//			// check: paranoid check
+//			DCS_DEBUG_ASSERT( ptr_vm );
+//
+//			if (ptr_vm->power_state() != powered_on_power_status)
+//			{
+//				// Non active VMs should not occupy resources
+//				continue;
+//			}
+//
+//			++num_vms;
+//
+//			real_type new_value(0);
+//
+//			// Retrieve current resource utilization
+//			new_value =  ptr_vm->guest_system().application().simulation_model().actual_tier_utilization(
+//							ptr_vm->guest_system().id()
+//				);
+//			// Scale in terms of reference machine
+//			new_value = scale_resource_utilization(
+//							ptr_vm->vmm().hosting_machine().resource(cpu_resource_category)->capacity(),
+//							ptr_vm->guest_system().application().reference_resource(cpu_resource_category).capacity(),
+//							new_value,
+//							ptr_vm->guest_system().application().reference_resource(cpu_resource_category).utilization_threshold()
+//				);
+//
+//			if (count_ > 1)
+//			{
+//				vm_util_map_[ptr_vm->id()] = ewma_smooth_*new_value + (1-ewma_smooth_)*vm_util_map_.at(ptr_vm->id());
+//			}
+//			else
+//			{
+//				vm_util_map_[ptr_vm->id()] = new_value;
+//			}
+//		}
 
 		// Apply best-fit-decreasing strategy
 
-		vm_iterator vm_end_it(sorted_vms.end());
 		for (vm_iterator vm_it = sorted_vms.begin(); vm_it != vm_end_it; ++vm_it)
 		{
 			vm_pointer ptr_vm(*vm_it);
@@ -309,11 +311,60 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 			// paranoid-check: valid pointer.
 			DCS_DEBUG_ASSERT( ptr_vm );
 
+			if (ptr_vm->power_state() != powered_on_power_status)
+			{
+//				// Non active VMs should not occupy resources
+//				dc.displace_virtual_machine(ptr_vm, false);
+				continue;
+			}
+
+			++num_vms;
+
+			// Compute and update VM utilization map
+
+			ref_resource_container rress(ptr_vm->guest_system().application().reference_resources());
+			ref_resource_iterator rress_end_it(rress.end());
+			for (ref_resource_iterator rress_it = rress.begin(); rress_it != rress_end_it; ++rress_it)
+			{
+				ref_resource_type res(*rress_it);
+
+				//TODO: CPU resource category not yet handle in app simulation model
+				DCS_ASSERT(
+						res.category() == cpu_resource_category,
+						DCS_EXCEPTION_THROW(
+							::std::runtime_error,
+							"Resource categories other than CPU are not yet implemented."
+						)
+					);
+
+				real_type new_util(0);
+
+				// Retrieve current resource utilization
+				new_util =  ptr_vm->guest_system().application().simulation_model().actual_tier_utilization(
+								ptr_vm->guest_system().id()
+					);
+				// Scale in terms of reference machine
+				new_util = scale_resource_utilization(
+								ptr_vm->vmm().hosting_machine().resource(res.category())->capacity(),
+								res.capacity(),
+								new_util,
+								res.utilization_threshold()
+					);
+
+				if (count_ > 1)
+				{
+					vm_util_map_[ptr_vm->id()][res.category()] = ewma_smooth_*new_util + (1-ewma_smooth_)*vm_util_map_.at(ptr_vm->id()).at(res.category());
+				}
+				else
+				{
+					vm_util_map_[ptr_vm->id()][res.category()] = new_util;
+				}
+			}
+
 			application_type const& app(ptr_vm->guest_system().application());
 
 			// Retrieve the share for every resource of the VM guest system
 			share_container ref_shares(ptr_vm->guest_system().resource_shares());
-//			resource_view_container ref_resources(ptr_vm->guest_system().application().reference_resources());
 
 			// For each physical machine PM, try to deploy current VM on PM
 			// until a suitable machine (i.e., a machine with sufficient free
@@ -353,29 +404,22 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 
 				// Reference to actual resource utilizaition
 				resource_utilization_map utils;
+				for (ref_resource_iterator rress_it = rress.begin(); rress_it != rress_end_it; ++rress_it)
 				{
-					//FIXME: CPU resource category is hard-coded.
-					physical_resource_category ref_category(cpu_resource_category);
-					real_type ref_util(0);
-					ref_util = app.performance_model().tier_measure(
-									ptr_vm->guest_system().id(),
-									utilization_performance_measure
-						);
+					ref_resource_type res(*rress_it);
 
-					real_type ref_capacity(app.reference_resource(ref_category).capacity());
-					real_type actual_capacity(ptr_pm->resource(ref_category)->capacity());
+					real_type util(vm_util_map_.at(ptr_vm->id()).at(res.category()));
 
-					real_type util(0);
-					util = scale_resource_utilization(ref_capacity,
-													  actual_capacity,
-													  ref_util,
-													  ptr_pm->resource(ref_category)->utilization_threshold());
-					if (shares.count(ref_category))
+					util = scale_resource_utilization(res.capacity(),
+													  ptr_pm->resource(res.category())->capacity(),
+													  util,
+													  ptr_pm->resource(res.category())->utilization_threshold());
+					if (shares.count(res.category()))
 					{
-						util /= shares.at(ref_category);
+						util /= shares.at(res.category());
 					}
 
-					utils[ref_category] = util;
+					utils[res.category()] = util;
 				}
 
 				// Try to place current VM on current PM
@@ -398,14 +442,32 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 			}
 		}
 
-		uint_type num_migrs(0);
+		if (num_vms > 0)
+		{
+			uint_type num_migrs(0);
+			num_migrs = this->migrate(deployment);
 
-		num_migrs = this->migrate(deployment);
+			migr_count_ += num_migrs;
+			// For migration rate, use the weighted harmonic mean (see the "Workload Book" by Feitelson)
+			migr_rate_num_ += num_vms;
+			migr_rate_den_ += num_migrs;
+		}
+		else
+		{
+			log_warn(DCS_EESIM_LOGGING_AT, "No VM is running. Power-off active PMs.");
 
-		migr_count_ += num_migrs;
-		// For migration rate, use the weighted harmonic mean (see the "Workload Book" by Feitelson)
-		migr_rate_num_ += num_vms;
-		migr_rate_den_ += num_migrs;
+			pm_container pms(dc.physical_machines(powered_on_power_status));
+			pm_iterator pm_end_it(pms.end());
+			for (pm_iterator pm_it = pms.begin(); pm_it != pm_end_it; ++pm_it)
+			{
+				pm_pointer ptr_pm(*pm_it);
+
+				// paranoid-check: null
+				DCS_DEBUG_ASSERT( ptr_pm );
+
+				ptr_pm->power_off();
+			}
+		}
 
 /*
 		// Check solution and act accordingly

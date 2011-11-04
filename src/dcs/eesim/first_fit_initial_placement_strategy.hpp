@@ -42,6 +42,9 @@ class first_fit_initial_placement_strategy: public base_initial_placement_strate
 		typedef typename share_container::const_iterator share_iterator;
 		typedef ::std::map<physical_resource_category,real_type> resource_share_map;
 		typedef ::std::map<physical_resource_category,real_type> resource_utilization_map;
+		typedef typename application_type::reference_physical_resource_type ref_resource_type;
+		typedef typename application_type::reference_physical_resource_container ref_resource_container;
+		typedef typename ref_resource_container::const_iterator ref_resource_iterator;
 
 		pm_container pms(dc.physical_machines());
 		vm_container vms(dc.active_virtual_machines());
@@ -64,7 +67,8 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 
 			// Retrieve the share for every resource of the VM guest system
 			share_container ref_shares(ptr_vm->guest_system().resource_shares());
-//			resource_view_container ref_resources(ptr_vm->guest_system().application().reference_resources());
+			ref_resource_container rress(app.reference_resources());
+			ref_resource_iterator rress_end_it(rress.end());
 
 			// For each physical machine PM, try to deploy current VM on PM
 			// until a suitable machine (i.e., a machine with sufficient free
@@ -108,29 +112,35 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 
 				// Reference to actual resource utilization
 				resource_utilization_map utils;
+				for (ref_resource_iterator rress_it = rress.begin(); rress_it != rress_end_it; ++rress_it)
 				{
-					//FIXME: CPU resource category is hard-coded.
-					physical_resource_category ref_category(cpu_resource_category);
-					real_type ref_util(0);
-					ref_util = app.performance_model().tier_measure(
+					ref_resource_type res(*rress_it);
+
+					//TODO: CPU resource category not yet handle in app simulation model
+					DCS_ASSERT(
+							res.category() == cpu_resource_category,
+							DCS_EXCEPTION_THROW(
+								::std::runtime_error,
+								"Resource categories other than CPU are not yet implemented."
+							)
+						);
+
+					real_type util(0);
+					util = app.performance_model().tier_measure(
 									ptr_vm->guest_system().id(),
 									utilization_performance_measure
 						);
 
-					real_type ref_capacity(app.reference_resource(ref_category).capacity());
-					real_type actual_capacity(ptr_pm->resource(ref_category)->capacity());
-
-					real_type util(0);
-					util = scale_resource_share(ref_capacity,
-												actual_capacity,
-												ref_util,
-												ptr_pm->resource(ref_category)->utilization_threshold());
-					if (shares.count(ref_category))
+					util = scale_resource_utilization(res.capacity(),
+													  ptr_pm->resource(res.category())->capacity(),
+													  util,
+													  ptr_pm->resource(res.category())->utilization_threshold());
+					if (shares.count(res.category()))
 					{
-						util /= shares.at(ref_category);
+						util /= shares.at(res.category());
 					}
 
-					utils[ref_category] = util;
+					utils[res.category()] = util;
 				}
 
 				// Try to place current VM on current PM
