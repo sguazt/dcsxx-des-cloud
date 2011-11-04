@@ -218,10 +218,14 @@ class base_migration_controller: public ::dcs::des::entity
 		typedef typename data_center_type::virtual_machine_pointer vm_pointer;
 		typedef ::std::vector<pm_pointer> pm_container;
 		typedef typename pm_container::const_iterator pm_iterator;
+		typedef ::std::vector<vm_pointer> vm_container;
+		typedef typename vm_container::const_iterator vm_iterator;
 		typedef ::std::map<pm_identifier_type,pm_pointer> pm_id_map;
 		typedef typename pm_id_map::iterator pm_id_iterator;
 //		typedef typename physical_virtual_machine_map::const_iterator physical_virtual_machine_iterator;
 		typedef typename virtual_machines_placement_type::const_iterator vm_placement_iterator;
+		typedef ::std::map<vm_identifier_type,vm_pointer> vm_id_map;
+		typedef typename vm_id_map::iterator vm_id_iterator;
 
 		if (placement.empty())
 		{
@@ -229,6 +233,7 @@ class base_migration_controller: public ::dcs::des::entity
 		}
 
 		pm_id_map inactive_pms;
+		vm_id_map inactive_vms;
 		uint_type num_migrs(0);
 
 		// Populate the inactive PMs container with all powered-on machines
@@ -240,6 +245,18 @@ class base_migration_controller: public ::dcs::des::entity
 				pm_pointer ptr_pm(*pm_it);
 
 				inactive_pms[ptr_pm->id()] = ptr_pm;
+			}
+		}
+
+		// Populate the inactive VMs container with all active virtual machines
+		{
+			vm_container active_vms(ptr_dc_->active_virtual_machines());
+			vm_iterator vm_end_it(active_vms.end());
+			for (vm_iterator vm_it = active_vms.begin(); vm_it != vm_end_it; ++vm_it)
+			{
+				vm_pointer ptr_vm(*vm_it);
+
+				inactive_vms[ptr_vm->id()] = ptr_vm;
 			}
 		}
 
@@ -281,6 +298,7 @@ class base_migration_controller: public ::dcs::des::entity
 				ptr_dc_->displace_virtual_machine(ptr_vm, true);
 			}
 
+			// Place
 			for (vm_placement_iterator pm_vm_it = placement.begin(); pm_vm_it != pm_vm_end_it; ++pm_vm_it)
 			{
 				pm_pointer ptr_pm(ptr_dc_->physical_machine_ptr(placement.pm_id(pm_vm_it)));
@@ -292,11 +310,23 @@ class base_migration_controller: public ::dcs::des::entity
 				DCS_DEBUG_ASSERT( ptr_vm );
 
 				ptr_dc_->place_virtual_machine(ptr_vm, ptr_pm, placement.shares_begin(pm_vm_it), placement.shares_end(pm_vm_it));
+				ptr_pm->vmm().power_on(ptr_vm);
 
 				if (inactive_pms.count(ptr_pm->id()) > 0)
 				{
 					inactive_pms.erase(ptr_pm->id());
 				}
+			}
+		}
+
+		// Turn off unused VMs
+		{
+			vm_id_iterator vm_id_end_it(inactive_vms.end());
+			for (vm_id_iterator vm_id_it = inactive_vms.begin(); vm_id_it != vm_id_end_it; ++vm_id_it)
+			{
+				vm_pointer ptr_vm(vm_id_it->second);
+
+				ptr_dc_->displace_virtual_machine(ptr_vm);
 			}
 		}
 
