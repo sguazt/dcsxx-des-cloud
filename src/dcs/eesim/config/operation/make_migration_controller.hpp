@@ -35,7 +35,7 @@ template <typename TraitsT, typename RealT>
 				typedef typename controller_config_type::best_fit_decreasing_migration_controller_config_type controller_config_impl_type;
 				typedef ::dcs::eesim::best_fit_decreasing_migration_controller<traits_type> controller_impl_type;
 
-				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
+				//controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
 
 				ptr_controller = ::dcs::make_shared<controller_impl_type>(ptr_dc,
 																		  controller_conf.sampling_time);
