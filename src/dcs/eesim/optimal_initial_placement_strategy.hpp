@@ -26,6 +26,7 @@
 #define DCS_EESIM_OPTIMAL_INITIAL_PLACEMENT_STRATEGY_HPP
 
 
+#include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/eesim/base_initial_placement_strategy.hpp>
 #include <dcs/eesim/data_center.hpp>
@@ -96,6 +97,7 @@ class optimal_initial_placement_strategy: public base_initial_placement_strategy
 	private: virtual_machines_placement<traits_type> do_placement(data_center_type const& dc)
 	{
 DCS_DEBUG_TRACE("BEGIN Initial Placement");//XXX
+::std::cerr << "[optimal_initial_placement] BEGIN Initial Placement" << ::std::endl;//XXX
 		typedef typename traits_type::physical_machine_identifier_type physical_machine_identifier_type;
 		typedef typename traits_type::virtual_machine_identifier_type virtual_machine_identifier_type;
 		typedef ::std::map<virtual_machine_identifier_type,real_type> virtual_machine_utilization_map;
@@ -106,6 +108,10 @@ DCS_DEBUG_TRACE("BEGIN Initial Placement");//XXX
 		typedef typename data_center_type::physical_machine_pointer physical_machine_pointer;
 		typedef typename data_center_type::virtual_machine_type virtual_machine_type;
 		typedef typename data_center_type::virtual_machine_pointer virtual_machine_pointer;
+        typedef typename data_center_type::application_type application_type;
+		typedef typename application_type::reference_physical_resource_type ref_resource_type;
+		typedef typename application_type::reference_physical_resource_container ref_resource_container;
+		typedef typename ref_resource_container::const_iterator ref_resource_iterator;
 
 
 		virtual_machine_utilization_map vm_util_map;
@@ -121,10 +127,30 @@ DCS_DEBUG_TRACE("BEGIN Initial Placement");//XXX
             {
                 virtual_machine_pointer ptr_vm(*vm_it);
 
-				vm_util_map[ptr_vm->id()] = ptr_vm->guest_system().application().performance_model().tier_measure(
-												ptr_vm->guest_system().id(),
-												::dcs::eesim::utilization_performance_measure
-					);
+				// paranoid-check: null
+				DCS_DEBUG_ASSERT( ptr_vm );
+
+				ref_resource_container rress(ptr_vm->guest_system().application().reference_resources());
+				ref_resource_iterator rress_end_it(rress.end());
+				for (ref_resource_iterator rress_it = rress.begin(); rress_it != rress_end_it; ++rress_it)
+				{
+					ref_resource_type res(*rress_it);
+
+					//TODO: CPU resource category not yet handle in app simulation model and optimization problem
+					DCS_ASSERT(
+							res.category() == cpu_resource_category,
+							DCS_EXCEPTION_THROW(
+								::std::runtime_error,
+								"Resource categories other than CPU are not yet implemented."
+							)
+						);
+
+					vm_util_map[ptr_vm->id()] = ptr_vm->guest_system().application().performance_model().tier_measure(
+													ptr_vm->guest_system().id(),
+													::dcs::eesim::utilization_performance_measure
+						);
+::std::cerr << "[optimal_initial_placement] VM: " << *ptr_vm << " - U: " << vm_util_map.at(ptr_vm->id()) << ::std::endl;//XXX
+				}
 			}
 		}
 
@@ -168,6 +194,7 @@ for (typename physical_virtual_machine_map::const_iterator it = ptr_solver_->res
 DCS_DEBUG_TRACE("Placed: VM(" << ptr_vm->id() << ") -> PM(" << ptr_pm->id() << ")");//XXX
 		}
 
+::std::cerr << "[optimal_initial_placement] END Initial Placement" << ::std::endl;//XXX
 DCS_DEBUG_TRACE("END Initial Placement ==> " << deployment);///XXX
 		return deployment;
 	}
