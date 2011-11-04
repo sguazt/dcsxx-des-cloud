@@ -316,6 +316,7 @@ class base_migration_controller: public ::dcs::des::entity
 				{
 					inactive_pms.erase(ptr_pm->id());
 				}
+				inactive_vms.erase(ptr_vm->id());
 			}
 		}
 
