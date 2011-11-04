@@ -234,6 +234,15 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 		typedef ::std::map<physical_machine_identifier_type,physical_machine_pointer> physical_machine_id_map;
 		typedef typename physical_machine_id_map::iterator physical_machine_id_iterator;
 		typedef typename base_type::virtual_machines_placement_type virtual_machines_placement_type;
+		typedef typename data_center_type::application_type application_type;
+        typedef typename application_type::reference_physical_resource_type ref_resource_type;
+        typedef typename application_type::reference_physical_resource_container ref_resource_container;
+        typedef typename ref_resource_container::const_iterator ref_resource_iterator;
+		typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
+		typedef typename virtual_machine_container::const_iterator virtual_machine_iterator;
+//		typedef ::std::vector<statistic_pointer> statistic_container;
+//		typedef typename statistic_container::const_iterator statistic_iterator;
+
 
 		++count_;
 
@@ -241,66 +250,58 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 		uint_type num_vms(0);
 
 		// Update VMs utilization stats
+		virtual_machine_container vms(dc.active_virtual_machines());
+		virtual_machine_iterator vm_end_it(vms.end());
+		for (virtual_machine_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
 		{
-			typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
-			typedef typename virtual_machine_container::const_iterator virtual_machine_iterator;
-//			typedef ::std::vector<statistic_pointer> statistic_container;
-//			typedef typename statistic_container::const_iterator statistic_iterator;
+			virtual_machine_pointer ptr_vm(*vm_it);
 
-			virtual_machine_container vms(dc.active_virtual_machines());
-			virtual_machine_iterator vm_end_it(vms.end());
-			for (virtual_machine_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
+			// check: paranoid check
+			DCS_DEBUG_ASSERT( ptr_vm );
+
+			if (ptr_vm->power_state() != powered_on_power_status)
 			{
-				virtual_machine_pointer ptr_vm(*vm_it);
+//				// Non active VMs should not occupy resources
+//				dc.displace_virtual_machine(ptr_vm, false);
+				continue;
+			}
 
-				// check: paranoid check
-				DCS_DEBUG_ASSERT( ptr_vm );
+			++num_vms;
 
-				if (ptr_vm->power_state() != powered_on_power_status)
-				{
-					// Non active VMs should not occupy resources
-					dc.displace_virtual_machine(ptr_vm, false);
-					continue;
-				}
+			ref_resource_container rress(ptr_vm->guest_system().application().reference_resources());
+			ref_resource_iterator rress_end_it(rress.end());
+			for (ref_resource_iterator rress_it = rress.begin(); rress_it != rress_end_it; ++rress_it)
+			{
+				ref_resource_type res(*rress_it);
 
-				++num_vms;
+				//TODO: CPU resource category not yet handle in app simulation model and optimization problem
+				DCS_ASSERT(
+						res.category() == cpu_resource_category,
+						DCS_EXCEPTION_THROW(
+							::std::runtime_error,
+							"Resource categories other than CPU are not yet implemented."
+						)
+					);
 
-//				statistic_container ustats;
-//				ustats = ptr_vm->guest_system().application().simulation_model().tier_statistic(
-//							ptr_vm->guest_system().id(),
-//							utilization_performance_measure
-//					);
-//				bool found(false);
 				real_type new_value(0);
-//				statistic_iterator stat_end_it(ustats.end());
-//				for (statistic_iterator stat_it = ustats.begin(); stat_it != stat_end_it && !found; ++stat_it)
-//				{
-//					statistic_pointer ptr_stat(*stat_it);
-//					if (ptr_stat->category() == utilization_statistic_category)
-//					{
-//						new_value = ptr_stat->estimate();
-//						found = true;
-//					}
-//				}
-//				if (!found)
-//				{
-//					// Fall back to the reference resource utilization
-//					new_value = ptr_vm->guest_system().application().performance_model().tier_measure(
-//									ptr_vm->guest_system().id(),
-//									::dcs::eesim::utilization_performance_measure
-//						);
-//				}
+
 				// Retrieve current resource utilization
 				new_value =  ptr_vm->guest_system().application().simulation_model().actual_tier_utilization(
 								ptr_vm->guest_system().id()
 					);
 				// Scale in terms of reference machine
-				new_value = scale_resource_share(
-								ptr_vm->vmm().hosting_machine().resource(cpu_resource_category)->capacity(),
-								ptr_vm->vmm().hosting_machine().resource(cpu_resource_category)->utilization_threshold(),
-								ptr_vm->guest_system().application().reference_resource(cpu_resource_category).capacity(),
-								ptr_vm->guest_system().application().reference_resource(cpu_resource_category).utilization_threshold(),
-								new_value
+//					new_value = scale_resource_share(
+//									ptr_vm->vmm().hosting_machine().resource(res.category())->capacity(),
+//									ptr_vm->vmm().hosting_machine().resource(res.category())->utilization_threshold(),
+//									ptr_vm->guest_system().application().reference_resource(res.category()).capacity(),
+//									ptr_vm->guest_system().application().reference_resource(res.category()).utilization_threshold(),
+//									new_value
+//						);
+				new_value = scale_resource_utilization(
+								ptr_vm->vmm().hosting_machine().resource(res.category())->capacity(),
+								res.capacity(),
+								new_value,
+								res.utilization_threshold()
 					);
 				if (count_ > 1)
 				{
@@ -313,48 +314,51 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 ::std::cerr << "MIGRATION CONTROLLER >> VM: " << ptr_vm->id() << " - Utilization: " << new_value << " - Smoothed value: " << vm_util_map_[ptr_vm->id()] << ::std::endl;//XXX
 			}
 		}
+		vms.clear();
 
-		// Solve the optimization problem
-
-		//optimal_solver_type solver;
-
-		ptr_solver_->solve(dc, wp_, wm_, ws_, vm_util_map_);
-
-		// Check solution and act accordingly
-
-		if (ptr_solver_->result().solved())
+		if (num_vms > 0)
 		{
-			(*ptr_cost_)(ptr_solver_->result().cost());
+			// Solve the optimization problem
 
-			virtual_machines_placement_type deployment;
+			//optimal_solver_type solver;
 
-			physical_virtual_machine_map pm_vm_map(ptr_solver_->result().placement());
-			physical_virtual_machine_iterator pm_vm_end_it(pm_vm_map.end());
-			for (physical_virtual_machine_iterator pm_vm_it = pm_vm_map.begin(); pm_vm_it != pm_vm_end_it; ++pm_vm_it)
+			ptr_solver_->solve(dc, wp_, wm_, ws_, vm_util_map_);
+
+			// Check solution and act accordingly
+
+			if (ptr_solver_->result().solved())
 			{
-				physical_machine_pointer ptr_pm(dc.physical_machine_ptr(pm_vm_it->first.first));
-				virtual_machine_pointer ptr_vm(dc.virtual_machine_ptr(pm_vm_it->first.second));
-				resource_share_container const& shares(pm_vm_it->second);
+				(*ptr_cost_)(ptr_solver_->result().cost());
 
-				// check: paranoid check
-				DCS_DEBUG_ASSERT( ptr_pm );
-				// check: paranoid check
-				DCS_DEBUG_ASSERT( ptr_vm );
+				virtual_machines_placement_type deployment;
 
-				deployment.place(*ptr_vm,
-								 *ptr_pm,
-								 shares.begin(),
-								 shares.end());
-			}
+				physical_virtual_machine_map pm_vm_map(ptr_solver_->result().placement());
+				physical_virtual_machine_iterator pm_vm_end_it(pm_vm_map.end());
+				for (physical_virtual_machine_iterator pm_vm_it = pm_vm_map.begin(); pm_vm_it != pm_vm_end_it; ++pm_vm_it)
+				{
+					physical_machine_pointer ptr_pm(dc.physical_machine_ptr(pm_vm_it->first.first));
+					virtual_machine_pointer ptr_vm(dc.virtual_machine_ptr(pm_vm_it->first.second));
+					resource_share_container const& shares(pm_vm_it->second);
 
-			uint_type num_migrs(0);
+					// check: paranoid check
+					DCS_DEBUG_ASSERT( ptr_pm );
+					// check: paranoid check
+					DCS_DEBUG_ASSERT( ptr_vm );
 
-			num_migrs = this->migrate(deployment);
+					deployment.place(*ptr_vm,
+									 *ptr_pm,
+									 shares.begin(),
+									 shares.end());
+				}
 
-			migr_count_ += num_migrs;
-			// For migration rate, use the weighted harmonic mean (see the "Workload Book" by Feitelson)
-			migr_rate_num_ += num_vms;
-			migr_rate_den_ += num_migrs;
+				uint_type num_migrs(0);
+
+				num_migrs = this->migrate(deployment);
+
+				migr_count_ += num_migrs;
+				// For migration rate, use the weighted harmonic mean (see the "Workload Book" by Feitelson)
+				migr_rate_num_ += num_vms;
+				migr_rate_den_ += num_migrs;
 
 //			physical_machine_id_map inactive_pms;
 //
@@ -419,11 +423,30 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 //					ptr_pm->power_off();
 //				}
 //			}
+			}
+			else
+			{
+				log_warn(DCS_EESIM_LOGGING_AT, "Failed to solve optimization problem. Skip migration.");
+				++fail_count_;
+			}
 		}
 		else
 		{
-			log_warn(DCS_EESIM_LOGGING_AT, "Failed to solve optimization problem. Skip migration.");
-			++fail_count_;
+			// No VMs -> Turn off active PMs
+
+			log_warn(DCS_EESIM_LOGGING_AT, "No VM is running. Power-off active PMs.");
+
+			physical_machine_container pms(dc.physical_machines(powered_on_power_status));
+			physical_machine_iterator pm_end_it(pms.end());
+			for (physical_machine_iterator pm_it = pms.begin(); pm_it != pm_end_it; ++pm_it)
+			{
+				physical_machine_pointer ptr_pm(*pm_it);
+
+				// paranoid-check: null
+				DCS_DEBUG_ASSERT( ptr_pm );
+
+				ptr_pm->power_off();
+			}
 		}
 
 {//XXX
