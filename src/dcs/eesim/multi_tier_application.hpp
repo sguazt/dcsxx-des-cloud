@@ -106,6 +106,7 @@ class multi_tier_application
 	public: typedef base_application_simulation_model<traits_type> simulation_model_type;
 	public: typedef ::dcs::shared_ptr<simulation_model_type> simulation_model_pointer;
 	public: typedef physical_resource_view<traits_type> reference_physical_resource_type;
+	public: typedef ::std::vector<reference_physical_resource_type> reference_physical_resource_container;
 	private: typedef ::std::map<
 						physical_resource_category,
 						reference_physical_resource_type
@@ -372,9 +373,9 @@ class multi_tier_application
 	}
 
 
-	public: ::std::vector<reference_physical_resource_type> reference_resources() const
+	public: reference_physical_resource_container reference_resources() const
 	{
-		::std::vector<reference_physical_resource_type> resources;
+		reference_physical_resource_container resources;
 
 		typename resource_container::const_iterator end_it = ref_resources_.end();
 
