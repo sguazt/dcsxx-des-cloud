@@ -386,7 +386,7 @@ template <typename TraitsT>
 			<< "pmpvals('" << (i+1) << "','r') = " << ptr_energy_model_impl->coefficient(3) << ";" << ::std::endl
 			<< "pmpvals('" << (i+1) << "','S_max') = " << 1 << ";" << ::std::endl
 			<< "pmpvals('" << (i+1) << "','C') = " << (ptr_resource->capacity()*ptr_resource->utilization_threshold()) << ";" << ::std::endl
-			<< "pmpvals('" << (i+1) << "','U_max') = " << (ptr_resource->capacity()*ptr_resource->utilization_threshold()) << ";" << ::std::endl;
+			<< "pmpvals('" << (i+1) << "','U_max') = " << ptr_resource->utilization_threshold() << ";" << ::std::endl;
 	}
 
 	// Reference machine capacity, utilization and min share of tiers
