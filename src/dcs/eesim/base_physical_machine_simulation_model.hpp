@@ -6,6 +6,7 @@
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/entity.hpp>
 #include <dcs/eesim/physical_machine.hpp>
+#include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/virtual_machine.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
@@ -136,6 +137,12 @@ class base_physical_machine_simulation_model: public ::dcs::des::entity
 	}
 
 
+	public: void vm_resource_share(virtual_machine_type const& vm, physical_resource_category category, real_type share)
+	{
+		do_vm_resource_share(vm, category, share);
+	}
+
+
 	public: des_event_source_type& power_on_event_source()
 	{
 		return do_power_on_event_source();
@@ -238,6 +245,12 @@ class base_physical_machine_simulation_model: public ::dcs::des::entity
 	}
 
 
+	public: output_statistic_type const& share() const
+	{
+		return do_utilization();
+	}
+
+
 	protected: virtual void do_enable(bool flag)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(flag);
@@ -268,6 +281,9 @@ class base_physical_machine_simulation_model: public ::dcs::des::entity
 
 
 	private: virtual void do_vm_migrate(virtual_machine_pointer const& ptr_vm, physical_machine_type& pm, bool pm_is_source) = 0;
+
+
+	private: virtual void do_vm_resource_share(virtual_machine_type const& vm, physical_resource_category category, real_type share) = 0;
 
 
 	private: virtual des_event_source_type& do_power_on_event_source() = 0;
@@ -319,6 +335,9 @@ class base_physical_machine_simulation_model: public ::dcs::des::entity
 
 
 	private: virtual output_statistic_type const& do_utilization() const = 0;
+
+
+	private: virtual output_statistic_type const& do_share() const = 0;
 
 
 	private: physical_machine_pointer ptr_mach_;

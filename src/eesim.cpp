@@ -515,6 +515,8 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<
 			   << "Consumed Energy: " << ptr_mach->simulation_model().consumed_energy() << ::std::endl;
 			os << indent << indent
 			   << "Utilization: " << ptr_mach->simulation_model().utilization() << ::std::endl;
+			os << indent << indent
+			   << "Share: " << ptr_mach->simulation_model().share() << ::std::endl;
 
 			tot_energy += ptr_mach->simulation_model().consumed_energy().estimate();
 		}
