@@ -358,6 +358,8 @@ class virtual_machine
 			if (power_status_ == powered_on_power_status)
 			{
 				update_share_stats(category, share);
+
+				ptr_vmm_->hosting_machine().simulation_model().vm_resource_share(*this, category, share);
 			}
 		}
 		else
@@ -653,15 +655,23 @@ class virtual_machine
 										 value);
 		}
 
-		::std::for_each(
-				res_shares_stats_[category].begin(),
-				res_shares_stats_[category].end(),
-				::dcs::functional::bind(
-					&statistic_type::operator(),
-					::dcs::functional::placeholders::_1,
-					value
-				)
-			);
+//		::std::for_each(
+//				res_shares_stats_[category].begin(),
+//				res_shares_stats_[category].end(),
+//				::dcs::functional::bind(
+//					&statistic_type::operator(),
+//					::dcs::functional::placeholders::_1,
+//					value
+//				)
+//			);
+		typedef typename statistic_container::iterator iterator;
+		iterator end_it(res_shares_stats_[category].end());
+		for (iterator it = res_shares_stats_[category].begin(); it != end_it; ++it)
+		{
+			statistic_pointer ptr_stat(*it);
+
+			(*ptr_stat)(value);
+		}
 	}
 
 

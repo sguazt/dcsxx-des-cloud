@@ -449,8 +449,8 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 
 			migr_count_ += num_migrs;
 			// For migration rate, use the weighted harmonic mean (see the "Workload Book" by Feitelson)
-			migr_rate_num_ += num_vms;
-			migr_rate_den_ += num_migrs;
+			migr_rate_den_ += num_vms;
+			migr_rate_num_ += num_migrs;
 		}
 		else
 		{
