@@ -221,12 +221,12 @@ class virtual_machines_placement
 		//vm_pm_pair_type key = ::std::make_pair(vm_id, pm_id);
 		vm_pm_pair_type key(make_vm_pm_pair(vm_id, pm_id));
 		placements_[key] = share_container(first_share, last_share);
-		while (first_share != last_share)
-		{
-			vm.wanted_resource_share(first_share->first, first_share->second);
-			vm.resource_share(first_share->first, first_share->second);
-			++first_share;
-		}
+//		while (first_share != last_share)
+//		{
+//			vm.wanted_resource_share(first_share->first, first_share->second);
+//			vm.resource_share(first_share->first, first_share->second);
+//			++first_share;
+//		}
 		by_vm_idx_[vm_id] = pm_id;
 		by_pm_idx_[pm_id].insert(vm_id);
 

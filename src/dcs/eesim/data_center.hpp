@@ -1188,6 +1188,14 @@ class data_center
 				placement_.place(*ptr_vm, *ptr_pm, first_share, last_share);
 			}
 		}
+
+		// Assign shares to this VM
+		while (first_share != last_share)
+		{
+			ptr_vm->wanted_resource_share(first_share->first, first_share->second);
+			ptr_vm->resource_share(first_share->first, first_share->second);
+			++first_share;
+		}
 ::std::cerr << "[data_center] END VM Placement>> VM: " << *ptr_vm << " - PM: " << *ptr_pm << " - SHARE: " << first_share->second << ::std::endl;//XXX
 	}
 
