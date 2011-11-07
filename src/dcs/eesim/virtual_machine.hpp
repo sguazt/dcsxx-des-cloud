@@ -173,7 +173,7 @@ class virtual_machine
 
 	public: bool deployed() const
 	{
-		return ptr_vmm_;
+		return assigned() && ptr_vmm_;
 	}
 
 
@@ -573,7 +573,7 @@ class virtual_machine
 //			);
 
 		// Express the input (actual) share value wrt reference machine
-		if (ptr_tier_ && ptr_vmm_)
+		if (deployed())
 		{
 			value = scale_resource_share(ptr_vmm_->hosting_machine().resource(category)->capacity(),
 										 ptr_tier_->application().reference_resource(category).capacity(),
@@ -648,7 +648,7 @@ class virtual_machine
 		}
 
 		// Express the input (actual) share value wrt reference machine
-		if (ptr_tier_ && ptr_vmm_)
+		if (deployed())
 		{
 			value = scale_resource_share(ptr_vmm_->hosting_machine().resource(category)->capacity(),
 										 ptr_tier_->application().reference_resource(category).capacity(),
