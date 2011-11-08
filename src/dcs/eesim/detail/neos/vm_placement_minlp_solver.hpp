@@ -13,12 +13,15 @@
 #include <dcs/eesim/detail/neos/client.hpp>
 #include <dcs/eesim/detail/base_initial_vm_placement_optimal_solver.hpp>
 #include <dcs/eesim/detail/base_vm_placement_optimal_solver.hpp>
+#include <dcs/eesim/logging.hpp>
 #include <dcs/eesim/optimal_solver_categories.hpp>
 #include <dcs/eesim/optimal_solver_ids.hpp>
 #include <dcs/eesim/optimal_solver_input_methods.hpp>
 #include <dcs/eesim/optimal_solver_proxies.hpp>
 #include <dcs/eesim/virtual_machines_placement.hpp>
+#include <exception>
 #include <string>
+#include <unistd.h>
 
 
 namespace dcs { namespace eesim { namespace detail { namespace neos {
@@ -73,13 +76,16 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 {
 	private: typedef base_initial_vm_placement_optimal_solver<TraitsT> base_type;
 	public: typedef TraitsT traits_type;
-	private: typedef typename base_type::real_type real_type;
+	private: typedef typename traits_type::uint_type uint_type;
+	private: typedef typename traits_type::real_type real_type;
 	private: typedef typename base_type::data_center_type data_center_type;
 	private: typedef typename base_type::virtual_machine_utilization_map virtual_machine_utilization_map;
 
 
 	public: static const optimal_solver_input_methods default_input_method;
 	public: static const optimal_solver_ids default_solver_id;
+	private: static const uint_type default_max_num_fails;
+	private: static const real_type default_initial_sleep_time;
 
 
 	public: explicit initial_vm_placement_minlp_solver(optimal_solver_ids solver_id = default_solver_id,
@@ -143,7 +149,31 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 //										   problem_descr.model,
 //										   problem_descr.data,
 //										   detail::ampl_options());
-					res = execute_job(neos, xml_job);
+
+					bool ok(false);
+					uint_type num_fails(0);
+					real_type zzz_time(default_initial_sleep_time);
+					while (!ok)
+					{
+						try
+						{
+							res = execute_job(neos, xml_job);
+							ok = true;
+						}
+						catch (::std::exception const& ex)
+						{
+							++num_fails;
+							if (num_fails == default_max_num_fails)
+							{
+								//throw ex;
+								log_warn(DCS_EESIM_LOGGING_AT, ex.what());
+								return;
+							}
+							::sleep(zzz_time);
+							zzz_time *= 1.5; // exponential backoff (1.5 -> 50% increase per back off)
+						}
+					}
+
 					ampl::vm_placement_problem_result problem_res;
 					problem_res = ampl::make_vm_placement_problem_result(res);
 ::std::cerr << "solver_exit_code: " << problem_res.solver_exit_code() << std::endl;//XXX
@@ -175,7 +205,31 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 										    detail::gams_options());
 					client neos;
 					::std::string res;
-					res = execute_job(neos, xml_job);
+
+					bool ok(false);
+					uint_type num_fails(0);
+					real_type zzz_time(default_initial_sleep_time);
+					while (!ok)
+					{
+						try
+						{
+							res = execute_job(neos, xml_job);
+							ok = true;
+						}
+						catch (::std::exception const& ex)
+						{
+							++num_fails;
+							if (num_fails == default_max_num_fails)
+							{
+								//throw ex;
+								log_warn(DCS_EESIM_LOGGING_AT, ex.what());
+								return;
+							}
+							::sleep(zzz_time);
+							zzz_time *= 1.5; // exponential backoff (1.5 -> 50% increase per back off)
+						}
+					}
+
 					gams::vm_placement_problem_result problem_res;
 					problem_res = gams::make_vm_placement_problem_result(res);
 ::std::cerr << "solver_result: " << problem_res.solver_result() << std::endl;//XXX
@@ -236,19 +290,28 @@ const optimal_solver_ids initial_vm_placement_minlp_solver<TraitsT>::default_sol
 template <typename TraitsT>
 const optimal_solver_input_methods initial_vm_placement_minlp_solver<TraitsT>::default_input_method(ampl_optimal_solver_input_method);
 
+template <typename TraitsT>
+const typename TraitsT::uint_type initial_vm_placement_minlp_solver<TraitsT>::default_max_num_fails(3);
+
+template <typename TraitsT>
+const typename TraitsT::real_type initial_vm_placement_minlp_solver<TraitsT>::default_initial_sleep_time(1);
+
 
 template <typename TraitsT>
 class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT>
 {
 	private: typedef base_vm_placement_optimal_solver<TraitsT> base_type;
 	public: typedef TraitsT traits_type;
-	private: typedef typename base_type::real_type real_type;
+	private: typedef typename traits_type::uint_type uint_type;
+	private: typedef typename traits_type::real_type real_type;
 	private: typedef typename base_type::data_center_type data_center_type;
 	private: typedef typename base_type::virtual_machine_utilization_map virtual_machine_utilization_map;
 
 
 	public: static const optimal_solver_input_methods default_input_method;
 	public: static const optimal_solver_ids default_solver_id;
+	private: static const uint_type default_max_num_fails;
+	private: static const real_type default_initial_sleep_time;
 
 
 	public: explicit vm_placement_minlp_solver(optimal_solver_ids solver_id = default_solver_id,
@@ -301,7 +364,31 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 										    detail::ampl_options());
 					client neos;
 					::std::string res;
-					res = execute_job(neos, xml_job);
+
+					bool ok(false);
+					uint_type num_fails(0);
+					real_type zzz_time(default_initial_sleep_time);
+					while (!ok)
+					{
+						try
+						{
+							res = execute_job(neos, xml_job);
+							ok = true;
+						}
+						catch (::std::exception const& ex)
+						{
+							++num_fails;
+							if (num_fails == default_max_num_fails)
+							{
+								//throw ex;
+								log_warn(DCS_EESIM_LOGGING_AT, ex.what());
+								return;
+							}
+							::sleep(zzz_time);
+							zzz_time *= 1.5; // exponential backoff (1.5 -> 50% increase per back off)
+						}
+					}
+
 					ampl::vm_placement_problem_result problem_res;
 					problem_res = ampl::make_vm_placement_problem_result(res);
 ::std::cerr << "solver_exit_code: " << problem_res.solver_exit_code() << std::endl;//XXX
@@ -333,7 +420,31 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 										    detail::gams_options());
 					client neos;
 					::std::string res;
-					res = execute_job(neos, xml_job);
+
+					bool ok(false);
+					uint_type num_fails(0);
+					real_type zzz_time(default_initial_sleep_time);
+					while (!ok)
+					{
+						try
+						{
+							res = execute_job(neos, xml_job);
+							ok = true;
+						}
+						catch (::std::exception const& ex)
+						{
+							++num_fails;
+							if (num_fails == default_max_num_fails)
+							{
+								//throw ex;
+								log_warn(DCS_EESIM_LOGGING_AT, ex.what());
+								return;
+							}
+							::sleep(zzz_time);
+							zzz_time *= 1.5; // exponential backoff (1.5 -> 50% increase per back off)
+						}
+					}
+
 					gams::vm_placement_problem_result problem_res;
 					problem_res = gams::make_vm_placement_problem_result(res);
 ::std::cerr << "cost: " << problem_res.cost() << std::endl;//XXX
@@ -373,6 +484,12 @@ const optimal_solver_ids vm_placement_minlp_solver<TraitsT>::default_solver_id(c
 
 template <typename TraitsT>
 const optimal_solver_input_methods vm_placement_minlp_solver<TraitsT>::default_input_method(ampl_optimal_solver_input_method);
+
+template <typename TraitsT>
+const typename TraitsT::uint_type vm_placement_minlp_solver<TraitsT>::default_max_num_fails(3);
+
+template <typename TraitsT>
+const typename TraitsT::real_type vm_placement_minlp_solver<TraitsT>::default_initial_sleep_time(1);
 
 }}}} // Namespace dcs::eesim::detail::neos
 
