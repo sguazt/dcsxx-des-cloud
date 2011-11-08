@@ -247,7 +247,7 @@ class base_physical_machine_simulation_model: public ::dcs::des::entity
 
 	public: output_statistic_type const& share() const
 	{
-		return do_utilization();
+		return do_share();
 	}
 
 
