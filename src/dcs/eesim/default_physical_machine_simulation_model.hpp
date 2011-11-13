@@ -441,6 +441,61 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	}
 
 
+	private: void update_resource_share_stat(physical_resource_category category)
+	{
+		//FIXME: CPU resource category is hard-coded
+		DCS_DEBUG_ASSERT( category == cpu_resource_category );
+
+		typedef typename physical_machine_type::vmm_type vmm_type;
+		typedef typename vmm_type::virtual_machine_container vm_container;
+		typedef typename vm_container::const_iterator vm_iterator;
+
+		real_type aggr_share(0);
+
+		vm_container vms(this->machine().vmm().virtual_machines(powered_on_power_status));
+		vm_iterator vm_end_it(vms.end());
+		for (vm_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
+		{
+			virtual_machine_pointer ptr_vm(*vm_it);
+
+			// paranoid-check: null
+			DCS_DEBUG_ASSERT( ptr_vm );
+
+			aggr_share += ptr_vm->resource_share(category);
+		}
+
+		real_type cur_time(registry_type::instance().des_engine().simulated_time());
+
+		// paranoid-check: consistency
+		DCS_DEBUG_ASSERT( cur_time >= share_stat_upd_time_ );
+
+		// Safety check to prevent NaNs
+		if (::dcs::math::float_traits<real_type>::definitely_greater(cur_time, share_stat_upd_time_) > 0)
+		{
+			(*ptr_share_stat_)(aggr_share, cur_time-share_stat_upd_time_);
+
+		}
+		share_stat_upd_time_ = cur_time;
+	}
+
+
+	private: void update_resource_share_stats()
+	{
+//		typedef typename resource_statistic_map::const_iterator iterator;
+//
+//		iterator end_it(share_stat_map_.end());
+//		for (iterator it = share_stat_map_.begin(); it != end_it; ++it)
+//		{
+//			physical_resource_category category(it->first);
+//
+//			update_resource_share_stat(category);
+//		}
+
+		//FIXME: CPU resource category is hard-coded
+		update_resource_share_stat(cpu_resource_category);
+	}
+
+
 	//@{ Interface Member Functions
 
 	protected: void do_enable(bool flag)
@@ -455,7 +510,14 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		// Update this time so that we don't take into account inactive periods
 		if (flag ^ this->enabled())
 		{
-			share_stat_upd_time_ = registry_type::instance().des_engine().simulated_time();
+			if (flag)
+			{
+				share_stat_upd_time_ = registry_type::instance().des_engine().simulated_time();
+			}
+			else
+			{
+				update_resource_share_stats();
+			}
 		}
 
 		ptr_pwron_evt_src_->enable(flag);
@@ -548,6 +610,8 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			// Update the uptime
 //::std::cerr << "Update UPTIME - old: " << uptime_ << " - new: " << (uptime_+(cur_time-last_pwron_time_)) << ::std::endl;//XXX
 			uptime_ += cur_time - last_pwron_time_;
+
+			update_resource_share_stats();
 
 			// Fire the power-off event
 			reg.des_engine().schedule_event(
@@ -823,11 +887,11 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	private: void do_vm_resource_share(virtual_machine_type const& vm, physical_resource_category category, real_type share)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(vm);
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(category);
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(share);
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Change Resource Share of virtual machine: " << vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 
+/*
 		typedef typename physical_machine_type::vmm_type vmm_type;
 		typedef typename vmm_type::virtual_machine_container vm_container;
 		typedef typename vm_container::const_iterator vm_iterator;
@@ -851,9 +915,16 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		// paranoid-check: consistency
 		DCS_DEBUG_ASSERT( cur_time >= share_stat_upd_time_ );
 
-		(*ptr_share_stat_)(aggr_share, cur_time-share_stat_upd_time_);
+		// Safety check to prevent NaNs
+		if (::dcs::math::float_traits<real_type>::definitely_greater(cur_time, share_stat_upd_time_) > 0)
+		{
+			(*ptr_share_stat_)(aggr_share, cur_time-share_stat_upd_time_);
 
+		}
 		share_stat_upd_time_ = cur_time;
+*/
+
+		update_resource_share_stat(category);
 
 		DCS_DEBUG_TRACE("(" << this << ") END Do Change Resource Share of virtual machine: " << vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 
