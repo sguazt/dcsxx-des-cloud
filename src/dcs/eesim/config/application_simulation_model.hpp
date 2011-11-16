@@ -47,6 +47,7 @@ enum qn_scheduling_policy_category
 
 enum qn_routing_strategy_category
 {
+	qn_deterministic_routing_strategy,
 	qn_probabilistic_routing_strategy
 };
 
@@ -63,6 +64,16 @@ enum qn_service_strategy_category
 //struct qn_fcfs_scheduling_policy_config
 //{
 //};
+
+
+template <typename UIntT>
+struct qn_deterministic_routing_strategy_config
+{
+	typedef UIntT uint_type;
+	typedef numeric_multiarray<uint_type> destination_container;
+
+	destination_container destinations;
+};
 
 
 template <typename RealT>
@@ -146,12 +157,14 @@ struct qn_delay_node_config
 {
 	typedef RealT real_type;
 	typedef UIntT uint_type;
+	typedef qn_deterministic_routing_strategy_config<UIntT> deterministic_routing_strategy_config_type;
 	typedef qn_probabilistic_routing_strategy_config<RealT> probabilistic_routing_strategy_config_type;
 	typedef probability_distribution_config<real_type> probability_distribution_config_type;
 	typedef ::std::vector<probability_distribution_config_type> probability_distribution_container;
 
 	qn_routing_strategy_category routing_category;
-	::boost::variant<probabilistic_routing_strategy_config_type> routing_conf;
+	::boost::variant<deterministic_routing_strategy_config_type,
+					 probabilistic_routing_strategy_config_type> routing_conf;
 	probability_distribution_container distributions;
 };
 
@@ -165,6 +178,7 @@ struct qn_queue_node_config
 	typedef qn_lcfs_scheduling_policy_config lcfs_scheduling_policy_config_type;
 	typedef qn_processor_sharing_scheduling_policy_config processor_sharing_scheduling_policy_config_type;
 	typedef qn_round_robin_scheduling_policy_config round_robin_scheduling_policy_config_type;
+	typedef qn_deterministic_routing_strategy_config<UIntT> deterministic_routing_strategy_config_type;
 	typedef qn_probabilistic_routing_strategy_config<RealT> probabilistic_routing_strategy_config_type;
 	typedef qn_load_independent_service_strategy_config<real_type> load_independent_service_strategy_config_type;
 	typedef qn_processor_sharing_service_strategy_config<real_type> processor_sharing_service_strategy_config_type;
@@ -179,7 +193,8 @@ struct qn_queue_node_config
 					 processor_sharing_scheduling_policy_config_type,
 					 round_robin_scheduling_policy_config_type> policy_conf;
 	qn_routing_strategy_category routing_category;
-	::boost::variant<probabilistic_routing_strategy_config_type> routing_conf;
+	::boost::variant<deterministic_routing_strategy_config_type,
+					 probabilistic_routing_strategy_config_type> routing_conf;
 	qn_service_strategy_category service_category;
 	::boost::variant<load_independent_service_strategy_config_type,
 					 processor_sharing_service_strategy_config_type,
@@ -196,10 +211,12 @@ struct qn_source_node_config
 {
 	typedef RealT real_type;
 	typedef UIntT uint_type;
+	typedef qn_deterministic_routing_strategy_config<UIntT> deterministic_routing_strategy_config_type;
 	typedef qn_probabilistic_routing_strategy_config<RealT> probabilistic_routing_strategy_config_type;
 
 	qn_routing_strategy_category routing_category;
-	::boost::variant<probabilistic_routing_strategy_config_type> routing_conf;
+	::boost::variant<deterministic_routing_strategy_config_type,
+					 probabilistic_routing_strategy_config_type> routing_conf;
 };
 
 
@@ -354,6 +371,33 @@ template <typename CharT, typename CharTraitsT>
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(config);
 
 	os << "<(round-robin-scheduling-routing)>";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT, typename UIntT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, qn_deterministic_routing_strategy_config<UIntT> const& routing_config)
+{
+	os << "<(deterministic-routing)";
+/*
+	os << " probabilities: [";
+
+	for (::std::size_t i = 0; i <  routing_config.probabilities.size(); ++i)
+	{
+		if (i != 0)
+		{
+			os << ",";
+		}
+
+		os << routing_config.probabilities[i];
+	}
+
+	os << "]";
+*/
+	os << " destinations: " << routing_config.destinations;
+
+	os << ">";
 
 	return os;
 }

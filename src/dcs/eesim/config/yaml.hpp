@@ -337,6 +337,10 @@ qn_routing_strategy_category text_to_qn_routing_strategy_category(::std::string 
 {
 	::std::string istr = ::dcs::string::to_lower_copy(str);
 
+	if (!istr.compare("deterministic"))
+	{
+		return qn_deterministic_routing_strategy;
+	}
 	if (!istr.compare("probabilistic"))
 	{
 		return qn_probabilistic_routing_strategy;
@@ -1887,6 +1891,17 @@ void operator>>(::YAML::Node const& node, qn_node_config<RealT,UIntT>& node_conf
 					node_impl_conf.routing_category = detail::text_to_qn_routing_strategy_category(label);
 					switch (node_impl_conf.routing_category)
 					{
+						case qn_deterministic_routing_strategy:
+							{
+								typedef typename node_impl_config_type::deterministic_routing_strategy_config_type routing_config_impl_type;
+
+								routing_config_impl_type routing_impl_conf;
+
+								routing_node["destinations"] >> routing_impl_conf.destinations;
+
+								node_impl_conf.routing_conf = routing_impl_conf;
+							}
+							break;
 						case qn_probabilistic_routing_strategy:
 							{
 								typedef typename node_impl_config_type::probabilistic_routing_strategy_config_type routing_config_impl_type;
@@ -1998,6 +2013,17 @@ void operator>>(::YAML::Node const& node, qn_node_config<RealT,UIntT>& node_conf
 					node_impl_conf.routing_category = detail::text_to_qn_routing_strategy_category(label);
 					switch (node_impl_conf.routing_category)
 					{
+						case qn_deterministic_routing_strategy:
+							{
+								typedef typename node_impl_config_type::deterministic_routing_strategy_config_type routing_config_impl_type;
+
+								routing_config_impl_type routing_impl_conf;
+
+								routing_node["destinations"] >> routing_impl_conf.destinations;
+
+								node_impl_conf.routing_conf = routing_impl_conf;
+							}
+							break;
 						case qn_probabilistic_routing_strategy:
 							{
 								typedef typename node_impl_config_type::probabilistic_routing_strategy_config_type routing_config_impl_type;
@@ -2124,6 +2150,17 @@ void operator>>(::YAML::Node const& node, qn_node_config<RealT,UIntT>& node_conf
 					node_impl_conf.routing_category = detail::text_to_qn_routing_strategy_category(label);
 					switch (node_impl_conf.routing_category)
 					{
+						case qn_deterministic_routing_strategy:
+							{
+								typedef typename node_impl_config_type::deterministic_routing_strategy_config_type routing_config_impl_type;
+
+								routing_config_impl_type routing_impl_conf;
+
+								routing_node["destinations"] >> routing_impl_conf.destinations;
+
+								node_impl_conf.routing_conf = routing_impl_conf;
+							}
+							break;
 						case qn_probabilistic_routing_strategy:
 							{
 								typedef typename node_impl_config_type::probabilistic_routing_strategy_config_type routing_config_impl_type;
@@ -2263,6 +2300,17 @@ void operator>>(::YAML::Node const& node, application_simulation_model_config<Re
 //
 //					switch (conf.routing_category)
 //					{
+//						case qn_deterministic_routing_strategy:
+//							{
+//								typedef typename node_impl_config_type::deterministic_routing_strategy_config_type routing_config_impl_type;
+//
+//								routing_config_impl_type routing_impl_conf;
+//
+//								routing_node["destinations"] >> routing_impl_conf.destinations;
+//
+//								node_impl_conf.routing_conf = routing_impl_conf;
+//							}
+//							break;
 //						case qn_probabilistic_routing_strategy:
 //							{
 //								typedef typename qn_config_type::probabilistic_routing_strategy_confg_type routing_config_impl_type;

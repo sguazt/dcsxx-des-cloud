@@ -9,6 +9,7 @@
 #include <dcs/des/model/qn/closed_customer_class.hpp>
 #include <dcs/des/model/qn/customer_class.hpp>
 #include <dcs/des/model/qn/delay_station_node.hpp>
+#include <dcs/des/model/qn/deterministic_routing_strategy.hpp>
 #include <dcs/des/model/qn/fcfs_queueing_strategy.hpp>
 #include <dcs/des/model/qn/lcfs_queueing_strategy.hpp>
 #include <dcs/des/model/qn/load_independent_service_strategy.hpp>
@@ -136,6 +137,28 @@ template <
 								// Routing strategy
 								switch (node_conf_impl.routing_category)
 								{
+									case qn_deterministic_routing_strategy:
+										{
+											typedef typename node_config_impl_type::deterministic_routing_strategy_config_type routing_config_impl_type;
+											typedef ::dcs::des::model::qn::deterministic_routing_strategy<model_impl_traits_type> routing_impl_type;
+											typedef typename routing_config_impl_type::destination_container destination_container;
+											typedef typename destination_container::const_iterator iterator;
+
+											::dcs::shared_ptr<routing_impl_type> ptr_routing_impl;
+											ptr_routing_impl = ::dcs::make_shared<routing_impl_type>();
+
+											routing_config_impl_type const& routing_conf_impl = ::boost::get<routing_config_impl_type>(node_conf_impl.routing_conf);
+											iterator route_end_it = routing_conf_impl.destinations.end();
+											for (iterator route_it = routing_conf_impl.destinations.begin(); route_it != route_end_it; ++route_it)
+											{
+												ptr_routing_impl->add_route(node_it->id,
+																			(route_it.index())[0],
+																			*route_it,
+																			(route_it.index())[1]);
+											}
+											ptr_routing = ptr_routing_impl;
+										}
+										break;
 									case qn_probabilistic_routing_strategy:
 										{
 											typedef typename node_config_impl_type::probabilistic_routing_strategy_config_type routing_config_impl_type;
@@ -292,6 +315,28 @@ template <
 								// Routing strategy
 								switch (node_conf_impl.routing_category)
 								{
+									case qn_deterministic_routing_strategy:
+										{
+											typedef typename node_config_impl_type::deterministic_routing_strategy_config_type routing_config_impl_type;
+											typedef ::dcs::des::model::qn::deterministic_routing_strategy<model_impl_traits_type> routing_impl_type;
+											typedef typename routing_config_impl_type::destination_container destination_container;
+											typedef typename destination_container::const_iterator iterator;
+
+											::dcs::shared_ptr<routing_impl_type> ptr_routing_impl;
+											ptr_routing_impl = ::dcs::make_shared<routing_impl_type>();
+
+											routing_config_impl_type const& routing_conf_impl = ::boost::get<routing_config_impl_type>(node_conf_impl.routing_conf);
+											iterator route_end_it = routing_conf_impl.destinations.end();
+											for (iterator route_it = routing_conf_impl.destinations.begin(); route_it != route_end_it; ++route_it)
+											{
+												ptr_routing_impl->add_route(node_it->id,
+																			(route_it.index())[0],
+																			*route_it,
+																			(route_it.index())[1]);
+											}
+											ptr_routing = ptr_routing_impl;
+										}
+										break;
 									case qn_probabilistic_routing_strategy:
 										{
 											typedef typename node_config_impl_type::probabilistic_routing_strategy_config_type routing_config_impl_type;
@@ -404,6 +449,28 @@ template <
 								// Routing strategy
 								switch (node_conf_impl.routing_category)
 								{
+									case qn_deterministic_routing_strategy:
+										{
+											typedef typename node_config_impl_type::deterministic_routing_strategy_config_type routing_config_impl_type;
+											typedef ::dcs::des::model::qn::deterministic_routing_strategy<model_impl_traits_type> routing_impl_type;
+											typedef typename routing_config_impl_type::destination_container destination_container;
+											typedef typename destination_container::const_iterator iterator;
+
+											::dcs::shared_ptr<routing_impl_type> ptr_routing_impl;
+											ptr_routing_impl = ::dcs::make_shared<routing_impl_type>();
+
+											routing_config_impl_type const& routing_conf_impl = ::boost::get<routing_config_impl_type>(node_conf_impl.routing_conf);
+											iterator route_end_it = routing_conf_impl.destinations.end();
+											for (iterator route_it = routing_conf_impl.destinations.begin(); route_it != route_end_it; ++route_it)
+											{
+												ptr_routing_impl->add_route(node_it->id,
+																			(route_it.index())[0],
+																			*route_it,
+																			(route_it.index())[1]);
+											}
+											ptr_routing = ptr_routing_impl;
+										}
+										break;
 									case qn_probabilistic_routing_strategy:
 										{
 											typedef typename node_config_impl_type::probabilistic_routing_strategy_config_type routing_config_impl_type;
