@@ -439,6 +439,8 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 				::std::ostringstream oss;
 				oss << "Failed to find a placement for VM: " << *ptr_vm << ". Skip migration.";
 				log_warn(DCS_EESIM_LOGGING_AT, oss.str());
+
+				return;
 			}
 		}
 
