@@ -15,6 +15,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <unistd.h>
 #include <xmlrpc-c/base.hpp>
 #include <xmlrpc-c/client_simple.hpp>
 
@@ -1773,7 +1774,37 @@ inline
 	creds = neos.submit_job(job_xml);
 
 ::std::cerr << "Job Crediantials: (" << creds.id << "," << creds.password << ")" << ::std::endl;//XXX
-	res = neos.final_results(creds);
+	res = neos.final_results(creds, false);
+
+	if (res.empty())
+	{
+		float zzz_time(5);
+		unsigned int num_trials(0);
+		unsigned int max_num_trials(20);
+
+		job_statuses status;
+		do
+		{
+			++num_trials;
+
+::std::cerr << "Waiting... (Trial: " << num_trials << ", Zzz: " << zzz_time << ")" << ::std::endl;//XXX
+			::sleep(zzz_time);
+			zzz_time *= 1.5; // exponential backoff (1.5 -> 50% increase per back-off)
+
+			status = neos.job_status(creds);
+		}
+		while ((status == running_job_status || status == waiting_job_status) && num_trials <= max_num_trials);
+
+		if (status == done_job_status)
+		{
+			res = neos.final_results(creds);
+		}
+		else
+		{
+::std::cerr << "Killing..." << ::std::endl;//XXX
+			neos.kill_job(creds);
+		}
+	}
 
 ::std::cerr << "Result: " << res << ::std::endl;//XXX
 	return res;
