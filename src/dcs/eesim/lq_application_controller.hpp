@@ -1236,13 +1236,13 @@ DCS_DEBUG_TRACE("phi=" << ptr_ident_strategy_->phi());//XXX
 
 				if (!ublasx::all(ublasx::isfinite(ptr_ident_strategy_->Theta_hat())))
 				{
-					::std::clog << "[Warning:lq_app_ctrl] Unable to estimate system parameters: infinite values in system parameters." << ::std::endl;
+					::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Unable to estimate system parameters: infinite values in system parameters." << ::std::endl;
 					ok = false;
 				}
 			}
 			catch (::std::exception const& e)
 			{
-				::std::clog << "[Warning:lq_app_ctrl] Unable to estimate system parameters: " << e.what() << "." << ::std::endl;
+				::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Unable to estimate system parameters: " << e.what() << "." << ::std::endl;
 				DCS_DEBUG_TRACE( "Caught exception: " << e.what() );
 
 				ok = false;
@@ -1324,7 +1324,7 @@ DCS_DEBUG_TRACE("u= " << u_);//XXX
 				}
 				catch (::std::exception const& e)
 				{
-					::std::clog << "[Warning:lq_app_ctrl] Unable to compute control input: " << e.what() << "." << ::std::endl;
+					::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Unable to compute control input: " << e.what() << "." << ::std::endl;
 					DCS_DEBUG_TRACE( "Caught exception: " << e.what() );
 
 					ok = false;
@@ -1335,7 +1335,7 @@ DCS_DEBUG_TRACE("u= " << u_);//XXX
 //				}
 //				catch (::std::exception const& e)
 //				{
-//					::std::clog << "[Warning:lq_app_ctrl] Unable to compute control input." << ::std::endl;
+//					::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Unable to compute control input." << ::std::endl;
 //					DCS_DEBUG_TRACE( "Caught exception: " << e.what() );
 //
 //					ok = false;
@@ -1444,11 +1444,11 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 #ifdef DCS_DEBUG
 								if (new_share < default_min_share_)
 								{
-									::std::clog << "[Warning:lq_app_ctrl] Optimal share too small; adjusted to " << default_min_share_ << "." << ::std::endl;
+									::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Optimal share (" << new_share << ") too small; adjusted to " << default_min_share_ << "." << ::std::endl;
 								}
 								if (new_share > 1)
 								{
-									::std::clog << "[Warning:lq_app_ctrl] Optimal share too big; adjusted to 1." << ::std::endl;
+									::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Optimal share (" << new_share << ") too big; adjusted to 1." << ::std::endl;
 								}
 #endif // DCS_DEBUG
 								new_share = ::std::min(::std::max(new_share, default_min_share_), static_cast<real_type>(1));
@@ -1456,7 +1456,7 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 							else
 							{
 #ifdef DCS_DEBUG
-								::std::clog << "[Warning:lq_app_ctrl] Optimal share is negative; adjusted to " << ::std::max(ptr_vm->resource_share(res_category), default_min_share_) << "." << ::std::endl;
+								::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to " << ::std::max(ptr_vm->resource_share(res_category), default_min_share_) << "." << ::std::endl;
 #endif // DCS_DEBUG
 								new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
 							}
@@ -1613,11 +1613,11 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 #ifdef DCS_DEBUG
 								if (new_share < default_min_share_)
 								{
-									::std::clog << "[Warning:lq_app_ctrl] Optimal share too small; adjusted to " << default_min_share_ << "." << ::std::endl;
+									::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Optimal share (" << new_share << ") too small; adjusted to " << default_min_share_ << "." << ::std::endl;
 								}
 								if (new_share > 1)
 								{
-									::std::clog << "[Warning:lq_app_ctrl] Optimal share too big; adjusted to 1." << ::std::endl;
+									::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Optimal share (" << new_share << ") too big; adjusted to 1." << ::std::endl;
 								}
 #endif // DCS_DEBUG
 								new_share = ::std::min(::std::max(new_share, default_min_share_), static_cast<real_type>(1));
@@ -1625,7 +1625,7 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 							else
 							{
 #ifdef DCS_DEBUG
-								::std::clog << "[Warning:lq_app_ctrl] Optimal share is negative; adjusted to " << ::std::max(ptr_vm->resource_share(res_category), default_min_share_) << "." << ::std::endl;
+								::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to " << ::std::max(ptr_vm->resource_share(res_category), default_min_share_) << "." << ::std::endl;
 #endif // DCS_DEBUG
 								new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
 							}
