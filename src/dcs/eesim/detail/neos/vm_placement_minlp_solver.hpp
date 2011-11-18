@@ -291,10 +291,10 @@ template <typename TraitsT>
 const optimal_solver_input_methods initial_vm_placement_minlp_solver<TraitsT>::default_input_method(ampl_optimal_solver_input_method);
 
 template <typename TraitsT>
-const typename TraitsT::uint_type initial_vm_placement_minlp_solver<TraitsT>::default_max_num_fails(3);
+const typename TraitsT::uint_type initial_vm_placement_minlp_solver<TraitsT>::default_max_num_fails(5);
 
 template <typename TraitsT>
-const typename TraitsT::real_type initial_vm_placement_minlp_solver<TraitsT>::default_initial_sleep_time(1);
+const typename TraitsT::real_type initial_vm_placement_minlp_solver<TraitsT>::default_initial_sleep_time(5);
 
 
 template <typename TraitsT>
@@ -486,10 +486,10 @@ template <typename TraitsT>
 const optimal_solver_input_methods vm_placement_minlp_solver<TraitsT>::default_input_method(ampl_optimal_solver_input_method);
 
 template <typename TraitsT>
-const typename TraitsT::uint_type vm_placement_minlp_solver<TraitsT>::default_max_num_fails(3);
+const typename TraitsT::uint_type vm_placement_minlp_solver<TraitsT>::default_max_num_fails(5);
 
 template <typename TraitsT>
-const typename TraitsT::real_type vm_placement_minlp_solver<TraitsT>::default_initial_sleep_time(1);
+const typename TraitsT::real_type vm_placement_minlp_solver<TraitsT>::default_initial_sleep_time(5);
 
 }}}} // Namespace dcs::eesim::detail::neos
 
