@@ -12,6 +12,7 @@
 #include <dcs/eesim/optimal_solver_ids.hpp>
 #include <dcs/eesim/optimal_solver_input_methods.hpp>
 #include <dcs/string/algorithm/to_lower.hpp>
+#include <dcs/exception.hpp>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -1294,8 +1295,8 @@ class client
 		if (rpc_res.type() != xmlrpc_c::value::TYPE_STRING)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::client::help] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
-			throw ::std::runtime_error(oss.str());
+			oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 		}
 
 		res = xmlrpc_c::value_string(rpc_res);
@@ -1317,8 +1318,8 @@ class client
 		if (rpc_res.type() != xmlrpc_c::value::TYPE_STRING)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::client::welcome] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
-			throw ::std::runtime_error(oss.str());
+			oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 		}
 
 		res = xmlrpc_c::value_string(rpc_res);
@@ -1340,8 +1341,8 @@ class client
 		if (rpc_res.type() != xmlrpc_c::value::TYPE_STRING)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::client::ping] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
-			throw ::std::runtime_error(oss.str());
+			oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 		}
 
 		::std::string const msg = xmlrpc_c::value_string(rpc_res);
@@ -1371,8 +1372,8 @@ class client
 		if (rpc_res.type() != xmlrpc_c::value::TYPE_STRING)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::client::queue] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
-			throw ::std::runtime_error(oss.str());
+			oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 		}
 
 		res = xmlrpc_c::value_string(rpc_res);
@@ -1400,8 +1401,8 @@ class client
 		if (rpc_res.type() != xmlrpc_c::value::TYPE_STRING)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::client::solver_template] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
-			throw ::std::runtime_error(oss.str());
+			oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 		}
 
 		res = xmlrpc_c::value_string(rpc_res);
@@ -1431,8 +1432,8 @@ class client
 		if (rpc_res.type() != xmlrpc_c::value::TYPE_ARRAY)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::client::all_solvers] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_ARRAY) << "' (" << xmlrpc_c::value::TYPE_ARRAY << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
-			throw ::std::runtime_error(oss.str());
+			oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_ARRAY) << "' (" << xmlrpc_c::value::TYPE_ARRAY << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 		}
 
 		// The returned message is a newline-separated string, where each
@@ -1446,8 +1447,8 @@ class client
 			if (it->type() != xmlrpc_c::value::TYPE_STRING)
 			{
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::neos::client::all_solvers] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(it->type()) << "' (" << it->type() << ").";
-				throw ::std::runtime_error(oss.str());
+				oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(it->type()) << "' (" << it->type() << ").";
+				DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 			}
 
 			::std::string const msg = xmlrpc_c::value_string(*it);
@@ -1474,8 +1475,8 @@ class client
 		if (rpc_res.type() != xmlrpc_c::value::TYPE_ARRAY)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::client::categories] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_ARRAY) << "' (" << xmlrpc_c::value::TYPE_ARRAY << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
-			throw ::std::runtime_error(oss.str());
+			oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_ARRAY) << "' (" << xmlrpc_c::value::TYPE_ARRAY << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 		}
 
 		// The returned message is a newline-separated string, where each
@@ -1489,8 +1490,8 @@ class client
 			if (it->type() != xmlrpc_c::value::TYPE_STRING)
 			{
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::neos::client::categories] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(it->type()) << "' (" << it->type() << ").";
-				throw ::std::runtime_error(oss.str());
+				oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(it->type()) << "' (" << it->type() << ").";
+				DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 			}
 
 			::std::string const msg = xmlrpc_c::value_string(*it);
@@ -1517,8 +1518,8 @@ class client
 		if (rpc_res.type() != xmlrpc_c::value::TYPE_ARRAY)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::client::solvers_in_categories] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_ARRAY) << "' (" << xmlrpc_c::value::TYPE_ARRAY << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
-			throw ::std::runtime_error(oss.str());
+			oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_ARRAY) << "' (" << xmlrpc_c::value::TYPE_ARRAY << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 		}
 
 		// The returned message is a newline-separated string, where each
@@ -1532,8 +1533,8 @@ class client
 			if (it->type() != xmlrpc_c::value::TYPE_STRING)
 			{
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::neos::client::solvers_in_categories] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(it->type()) << "' (" << it->type() << ").";
-				throw ::std::runtime_error(oss.str());
+				oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(it->type()) << "' (" << it->type() << ").";
+				DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 			}
 
 			::std::string const msg = xmlrpc_c::value_string(*it);
@@ -1558,31 +1559,41 @@ class client
 		if (rpc_res.type() != xmlrpc_c::value::TYPE_ARRAY)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::client::submit_job] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_ARRAY) << "' (" << xmlrpc_c::value::TYPE_ARRAY << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
-			throw ::std::runtime_error(oss.str());
+			oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_ARRAY) << "' (" << xmlrpc_c::value::TYPE_ARRAY << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 		}
 
 		carray const job_creds = xmlrpc_c::value_array(rpc_res).vectorValueValue();
 		if (job_creds.size() != 2)
 		{
-			throw ::std::runtime_error("Expected (jobnumber,password) credentials.");
+			DCS_EXCEPTION_THROW(::std::runtime_error, "Expected (jobnumber,password) credentials.");
 		}
 		if (job_creds[0].type() != xmlrpc_c::value::TYPE_INT)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::client::submit_job] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_INT) << "' (" << xmlrpc_c::value::TYPE_INT << "), got type '" << detail::to_string(job_creds[0].type()) << "' (" << job_creds[0].type() << ").";
-			throw ::std::runtime_error(oss.str());
+			oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_INT) << "' (" << xmlrpc_c::value::TYPE_INT << "), got type '" << detail::to_string(job_creds[0].type()) << "' (" << job_creds[0].type() << ").";
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 		}
 		if (job_creds[1].type() != xmlrpc_c::value::TYPE_STRING)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::client::submit_job] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(job_creds[1].type()) << "' (" << job_creds[1].type() << ").";
-			throw ::std::runtime_error(oss.str());
+			oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(job_creds[1].type()) << "' (" << job_creds[1].type() << ").";
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 		}
+
 		res.id = xmlrpc_c::value_int(job_creds[0]);
 		res.password = xmlrpc_c::value_string(job_creds[1]);
 
 		DCS_DEBUG_TRACE("jobNumber = " << res.id << "\tpassword = " << res.password);
+
+		// Check for NEOS error:
+		//   "In case of an error (NEOS Job queue is full), submitJob() will return (0,errorMessage)"
+		if (res.id == 0)
+		{
+			::std::ostringstream oss;
+			oss << "Error from NEOS: '" << res.password << "'.";
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
+		}
 
 		return res;
 	}
@@ -1599,8 +1610,8 @@ class client
 		if (rpc_res.type() != xmlrpc_c::value::TYPE_STRING)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::client::job_status] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
-			throw ::std::runtime_error(oss.str());
+			oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 		}
 
 		::std::string const status_str = xmlrpc_c::value_string(rpc_res);
@@ -1623,8 +1634,8 @@ class client
 		if (rpc_res.type() != xmlrpc_c::value::TYPE_STRING)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::client::job_info] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
-			throw ::std::runtime_error(oss.str());
+			oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 		}
 
 		::std::string const msg = xmlrpc_c::value_string(rpc_res);
@@ -1646,8 +1657,8 @@ class client
 		if (rpc_res.type() != xmlrpc_c::value::TYPE_STRING)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::client::kill_job] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
-			throw ::std::runtime_error(oss.str());
+			oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_STRING) << "' (" << xmlrpc_c::value::TYPE_STRING << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 		}
 	}
 
@@ -1679,26 +1690,26 @@ class client
 		if (rpc_res.type() != xmlrpc_c::value::TYPE_ARRAY)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::client::intermediate_results] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_ARRAY) << "' (" << xmlrpc_c::value::TYPE_ARRAY << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
-			throw ::std::runtime_error(oss.str());
+			oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_ARRAY) << "' (" << xmlrpc_c::value::TYPE_ARRAY << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 		}
 
 		carray const msg_offs = xmlrpc_c::value_array(rpc_res).vectorValueValue();
 		if (msg_offs.size() != 2)
 		{
-			throw std::runtime_error("[dcs::eesim::detail::neos::client::intermediate_results] Expected (msg,offset) result pair.");
+			DCS_EXCEPTION_THROW(std::runtime_error, "Expected (msg,offset) result pair.");
 		}
 		if (msg_offs[0].type() != xmlrpc_c::value::TYPE_BYTESTRING)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::client::intermediate_results] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_BYTESTRING) << "' (" << xmlrpc_c::value::TYPE_BYTESTRING << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
-			throw ::std::runtime_error(oss.str());
+			oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_BYTESTRING) << "' (" << xmlrpc_c::value::TYPE_BYTESTRING << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 		}
 		if (msg_offs[1].type() != xmlrpc_c::value::TYPE_INT)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::client::intermediate_results] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_INT) << "' (" << xmlrpc_c::value::TYPE_INT << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
-			throw ::std::runtime_error(oss.str());
+			oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_INT) << "' (" << xmlrpc_c::value::TYPE_INT << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 		}
 
 		cbytestring const msg_enc = xmlrpc_c::value_bytestring(msg_offs[0]).vectorUcharValue();
@@ -1734,8 +1745,8 @@ class client
 		if (rpc_res.type() != xmlrpc_c::value::TYPE_BYTESTRING)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::client::final_results] Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_BYTESTRING) << "' (" << xmlrpc_c::value::TYPE_BYTESTRING << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
-			throw ::std::runtime_error(oss.str());
+			oss << "Expected type '" << detail::to_string(xmlrpc_c::value::TYPE_BYTESTRING) << "' (" << xmlrpc_c::value::TYPE_BYTESTRING << "), got type '" << detail::to_string(rpc_res.type()) << "' (" << rpc_res.type() << ").";
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 		}
 
 		cbytestring const msg_enc = xmlrpc_c::value_bytestring(rpc_res).vectorUcharValue();
