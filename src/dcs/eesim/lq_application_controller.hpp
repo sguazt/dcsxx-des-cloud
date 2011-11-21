@@ -637,10 +637,12 @@ class lq_application_controller: public base_application_controller<TraitsT>
 		u_ = vector_type(n_u_, 0);
 #if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
 		num_ref_measures_ = 5;
-		next_ref_measure_ = 0;
-		ref_measure_ = 0;
-		next_tier_ref_measures_ = ::std::vector<real_type>(num_ref_measures_,0);
-		tier_ref_measures_ = ::std::vector<real_type>(num_ref_measures_,0);
+		next_ref_out_measure_ = 0;
+		ref_out_measure_ = 0;
+		next_tier_ref_out_measures_ = ::std::vector<real_type>(num_ref_measures_,0);
+		tier_ref_out_measures_ = ::std::vector<real_type>(num_ref_measures_,0);
+		next_tier_ref_in_measures_ = ::std::vector<real_type>(num_ref_measures_,0);
+		tier_ref_in_measures_ = ::std::vector<real_type>(num_ref_measures_,0);
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 	}
 
@@ -1002,19 +1004,30 @@ if ((count_ % 1000) == 0)//XXX
 			{
 				if ((count_ % num_ref_measures_) == 0)
 				{
-					ref_measure_ = next_ref_measure_ / ((count_>num_ref_measures_) ? static_cast<real_type>(num_ref_measures_) : static_cast<real_type>(num_ref_measures_+1));
-					next_ref_measure_ = ref_measure;
+					if (count_ > num_ref_measures_)
+					{
+						ref_out_measure_ = next_ref_out_measure_ / static_cast<real_type>(num_ref_measures_);
+					}
+					else
+					{
+						// The first time take into consideration the additional
+						// measure added when count_ <= 1 representing the
+						// steady-state performance measure (see else branch
+						// below).
+						ref_out_measure_ = next_ref_out_measure_ / static_cast<real_type>(num_ref_measures_+1);
+					}
+					next_ref_out_measure_ = ref_measure;
 				}
 				else
 				{
-					next_ref_measure_ += ptr_stat->estimate();
+					next_ref_out_measure_ += ptr_stat->estimate();
 				}
 			}
 			else
 			{
-				ref_measure_ = app_perf_model.application_measure(category);
+				ref_out_measure_ = app_perf_model.application_measure(category);
 			}
-			ref_measure = ref_measure_;
+			ref_measure = ref_out_measure_;
 #else
 			ref_measure = app_perf_model.application_measure(category);
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
@@ -1044,13 +1057,25 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - OBSERVATION: ref: " << ref_measure << 
 
 #if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION)
 # if defined(DDCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+			y(0) = actual_measure/app_perf_model.measure(category) - 1;
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 			y(0) = actual_measure/ref_measure - 1;
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+			y(0) = actual_measure - app_perf_model.application_measure(category);
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 			y(0) = actual_measure - ref_measure;
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
 #else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
 # if defined(DDCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+			y(0) = actual_measure/app_perf_model.measure(category);
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 			y(0) = actual_measure/ref_measure;
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
 			y(0) = actual_measure;
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
@@ -1077,19 +1102,31 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - OBSERVATION: ref: " << ref_measure << 
 									{
 										if ((count_ % num_ref_measures_) == 0)
 										{
-											tier_ref_measures_[tier_id] = next_tier_ref_measures_[tier_id] / ((count_>num_ref_measures_) ? static_cast<real_type>(num_ref_measures_) : static_cast<real_type>(num_ref_measures_+1));
-											next_tier_ref_measures_[tier_id] = ref_measure;
+											// We have collected a sufficient number of observations to form a new estimate of the equilibrium point
+											if (count_ > num_ref_measures_)
+											{
+												tier_ref_out_measures_[tier_id] = next_tier_ref_out_measures_[tier_id] / static_cast<real_type>(num_ref_measures_);
+											}
+											else
+											{
+												// The first time take into consideration the additional
+												// measure added when count_ <= 1 representing the
+												// steady-state performance measure (see else branch
+												// below).
+												tier_ref_out_measures_[tier_id] = next_tier_ref_out_measures_[tier_id] / static_cast<real_type>(num_ref_measures_+1);
+											}
+											next_tier_ref_out_measures_[tier_id] = ref_measure;
 										}
 										else
 										{
-											next_tier_ref_measures_[tier_id] += ptr_stat->estimate();
+											next_tier_ref_out_measures_[tier_id] += ptr_stat->estimate();
 										}
 									}
 									else
 									{
-										tier_ref_measures_[tier_id] = app_perf_model.tier_measure(tier_id, category);
+										tier_ref_out_measures_[tier_id] = app_perf_model.tier_measure(tier_id, category);
 									}
-									ref_measure = tier_ref_measures_[tier_id];
+									ref_measure = tier_ref_out_measures_[tier_id];
 #else
 									ref_measure = app_perf_model.tier_measure(tier_id, category);
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
@@ -1107,16 +1144,31 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 //::std::cerr << "APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: ref: " << ref_measure << " - actual: " << actual_measure << ::std::endl;//XXX
 #if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION)
 # if defined(DDCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+									p(tier_id) = actual_measure/ref_measure - 1;
+									x_(x_offset_+tier_id) = actual_measure/app_perf_model.tier_measure(tier_id, category) - 1;
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 									x_(x_offset_+tier_id) = p(tier_id)
 														  = actual_measure/ref_measure - 1;
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+									p(tier_id) = actual_measure - ref_measure;
+									x_(x_offset_+tier_id) = actual_measure - app_perf_model.tier_measure(tier_id, category);
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 									x_(x_offset_+tier_id) = p(tier_id)
 														  = actual_measure - ref_measure;
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
 #else // DDCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
 # if defined(DDCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+									p(tier_id) = actual_measure/ref_measure;
+									x_(x_offset_+tier_id) = actual_measure/app_perf_model.tier_measure(tier_id, category);
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 									x_(x_offset_+tier_id) = p(tier_id)
 														  = actual_measure/ref_measure;
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
 									x_(x_offset_+tier_id) = p(tier_id)
 														  = actual_measure;
@@ -1124,8 +1176,8 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 #endif // DDCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
 
 #ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
-			// Dump actual tier residence time
-			ofs << "," << actual_measure << "," << p(tier_id);
+									// Dump actual tier residence time
+									ofs << "," << actual_measure << "," << p(tier_id);
 #endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
 								}
 								break;
@@ -1157,11 +1209,6 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 				//FIXME: resource category is actually hard-coded to CPU
 				physical_resource_category res_category(cpu_resource_category);
 
-				// Get the reference resource share for the tier from the application specs
-	//			//real_type ref_share(ptr_vm->wanted_resource_share(ptr_vm->vmm().hosting_machine(), category));
-	//			//real_type ref_share(ptr_vm->wanted_resource_share(res_category));
-				real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
-
 				// Get the actual resource share from the VM and scale w.r.t. the reference machine
 				real_type actual_share;
 				actual_share = ::dcs::eesim::scale_resource_share(actual_pm.resource(res_category)->capacity(),
@@ -1170,21 +1217,74 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 																  app.reference_resource(res_category).utilization_threshold(),
 																  ptr_vm->resource_share(res_category));
 
+//				// Get the reference resource share for the tier from the application specs
+////				//real_type ref_share(ptr_vm->wanted_resource_share(ptr_vm->vmm().hosting_machine(), category));
+////				//real_type ref_share(ptr_vm->wanted_resource_share(res_category));
+//				real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
+				real_type ref_share(0);
+
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+				if (count_ > 1)
+				{
+					if ((count_ % num_ref_measures_) == 0)
+					{
+						if (count_ > num_ref_measures_)
+						{
+							tier_ref_in_measures_[tier_id] = next_tier_ref_in_measures_[tier_id] / static_cast<real_type>(num_ref_measures_);
+						}
+						else
+						{
+							// The first time take into consideration the additional
+							// measure added when count_ <= 1 representing the
+							// steady-state performance measure (see else branch
+							// below).
+							tier_ref_in_measures_[tier_id] = next_tier_ref_in_measures_[tier_id] / static_cast<real_type>(num_ref_measures_+1);
+						}
+						next_tier_ref_in_measures_[tier_id] = ref_share;
+					}
+					else
+					{
+						next_tier_ref_in_measures_[tier_id] += actual_share;
+					}
+				}
+				else
+				{
+					tier_ref_in_measures_[tier_id] =  ptr_vm->guest_system().resource_share(res_category);
+				}
+				ref_share = tier_ref_in_measures_[tier_id];
+#else
+				ref_share = ptr_vm->guest_system().resource_share(res_category);
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 				//FIXME: should u contain relative errore w.r.t. resource share given from performance model?
 DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " SHARE: ref: " << ref_share << " - actual: " << ptr_vm->resource_share(res_category) << " - actual-scaled: " << actual_share);//XXX
 //::std::cerr << "APP " << app.id() << " - TIER " << tier_id << " SHARE: ref: " << ref_share << " - actual: " << ptr_vm->resource_share(res_category) << " - actual-scaled: " << actual_share << ::std::endl;//XXX
 #if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION)
 # if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+				s(tier_id) = actual_share/ref_share - 1;
+				u_(u_offset_+tier_id) = actual_share/ptr_vm->guest_system().resource_share(res_category) - 1;
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 				u_(u_offset_+tier_id) = s(tier_id)
 									  = actual_share/ref_share - 1;
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+				s(tier_id) = actual_share - ref_share;
+				u_(u_offset_+tier_id) = actual_share - ptr_vm->guest_system().resource_share(res_category);
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 				u_(u_offset_+tier_id) = s(tier_id)
 									  = actual_share - ref_share;
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 #else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 # if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+				s(tier_id) = actual_share/ref_share;
+				u_(u_offset_+tier_id) = actual_share/ptr_vm->guest_system().resource_share(res_category);
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 				u_(u_offset_+tier_id) = s(tier_id)
 									  = actual_share/ref_share;
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 				u_(u_offset_+tier_id) = s(tier_id)
 									  = actual_share;
@@ -1193,7 +1293,7 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " SHARE: ref: " <
 
 #ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
 			// Dump actual tier resource share
-			ofs << "," << res_category << "," << actual_share << "," << s(tier_id);
+				ofs << "," << res_category << "," << actual_share << "," << s(tier_id);
 #endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
 			}
 		}
@@ -1260,13 +1360,25 @@ DCS_DEBUG_TRACE("phi=" << ptr_ident_strategy_->phi());//XXX
 
 # if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION)
 #  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
+#   if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+				ofs << tier_ref_out_measures_[i]*(1.0+p_hat(i));
+#   else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 				ofs << ref_measure*(1.0+p_hat(i));
+#   endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 #  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+#   if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+				ofs << tier_ref_out_measures_[i]+p_hat(i);
+#   else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 				ofs << (ref_measure+p_hat(i));
+#   endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 #  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
 #  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
+#   if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+				ofs << tier_ref_out_measures_[i]*p_hat(i);
+#   else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 				ofs << ref_measure*p_hat(i);
+#   endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 #  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
 				ofs << p_hat(i);
 #  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
@@ -1376,13 +1488,25 @@ DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: "
 
 # if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION)
 #  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+#   if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+						ofs << ptr_vm->guest_system().resource_share(res_category)*(1+opt_u(u_offset_+tier_id));
+#   else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 						ofs << ref_share*(1+opt_u(u_offset_+tier_id));
+#   endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 #  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#   if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+						ofs << ptr_vm->guest_system().resource_share(res_category)+opt_u(u_offset_+tier_id);
+#   else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 						ofs << (ref_share+opt_u(u_offset_+tier_id));
+#   endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 #  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 #  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+#   if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+						ofs << ptr_vm->guest_system().resource_share(res_category)*opt_u(u_offset_+tier_id);
+#   else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 						ofs << ref_share*opt_u(u_offset_+tier_id);
+#   endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 #  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 						ofs << opt_u(u_offset_+tier_id);
 #  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
@@ -1415,13 +1539,25 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 	//DCS_DEBUG_TRACE("Tier " << tier_id << " --> Actual share: " << actual_share);//XXX
 #if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION)
 # if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+							real_type new_share(ptr_vm->guest_system().resource_share(res_category)*(opt_u(u_offset_+tier_id) + 1));
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 							real_type new_share(ref_share*(opt_u(u_offset_+tier_id)+1));
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+							real_type new_share(ptr_vm->guest_system().resource_share(res_category)+opt_u(u_offset_+tier_id));
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 							real_type new_share(ref_share+opt_u(u_offset_+tier_id));
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 #else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 # if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+							real_type new_share(ptr_vm->guest_system().resource_share(res_category)*opt_u(u_offset_+tier_id));
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 							real_type new_share(ref_share*opt_u(u_offset_+tier_id));
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 							real_type new_share(opt_u(u_offset_+tier_id));
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
@@ -1431,10 +1567,10 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 							new_share = ::dcs::eesim::scale_resource_share(
 											// Reference resource capacity and threshold
 											app.reference_resource(res_category).capacity(),
-											app.reference_resource(res_category).utilization_threshold(),
+											//app.reference_resource(res_category).utilization_threshold(),
 											// Actual resource capacity and threshold
 											pm.resource(res_category)->capacity(),
-											pm.resource(res_category)->utilization_threshold(),
+											//pm.resource(res_category)->utilization_threshold(),
 											// Unscaled share: reference resource share "+" computed deviation
 											new_share
 								);
@@ -1467,22 +1603,34 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 							new_share = ::dcs::eesim::scale_resource_share(
 											// Actual resource capacity and threshold
 											pm.resource(res_category)->capacity(),
-											pm.resource(res_category)->utilization_threshold(),
+											//pm.resource(res_category)->utilization_threshold(),
 											// Reference resource capacity and threshold
 											app.reference_resource(res_category).capacity(),
-											app.reference_resource(res_category).utilization_threshold(),
+											//app.reference_resource(res_category).utilization_threshold(),
 											// Scaled share: reference resource share "+" computed deviation
 											new_share
 								);
 #if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION)
 # if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+							adj_opt_u(u_offset_+tier_id) = new_share/ptr_vm->guest_system().resource_share(res_category) - 1;
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 							adj_opt_u(u_offset_+tier_id) = new_share/ref_share - 1;
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+							adj_opt_u(u_offset_+tier_id) = new_share - ptr_vm->guest_system().resource_share(res_category);
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 							adj_opt_u(u_offset_+tier_id) = new_share - ref_share;
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 #else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 # if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+							adj_opt_u(u_offset_+tier_id) = new_share/ptr_vm->guest_system().resource_share(res_category);
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 							adj_opt_u(u_offset_+tier_id) = new_share/ref_share;
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 							adj_opt_u(u_offset_+tier_id) = new_share;
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
@@ -1529,24 +1677,40 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 
 #if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION)
 # if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+								real_type new_share(ptr_vm->guest_system().resource_share(res_category)*(opt_u(u_offset_+tier_id) + 1));
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 								real_type new_share(ref_share*(adj_opt_u(u_offset_+tier_id)+1));
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+								real_type new_share(ptr_vm->guest_system().resource_share(res_category)+(opt_u(u_offset_+tier_id)));
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 								real_type new_share(ref_share+adj_opt_u(u_offset_+tier_id));
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 #else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 # if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+								real_type new_share(ptr_vm->guest_system().resource_share(res_category)*(opt_u(u_offset_+tier_id)));
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 								real_type new_share(ref_share*adj_opt_u(u_offset_+tier_id));
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+								real_type new_share(opt_u(u_offset_+tier_id));
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 								real_type new_share(adj_opt_u(u_offset_+tier_id));
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 								new_share = ::dcs::eesim::scale_resource_share(
 												// Reference resource capacity and threshold
 												app.reference_resource(res_category).capacity(),
-												app.reference_resource(res_category).utilization_threshold(),
+												//app.reference_resource(res_category).utilization_threshold(),
 												// Actual resource capacity and threshold
 												pm.resource(res_category)->capacity(),
-												pm.resource(res_category)->utilization_threshold(),
+												//pm.resource(res_category)->utilization_threshold(),
 												// Old resource share + computed deviation
 												new_share
 									);
@@ -1584,26 +1748,50 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 	DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Unscaled share: " << (ref_share*(opt_u(u_offset_+tier_id)+real_type(1))));//XXX
 #if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION)
 # if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+							real_type new_share(ptr_vm->guest_system().resource_share(res_category)*(opt_u(u_offset_+tier_id) + 1));
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 							real_type new_share(ref_share*(opt_u(u_offset_+tier_id) + 1));
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+							real_type new_share(ptr_vm->guest_system().resource_share(res_category)+(opt_u(u_offset_+tier_id)));
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 							real_type new_share(ref_share+opt_u(u_offset_+tier_id));
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 #else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 # if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+							real_type new_share(ptr_vm->guest_system().resource_share(res_category)*(opt_u(u_offset_+tier_id)));
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 							real_type new_share(ref_share*opt_u(u_offset_+tier_id));
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
 							real_type new_share(opt_u(u_offset_+tier_id));
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+							real_type new_share(opt_u(u_offset_+tier_id));
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unscaled share: " << new_share);//XXX
 //::std::cerr << "APP : " << app.id() << " - Tier " << tier_id << " --> New Unscaled share: " << new_share << ::std::endl;//XXX
+//							new_share = ::dcs::eesim::scale_resource_share(
+//											// Reference resource capacity and threshold
+//											app.reference_resource(res_category).capacity(),
+//											app.reference_resource(res_category).utilization_threshold(),
+//											// Actual resource capacity and threshold
+//											pm.resource(res_category)->capacity(),
+//											pm.resource(res_category)->utilization_threshold(),
+//											// Reference resource share "+" computed deviation
+//											new_share
+//								);
 							new_share = ::dcs::eesim::scale_resource_share(
 											// Reference resource capacity and threshold
 											app.reference_resource(res_category).capacity(),
-											app.reference_resource(res_category).utilization_threshold(),
 											// Actual resource capacity and threshold
 											pm.resource(res_category)->capacity(),
-											pm.resource(res_category)->utilization_threshold(),
 											// Reference resource share "+" computed deviation
 											new_share
 								);
@@ -1630,8 +1818,13 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 								new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
 							}
 
-							DCS_DEBUG_TRACE("APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " - Category: " << res_category << " - Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (REF: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share);
-//::std::cerr << "APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (REF: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << ::std::endl;//XXX
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+							DCS_DEBUG_TRACE("APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (Equilibrium-Point: " << tier_ref_out_measures_[tier_id] << " - Reference-Point: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << " (Equilibrium-Point: " << ::dcs::eesim::scale_resource_share(app.reference_resource(res_category).capacity(), pm.resource(res_category)->capacity(), tier_ref_in_measures_[tier_id]) << " - Reference-Point: " << ::dcs::eesim::scale_resource_share(app.reference_resource(res_category).capacity(), pm.resource(res_category)->capacity(), ref_share) << ")");
+//::std::cerr << "APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (Equilibrium-Point: " << tier_ref_out_measures_[tier_id] << " - Reference-Point: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << " (Equilibrium-Point: " << ::dcs::eesim::scale_resource_share(app.reference_resource(res_category).capacity(), pm.resource(res_category)->capacity(), tier_ref_in_measures_[tier_id]) << " - Reference-Point: " << ::dcs::eesim::scale_resource_share(app.reference_resource(res_category).capacity(), pm.resource(res_category)->capacity(), ref_share) << ")" << ::std::endl;//XXX
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+							DCS_DEBUG_TRACE("APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " - Category: " << res_category << " - Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (Reference-Point: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share);
+//::std::cerr << "APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (Reference-Point: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << ::std::endl;//XXX
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 
 							ptr_vm->wanted_resource_share(res_category, new_share);
 						}
@@ -1680,7 +1873,31 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 
 				++ident_fail_count_;
 				::std::clog << "[Warning:lq_app_ctrl] Control not applied for Application '" << app.id() << "': failed to solve the identification problem." << ::std::endl;
+
+#ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
+				// Dump (fake) predicted tier resource share
+				for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+				{
+					//FIXME: resource category is actually hard-coded to CPU
+					physical_resource_category res_category(cpu_resource_category);
+
+					ofs << "," << res_category << ",,";
+				}
+#endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
 			}
+#ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
+			else
+			{
+				// Dump (fake) predicted tier resource share
+				for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+				{
+					//FIXME: resource category is actually hard-coded to CPU
+					physical_resource_category res_category(cpu_resource_category);
+
+					ofs << "," << res_category << ",,";
+				}
+			}
+#endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
 		}
 		else
 		{
@@ -1789,10 +2006,14 @@ if (((count_-1) % 1000) == 0)//XXX
 	private: triggers_type triggers_;
 #if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
 	private: uint_type num_ref_measures_;
-	private: real_type next_ref_measure_;
-	private: real_type ref_measure_;
-	private: ::std::vector<real_type> next_tier_ref_measures_;
-	private: ::std::vector<real_type> tier_ref_measures_;
+	private: real_type next_ref_out_measure_;
+	private: real_type ref_out_measure_;
+	private: ::std::vector<real_type> next_tier_ref_out_measures_;
+	private: ::std::vector<real_type> tier_ref_out_measures_;
+//	private: real_type next_ref_in_measure_;
+//	private: real_type ref_in_measure_;
+	private: ::std::vector<real_type> next_tier_ref_in_measures_;
+	private: ::std::vector<real_type> tier_ref_in_measures_;
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 }; // lq_application_controller
 
