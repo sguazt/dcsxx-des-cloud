@@ -453,7 +453,6 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		typedef typename vmm_type::virtual_machine_container vm_container;
 		typedef typename vm_container::const_iterator vm_iterator;
 
-::std::cerr << "[default_physical_machine_simulation] BEGIN Update Share Profile" << ::std::endl;///XXX
 		real_type aggr_share(0);
 
 		vm_container vms(this->machine().vmm().virtual_machines(powered_on_power_status));
@@ -461,7 +460,6 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		for (vm_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
 		{
 			virtual_machine_pointer ptr_vm(*vm_it);
-::std::cerr << "[default_physical_machine_simulation] VM: " << *ptr_vm << " --> " << ptr_vm->resource_share(category) << ::std::endl;///XXX
 
 			// paranoid-check: null
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -474,7 +472,6 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		// paranoid-check: consistency
 		DCS_DEBUG_ASSERT( cur_time >= last_share_upd_time_ );
 
-::std::cerr << "[default_physical_machine_simulation] Aggregate Share: " << aggr_share << " - Weight: " << (cur_time-last_share_upd_time_) << ::std::endl;///XXX
 		// Safety check to prevent NaNs
 		if (::dcs::math::float_traits<real_type>::definitely_greater(cur_time, last_share_upd_time_) > 0)
 		{
@@ -484,7 +481,6 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 //			(*ptr_share_stat_)(aggr_share);
 		}
 		last_share_upd_time_ = cur_time;
-::std::cerr << "[default_physical_machine_simulation] END Update Share Profile" << ::std::endl;///XXX
 	}
 
 
