@@ -78,6 +78,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	private: typedef resource_utilization_profile<traits_type> utilization_profile_type;
 	private: typedef typename traits_type::virtual_machine_identifier_type virtual_machine_identifier_type;
 	private: typedef ::std::map< virtual_machine_identifier_type, ::std::vector< ::std::pair<real_type,real_type> > > virtual_machine_hosting_time_map;
+	private: typedef ::std::map< virtual_machine_identifier_type, ::std::map<physical_resource_category,real_type> > virtual_machine_share_time_map;
 
 
 	private: static const ::std::string poweron_event_source_name;
@@ -106,7 +107,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	  ptr_uptime_stat_(new mean_estimator_statistic_type()), //FIXME: statistic type (mean) is hard-coded
 	  ptr_util_stat_(new mean_estimator_statistic_type()), //FIXME: statistic type (mean) is hard-coded
 	  ptr_share_stat_(registry_type::instance().des_engine().make_analyzable_statistic(weighted_mean_estimator_statistic_type())), //FIXME: statistic type (mean) is hard-coded
-	  share_stat_upd_time_(0)
+	  last_share_upd_time_(0)
 	{
 		init();
 	}
@@ -441,6 +442,60 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	}
 
 
+	private: void update_share_profile(physical_resource_category category)
+	{
+		DCS_DEBUG_TRACE("(" << this << ") BEGIN Updating Share Profile (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
+
+		//FIXME: CPU resource category is hard-coded
+		DCS_DEBUG_ASSERT( category == cpu_resource_category );
+
+		typedef typename physical_machine_type::vmm_type vmm_type;
+		typedef typename vmm_type::virtual_machine_container vm_container;
+		typedef typename vm_container::const_iterator vm_iterator;
+
+::std::cerr << "[default_physical_machine_simulation] BEGIN Update Share Profile" << ::std::endl;///XXX
+		real_type aggr_share(0);
+
+		vm_container vms(this->machine().vmm().virtual_machines(powered_on_power_status));
+		vm_iterator vm_end_it(vms.end());
+		for (vm_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
+		{
+			virtual_machine_pointer ptr_vm(*vm_it);
+::std::cerr << "[default_physical_machine_simulation] VM: " << *ptr_vm << " --> " << ptr_vm->resource_share(category) << ::std::endl;///XXX
+
+			// paranoid-check: null
+			DCS_DEBUG_ASSERT( ptr_vm );
+
+			aggr_share += ptr_vm->resource_share(category);
+		}
+
+		real_type cur_time(registry_type::instance().des_engine().simulated_time());
+
+		// paranoid-check: consistency
+		DCS_DEBUG_ASSERT( cur_time >= last_share_upd_time_ );
+
+::std::cerr << "[default_physical_machine_simulation] Aggregate Share: " << aggr_share << " - Weight: " << (cur_time-last_share_upd_time_) << ::std::endl;///XXX
+		// Safety check to prevent NaNs
+		if (::dcs::math::float_traits<real_type>::definitely_greater(cur_time, last_share_upd_time_) > 0)
+		{
+			share_profile_map_[category](last_share_upd_time_, cur_time, aggr_share);
+
+			(*ptr_share_stat_)(aggr_share, cur_time-last_share_upd_time_);
+//			(*ptr_share_stat_)(aggr_share);
+		}
+		last_share_upd_time_ = cur_time;
+::std::cerr << "[default_physical_machine_simulation] END Update Share Profile" << ::std::endl;///XXX
+	}
+
+
+	private: void update_share_profiles()
+	{
+		//FIXME: CPU resource category is hard-coded
+		update_share_profile(cpu_resource_category);
+	}
+
+
+/*
 	private: void update_resource_share_stat(physical_resource_category category)
 	{
 		//FIXME: CPU resource category is hard-coded
@@ -452,11 +507,14 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 
 		real_type aggr_share(0);
 
+::std::cerr << "[default_physical_machine_simulation] BEGIN Update Share Stats" << ::std::endl;///XXX
+::std::cerr << "[default_physical_machine_simulation] Old Share Stat: " << ptr_share_stat_->estimate() << ::std::endl;///XXX
 		vm_container vms(this->machine().vmm().virtual_machines(powered_on_power_status));
 		vm_iterator vm_end_it(vms.end());
 		for (vm_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
 		{
 			virtual_machine_pointer ptr_vm(*vm_it);
+::std::cerr << "[default_physical_machine_simulation] VM: " << *ptr_vm << " --> " << ptr_vm->resource_share(category) << ::std::endl;///XXX
 
 			// paranoid-check: null
 			DCS_DEBUG_ASSERT( ptr_vm );
@@ -469,13 +527,17 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		// paranoid-check: consistency
 		DCS_DEBUG_ASSERT( cur_time >= share_stat_upd_time_ );
 
+::std::cerr << "[default_physical_machine_simulation] Aggregate Share: " << aggr_share << " - Weight: " << (cur_time-share_stat_upd_time_) << ::std::endl;///XXX
 		// Safety check to prevent NaNs
 		if (::dcs::math::float_traits<real_type>::definitely_greater(cur_time, share_stat_upd_time_) > 0)
 		{
 			(*ptr_share_stat_)(aggr_share, cur_time-share_stat_upd_time_);
+//			(*ptr_share_stat_)(aggr_share);
 
 		}
 		share_stat_upd_time_ = cur_time;
+::std::cerr << "[default_physical_machine_simulation] New Share Stat: " << ptr_share_stat_->estimate() << ::std::endl;///XXX
+::std::cerr << "[default_physical_machine_simulation] END Update Share Stats" << ::std::endl;///XXX
 	}
 
 
@@ -496,6 +558,30 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	}
 
 
+	private: void update_vm_share_time(real_type time)
+	{
+		typedef typename physical_machine_type::vmm_type vmm_type;
+		typedef typename vmm_type::virtual_machine_container vm_container;
+		typedef typename vm_container::const_iterator vm_iterator;
+
+::std::cerr << "[default_physical_machine_simulation] BEGIN Update Share Time: " << time << ::std::endl;///XXX
+		vm_container vms(this->machine().vmm().virtual_machines(powered_on_power_status));
+		vm_iterator vm_end_it(vms.end());
+		for (vm_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
+		{
+			virtual_machine_pointer ptr_vm(*vm_it);
+::std::cerr << "[default_physical_machine_simulation] VM: " << *ptr_vm << " --> " << ptr_vm->resource_share(cpu_resource_category) << ::std::endl;///XXX
+
+			// paranoid-check: null
+			DCS_DEBUG_ASSERT( ptr_vm );
+
+			vm_share_time_map_[ptr_vm->id()][cpu_resource_category] = time;
+		}
+::std::cerr << "[default_physical_machine_simulation] END Update Share Time: " << time << ::std::endl;///XXX
+	}
+*/
+
+
 	//@{ Interface Member Functions
 
 	protected: void do_enable(bool flag)
@@ -512,11 +598,11 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		{
 			if (flag)
 			{
-				share_stat_upd_time_ = registry_type::instance().des_engine().simulated_time();
+				last_share_upd_time_ = registry_type::instance().des_engine().simulated_time();
 			}
 			else
 			{
-				update_resource_share_stats();
+				update_share_profiles();
 			}
 		}
 
@@ -564,7 +650,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 
 			// Update info for uptime and other stats
 			last_pwron_time_ = cur_time;
-			share_stat_upd_time_ = cur_time;
+			last_share_upd_time_ = cur_time;
 
 			// Fire the power-on event
 			reg.des_engine().schedule_event(
@@ -611,7 +697,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 //::std::cerr << "Update UPTIME - old: " << uptime_ << " - new: " << (uptime_+(cur_time-last_pwron_time_)) << ::std::endl;//XXX
 			uptime_ += cur_time - last_pwron_time_;
 
-			update_resource_share_stats();
+//			update_resource_share_stats();
 
 			// Fire the power-off event
 			reg.des_engine().schedule_event(
@@ -699,6 +785,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			vm_host_time_map_[ptr_vm->id()].back().second = cur_time;
 
 			update_utilization_profile(ptr_vm);
+			update_share_profiles();
 
 			ptr_vm->power_off();
 
@@ -746,6 +833,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			vm_host_time_map_[ptr_vm->id()].back().second = cur_time;
 
 			update_utilization_profile(ptr_vm);
+			update_share_profiles();
 
 			ptr_vm->suspend();
 
@@ -857,6 +945,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 				vm_host_time_map_[ptr_vm->id()].back().second = cur_time;
 
 				update_utilization_profile(ptr_vm);
+				update_share_profiles();
 
 				ptr_vm->guest_system().application().simulation_model().request_tier_service_event_source(ptr_vm->guest_system().id()).disconnect(
 						::dcs::functional::bind(
@@ -924,7 +1013,8 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		share_stat_upd_time_ = cur_time;
 */
 
-		update_resource_share_stat(category);
+		update_share_profile(category);
+//		update_resource_share_stat(category);
 
 		DCS_DEBUG_TRACE("(" << this << ") END Do Change Resource Share of virtual machine: " << vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 
@@ -1056,7 +1146,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		ptr_util_stat_->reset();
 		ptr_share_stat_->reset();
 
-		share_stat_upd_time_ = real_type(0);
+		last_share_upd_time_ = real_type(0);
 
 		DCS_DEBUG_TRACE("(" << this << ") END Processing BEGIN-OF-SIMULATION (Clock: " << ctx.simulated_time() << ")");
 	}
@@ -1073,7 +1163,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		// Reset per-experiment stats
 //		energy_ = uptime_
 		uptime_ = last_pwron_time_
-				= share_stat_upd_time_
+				= last_share_upd_time_
 				= real_type/*zero*/();
 
 		pwr_state_ = powered_off_power_status;
@@ -1259,9 +1349,11 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	private: output_statistic_pointer ptr_uptime_stat_;
 	private: output_statistic_pointer ptr_util_stat_;
 	private: output_statistic_pointer ptr_share_stat_;
-	private: real_type share_stat_upd_time_;
+	private: real_type last_share_upd_time_;
 	private: ::std::map<physical_resource_category,utilization_profile_type> res_profile_map_;
+	private: ::std::map<physical_resource_category,utilization_profile_type> share_profile_map_;
 	private: virtual_machine_hosting_time_map vm_host_time_map_;
+//	private: virtual_machine_share_time_map vm_share_time_map_;
 }; // default_physical_machine_simulation_model: public base_physical_machine_simulation_model<TraitsT>
 
 template <typename TraitsT>
