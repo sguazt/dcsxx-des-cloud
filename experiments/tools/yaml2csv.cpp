@@ -318,7 +318,7 @@ int main(int argc, char* argv[])
 	yaml_fname = argv[1];
 	if (argc >= 3)
 	{
-		csv_fname = argv[1];
+		csv_fname = argv[2];
 	}
 
 	std::ifstream ifs(yaml_fname.c_str());
