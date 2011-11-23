@@ -1,5 +1,6 @@
 #include <cstddef>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -193,6 +194,9 @@ void yaml_to_csv(std::istream& is,
 	typedef typename application_tier_info_container::const_iterator application_tier_info_iterator;
 	typedef physical_machine_info<uint_type,real_type> physical_machine_info_type;
 	typedef data_center_info<uint_type,real_type> data_center_info_type;
+
+
+	os << std::fixed << std::setprecision(6);
 
 	YAML::Parser yaml(is);
 	YAML::Node doc;
