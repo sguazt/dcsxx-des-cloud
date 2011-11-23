@@ -1,5 +1,6 @@
 #include <cstddef>
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <vector>
 #include <yaml-cpp/yaml.h>
@@ -22,6 +23,8 @@ std::string to_string(YAML::NodeType::value type)
 	{
 		return "MAP";
 	}
+
+	return "UNKNOWN";
 }
 
 template <typename RealT>
@@ -154,29 +157,44 @@ void operator>>(YAML::Node const& node, data_center_info<UIntT,RealT>& dc)
 	node["vm-migration-rate"] >> dc.vm_migration_rate;
 }
 
-int main()
+
+template <
+	typename UIntT,
+	typename RealT,
+	typename IsCharT,
+	typename IsCharTraitsT,
+	typename OsCharT,
+	typename OsCharTraitsT
+>
+void yaml_to_csv(std::basic_istream<IsCharT,IsCharTraitsT>& is,
+				 std::basic_ostream<OsCharT,OsCharTraitsT>& os,
+				 std::string const& sep,
+				 std::string const& eol,
+				 std::string const& quote)
+/*
+template <
+	typename UIntT,
+	typename RealT
+>
+void yaml_to_csv(std::istream& is,
+				 std::ostream& os,
+				 std::string const& sep, std::string const& eol,
+				 std::string const& quote)
+*/
 {
-	typedef unsigned long uint_type;
-	typedef double real_type;
+	// Avoid unused variable warnings
+	(void)quote;
 
-	std::string sep(",");
-	std::string eol("\n");
-	std::string quote("\"");
-
-	std::string yaml_fname;
-
-	yaml_fname = "out.yaml";
-	std::ostream& os(std::cout);
-
+	typedef UIntT uint_type;
+	typedef RealT real_type;
 	typedef application_info<uint_type,real_type> application_info_type;
-	typedef application_info_type::tier_info_type application_tier_info_type;
-	typedef application_info_type::tier_info_container application_tier_info_container;
-	typedef application_tier_info_container::const_iterator application_tier_info_iterator;
+	typedef typename application_info_type::tier_info_type application_tier_info_type;
+	typedef typename application_info_type::tier_info_container application_tier_info_container;
+	typedef typename application_tier_info_container::const_iterator application_tier_info_iterator;
 	typedef physical_machine_info<uint_type,real_type> physical_machine_info_type;
 	typedef data_center_info<uint_type,real_type> data_center_info_type;
 
-	std::ifstream ifs(yaml_fname.c_str());
-	YAML::Parser yaml(ifs);
+	YAML::Parser yaml(is);
 	YAML::Node doc;
 	while (yaml.GetNextDocument(doc))
 	{
@@ -274,6 +292,47 @@ int main()
 //			   << sep << dc.num_vm_migrations.sd;
 //		}
 //
-//		os << eol;
+		os << eol;
+	}
+}
+
+int main(int argc, char* argv[])
+{
+	typedef unsigned long uint_type;
+	typedef double real_type;
+
+
+	if (argc < 2)
+	{
+		std::cerr << "Usage: " << argv[0] << " <yaml-file> [<csv-file>]" << std::endl;
+		return -1;
+	}
+
+	const std::string sep(",");
+	const std::string eol("\n");
+	const std::string quote("\"");
+
+	std::string yaml_fname;
+	std::string csv_fname;
+
+	yaml_fname = argv[1];
+	if (argc >= 3)
+	{
+		csv_fname = argv[1];
+	}
+
+	std::ifstream ifs(yaml_fname.c_str());
+
+	if (csv_fname.empty())
+	{
+		yaml_to_csv<uint_type,real_type>(ifs, std::cout, sep, eol, quote);
+	}
+	else
+	{
+		std::ofstream ofs(csv_fname.c_str());
+
+		yaml_to_csv<uint_type,real_type>(ifs, ofs, sep, eol, quote);
+
+		ofs.close();
 	}
 }
