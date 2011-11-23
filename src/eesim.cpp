@@ -55,11 +55,13 @@
 #  include <execinfo.h>
 # endif // __GNUC__
 #endif // DCS_DEBUG
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <yaml-cpp/yaml.h>
 
 
 static std::string prog_name;
@@ -115,7 +117,8 @@ void usage()
 	::std::cerr << "Usage: " << prog_name << " <options>" << ::std::endl
 				<< "Options:" << ::std::endl
 				<< "  --partial-stats" << ::std::endl
-				<< "  --conf <configuration-file>" << ::std::endl;
+				<< "  --conf <configuration-file>" << ::std::endl
+				<< "  --out-data-file <output-data-file>" << ::std::endl;
 }
 
 
@@ -206,6 +209,29 @@ inline
 	}
 
 	return ::std::string("Unknown Performance Measure");
+}
+
+
+inline
+::std::string to_yaml_id(::dcs::eesim::performance_measure_category category)
+{
+	switch (category)
+	{
+		case ::dcs::eesim::busy_time_performance_measure:
+			return ::std::string("busy-time");
+		case ::dcs::eesim::queue_length_performance_measure:
+			return ::std::string("queue-length");
+		case ::dcs::eesim::response_time_performance_measure:
+			return ::std::string("response-time");
+		case ::dcs::eesim::throughput_performance_measure:
+			return ::std::string("throughput");
+		case ::dcs::eesim::utilization_performance_measure:
+			return ::std::string("utilization");
+		default:
+			break;
+	}
+
+	return ::std::string("unknown");
 }
 
 
@@ -535,6 +561,359 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<
 }
 
 
+template <
+	typename CharT,
+	typename CharTraitsT,
+	typename TraitsT
+>
+void yaml_report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<TraitsT> const& sys)
+{
+	typedef TraitsT traits_type;
+	typedef typename traits_type::uint_type uint_type;
+	typedef typename traits_type::real_type real_type;
+	typedef typename simulated_system<TraitsT>::data_center_type data_center_type;
+
+	data_center_type const& dc(sys.data_center());
+
+	::YAML::Emitter yaml;
+
+	yaml << ::YAML::BeginMap;
+
+	// Virtual Machines
+	{
+		typedef typename data_center_type::virtual_machine_type virtual_machine_type;
+		typedef typename data_center_type::virtual_machine_pointer virtual_machine_pointer;
+		typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
+		typedef typename virtual_machine_container::const_iterator virtual_machine_iterator;
+		typedef typename virtual_machine_type::statistic_pointer statistic_pointer;
+		typedef ::std::vector<statistic_pointer> vm_statistic_container;
+		typedef typename vm_statistic_container::const_iterator vm_statistic_iterator;
+		typedef ::std::map< ::dcs::eesim::physical_resource_category, vm_statistic_container> vm_resource_statistic_map;
+		typedef typename vm_resource_statistic_map::const_iterator vm_resource_statistic_iterator;
+
+		yaml << ::YAML::Key << "virtual-machines" << ::YAML::Value;
+		yaml << ::YAML::BeginSeq;
+
+		virtual_machine_container vms = dc.virtual_machines();
+		virtual_machine_iterator vm_end_it = vms.end();
+		for (virtual_machine_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
+		{
+			virtual_machine_pointer ptr_vm = *vm_it;
+			vm_resource_statistic_map vm_res_stats;
+			vm_resource_statistic_iterator res_stat_end_it;
+
+			yaml << ::YAML::BeginMap;
+
+			yaml << ::YAML::Key << "id" << ::YAML::Value << ptr_vm->id();
+
+			yaml << ::YAML::Key << "name" << ::YAML::Value << ptr_vm->name();
+
+			yaml << ::YAML::Key << "wanted-shares" << ::YAML::Value;
+			yaml << ::YAML::BeginSeq;
+			vm_res_stats = ptr_vm->wanted_resource_share_statistics();
+			res_stat_end_it = vm_res_stats.end();
+			for (vm_resource_statistic_iterator res_stat_it = vm_res_stats.begin(); res_stat_it != res_stat_end_it; ++res_stat_it)
+			{
+				yaml << ::YAML::BeginMap;
+				yaml << ::YAML::Key << "resource-category" << ::YAML::Value << res_stat_it->first;
+				yaml << ::YAML::Key << "stats" << ::YAML::Value;
+				yaml << ::YAML::BeginSeq;
+				vm_statistic_container vm_stats(res_stat_it->second);
+				vm_statistic_iterator stat_end_it(vm_stats.end());
+				for (vm_statistic_iterator stat_it = vm_stats.begin(); stat_it != stat_end_it; ++stat_it)
+				{
+					statistic_pointer ptr_stat(*stat_it);
+
+					yaml << ::YAML::BeginMap;
+					yaml << ::YAML::Key << "type" << ::YAML::Value << ptr_stat->name();
+					yaml << ::YAML::Key << "estimate" << ::YAML::Value << ptr_stat->estimate();
+					yaml << ::YAML::Key << "stddev" << ::YAML::Value << ptr_stat->standard_deviation();
+					yaml << ::YAML::EndMap;
+				}
+				yaml << ::YAML::EndSeq; // statistic
+				yaml << ::YAML::EndMap; // wanted-share
+			}
+			yaml << ::YAML::EndSeq; // wanted-shares
+
+			yaml << ::YAML::Key << "assigned-shares" << ::YAML::Value;
+			yaml << ::YAML::BeginSeq;
+			vm_res_stats = ptr_vm->resource_share_statistics();
+			res_stat_end_it = vm_res_stats.end();
+			for (vm_resource_statistic_iterator res_stat_it = vm_res_stats.begin(); res_stat_it != res_stat_end_it; ++res_stat_it)
+			{
+				yaml << ::YAML::BeginMap;
+				yaml << ::YAML::Key << "resource-category" << ::YAML::Value << res_stat_it->first;
+				yaml << ::YAML::Key << "stats" << ::YAML::Value;
+				yaml << ::YAML::BeginSeq;
+				vm_statistic_container vm_stats(res_stat_it->second);
+				vm_statistic_iterator stat_end_it(vm_stats.end());
+				for (vm_statistic_iterator stat_it = vm_stats.begin(); stat_it != stat_end_it; ++stat_it)
+				{
+					statistic_pointer ptr_stat(*stat_it);
+
+					yaml << ::YAML::BeginMap;
+					yaml << ::YAML::Key << "type" << ::YAML::Value << ptr_stat->name();
+					yaml << ::YAML::Key << "estimate" << ::YAML::Value << ptr_stat->estimate();
+					yaml << ::YAML::Key << "stddev" << ::YAML::Value << ptr_stat->standard_deviation();
+					yaml << ::YAML::EndMap;
+				}
+				yaml << ::YAML::EndSeq; // statistics
+				yaml << ::YAML::EndMap; // assigned-share
+			}
+			yaml << ::YAML::EndSeq; // assigned-shares
+
+			yaml << ::YAML::EndMap; // virtual-machine
+		}
+
+		yaml << ::YAML::EndSeq; // virtual-machines
+	}
+
+	// Application statistics
+	{
+		typedef typename data_center_type::application_type application_type;
+		typedef typename data_center_type::application_pointer application_pointer;
+		typedef ::std::vector<application_pointer> application_container;
+		typedef typename application_container::const_iterator application_iterator;
+		typedef typename application_type::simulation_model_type application_simulation_model_type;
+		typedef typename application_simulation_model_type::output_statistic_pointer output_statistic_pointer;
+		typedef ::std::vector<output_statistic_pointer> statistic_container;
+		typedef typename statistic_container::const_iterator statistic_iterator;
+		typedef typename application_type::application_tier_pointer application_tier_pointer;
+		typedef ::std::vector<application_tier_pointer> tier_container;
+		typedef typename tier_container::const_iterator tier_iterator;
+		typedef ::dcs::eesim::performance_measure_category statistic_category_type;
+		typedef ::std::vector<statistic_category_type> statistic_category_container;
+		typedef typename statistic_category_container::const_iterator statistic_category_iterator;
+
+		yaml << ::YAML::Key << "applications" << ::YAML::Value;
+
+		yaml << ::YAML::BeginSeq;
+
+		application_container apps = dc.applications();
+		application_iterator app_end_it = apps.end();
+		for (application_iterator app_it = apps.begin(); app_it != app_end_it; ++app_it)
+		{
+			application_pointer ptr_app = *app_it;
+
+			yaml << ::YAML::BeginMap;
+
+			yaml << ::YAML::Key << "id" << ::YAML::Value << ptr_app->id();
+
+			yaml << ::YAML::Key << "name" << ::YAML::Value << ptr_app->name();
+
+			yaml << ::YAML::Key << "overall" << ::YAML::Value;
+			yaml << ::YAML::BeginMap;
+			yaml << ::YAML::Key << "num-arrivals" << ::YAML::Value;
+			yaml << ::YAML::BeginMap;
+			yaml << ::YAML::Key << "type" << ::YAML::Value << ptr_app->simulation_model().num_arrivals().name();
+			yaml << ::YAML::Key << "estimate" << ::YAML::Value << ptr_app->simulation_model().num_arrivals().estimate();
+			yaml << ::YAML::Key << "stddev" << ::YAML::Value << ptr_app->simulation_model().num_arrivals().standard_deviation();
+			yaml << ::YAML::EndMap;
+			yaml << ::YAML::Key << "num-departures" << ::YAML::Value;
+			yaml << ::YAML::BeginMap;
+			yaml << ::YAML::Key << "type" << ::YAML::Value << ptr_app->simulation_model().num_departures().name();
+			yaml << ::YAML::Key << "estimate" << ::YAML::Value << ptr_app->simulation_model().num_departures().estimate();
+			yaml << ::YAML::Key << "stddev" << ::YAML::Value << ptr_app->simulation_model().num_departures().standard_deviation();
+			yaml << ::YAML::EndMap;
+			yaml << ::YAML::Key << "num-sla-violations" << ::YAML::Value;
+			yaml << ::YAML::BeginMap;
+			yaml << ::YAML::Key << "type" << ::YAML::Value << ptr_app->simulation_model().num_sla_violations().name();
+			yaml << ::YAML::Key << "estimate" << ::YAML::Value << ptr_app->simulation_model().num_sla_violations().estimate();
+			yaml << ::YAML::Key << "stddev" << ::YAML::Value << ptr_app->simulation_model().num_sla_violations().standard_deviation();
+			yaml << ::YAML::EndMap;
+
+			statistic_category_container stat_categories(::dcs::eesim::performance_measure_categories());
+			statistic_category_iterator stat_cat_end_it = stat_categories.end();
+			for (statistic_category_iterator stat_cat_it = stat_categories.begin(); stat_cat_it != stat_cat_end_it; ++stat_cat_it)
+			{
+				statistic_category_type stat_category(*stat_cat_it);
+
+				if (::dcs::eesim::for_application(stat_category))
+				{
+					yaml << ::YAML::Key << to_yaml_id(stat_category) << ::YAML::Value;
+
+					yaml << ::YAML::BeginSeq;
+
+					statistic_container ptr_stats;
+					ptr_stats = ptr_app->simulation_model().statistic(stat_category);
+					statistic_iterator stat_end_it = ptr_stats.end();
+					for (statistic_iterator stat_it = ptr_stats.begin(); stat_it != stat_end_it; ++stat_it)
+					{
+						output_statistic_pointer ptr_stat(*stat_it);
+
+						yaml << ::YAML::BeginMap;
+						yaml << ::YAML::Key << "type" << ::YAML::Value << ptr_stat->name();
+						yaml << ::YAML::Key << "estimate" << ::YAML::Value << ptr_stat->estimate();
+						yaml << ::YAML::Key << "stddev" << ::YAML::Value << ptr_stat->standard_deviation();
+						yaml << ::YAML::EndMap;
+					}
+
+					yaml << ::YAML::EndSeq;
+				}
+			}
+
+			yaml << ::YAML::EndMap;
+
+			yaml << ::YAML::Key << "tiers" << ::YAML::Value;
+
+			yaml << ::YAML::BeginSeq;
+
+			// Tier statistics
+			tier_container tiers;
+			tiers = ptr_app->tiers();
+			tier_iterator tier_end_it = tiers.end();
+			for (tier_iterator tier_it = tiers.begin(); tier_it != tier_end_it; ++tier_it)
+			{
+				application_tier_pointer ptr_tier(*tier_it);
+				uint_type tier_id(ptr_tier->id());
+
+				yaml << ::YAML::BeginMap;
+
+				yaml << ::YAML::Key << "id" << ::YAML::Value << tier_id;
+				yaml << ::YAML::Key << "name" << ::YAML::Value << ptr_tier->name();
+				yaml << ::YAML::Key << "num-arrivals" << ::YAML::Value;
+				yaml << ::YAML::BeginMap;
+				yaml << ::YAML::Key << "type" << ::YAML::Value << ptr_app->simulation_model().tier_num_arrivals(tier_id).name();
+				yaml << ::YAML::Key << "estimate" << ::YAML::Value << ptr_app->simulation_model().tier_num_arrivals(tier_id).estimate();
+				yaml << ::YAML::Key << "stddev" << ::YAML::Value << ptr_app->simulation_model().tier_num_arrivals(tier_id).standard_deviation();
+				yaml << ::YAML::EndMap;
+				yaml << ::YAML::Key << "num-departures" << ::YAML::Value;
+				yaml << ::YAML::BeginMap;
+				yaml << ::YAML::Key << "type" << ::YAML::Value << ptr_app->simulation_model().tier_num_departures(tier_id).name();
+				yaml << ::YAML::Key << "estimate" << ::YAML::Value << ptr_app->simulation_model().tier_num_departures(tier_id).estimate();
+				yaml << ::YAML::Key << "stddev" << ::YAML::Value << ptr_app->simulation_model().tier_num_departures(tier_id).standard_deviation();
+				yaml << ::YAML::EndMap;
+
+				statistic_category_iterator stat_cat_end_it = stat_categories.end();
+				for (statistic_category_iterator stat_cat_it = stat_categories.begin(); stat_cat_it != stat_cat_end_it; ++stat_cat_it)
+				{
+					statistic_category_type stat_category(*stat_cat_it);
+
+					if (::dcs::eesim::for_application_tier(stat_category))
+					{
+						yaml << ::YAML::Key << to_yaml_id(stat_category) << ::YAML::Value;
+
+						yaml << ::YAML::BeginSeq;
+
+						statistic_container ptr_tier_stats;
+						ptr_tier_stats = ptr_app->simulation_model().tier_statistic(tier_id, stat_category);
+						statistic_iterator tier_stat_end_it = ptr_tier_stats.end();
+						for (statistic_iterator tier_stat_it = ptr_tier_stats.begin(); tier_stat_it != tier_stat_end_it; ++tier_stat_it)
+						{
+							output_statistic_pointer ptr_tier_stat(*tier_stat_it);
+
+							yaml << ::YAML::BeginMap;
+							yaml << ::YAML::Key << "type" << ::YAML::Value << ptr_tier_stat->name();
+							yaml << ::YAML::Key << "estimate" << ::YAML::Value << ptr_tier_stat->estimate();
+							yaml << ::YAML::Key << "stddev" << ::YAML::Value << ptr_tier_stat->standard_deviation();
+							yaml << ::YAML::EndMap;
+						}
+
+						yaml << ::YAML::EndSeq; // statistics
+					}
+				}
+
+				yaml << ::YAML::EndMap; // tier
+			}
+
+			yaml << ::YAML::EndSeq; // tiers
+
+			yaml << ::YAML::EndMap; // application
+		}
+
+		yaml << ::YAML::EndSeq; // applications
+	}
+
+	real_type tot_energy(0);
+
+	// Machine statistics
+	{
+		typedef typename data_center_type::physical_machine_type physical_machine_type;
+		typedef typename data_center_type::physical_machine_pointer physical_machine_pointer;
+		typedef ::std::vector<physical_machine_pointer> physical_machine_container;
+		typedef typename physical_machine_container::const_iterator physical_machine_iterator;
+
+		yaml << ::YAML::Key << "physical-machines" << ::YAML::Value;
+		yaml << ::YAML::BeginSeq;
+
+		physical_machine_container machs = dc.physical_machines();
+		physical_machine_iterator mach_end_it = machs.end();
+		for (physical_machine_iterator mach_it = machs.begin(); mach_it != mach_end_it; ++mach_it)
+		{
+			physical_machine_pointer ptr_mach = *mach_it;
+
+			yaml << ::YAML::BeginMap;
+
+			yaml << ::YAML::Key << "id" << ::YAML::Value << ptr_mach->id();
+
+			yaml << ::YAML::Key << "name" << ::YAML::Value << ptr_mach->name();
+
+			yaml << ::YAML::Key << "uptime" << ::YAML::Value;
+			yaml << ::YAML::BeginMap;
+			yaml << ::YAML::Key << "type" << ::YAML::Value << ptr_mach->simulation_model().uptime().name();
+			yaml << ::YAML::Key << "estimate" << ::YAML::Value << ptr_mach->simulation_model().uptime().estimate();
+			yaml << ::YAML::Key << "stddev" << ::YAML::Value << ptr_mach->simulation_model().uptime().standard_deviation();
+			yaml << ::YAML::EndMap;
+			yaml << ::YAML::Key << "consumed-energy" << ::YAML::Value;
+			yaml << ::YAML::BeginMap;
+			yaml << ::YAML::Key << "type" << ::YAML::Value << ptr_mach->simulation_model().consumed_energy().name();
+			yaml << ::YAML::Key << "estimate" << ::YAML::Value << ptr_mach->simulation_model().consumed_energy().estimate();
+			yaml << ::YAML::Key << "stddev" << ::YAML::Value << ptr_mach->simulation_model().consumed_energy().standard_deviation();
+			yaml << ::YAML::EndMap;
+			yaml << ::YAML::Key << "utilization" << ::YAML::Value;
+			yaml << ::YAML::BeginMap;
+			yaml << ::YAML::Key << "type" << ::YAML::Value << ptr_mach->simulation_model().utilization().name();
+			yaml << ::YAML::Key << "estimate" << ::YAML::Value << ptr_mach->simulation_model().utilization().estimate();
+			yaml << ::YAML::Key << "stddev" << ::YAML::Value << ptr_mach->simulation_model().utilization().standard_deviation();
+			yaml << ::YAML::EndMap;
+			yaml << ::YAML::Key << "share" << ::YAML::Value;
+			yaml << ::YAML::BeginMap;
+			yaml << ::YAML::Key << "type" << ::YAML::Value << ptr_mach->simulation_model().share().name();
+			yaml << ::YAML::Key << "estimate" << ::YAML::Value << ptr_mach->simulation_model().share().estimate();
+			yaml << ::YAML::Key << "stddev" << ::YAML::Value << ptr_mach->simulation_model().share().standard_deviation();
+			yaml << ::YAML::EndMap;
+
+			yaml << ::YAML::EndMap; // physical-machine
+
+			tot_energy += ptr_mach->simulation_model().consumed_energy().estimate();
+		}
+
+		yaml << ::YAML::EndSeq; // physical-machines
+	}
+
+	// Data Center statistics
+	{
+		yaml << ::YAML::Key << "data-center" << ::YAML::Value;
+		yaml << ::YAML::BeginMap;
+
+		yaml << ::YAML::Key << "consumed-energy" << ::YAML::Value;
+		yaml << ::YAML::BeginMap;
+		yaml << ::YAML::Key << "type" << ::YAML::Value << "mean";
+		yaml << ::YAML::Key << "estimate" << ::YAML::Value << tot_energy;
+		yaml << ::YAML::Key << "stddev" << ::YAML::Value << 0;
+		yaml << ::YAML::EndMap;
+		yaml << ::YAML::Key << "num-vm-migrations" << ::YAML::Value;
+		yaml << ::YAML::BeginMap;
+		yaml << ::YAML::Key << "type" << ::YAML::Value << sys.data_center_manager().migration_controller().num_migrations().name();
+		yaml << ::YAML::Key << "estimate" << ::YAML::Value << sys.data_center_manager().migration_controller().num_migrations().estimate();
+		yaml << ::YAML::Key << "stddev" << ::YAML::Value << sys.data_center_manager().migration_controller().num_migrations().standard_deviation();
+		yaml << ::YAML::EndMap;
+		yaml << ::YAML::Key << "vm-migration-rate" << ::YAML::Value;
+		yaml << ::YAML::BeginMap;
+		yaml << ::YAML::Key << "type" << ::YAML::Value << sys.data_center_manager().migration_controller().migration_rate().name();
+		yaml << ::YAML::Key << "estimate" << ::YAML::Value << sys.data_center_manager().migration_controller().migration_rate().estimate();
+		yaml << ::YAML::Key << "stddev" << ::YAML::Value << sys.data_center_manager().migration_controller().migration_rate().standard_deviation();
+		yaml << ::YAML::EndMap;
+
+		yaml << ::YAML::EndMap;
+	}
+
+	yaml << ::YAML::EndMap;
+
+	os << yaml.c_str() << ::std::endl;
+}
+
+
 void process_sys_init_sim_event(des_event_type const& evt, des_engine_context_type& ctx, random_seeder_type& seeder)
 {
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
@@ -649,6 +1028,7 @@ int main(int argc, char* argv[])
 
 	std::string conf_fname; // (argv[1]);
 	bool partial_stats(false);
+	std::string outdata_fname;
 
 	if (argc > 2)
 	{
@@ -656,6 +1036,7 @@ int main(int argc, char* argv[])
 		{
 			partial_stats = detail::get_option(argv, argv+argc, "--partial-stats");
 			conf_fname = detail::get_option<std::string>(argv, argv+argc, "--conf");
+			outdata_fname = detail::get_option<std::string>(argv, argv+argc, "--out-data-file");
 		}
 		catch (std::exception const& e)
 		{
@@ -782,4 +1163,13 @@ int main(int argc, char* argv[])
 
 
 	std::cout << "--- EESim stop at " << detail::strtime() << "." << std::endl;
+
+	if (!outdata_fname.empty())
+	{
+		::std::ofstream ofs(outdata_fname.c_str());
+
+		detail::yaml_report_stats(ofs, sys);
+
+		ofs.close();
+	}
 }
