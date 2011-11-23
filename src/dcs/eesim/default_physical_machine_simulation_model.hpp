@@ -453,33 +453,32 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		typedef typename vmm_type::virtual_machine_container vm_container;
 		typedef typename vm_container::const_iterator vm_iterator;
 
-		real_type aggr_share(0);
-
-		vm_container vms(this->machine().vmm().virtual_machines(powered_on_power_status));
-		vm_iterator vm_end_it(vms.end());
-		for (vm_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
-		{
-			virtual_machine_pointer ptr_vm(*vm_it);
-
-			// paranoid-check: null
-			DCS_DEBUG_ASSERT( ptr_vm );
-
-			aggr_share += ptr_vm->resource_share(category);
-		}
-
 		real_type cur_time(registry_type::instance().des_engine().simulated_time());
 
 		// paranoid-check: consistency
 		DCS_DEBUG_ASSERT( cur_time >= last_share_upd_time_ );
 
 		// Safety check to prevent NaNs
-		if (::dcs::math::float_traits<real_type>::definitely_greater(cur_time, last_share_upd_time_) > 0)
+		if (::dcs::math::float_traits<real_type>::definitely_greater(cur_time, last_share_upd_time_))
 		{
-			share_profile_map_[category](last_share_upd_time_, cur_time, aggr_share);
+			real_type aggr_share(0);
+
+			vm_container vms(this->machine().vmm().virtual_machines(powered_on_power_status));
+			vm_iterator vm_end_it(vms.end());
+			for (vm_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
+			{
+				virtual_machine_pointer ptr_vm(*vm_it);
+
+				// paranoid-check: null
+				DCS_DEBUG_ASSERT( ptr_vm );
+
+				aggr_share += ptr_vm->resource_share(category);
+			}
 
 			(*ptr_share_stat_)(aggr_share, cur_time-last_share_upd_time_);
 //			(*ptr_share_stat_)(aggr_share);
 		}
+
 		last_share_upd_time_ = cur_time;
 	}
 
@@ -1186,6 +1185,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		if (this->power_state() == powered_on_power_status)
 		{
 			//update_experiment_stats(ctx);
+			update_share_profiles();
 			this->machine().power_off();
 		}
 
@@ -1347,7 +1347,6 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	private: output_statistic_pointer ptr_share_stat_;
 	private: real_type last_share_upd_time_;
 	private: ::std::map<physical_resource_category,utilization_profile_type> res_profile_map_;
-	private: ::std::map<physical_resource_category,utilization_profile_type> share_profile_map_;
 	private: virtual_machine_hosting_time_map vm_host_time_map_;
 //	private: virtual_machine_share_time_map vm_share_time_map_;
 }; // default_physical_machine_simulation_model: public base_physical_machine_simulation_model<TraitsT>
