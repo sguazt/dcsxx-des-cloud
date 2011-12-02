@@ -529,16 +529,16 @@ class base_migration_controller: public ::dcs::des::entity
 
 		do_process_control(evt, ctx);
 
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
-		typedef typename vm_observer_container::iterator vm_observer_iterator;
-
-		vm_observer_iterator end_it(vm_obs_map_.end());
-		for (vm_observer_iterator it = vm_obs_map_.begin(); it != end_it; ++it)
-		{
-			it->second->got_shares.clear();
-			it->second->wanted_shares.clear();
-		}
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+//#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+//		typedef typename vm_observer_container::iterator vm_observer_iterator;
+//
+//		vm_observer_iterator end_it(vm_obs_map_.end());
+//		for (vm_observer_iterator it = vm_obs_map_.begin(); it != end_it; ++it)
+//		{
+//			it->second->got_shares.clear();
+//			it->second->wanted_shares.clear();
+//		}
+//#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 	}
 
 	//@} Event Handlers
@@ -632,6 +632,7 @@ class base_migration_controller: public ::dcs::des::entity
 
 		void wanted_resource_share_updated(physical_resource_category category, real_type share)
 		{
+::std::cerr << "[vm_share_observer] BEGIN WANTED SHARE UPDATE - Category: " << category << " - Share: " << share << " - Aggregated: " << (wanted_shares.count(category) ? wanted_shares.at(category) : share) << ::std::endl;//XXX
 			if (wanted_shares.count(category) == 0)
 			{
 				wanted_shares[category] = share;
@@ -640,11 +641,13 @@ class base_migration_controller: public ::dcs::des::entity
 			{
 				wanted_shares[category] = smooth_factor*share+(1-smooth_factor)*wanted_shares.at(category);
 			}
+::std::cerr << "[vm_share_observer] END WANTED SHARE UPDATE - Category: " << category << " - Share: " << share << " - Aggregated: " << wanted_shares.at(category) << ::std::endl;//XXX
 		}
 
 
 		void resource_share_updated(physical_resource_category category, real_type share)
 		{
+::std::cerr << "[vm_share_observer] BEGIN GOT SHARE UPDATE - Category: " << category << " - Share: " << share << " - Aggregated: " << (got_shares.count(category) ? got_shares.at(category) : share) << ::std::endl;//XXX
 			if (got_shares.count(category) == 0)
 			{
 				got_shares[category] = share;
@@ -653,6 +656,7 @@ class base_migration_controller: public ::dcs::des::entity
 			{
 				got_shares[category] = smooth_factor*share+(1-smooth_factor)*got_shares.at(category);
 			}
+::std::cerr << "[vm_share_observer] END GOT SHARE UPDATE - Category: " << category << " - Share: " << share << " - Aggregated: " << (got_shares.at(category) ? got_shares.at(category) : share) << ::std::endl;//XXX
 		}
 
 		share_container wanted_shares;
