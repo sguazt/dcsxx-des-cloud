@@ -853,6 +853,10 @@ class data_center
 				ptr_pm->vmm().power_off(ptr_vm);
 				ptr_pm->vmm().destroy_domain(ptr_vm);
 //				placement_.displace(*ptr_vm);
+
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+				ptr_mngr_->migration_controller().notify_vm_destruction(ptr_vm);
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 			}
 		}
 		placement_.displace_all();
@@ -1207,6 +1211,10 @@ class data_center
 				placement_.place(*ptr_vm, *ptr_pm, first_share, last_share);
 			}
 		}
+
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+		ptr_mngr_->migration_controller().notify_vm_creation(ptr_vm);
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 		// Assign shares to this VM
 		while (first_share != last_share)
