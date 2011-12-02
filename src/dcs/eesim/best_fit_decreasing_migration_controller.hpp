@@ -34,6 +34,7 @@
 #include <dcs/des/mean_estimator.hpp>
 #include <dcs/des/statistic_categories.hpp>
 #include <dcs/eesim/base_migration_controller.hpp>
+#include <dcs/eesim/detail/placement_strategy_utility.hpp>
 #include <dcs/eesim/logging.hpp>
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/eesim/power_status.hpp>
@@ -209,7 +210,11 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 //		typedef ::std::pair<physical_resource_category,real_type> share_type;
 //		typedef ::std::vector<share_type> share_container;
 		typedef typename application_tier_type::resource_share_type share_type;
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+		typedef typename base_type::vm_share_observer::share_container share_container;
+#else // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 		typedef typename application_tier_type::resource_share_container share_container;
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 		typedef typename share_container::const_iterator share_iterator;
 		typedef ::std::map<physical_resource_category,real_type> resource_share_map;
 		typedef ::std::map<physical_resource_category,real_type> resource_utilization_map;
@@ -252,9 +257,23 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 
 		// Sort virtual machines according to their shares
         vm_container sorted_vms(dc.active_virtual_machines());
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+		::std::map<typename traits_type::virtual_machine_identifier_type, share_container> wanted_shares;
+		typedef typename base_type::vm_observer_container::const_iterator vm_observer_iterator;
+		vm_observer_iterator vm_obs_end_it(this->vm_observer_map().end());
+		for (vm_observer_iterator it = this->vm_observer_map().begin(); it != vm_obs_end_it; ++it)
+		{
+			wanted_shares[it->first] = share_container(it->second->wanted_shares.begin(), it->second->wanted_shares.end());
+		}
+		::std::sort(sorted_vms.begin(),
+					sorted_vms.end(),
+					detail::ptr_virtual_machine_greater_by_share_comparator<vm_type>(wanted_shares.begin(), wanted_shares.end()));
+		wanted_shares.clear();
+#else // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
         ::std::sort(sorted_vms.begin(),
                     sorted_vms.end(),
                     detail::ptr_virtual_machine_greater_comparator<vm_type>());
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 		uint_type num_vms(0);
 
@@ -364,7 +383,15 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 			application_type const& app(ptr_vm->guest_system().application());
 
 			// Retrieve the share for every resource of the VM guest system
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+			// As reference shares uses the wanted shares collected by
+			// monitoring each VM.
+			share_container ref_shares(this->vm_observer_map().at(ptr_vm->id())->wanted_shares);
+#else // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+			// As reference shares uses the ones defined by the tier
+			// specifications.
 			share_container ref_shares(ptr_vm->guest_system().resource_shares());
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 			// For each physical machine PM, try to deploy current VM on PM
 			// until a suitable machine (i.e., a machine with sufficient free
@@ -381,22 +408,23 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 
 				// Reference to actual resource shares
 				resource_share_map shares;
+
 				for (share_iterator ref_share_it = ref_shares.begin(); ref_share_it != ref_share_end_it; ++ref_share_it)
 				{
 					physical_resource_category ref_category(ref_share_it->first);
 					real_type ref_share(ref_share_it->second);
 
 					real_type ref_capacity(app.reference_resource(ref_category).capacity());
-					real_type ref_threshold(app.reference_resource(ref_category).utilization_threshold());
+					//real_type ref_threshold(app.reference_resource(ref_category).utilization_threshold());
 
 					real_type actual_capacity(ptr_pm->resource(ref_category)->capacity());
-					real_type actual_threshold(ptr_pm->resource(ref_category)->utilization_threshold());
+					//real_type actual_threshold(ptr_pm->resource(ref_category)->utilization_threshold());
 
 					real_type share;
 					share = scale_resource_share(ref_capacity,
-												 ref_threshold,
+												 //ref_threshold,
 												 actual_capacity,
-												 actual_threshold,
+												 //actual_threshold,
 												 ref_share);
 
 					shares[ref_category] = share;
@@ -430,6 +458,7 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 											  utils.begin(),
 											  utils.end(),
 											  dc);
+::std::cerr << "[bfd_migration_controller] Evaluating VM: " << *ptr_vm << " - PM: " << *ptr_pm << " - SHARE: " << shares.at(cpu_resource_category) << " - UTIL: " << utils.at(cpu_resource_category) << " ==> " << std::boolalpha << placed << ::std::endl;//XXX
 			}
 
 			if (!placed)

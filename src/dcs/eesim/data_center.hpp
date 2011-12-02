@@ -51,6 +51,10 @@
 
 namespace dcs { namespace eesim {
 
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+template <typename TraitsT>
+class data_center_manager;
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 template <typename TraitsT>
 class data_center
@@ -75,6 +79,9 @@ class data_center
 	private: typedef ::std::map<physical_machine_identifier_type,physical_machine_controller_pointer> physical_machine_controller_container;
 	public: typedef virtual_machine<traits_type> virtual_machine_type;
 	public: typedef ::dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+	public: typedef data_center_manager<traits_type>* manager_pointer;
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 	private: typedef ::std::map<virtual_machine_identifier_type,virtual_machine_pointer> virtual_machine_container;
 	private: typedef registry<traits_type> registry_type;
 	private: typedef typename traits_type::uint_type uint_type;
@@ -804,6 +811,10 @@ class data_center
 
 				ptr_pm->vmm().power_off(ptr_vm);
 				ptr_pm->vmm().destroy_domain(ptr_vm);
+
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+				ptr_mngr_->migration_controller().notify_vm_destruction(ptr_vm);
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 			}
 
 			placement_.displace(*ptr_vm);
@@ -1073,6 +1084,14 @@ class data_center
 	}
 
 
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+	public: void manager(manager_pointer const& ptr_mngr)
+	{
+		ptr_mngr_ = ptr_mngr;
+	}
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+
+
 	private: bool inhibited_virtual_machine(virtual_machine_identifier_type id) const
 	{
 		return inhibited_apps_.count(vms_.at(id)->guest_system().application().id()) > 0;
@@ -1208,6 +1227,9 @@ class data_center
 	private: virtual_machines_placement_type placement_;
 	private: deployed_application_container deployed_apps_;
 	private: application_id_container inhibited_apps_;
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+	private: manager_pointer ptr_mngr_;
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 }; // data_center
 
 

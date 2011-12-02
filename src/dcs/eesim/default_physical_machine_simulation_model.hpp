@@ -107,7 +107,12 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	  ptr_uptime_stat_(new mean_estimator_statistic_type()), //FIXME: statistic type (mean) is hard-coded
 	  ptr_util_stat_(new mean_estimator_statistic_type()), //FIXME: statistic type (mean) is hard-coded
 	  ptr_share_stat_(registry_type::instance().des_engine().make_analyzable_statistic(weighted_mean_estimator_statistic_type())), //FIXME: statistic type (mean) is hard-coded
+#ifdef DDCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
+	  last_share_upd_time_(0),
+	  can_pm_auto_pow_off_(true)
+#else // DDCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
 	  last_share_upd_time_(0)
+#endif // DDCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
 	{
 		init();
 	}
@@ -673,6 +678,9 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			// Power-off hosted VMs
 			typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
 			typedef typename virtual_machine_container::iterator virtual_machine_iterator;
+#ifdef DDCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
+	  		can_pm_auto_pow_off_ = false;
+#endif // DDCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
 			virtual_machine_container vms(this->machine().vmm().virtual_machines());
 			virtual_machine_iterator vm_end_it(vms.end());
 			for (virtual_machine_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
@@ -699,6 +707,9 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 					ptr_pwroff_evt_src_,
 					cur_time
 				);
+#ifdef DDCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
+	  		can_pm_auto_pow_off_ = true;
+#endif // DDCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
 		}
 		else
 		{
@@ -805,6 +816,15 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			log_warn(DCS_EESIM_LOGGING_AT, "Cannot power-off an already powered-off virtual machine.");
 		}
 
+#ifdef DDCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
+			if (can_pm_auto_pow_off_
+				&&
+				this->machine().vmm().virtual_machines(powered_on_power_status).size() == 0)
+			{
+::std::cerr << "[default_physical_machine_simulation_model] Auto-powering off machine" << this->machine() << ::std::endl;//XXX
+				this->machine().power_off();
+			}
+#endif // DDCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
 //::std::cerr << "(" << this << ") END Do Power-Off virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")" << ::std::endl;///XXX
 		DCS_DEBUG_TRACE("[default_physical_machine_simulation_model] (" << this << ") END Do Power-Off virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 	}
@@ -1349,6 +1369,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	private: ::std::map<physical_resource_category,utilization_profile_type> res_profile_map_;
 	private: virtual_machine_hosting_time_map vm_host_time_map_;
 //	private: virtual_machine_share_time_map vm_share_time_map_;
+	private: bool can_pm_auto_pow_off_;
 }; // default_physical_machine_simulation_model: public base_physical_machine_simulation_model<TraitsT>
 
 template <typename TraitsT>

@@ -65,7 +65,18 @@ namespace dcs { namespace eesim {
 
 template <typename TraitsT>
 class virtual_machine_monitor;
+ 
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+template <typename TraitsT>
+struct share_observer
+{
+	typedef typename TraitsT::real_type real_type;
 
+	virtual void wanted_resource_share_updated(physical_resource_category category, real_type share) = 0;
+
+	virtual void resource_share_updated(physical_resource_category category, real_type share) = 0;
+};
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 /**
  * \brief Model for virtual machines.
@@ -286,6 +297,9 @@ class virtual_machine
 	public: void wanted_resource_share(physical_resource_category category, real_type fraction)
 	{
 		wanted_res_shares_[category] = fraction;
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+		notify_share_change(category, fraction, true);
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 		if (power_status_ == powered_on_power_status)
 		{
@@ -344,6 +358,9 @@ class virtual_machine
 	public: void resource_share(physical_resource_category category, real_type share)
 	{
 		res_shares_[category] = share;
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+		notify_share_change(category, share, false);
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 		if (this->guest_system_ptr() && this->deployed())
 		{
@@ -488,6 +505,51 @@ class virtual_machine
 	{
 		return power_status_;
 	}
+
+
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+	public: typedef share_observer<traits_type> share_observer_type;
+	public: typedef ::dcs::shared_ptr<share_observer_type> share_observer_pointer;
+	public: typedef ::std::set<share_observer_pointer> share_observer_container;
+
+	public: void add_share_observer(share_observer_pointer ptr_obs)
+	{
+		share_obs_.insert(ptr_obs);
+	}
+
+
+	public: void remove_share_observer(share_observer_pointer ptr_obs)
+	{
+		share_obs_.erase(ptr_obs);
+	}
+
+
+	private: void notify_share_change(physical_resource_category category, real_type share, bool wanted_share)
+	{
+		typedef typename share_observer_container::iterator obs_iterator;
+
+		if (deployed())
+		{
+			share = scale_resource_share(ptr_vmm_->hosting_machine().resource(category)->capacity(),
+										 ptr_tier_->application().reference_resource(category).capacity(),
+										 share);
+		}
+
+		obs_iterator end_it(share_obs_.end());
+		for (obs_iterator it = share_obs_.begin(); it != end_it; ++it)
+		{
+			share_observer_pointer ptr_obs(*it);
+			if (wanted_share)
+			{
+				ptr_obs->wanted_resource_share_updated(category, share);
+			}
+			else
+			{
+				ptr_obs->resource_share_updated(category, share);
+			}
+		}
+	}
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 
 	protected: application_tier_pointer guest_system_ptr() const
@@ -731,6 +793,9 @@ class virtual_machine
 	private: virtual_machine_monitor_pointer ptr_vmm_;
 	private: resource_share_stat_impl_container wanted_res_shares_stats_;
 	private: resource_share_stat_impl_container res_shares_stats_;
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+	private: share_observer_container share_obs_;
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 };
 
 

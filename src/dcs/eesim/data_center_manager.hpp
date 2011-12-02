@@ -123,6 +123,9 @@ class data_center_manager
 		DCS_DEBUG_ASSERT( ptr_dc );
 
 		ptr_dc_ = ptr_dc;
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+		ptr_dc_->manager(this);
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 	}
 
 
@@ -146,6 +149,17 @@ class data_center_manager
 
 		return *ptr_migrator_;
 	}
+
+
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+	public: migration_controller_type& migration_controller()
+	{
+		// paranoid-check: valid pointer
+		DCS_DEBUG_ASSERT( ptr_migrator_ );
+
+		return *ptr_migrator_;
+	}
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 
 	public: void initial_placement_strategy(initial_placement_strategy_pointer const& ptr_strategy)

@@ -6,6 +6,7 @@
 #include <dcs/eesim/physical_resource_category.hpp>
 #include <dcs/memory.hpp>
 #include <functional>
+#include <map>
 
 
 namespace dcs { namespace eesim { namespace detail {
@@ -334,6 +335,87 @@ struct ptr_virtual_machine_greater_comparator
 											   ::std::greater<typename VirtMachT::real_type> >()(lhs, rhs);
 	}
 };
+
+
+/// Compare two virtual machines according to the share they want.
+template <typename VirtMachT, typename CompareT = ::std::less<typename VirtMachT::real_type> >
+class ptr_virtual_machine_by_share_comparator
+{
+	public: typedef VirtMachT virtual_machine_type;
+	public: typedef CompareT comparator_type;
+	public: typedef ::dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
+	public: typedef typename virtual_machine_type::real_type real_type;
+	public: typedef typename virtual_machine_type::identifier_type virtual_machine_identifier_type;
+	public: typedef ::std::map<physical_resource_category,real_type> share_container;
+	public: typedef ::std::map<virtual_machine_identifier_type,share_container> virtual_machine_share_container;
+
+	public: template <typename ForwardIterT>
+	ptr_virtual_machine_by_share_comparator(ForwardIterT share_first, ForwardIterT share_last, comparator_type cmp = comparator_type())
+	: shares_(share_first, share_last),
+	  cmp_(cmp)
+	{
+	}
+
+
+	public: bool operator()(virtual_machine_pointer const& lhs, virtual_machine_pointer const& rhs) const
+	{
+		// Return true if the number of physical resources of the first VM such
+		// that the comparator function return true is greater than the one for
+		// the second VM.
+ 
+		typedef typename share_container::const_iterator share_iterator;
+
+		int cmps(0);
+
+		share_iterator share_end_it(shares_.at(lhs->id()).end());
+		for (share_iterator share_it = shares_.at(lhs->id()).begin(); share_it != share_end_it; ++share_it)
+		{
+			physical_resource_category category(share_it->first);
+
+			if (shares_.at(rhs->id()).count(category) == 0)
+			{
+				continue;
+			}
+
+			real_type lhs_share(share_it->second);
+			real_type rhs_share(shares_.at(rhs->id()).at(category));
+
+			cmps += cmp_(lhs_share, rhs_share) ? 1 : -1;
+		}
+
+		return (cmps > 0) ? true : false;
+	}
+
+
+	private: virtual_machine_share_container shares_;
+	private: CompareT cmp_;
+}; // virtual_machine_by_share_comparator
+
+
+template <typename VirtMachT>
+class ptr_virtual_machine_greater_by_share_comparator: public ptr_virtual_machine_by_share_comparator< VirtMachT,::std::greater<typename VirtMachT::real_type> >
+{
+	private: typedef ptr_virtual_machine_by_share_comparator<VirtMachT,::std::greater<typename VirtMachT::real_type> > base_type;
+	public: typedef VirtMachT virtual_machine_type;
+	public: typedef ::dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
+	public: typedef typename virtual_machine_type::real_type real_type;
+	public: typedef typename virtual_machine_type::identifier_type virtual_machine_identifier_type;
+	public: typedef typename virtual_machine_type::resource_share_container share_container;
+	public: typedef ::std::map<virtual_machine_identifier_type,share_container> virtual_machine_share_container;
+
+
+	public: template <typename ForwardIterT>
+	ptr_virtual_machine_greater_by_share_comparator(ForwardIterT share_first, ForwardIterT share_last)
+	: base_type(share_first, share_last)
+	{
+	}
+
+
+	public: bool operator()(virtual_machine_pointer const& lhs, virtual_machine_pointer const& rhs) const
+	{
+		return base_type::operator()(lhs, rhs);
+	}
+}; // ptr_virtual_machine_greater_by_share_comparator
 
 }}} // Namespace dcs::eesim::detail
 

@@ -47,6 +47,11 @@ namespace dcs { namespace eesim {
 template <typename TraitsT>
 class base_migration_controller: public ::dcs::des::entity
 {
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+	// Forward declaration
+	protected: struct vm_share_observer;
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+
 	private: typedef base_migration_controller<TraitsT> self_type;
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::real_type real_type;
@@ -66,10 +71,14 @@ class base_migration_controller: public ::dcs::des::entity
 //	protected: typedef ::std::pair<virtual_machine_identifier_type,physical_machine_identifier_type> physical_virtual_machine_pair;
 //	protected: typedef ::std::map<physical_virtual_machine_pair,resource_share_container> physical_virtual_machine_map;
 	private: typedef registry<traits_type> registry_type;
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+	private: typedef typename traits_type::virtual_machine_identifier_type virtual_machine_identifier_type;
+	private: typedef typename data_center_type::virtual_machine_pointer virtual_machine_pointer;
+	protected: typedef ::std::map< virtual_machine_identifier_type,::dcs::shared_ptr<vm_share_observer> > vm_observer_container;
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 
 	private: static const ::std::string control_event_source_name;
-
 
 
 	/// Default constructor.
@@ -196,6 +205,22 @@ class base_migration_controller: public ::dcs::des::entity
 	{
 		return do_migration_rate();
 	}
+
+
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+	public: void notify_vm_creation(virtual_machine_pointer const& ptr_vm)
+	{
+		vm_obs_map_[ptr_vm->id()] = ::dcs::make_shared<vm_share_observer>();
+		ptr_vm->add_share_observer(vm_obs_map_.at(ptr_vm->id()));
+	}
+
+
+	public: void notify_vm_destruction(virtual_machine_pointer const& ptr_vm)
+	{
+		ptr_vm->remove_share_observer(vm_obs_map_.at(ptr_vm->id()));
+		vm_obs_map_.erase(ptr_vm->id());
+	}
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 
 	protected: data_center_pointer controlled_data_center_ptr() const
@@ -488,6 +513,9 @@ class base_migration_controller: public ::dcs::des::entity
 
 	private: void process_sys_finit(des_event_type const& evt, des_engine_context_type& ctx)
 	{
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+		vm_obs_map_.clear();
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 		do_process_sys_finit(evt, ctx);
 	}
 
@@ -500,6 +528,17 @@ class base_migration_controller: public ::dcs::des::entity
 		}
 
 		do_process_control(evt, ctx);
+
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+		typedef typename vm_observer_container::iterator vm_observer_iterator;
+
+		vm_observer_iterator end_it(vm_obs_map_.end());
+		for (vm_observer_iterator it = vm_obs_map_.begin(); it != end_it; ++it)
+		{
+			it->second->got_shares.clear();
+			it->second->wanted_shares.clear();
+		}
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 	}
 
 	//@} Event Handlers
@@ -559,6 +598,20 @@ class base_migration_controller: public ::dcs::des::entity
 	}
 
 
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+	protected: vm_observer_container const& vm_observer_map() const
+	{
+		return vm_obs_map_;
+	}
+
+
+	protected: vm_observer_container& vm_observer_map()
+	{
+		return vm_obs_map_;
+	}
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+
+
 	private: virtual void do_process_control(des_event_type const& evt, des_engine_context_type& ctx) = 0;
 
 
@@ -570,13 +623,59 @@ class base_migration_controller: public ::dcs::des::entity
 	//@} Interface Member Functions
 
 
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+	protected: struct vm_share_observer: public share_observer<traits_type>
+	{
+		typedef ::std::map<physical_resource_category,real_type> share_container;
+
+		static const real_type smooth_factor;
+
+		void wanted_resource_share_updated(physical_resource_category category, real_type share)
+		{
+			if (wanted_shares.count(category) == 0)
+			{
+				wanted_shares[category] = share;
+			}
+			else
+			{
+				wanted_shares[category] = smooth_factor*share+(1-smooth_factor)*wanted_shares.at(category);
+			}
+		}
+
+
+		void resource_share_updated(physical_resource_category category, real_type share)
+		{
+			if (got_shares.count(category) == 0)
+			{
+				got_shares[category] = share;
+			}
+			else
+			{
+				got_shares[category] = smooth_factor*share+(1-smooth_factor)*got_shares.at(category);
+			}
+		}
+
+		share_container wanted_shares;
+		share_container got_shares;
+	}; // vm_share_observer
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+
+
 	private: data_center_pointer ptr_dc_;
 	private: real_type ts_;
 	private: des_event_source_pointer ptr_control_evt_src_;
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+	private: vm_observer_container vm_obs_map_;
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 }; // base_migration_controller
 
 template <typename TraitsT>
 const ::std::string base_migration_controller<TraitsT>::control_event_source_name("Control Data Center");
+
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+template <typename TraitsT>
+const typename TraitsT::real_type base_migration_controller<TraitsT>::vm_share_observer::smooth_factor(0.90);
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 }} // Namespace dcs::eesim
 
