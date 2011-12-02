@@ -123,6 +123,66 @@ void usage()
 
 
 inline
+void info()
+{
+//	::std::cerr << "Usage: " << prog_name << " conf_file" << std::endl;
+	::std::cerr << "Executable name: " << prog_name << ::std::endl
+				<< "Features:" << ::std::endl
+#ifdef DCS_EESIM_EXP_OUTPUT_VM_SHARES
+				<< "  OUTPUT_VM_SHARES=on" << ::std::endl
+#else // DCS_EESIM_EXP_OUTPUT_VM_SHARES
+				<< "  OUTPUT_VM_SHARES=off" << ::std::endl
+#endif // DCS_EESIM_EXP_OUTPUT_VM_SHARES
+#ifdef DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+				<< "  OUTPUT_VM_MEASURES=on" << ::std::endl
+#else // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+				<< "  OUTPUT_VM_MEASURES=off" << ::std::endl
+#endif // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+#ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
+				<< "  OUTPUT_RLS_DATA=on" << ::std::endl
+#else // DCS_EESIM_EXP_OUTPUT_RLS_DATA
+				<< "  OUTPUT_RLS_DATA=off" << ::std::endl
+#endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
+#ifdef DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
+				<< "  LQ_APP_CONTROLLER_USE_INPUT_DEVIATION=on" << ::std::endl
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
+				<< "  LQ_APP_CONTROLLER_USE_INPUT_DEVIATION=off" << ::std::endl
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
+#ifdef DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+				<< "  LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT=on" << ::std::endl
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+				<< "  LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT=off" << ::std::endl
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#ifdef DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+				<< "  LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION=on" << ::std::endl
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+				<< "  LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION=off" << ::std::endl
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+#ifdef DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+				<< "  LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT=on" << ::std::endl
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+				<< "  LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT=off" << ::std::endl
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+#ifdef DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+				<< "  LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT=on" << ::std::endl
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+				<< "  LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT=off" << ::std::endl
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+				<< "  MIGR_CONTROLLER_MONITOR_VMS=on" << ::std::endl
+#else // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+				<< "  MIGR_CONTROLLER_MONITOR_VMS=off" << ::std::endl
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
+				<< "  PHYSICAL_MACHINES_AUTO_POWER_OFF=on" << ::std::endl
+#else // DCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
+				<< "  PHYSICAL_MACHINES_AUTO_POWER_OFF=off" << ::std::endl
+#endif // DCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
+				;
+}
+
+
+inline
 ::std::string strtime()
 {
 	::std::time_t t(::std::time(0));//XXX
@@ -168,6 +228,25 @@ T get_option(ForwardIterT begin, ForwardIterT end, std::string const& option)
 		::std::ostringstream oss;
 		oss << "Unable to find option: '" << option << "'";
     	throw ::std::runtime_error(oss.str());
+    }
+
+	T value;
+
+	::std::istringstream iss(*it);
+	iss >> value;
+
+    return value;
+}
+
+
+template <typename T, typename ForwardIterT>
+T get_option(ForwardIterT begin, ForwardIterT end, std::string const& option, T default_value)
+{
+    ForwardIterT it = find_option(begin, end, option);
+
+    if (it == end || ++it == end)
+    {
+		return default_value;
     }
 
 	T value;
@@ -1029,26 +1108,34 @@ int main(int argc, char* argv[])
 	std::string conf_fname; // (argv[1]);
 	bool partial_stats(false);
 	std::string outdata_fname;
+	bool output_info(false);
+	bool output_help(false);
 
-	if (argc > 2)
+	output_help = detail::get_option(argv, argv+argc, "--help");
+	output_info = detail::get_option(argv, argv+argc, "--info");
+
+	if (output_help)
 	{
-		try
-		{
-			partial_stats = detail::get_option(argv, argv+argc, "--partial-stats");
-			conf_fname = detail::get_option<std::string>(argv, argv+argc, "--conf");
-			outdata_fname = detail::get_option<std::string>(argv, argv+argc, "--out-data-file");
-		}
-		catch (std::exception const& e)
-		{
-			std::cerr << "[Error] Error while parsing command-line options: " << e.what() << std::endl;
-			detail::usage();
-			std::abort();
-		}
+		detail::usage();
+		return 0;
 	}
-	else
+	if (output_info)
 	{
-		// old-style usage: exec_name <conf-file>
-		conf_fname = argv[1];
+		detail::info();
+		return 0;
+	}
+
+	try
+	{
+		partial_stats = detail::get_option(argv, argv+argc, "--partial-stats");
+		conf_fname = detail::get_option<std::string>(argv, argv+argc, "--conf");
+		outdata_fname = detail::get_option<std::string>(argv, argv+argc, "--out-data-file", "");
+	}
+	catch (std::exception const& e)
+	{
+		std::cerr << "[Error] Error while parsing command-line options: " << e.what() << std::endl;
+		detail::usage();
+		std::abort();
 	}
 
 	// Read configuration
