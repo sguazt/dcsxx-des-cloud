@@ -1138,7 +1138,7 @@ int main(int argc, char* argv[])
 		std::abort();
 	}
 
-	::std::cout << "CLI OPTIONS:" << ::std::endl
+	std::cout << "CLI OPTIONS:" << std::endl;
 	std::cout << " - Partial Statistics: " << std::boolalpha << partial_stats << std::endl;
 	std::cout << " - Configuration File: " << conf_fname << std::endl;
 	std::cout << " - Output Data File: " << outdata_fname << std::endl;
