@@ -209,7 +209,8 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 					bool ok(false);
 					uint_type num_fails(0);
 					real_type zzz_time(default_initial_sleep_time);
-					while (!ok)
+//					while (!ok)
+					do
 					{
 						try
 						{
@@ -219,15 +220,23 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 						catch (::std::exception const& ex)
 						{
 							++num_fails;
-							if (num_fails == default_max_num_fails)
-							{
-								//throw ex;
-								log_warn(DCS_EESIM_LOGGING_AT, ex.what());
-								return;
-							}
+::std::cerr << "Waiting... (Failure: " << num_fails << "/" << default_max_num_fails << ", Zzz: " << zzz_time << ")" << ::std::endl;//XXX
+							log_warn(DCS_EESIM_LOGGING_AT, ex.what());
+//							if (num_fails == default_max_num_fails)
+//							{
+//								//throw ex;
+//								log_warn(DCS_EESIM_LOGGING_AT, ex.what());
+//								return;
+//							}
 							::sleep(zzz_time);
 							zzz_time *= 1.5; // exponential backoff (1.5 -> 50% increase per back off)
 						}
+					}
+					while (!ok && num_fails <= default_max_num_fails);
+
+					if (!ok)
+					{
+						return;
 					}
 
 					gams::vm_placement_problem_result problem_res;
@@ -291,7 +300,7 @@ template <typename TraitsT>
 const optimal_solver_input_methods initial_vm_placement_minlp_solver<TraitsT>::default_input_method(ampl_optimal_solver_input_method);
 
 template <typename TraitsT>
-const typename TraitsT::uint_type initial_vm_placement_minlp_solver<TraitsT>::default_max_num_fails(5);
+const typename TraitsT::uint_type initial_vm_placement_minlp_solver<TraitsT>::default_max_num_fails(10);
 
 template <typename TraitsT>
 const typename TraitsT::real_type initial_vm_placement_minlp_solver<TraitsT>::default_initial_sleep_time(5);
@@ -442,7 +451,7 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 					bool ok(false);
 					uint_type num_fails(0);
 					real_type zzz_time(default_initial_sleep_time);
-					while (!ok)
+					do
 					{
 						try
 						{
@@ -452,15 +461,22 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 						catch (::std::exception const& ex)
 						{
 							++num_fails;
-							if (num_fails == default_max_num_fails)
-							{
-								//throw ex;
-								log_warn(DCS_EESIM_LOGGING_AT, ex.what());
-								return;
-							}
+::std::cerr << "Waiting... (Failure: " << num_fails << "/" << default_max_num_fails << ", Zzz: " << zzz_time << ")" << ::std::endl;//XXX
+							log_warn(DCS_EESIM_LOGGING_AT, ex.what());
+//							if (num_fails == default_max_num_fails)
+//							{
+//								//throw ex;
+//								return;
+//							}
 							::sleep(zzz_time);
 							zzz_time *= 1.5; // exponential backoff (1.5 -> 50% increase per back off)
 						}
+					}
+					while (!ok && num_fails <= default_max_num_fails);
+
+					if (!ok)
+					{
+						return;
 					}
 
 					gams::vm_placement_problem_result problem_res;
