@@ -192,6 +192,7 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 	private: typedef typename base_type::real_type real_type;
 	private: typedef typename base_type::data_center_type data_center_type;
 	private: typedef typename base_type::virtual_machine_utilization_map virtual_machine_utilization_map;
+	private: typedef typename base_type::virtual_machine_share_map virtual_machine_share_map;
 
 
     public: static const optimal_solver_ids default_solver_id;
@@ -219,7 +220,8 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 						   real_type wp,
 						   real_type wm,
 						   real_type ws,
-						   virtual_machine_utilization_map const& vm_util_map)
+						   virtual_machine_utilization_map const& vm_util_map,
+						   virtual_machine_share_map const& vm_share_map)
 	{
 		// Reset previous solution
 		this->result().reset();
@@ -233,7 +235,10 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 															   wp,
 															   wm,
 															   ws,
-															   vm_util_map,
+															   vm_util_map.begin(),
+															   vm_util_map.end(),
+															   vm_share_map.begin(),
+															   vm_share_map.end(),
 															   init_guess);
 
 		::std::ostringstream oss;

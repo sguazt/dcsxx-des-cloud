@@ -330,13 +330,17 @@ inline
 }
 
 
-template <typename TraitsT>
+template <typename TraitsT, typename UtilFwdIterT, typename ShareFwdIterT>
 ::std::string make_vm_placement_problem_data(data_center<TraitsT> const& dc,
 											 typename TraitsT::real_type wp,
 											 typename TraitsT::real_type wm,
 											 typename TraitsT::real_type ws,
-											 ::std::map<typename TraitsT::virtual_machine_identifier_type,
-													    typename TraitsT::real_type> const& vm_util_map,
+//											 ::std::map<typename TraitsT::virtual_machine_identifier_type,
+//													    typename TraitsT::real_type> const& vm_util_map,
+											 UtilFwdIterT vm_util_first,
+											 UtilFwdIterT vm_util_last,
+											 ShareFwdIterT vm_share_first,
+											 ShareFwdIterT vm_share_last,
 											 virtual_machines_placement<TraitsT> const& init_guess,
 											 ::std::vector<typename TraitsT::physical_machine_identifier_type>& pm_ids,
 											 ::std::vector<typename TraitsT::virtual_machine_identifier_type>& vm_ids)
@@ -360,13 +364,33 @@ template <typename TraitsT>
 	typedef typename application_type::reference_physical_resource_type reference_resource_type;
 	typedef typename traits_type::physical_machine_identifier_type pm_identifier_type;
 	typedef typename traits_type::virtual_machine_identifier_type vm_identifier_type;
-	typedef typename ::std::vector<pm_identifier_type> pm_identifier_container;
-	typedef typename ::std::vector<vm_identifier_type> vm_identifier_container;
+	typedef ::std::vector<pm_identifier_type> pm_identifier_container;
+	typedef ::std::vector<vm_identifier_type> vm_identifier_container;
+	typedef ::std::map<vm_identifier_type, real_type> vm_utilization_container;
+	typedef ::std::map<physical_resource_category, real_type> share_container;
+	typedef ::std::map<vm_identifier_type, share_container> vm_share_container;
+
 
 	::std::ostringstream oss;
 
 	// Create the set of all physical machines
 	pm_container pms(dc.physical_machines());
+
+	// Create the VM utilization container
+	vm_utilization_container vm_util_map;
+	while (vm_util_first != vm_util_last)
+	{
+		vm_util_map[vm_util_first->first] = vm_util_first->second;
+		++vm_util_first;
+	}
+
+	// Create the VM share container
+	vm_share_container vm_share_map;
+	while (vm_share_first != vm_share_last)
+	{
+		vm_share_map[vm_share_first->first] = share_container(vm_share_first->second.begin(), vm_share_first->second.end());
+		++vm_share_first;
+	}
 
 	::std::size_t n_pms(pms.size());
 
@@ -555,14 +579,18 @@ template <typename TraitsT>
 }
 
 
-template <typename TraitsT>
+template <typename TraitsT, typename UtilFwdIterT, typename ShareFwdIterT>
 inline
 ::std::string make_vm_placement_problem_data(data_center<TraitsT> const& dc,
 											 typename TraitsT::real_type wp,
 											 typename TraitsT::real_type wm,
 											 typename TraitsT::real_type ws,
-											 ::std::map<typename TraitsT::virtual_machine_identifier_type,
-													    typename TraitsT::real_type> const& vm_util_map,
+//											 ::std::map<typename TraitsT::virtual_machine_identifier_type,
+//													    typename TraitsT::real_type> const& vm_util_map,
+											 UtilFwdIterT vm_util_first,
+											 UtilFwdIterT vm_util_last,
+											 ShareFwdIterT vm_share_first,
+											 ShareFwdIterT vm_share_last,
 											 ::std::vector<typename TraitsT::physical_machine_identifier_type>& pm_ids,
 											 ::std::vector<typename TraitsT::virtual_machine_identifier_type>& vm_ids)
 {
@@ -570,7 +598,10 @@ inline
 										  wp,
 										  wm,
 										  ws,
-										  vm_util_map,
+										  vm_util_first,
+										  vm_util_last,
+										  vm_share_first,
+										  vm_share_last,
 										  virtual_machines_placement<TraitsT>(),
 										  pm_ids,
 										  vm_ids);
@@ -728,54 +759,74 @@ vm_placement_problem<TraitsT> make_initial_vm_placement_problem(data_center<Trai
 }
 
 
-template <typename TraitsT>
+template <typename TraitsT, typename UtilFwdIterT, typename ShareFwdIterT>
 inline
 ::std::string make_vm_placement_problem_model(data_center<TraitsT> const& dc,
 											  typename TraitsT::real_type wp,
 											  typename TraitsT::real_type wm,
 											  typename TraitsT::real_type ws,
-											  ::std::map<typename TraitsT::virtual_machine_identifier_type,
-													     typename TraitsT::real_type> const& vm_util_map)
+											  UtilFwdIterT vm_util_first,
+											  UtilFwdIterT vm_util_last,
+											  ShareFwdIterT vm_share_first,
+											  ShareFwdIterT vm_share_last)
+//											  ::std::map<typename TraitsT::virtual_machine_identifier_type,
+//													     typename TraitsT::real_type> const& vm_util_map)
 {
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(dc);
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(wp);
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(wm);
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(ws);
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(vm_util_map);
+//	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(vm_util_map);
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(vm_util_first);
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(vm_util_last);
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(vm_share_first);
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(vm_share_last);
 
 	return detail::make_vm_placement_problem_model();
 }
 
 
-template <typename TraitsT>
+template <typename TraitsT, typename UtilFwdIterT, typename ShareFwdIterT>
 inline
 ::std::string make_vm_placement_problem_model(data_center<TraitsT> const& dc,
 											  typename TraitsT::real_type wp,
 											  typename TraitsT::real_type wm,
 											  typename TraitsT::real_type ws,
-											  ::std::map<typename TraitsT::virtual_machine_identifier_type,
-													     typename TraitsT::real_type> const& vm_util_map,
+//											  ::std::map<typename TraitsT::virtual_machine_identifier_type,
+//													     typename TraitsT::real_type> const& vm_util_map,
+											  UtilFwdIterT vm_util_first,
+											  UtilFwdIterT vm_util_last,
+											  ShareFwdIterT vm_share_first,
+											  ShareFwdIterT vm_share_last,
 											  virtual_machines_placement<TraitsT> const& init_guess)
 {
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(dc);
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(wp);
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(wm);
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(ws);
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(vm_util_map);
+//	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(vm_util_map);
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(vm_util_first);
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(vm_util_last);
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(vm_share_first);
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(vm_share_last);
 	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(init_guess);
 
 	return detail::make_vm_placement_problem_model();
 }
 
 
-template <typename TraitsT>
+template <typename TraitsT, typename UtilFwdIterT, typename ShareFwdIterT>
 inline
 ::std::string make_vm_placement_problem_data(data_center<TraitsT> const& dc,
 											 typename TraitsT::real_type wp,
 											 typename TraitsT::real_type wm,
 											 typename TraitsT::real_type ws,
-											 ::std::map<typename TraitsT::virtual_machine_identifier_type,
-													    typename TraitsT::real_type> const& vm_util_map)
+										     UtilFwdIterT vm_util_first,
+										     UtilFwdIterT vm_util_last,
+										     ShareFwdIterT vm_share_first,
+										     ShareFwdIterT vm_share_last)
+//											 ::std::map<typename TraitsT::virtual_machine_identifier_type,
+//													    typename TraitsT::real_type> const& vm_util_map)
 {
 	typename vm_placement_problem<TraitsT>::physical_machine_identifier_container tmp_pm_ids;
 	typename vm_placement_problem<TraitsT>::virtual_machine_identifier_container tmp_vm_ids;
@@ -784,20 +835,27 @@ inline
 												  wp,
 												  wm,
 												  ws,
-												  vm_util_map,
+												  vm_util_first,
+												  vm_util_last,
+												  vm_share_first,
+												  vm_share_last,
 												  tmp_pm_ids,
 												  tmp_vm_ids);
 }
 
 
-template <typename TraitsT>
+template <typename TraitsT, typename UtilFwdIterT, typename ShareFwdIterT>
 inline
 ::std::string make_vm_placement_problem_data(data_center<TraitsT> const& dc,
 											 typename TraitsT::real_type wp,
 											 typename TraitsT::real_type wm,
 											 typename TraitsT::real_type ws,
-											 ::std::map<typename TraitsT::virtual_machine_identifier_type,
-													    typename TraitsT::real_type> const& vm_util_map,
+//											 ::std::map<typename TraitsT::virtual_machine_identifier_type,
+//													    typename TraitsT::real_type> const& vm_util_map,
+											 UtilFwdIterT vm_util_first,
+											 UtilFwdIterT vm_util_last,
+											 ShareFwdIterT vm_share_first,
+											 ShareFwdIterT vm_share_last,
 											 virtual_machines_placement<TraitsT> const& init_guess)
 {
 	typename vm_placement_problem<TraitsT>::physical_machine_identifier_container tmp_pm_ids;
@@ -807,21 +865,28 @@ inline
 												  wp,
 												  wm,
 												  ws,
-												  vm_util_map,
+												  vm_util_first,
+												  vm_util_last,
+												  vm_share_first,
+												  vm_share_last,
 												  init_guess,
 												  tmp_pm_ids,
 												  tmp_vm_ids);
 }
 
 
-template <typename TraitsT>
+template <typename TraitsT, typename UtilFwdIterT, typename ShareFwdIterT>
 inline
 vm_placement_problem<TraitsT> make_vm_placement_problem(data_center<TraitsT> const& dc,
 														typename TraitsT::real_type wp,
 														typename TraitsT::real_type wm,
 														typename TraitsT::real_type ws,
-														::std::map<typename TraitsT::virtual_machine_identifier_type,
-																   typename TraitsT::real_type> const& vm_util_map)
+														UtilFwdIterT vm_util_first,
+														UtilFwdIterT vm_util_last,
+														ShareFwdIterT vm_share_first,
+														ShareFwdIterT vm_share_last)
+//														::std::map<typename TraitsT::virtual_machine_identifier_type,
+//																   typename TraitsT::real_type> const& vm_util_map)
 {
 	vm_placement_problem<TraitsT> problem;
 
@@ -830,21 +895,28 @@ vm_placement_problem<TraitsT> make_vm_placement_problem(data_center<TraitsT> con
 														  wp,
 														  wm,
 														  ws,
-														  vm_util_map,
+														  vm_util_first,
+														  vm_util_last,
+														  vm_share_first,
+														  vm_share_last,
 														  problem.pm_ids,
 														  problem.vm_ids);
 	return problem;
 }
 
 
-template <typename TraitsT>
+template <typename TraitsT, typename UtilFwdIterT, typename ShareFwdIterT>
 inline
 vm_placement_problem<TraitsT> make_vm_placement_problem(data_center<TraitsT> const& dc,
 														typename TraitsT::real_type wp,
 														typename TraitsT::real_type wm,
 														typename TraitsT::real_type ws,
-														::std::map<typename TraitsT::virtual_machine_identifier_type,
-																   typename TraitsT::real_type> const& vm_util_map,
+//														::std::map<typename TraitsT::virtual_machine_identifier_type,
+//																   typename TraitsT::real_type> const& vm_util_map,
+														UtilFwdIterT vm_util_first,
+														UtilFwdIterT vm_util_last,
+														ShareFwdIterT vm_share_first,
+														ShareFwdIterT vm_share_last,
 														virtual_machines_placement<TraitsT> const& init_guess)
 {
 	vm_placement_problem<TraitsT> problem;
@@ -854,7 +926,10 @@ vm_placement_problem<TraitsT> make_vm_placement_problem(data_center<TraitsT> con
 														  wp,
 														  wm,
 														  ws,
-														  vm_util_map,
+														  vm_util_first,
+														  vm_util_last,
+														  vm_share_first,
+														  vm_share_last,
 														  init_guess,
 														  problem.pm_ids,
 														  problem.vm_ids);

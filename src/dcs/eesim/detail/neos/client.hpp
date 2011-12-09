@@ -1791,7 +1791,7 @@ inline
 	{
 		float zzz_time(2);
 		unsigned int num_trials(0);
-		unsigned int max_num_trials(3600/zzz_time); // ... so that we wait at most for 1 hour
+		unsigned int max_num_trials(3600/zzz_time); // ... so that we wait at least for 1 hour
 
 		job_statuses status;
 		do
@@ -1801,6 +1801,7 @@ inline
 ::std::cerr << "Waiting... (Trial: " << num_trials << ", Zzz: " << zzz_time << ")" << ::std::endl;//XXX
 			::sleep(zzz_time);
 //			zzz_time *= 1.5; // exponential backoff (1.5 -> 50% increase per back-off)
+			zzz_time += 0.5;
 
 			status = neos.job_status(creds);
 		}

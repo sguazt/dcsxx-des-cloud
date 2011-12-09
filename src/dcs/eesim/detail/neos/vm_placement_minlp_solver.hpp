@@ -306,6 +306,7 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 	private: typedef typename traits_type::real_type real_type;
 	private: typedef typename base_type::data_center_type data_center_type;
 	private: typedef typename base_type::virtual_machine_utilization_map virtual_machine_utilization_map;
+	private: typedef typename base_type::virtual_machine_share_map virtual_machine_share_map;
 
 
 	public: static const optimal_solver_input_methods default_input_method;
@@ -338,7 +339,8 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 						   real_type wp,
 						   real_type wm,
 						   real_type ws,
-						   virtual_machine_utilization_map const& vm_util_map)
+						   virtual_machine_utilization_map const& vm_util_map,
+						   virtual_machine_share_map const& vm_share_map)
     {
 		// Reset previous solution
 		this->result().reset();
@@ -355,7 +357,15 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 					// Create a new problem
 					// 1. Create a problem in AMPL format
 					ampl::vm_placement_problem<traits_type> problem_descr;
-					problem_descr = ampl::make_vm_placement_problem<traits_type>(dc, wp, wm, ws, vm_util_map, init_guess);
+					problem_descr = ampl::make_vm_placement_problem<traits_type>(dc,
+																				 wp,
+																				 wm,
+																				 ws,
+																				 vm_util_map.begin(),
+																				 vm_util_map.end(),
+																				 vm_share_map.begin(),
+																				 vm_share_map.end(),
+																				 init_guess);
 ::std::cerr << "Created AMPL problem: " << problem_descr.model << "reset data; data;" << problem_descr.data << ::std::endl;//XXX
 					::std::string xml_job;
 					xml_job = make_ampl_job(xml_tmpl_,
@@ -412,7 +422,15 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 					// Create a new problem
 					// 1. Create a problem in GAMS format
 					gams::vm_placement_problem<traits_type> problem_descr;
-					problem_descr = gams::make_vm_placement_problem<traits_type>(dc, wp, wm, ws, vm_util_map, init_guess);
+					problem_descr = gams::make_vm_placement_problem<traits_type>(dc,
+																				 wp,
+																				 wm,
+																				 ws,
+																				 vm_util_map.begin(),
+																				 vm_util_map.end(),
+																				 vm_share_map.begin(),
+																				 vm_share_map.end(),
+																				 init_guess);
 ::std::cerr << "Created GAMS problem: " << problem_descr.model << ::std::endl;//XXX
 					::std::string xml_job;
 					xml_job = make_gams_job(xml_tmpl_,

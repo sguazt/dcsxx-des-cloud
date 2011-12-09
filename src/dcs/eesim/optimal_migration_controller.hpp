@@ -322,7 +322,37 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 
 			//optimal_solver_type solver;
 
-			ptr_solver_->solve(dc, wp_, wm_, ws_, vm_util_map_);
+			::std::map<typename traits_type::virtual_machine_identifier_type, resource_share_container> wanted_share_map;
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+			// As reference shares uses the wanted shares collected by
+			// monitoring each VM.
+
+			typedef typename base_type::vm_observer_container::const_iterator vm_observer_iterator;
+			vm_observer_iterator vm_obs_end_it(this->vm_observer_map().end());
+			for (vm_observer_iterator it = this->vm_observer_map().begin(); it != vm_obs_end_it; ++it)
+			{
+				wanted_share_map[it->first] = resource_share_container(it->second->wanted_shares.begin(), it->second->wanted_shares.end());
+			}
+#else // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+			// As reference shares uses the ones defined by the tier
+			// specifications.
+
+			vm_container vms(dc.active_virtual_machines());
+			typedef typename vm_container::const_iterator vm_iterator;
+			vm_iterator vm_end_it(vms.end());
+			for (vm_iterator it = vms.begin(); it != vm_end_it; ++it)
+			{
+				vm_pointer ptr_vm(*it);
+
+				// paranoid-check: null
+				DCS_DEBUG_ASSERT( ptr_vm );
+
+				wanted_share_map[ptr_vm->id()] = ptr_vm->guest_system().resource_shares();
+			}
+			vms.clear();
+
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+			ptr_solver_->solve(dc, wp_, wm_, ws_, vm_util_map_.begin(), vm_util_map_.end(), wanted_share_map.begin(), wanted_share_map.end());
 
 			// Check solution and act accordingly
 

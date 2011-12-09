@@ -26,6 +26,7 @@ class base_vm_placement_optimal_solver
 	public: typedef typename problem_result_type::physical_virtual_machine_pair_type physical_virtual_machine_pair_type;
 	public: typedef typename problem_result_type::resource_share_container resource_share_container;
 	public: typedef typename problem_result_type::physical_virtual_machine_map physical_virtual_machine_map;
+	public: typedef ::std::map<virtual_machine_identifier_type,resource_share_container> virtual_machine_share_map;
 
 
 	public: base_vm_placement_optimal_solver()
@@ -65,13 +66,28 @@ class base_vm_placement_optimal_solver
 	}
 
 
-	public: void solve(data_center_type const& dc,
+//	public: void solve(data_center_type const& dc,
+//					   real_type wp,
+//					   real_type wm,
+//					   real_type ws,
+//					   virtual_machine_utilization_map const& vm_util_map)
+//	{
+//	}
+
+	public: template <typename UtilFwdIterT, typename ShareFwdIterT>
+			void solve(data_center_type const& dc,
 					   real_type wp,
 					   real_type wm,
 					   real_type ws,
-					   virtual_machine_utilization_map const& vm_util_map)
+					   UtilFwdIterT vm_util_first,
+					   UtilFwdIterT vm_util_last,
+					   ShareFwdIterT vm_share_first,
+					   ShareFwdIterT vm_share_last)
 	{
-		do_solve(dc, wp, wm, ws, vm_util_map);
+		virtual_machine_utilization_map vm_util_map(vm_util_first, vm_util_last);
+		virtual_machine_share_map vm_share_map(vm_share_first, vm_share_last);
+
+		do_solve(dc, wp, wm, ws, vm_util_map, vm_share_map);
 	}
 
 
@@ -103,7 +119,8 @@ class base_vm_placement_optimal_solver
 								   real_type wp,
 								   real_type wm,
 								   real_type ws,
-								   virtual_machine_utilization_map const& vm_util_map) = 0;
+								   virtual_machine_utilization_map const& vm_util_map,
+								   virtual_machine_share_map const& vm_share_map) = 0;
 
 
 	private: optimal_solver_ids sid_;
