@@ -1016,7 +1016,8 @@ if ((count_ % 1000) == 0)//XXX
 						// below).
 						ref_out_measure_ = next_ref_out_measure_ / static_cast<real_type>(num_ref_measures_+1);
 					}
-					next_ref_out_measure_ = ref_measure;
+					//next_ref_out_measure_ = ref_measure;
+					next_ref_out_measure_ = ref_out_measure_;
 				}
 				else
 				{
@@ -1115,7 +1116,8 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - OBSERVATION: ref: " << ref_measure << 
 												// below).
 												tier_ref_out_measures_[tier_id] = next_tier_ref_out_measures_[tier_id] / static_cast<real_type>(num_ref_measures_+1);
 											}
-											next_tier_ref_out_measures_[tier_id] = ref_measure;
+											//next_tier_ref_out_measures_[tier_id] = ref_measure;
+											next_tier_ref_out_measures_[tier_id] = tier_ref_out_measures_[tier_id];
 										}
 										else
 										{
@@ -1240,7 +1242,8 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 							// below).
 							tier_ref_in_measures_[tier_id] = next_tier_ref_in_measures_[tier_id] / static_cast<real_type>(num_ref_measures_+1);
 						}
-						next_tier_ref_in_measures_[tier_id] = ref_share;
+						//next_tier_ref_in_measures_[tier_id] = ref_share;
+						next_tier_ref_in_measures_[tier_id] = tier_ref_in_measures_[tier_id];
 					}
 					else
 					{
