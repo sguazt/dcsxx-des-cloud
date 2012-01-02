@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
 }
 EOT
 
-	compile_test=(`$CXX $CXXFLAGS -x 'c++' -o $out_temp_file $src_temp_file 2>&1 >/dev/null`)
+	compile_test=$($CXX $CXXFLAGS -x 'c++' -o $out_temp_file $src_temp_file 2>&1 >/dev/null)
 	ret=$?
 
 	rm -f $out_temp_file $src_temp_file
@@ -155,7 +155,7 @@ int main(int argc, char* argv[])
 }
 EOT
 
-	compile_test=(`$CXX $CXXFLAGS -x 'c++' -o $out_temp_file $src_temp_file 2>&1 >/dev/null`)
+	compile_test=$($CXX $CXXFLAGS -x 'c++' -o $out_temp_file $src_temp_file 2>&1 >/dev/null)
 	ret=$?
 
 	rm -f $out_temp_file $src_temp_file
@@ -182,7 +182,7 @@ int main(int argc, char* argv[])
 }
 EOT
 
-	compile_test=(`$CXX $CXXFLAGS -x 'c++' -o $out_temp_file $src_temp_file 2>&1 >/dev/null`)
+	compile_test=$($CXX $CXXFLAGS -x 'c++' -o $out_temp_file $src_temp_file 2>&1 >/dev/null)
 	ret=$?
 
 	rm -f $out_temp_file $src_temp_file
