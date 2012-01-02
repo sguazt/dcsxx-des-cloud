@@ -1530,7 +1530,6 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 
 							virtual_machine_pointer ptr_vm(app_sim_model.tier_virtual_machine(tier_id));
 							physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
-							real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
 	//						real_type actual_share;
 	//						actual_share = ::dcs::eesim::scale_resource_share(pm.resource(res_category)->capacity(),
 	//																		  pm.resource(res_category)->utilization_threshold(),
@@ -1545,12 +1544,14 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 #  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
 							real_type new_share(ptr_vm->guest_system().resource_share(res_category)*(opt_u(u_offset_+tier_id) + 1));
 #  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+							real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
 							real_type new_share(ref_share*(opt_u(u_offset_+tier_id)+1));
 #  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 #  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
 							real_type new_share(ptr_vm->guest_system().resource_share(res_category)+opt_u(u_offset_+tier_id));
 #  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+							real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
 							real_type new_share(ref_share+opt_u(u_offset_+tier_id));
 #  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
@@ -1559,6 +1560,7 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 #  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
 							real_type new_share(ptr_vm->guest_system().resource_share(res_category)*opt_u(u_offset_+tier_id));
 #  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+							real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
 							real_type new_share(ref_share*opt_u(u_offset_+tier_id));
 #  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
@@ -1676,19 +1678,20 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 
 								virtual_machine_pointer ptr_vm(app_sim_model.tier_virtual_machine(tier_id));
 								physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
-								real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
 
 #if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION)
 # if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
 #  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
 								real_type new_share(ptr_vm->guest_system().resource_share(res_category)*(opt_u(u_offset_+tier_id) + 1));
 #  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+								real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
 								real_type new_share(ref_share*(adj_opt_u(u_offset_+tier_id)+1));
 #  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 #  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
 								real_type new_share(ptr_vm->guest_system().resource_share(res_category)+(opt_u(u_offset_+tier_id)));
 #  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+								real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
 								real_type new_share(ref_share+adj_opt_u(u_offset_+tier_id));
 #  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
@@ -1697,12 +1700,14 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 #  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
 								real_type new_share(ptr_vm->guest_system().resource_share(res_category)*(opt_u(u_offset_+tier_id)));
 #  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+								real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
 								real_type new_share(ref_share*adj_opt_u(u_offset_+tier_id));
 #  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 #  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
 								real_type new_share(opt_u(u_offset_+tier_id));
 #  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+								real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
 								real_type new_share(adj_opt_u(u_offset_+tier_id));
 #  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
@@ -1738,7 +1743,6 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 
 							virtual_machine_pointer ptr_vm(app_sim_model.tier_virtual_machine(tier_id));
 							physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
-							real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
 	//						real_type actual_share;
 	//						actual_share = ::dcs::eesim::scale_resource_share(pm.resource(res_category)->capacity(),
 	//																		  pm.resource(res_category)->utilization_threshold(),
@@ -1754,12 +1758,14 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 #  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
 							real_type new_share(ptr_vm->guest_system().resource_share(res_category)*(opt_u(u_offset_+tier_id) + 1));
 #  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+							real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
 							real_type new_share(ref_share*(opt_u(u_offset_+tier_id) + 1));
 #  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 #  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
 							real_type new_share(ptr_vm->guest_system().resource_share(res_category)+(opt_u(u_offset_+tier_id)));
 #  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+							real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
 							real_type new_share(ref_share+opt_u(u_offset_+tier_id));
 #  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
@@ -1768,6 +1774,7 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 #  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
 							real_type new_share(ptr_vm->guest_system().resource_share(res_category)*(opt_u(u_offset_+tier_id)));
 #  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+							real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
 							real_type new_share(ref_share*opt_u(u_offset_+tier_id));
 #  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
