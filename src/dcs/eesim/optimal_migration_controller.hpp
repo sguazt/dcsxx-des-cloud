@@ -226,9 +226,14 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 ::std::string st(::std::asctime(::std::localtime(&t)));
 ::std::cerr << "[optimal_migration_controller] BEGIN Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << " - Fail-Count: " << fail_count_ << " - #Migrations: " << migr_count_ << " - Real-Clock: " << st.substr(0, st.size()-1) <<  " (" << static_cast< unsigned long >(t) << " secs since the Epoch" << "))" << ::std::endl;//XXX
 }//XXX
-		typedef typename optimal_solver_type::physical_virtual_machine_map physical_virtual_machine_map;
-		typedef typename physical_virtual_machine_map::const_iterator physical_virtual_machine_iterator;
-		typedef typename optimal_solver_type::resource_share_container resource_share_container;
+		typedef typename optimal_solver_type::problem_result_type optimal_solver_result_type;
+		typedef typename application_tier_type::resource_share_container ref_share_container;
+		//typedef typename optimal_solver_type::resource_share_container share_container;
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+		typedef typename base_type::vm_share_observer::share_container share_container;
+#else // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+		typedef ::std::map<physical_resource_category,real_type> share_container;
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 		typedef ::std::vector<physical_machine_pointer> physical_machine_container;
 		typedef typename physical_machine_container::const_iterator physical_machine_iterator;
 		typedef ::std::map<physical_machine_identifier_type,physical_machine_pointer> physical_machine_id_map;
@@ -248,6 +253,7 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 
 		data_center_type& dc(this->controlled_data_center());
 		uint_type num_vms(0);
+		::std::map<typename traits_type::virtual_machine_identifier_type, share_container> wanted_share_map;
 
 		// Update VMs utilization stats
 		virtual_machine_container vms(dc.active_virtual_machines());
@@ -256,7 +262,7 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 		{
 			virtual_machine_pointer ptr_vm(*vm_it);
 
-			// check: paranoid check
+			// paranoid-check: null
 			DCS_DEBUG_ASSERT( ptr_vm );
 
 			if (ptr_vm->power_state() != powered_on_power_status)
@@ -267,6 +273,29 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 			}
 
 			++num_vms;
+
+			// Retrieve reference resource shares
+			share_container ref_shares;
+			{
+				ref_share_container tmp_shares(ptr_vm->guest_system().resource_shares());
+				ref_shares = share_container(tmp_shares.begin(), tmp_shares.end());
+			}
+
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+			// As observed shares uses the wanted shares collected by
+			// monitoring each VM.
+
+			wanted_share_map[ptr_vm->id()] = share_container(this->vm_observer_map().at(ptr_vm->id())->wanted_shares.begin(),
+															 this->vm_observer_map().at(ptr_vm->id())->wanted_shares.end());
+#else // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+			// As reference shares uses the ones defined by the tier
+			// specifications.
+
+			wanted_share_map[ptr_vm->id()] = share_container(ref_shares.begin(),
+															 ref_shares.end());
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+
+			// Compute and update VM utilization map
 
 			ref_resource_container rress(ptr_vm->guest_system().application().reference_resources());
 			ref_resource_iterator rress_end_it(rress.end());
@@ -283,35 +312,45 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 						)
 					);
 
-				real_type new_value(0);
+				real_type obs_util(0);
 
 				// Retrieve current resource utilization
-				new_value =  ptr_vm->guest_system().application().simulation_model().actual_tier_utilization(
+				obs_util =  ptr_vm->guest_system().application().simulation_model().actual_tier_utilization(
 								ptr_vm->guest_system().id()
 					);
-				// Scale in terms of reference machine
-//					new_value = scale_resource_share(
-//									ptr_vm->vmm().hosting_machine().resource(res.category())->capacity(),
-//									ptr_vm->vmm().hosting_machine().resource(res.category())->utilization_threshold(),
-//									ptr_vm->guest_system().application().reference_resource(res.category()).capacity(),
-//									ptr_vm->guest_system().application().reference_resource(res.category()).utilization_threshold(),
-//									new_value
-//						);
-				new_value = scale_resource_utilization(
-								ptr_vm->vmm().hosting_machine().resource(res.category())->capacity(),
-								res.capacity(),
-								new_value,
-								res.utilization_threshold()
-					);
+::std::cerr << "[optimal_migration_controller] Observed Utilization " << obs_util << ::std::endl;//XXX
+
+				real_type obs_share(wanted_share_map.at(ptr_vm->id()).at(res.category()));
+::std::cerr << "[optimal_migration_controller] Observed Share " << obs_share << ::std::endl;//XXX
+
+				// Scale share in terms of actual machine
+                obs_share = scale_resource_share(res.capacity(),
+												 ptr_vm->vmm().hosting_machine().resource(res.category())->capacity(),
+												 obs_share);
+
+::std::cerr << "[optimal_migration_controller] Scaled (ref -> actual) Observed Share " << obs_share << ::std::endl;//XXX
+::std::cerr << "[optimal_migration_controller] Reference Share " << ref_shares.at(res.category()) << ::std::endl;//XXX
+
+				// Scale utilization in terms of reference machine
+				obs_util = scale_resource_utilization(ptr_vm->vmm().hosting_machine().resource(res.category())->capacity(),
+													  obs_share,
+													  res.capacity(),
+													  ref_shares.at(res.category()),
+													  obs_util,
+													  res.utilization_threshold());
+::std::cerr << "[optimal_migration_controller] Scaled (actual -> reference) Observed Utilization " << obs_util << ::std::endl;//XXX
+
 				if (count_ > 1)
 				{
-					vm_util_map_[ptr_vm->id()] = ewma_smooth_*new_value + (1-ewma_smooth_)*vm_util_map_.at(ptr_vm->id());
+					//vm_util_map_[ptr_vm->id()][res.category()] = ewma_smooth_*obs_util + (1-ewma_smooth_)*vm_util_map_.at(ptr_vm->id());
+					vm_util_map_[ptr_vm->id()] = ewma_smooth_*obs_util + (1-ewma_smooth_)*vm_util_map_.at(ptr_vm->id());
 				}
 				else
 				{
-					vm_util_map_[ptr_vm->id()] = new_value;
+					//vm_util_map_[ptr_vm->id()][res.category()] = obs_util;
+					vm_util_map_[ptr_vm->id()] = obs_util;
 				}
-::std::cerr << "MIGRATION CONTROLLER >> VM: " << *ptr_vm << " - Utilization: " << new_value << " - Smoothed value: " << vm_util_map_[ptr_vm->id()] << ::std::endl;//XXX
+::std::cerr << "[optimal_migration_controller] Filtered Observed Utilization " << vm_util_map_.at(ptr_vm->id())/*.at(res.category())*/ << ::std::endl;//XX
 			}
 		}
 		vms.clear();
@@ -322,53 +361,57 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 
 			//optimal_solver_type solver;
 
-			::std::map<typename traits_type::virtual_machine_identifier_type, resource_share_container> wanted_share_map;
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
-			// As reference shares uses the wanted shares collected by
-			// monitoring each VM.
+//			::std::map<typename traits_type::virtual_machine_identifier_type, share_container> wanted_share_map;
+//#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+//			// As reference shares uses the wanted shares collected by
+//			// monitoring each VM.
+//
+//			typedef typename base_type::vm_observer_container::const_iterator vm_observer_iterator;
+//			vm_observer_iterator vm_obs_end_it(this->vm_observer_map().end());
+//			for (vm_observer_iterator it = this->vm_observer_map().begin(); it != vm_obs_end_it; ++it)
+//			{
+//				wanted_share_map[it->first] = resource_share_container(it->second->wanted_shares.begin(), it->second->wanted_shares.end());
+//			}
+//#else // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+//			// As reference shares uses the ones defined by the tier
+//			// specifications.
+//
+//			vm_container vms(dc.active_virtual_machines());
+//			typedef typename vm_container::const_iterator vm_iterator;
+//			vm_iterator vm_end_it(vms.end());
+//			for (vm_iterator it = vms.begin(); it != vm_end_it; ++it)
+//			{
+//				vm_pointer ptr_vm(*it);
+//
+//				// paranoid-check: null
+//				DCS_DEBUG_ASSERT( ptr_vm );
+//
+//				wanted_share_map[ptr_vm->id()] = ptr_vm->guest_system().resource_shares();
+//			}
+//			vms.clear();
+//#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
-			typedef typename base_type::vm_observer_container::const_iterator vm_observer_iterator;
-			vm_observer_iterator vm_obs_end_it(this->vm_observer_map().end());
-			for (vm_observer_iterator it = this->vm_observer_map().begin(); it != vm_obs_end_it; ++it)
-			{
-				wanted_share_map[it->first] = resource_share_container(it->second->wanted_shares.begin(), it->second->wanted_shares.end());
-			}
-#else // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
-			// As reference shares uses the ones defined by the tier
-			// specifications.
-
-			vm_container vms(dc.active_virtual_machines());
-			typedef typename vm_container::const_iterator vm_iterator;
-			vm_iterator vm_end_it(vms.end());
-			for (vm_iterator it = vms.begin(); it != vm_end_it; ++it)
-			{
-				vm_pointer ptr_vm(*it);
-
-				// paranoid-check: null
-				DCS_DEBUG_ASSERT( ptr_vm );
-
-				wanted_share_map[ptr_vm->id()] = ptr_vm->guest_system().resource_shares();
-			}
-			vms.clear();
-
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 			ptr_solver_->solve(dc, wp_, wm_, ws_, vm_util_map_.begin(), vm_util_map_.end(), wanted_share_map.begin(), wanted_share_map.end());
 
 			// Check solution and act accordingly
 
 			if (ptr_solver_->result().solved())
 			{
+				typedef typename optimal_solver_result_type::resource_share_container opt_share_container;
+				typedef typename optimal_solver_result_type::physical_virtual_machine_map opt_physical_virtual_machine_map;
+				typedef typename opt_physical_virtual_machine_map::const_iterator opt_physical_virtual_machine_iterator;
+
 				(*ptr_cost_)(ptr_solver_->result().cost());
 
 				virtual_machines_placement_type deployment;
 
-				physical_virtual_machine_map pm_vm_map(ptr_solver_->result().placement());
-				physical_virtual_machine_iterator pm_vm_end_it(pm_vm_map.end());
-				for (physical_virtual_machine_iterator pm_vm_it = pm_vm_map.begin(); pm_vm_it != pm_vm_end_it; ++pm_vm_it)
+				opt_physical_virtual_machine_map pm_vm_map(ptr_solver_->result().placement());
+				opt_physical_virtual_machine_iterator pm_vm_end_it(pm_vm_map.end());
+				for (opt_physical_virtual_machine_iterator pm_vm_it = pm_vm_map.begin(); pm_vm_it != pm_vm_end_it; ++pm_vm_it)
 				{
 					physical_machine_pointer ptr_pm(dc.physical_machine_ptr(pm_vm_it->first.first));
 					virtual_machine_pointer ptr_vm(dc.virtual_machine_ptr(pm_vm_it->first.second));
-					resource_share_container const& shares(pm_vm_it->second);
+					opt_share_container const& shares(pm_vm_it->second);
 
 					// check: paranoid check
 					DCS_DEBUG_ASSERT( ptr_pm );

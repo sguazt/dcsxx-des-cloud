@@ -41,10 +41,13 @@ class best_fit_incremental_placement_strategy: public base_incremental_placement
 		typedef typename pm_container::const_iterator pm_iterator;
 		typedef typename vm_container::const_iterator vm_iterator;
 		typedef typename application_type::application_tier_type application_tier_type;
-		typedef typename application_tier_type::resource_share_type share_type;
-		typedef typename application_tier_type::resource_share_container share_container;
+//		typedef typename application_tier_type::resource_share_type share_type;
+//		typedef typename application_tier_type::resource_share_container share_container;
+//		typedef typename share_container::const_iterator share_iterator;
+//		typedef ::std::map<physical_resource_category,real_type> resource_share_map;
+		typedef typename application_tier_type::resource_share_container ref_share_container;
+		typedef ::std::map<physical_resource_category,real_type> share_container;
 		typedef typename share_container::const_iterator share_iterator;
-		typedef ::std::map<physical_resource_category,real_type> resource_share_map;
 		typedef ::std::map<physical_resource_category,real_type> resource_utilization_map;
 		typedef typename application_type::reference_physical_resource_type ref_resource_type;
 		typedef typename application_type::reference_physical_resource_container ref_resource_container;
@@ -66,6 +69,9 @@ class best_fit_incremental_placement_strategy: public base_incremental_placement
 		{
 			::std::sort(pms.begin(),
 						pms.end(),
+						detail::ptr_physical_machine_less_by_id_comparator<pm_type>());
+			::std::sort(pms.begin(),
+						pms.end(),
 						detail::ptr_physical_machine_less_comparator<pm_type>());
 			sorted_pms.insert(sorted_pms.end(), pms.begin(), pms.end());
 		}
@@ -74,12 +80,18 @@ class best_fit_incremental_placement_strategy: public base_incremental_placement
 		{
 			::std::sort(pms.begin(),
 						pms.end(),
+						detail::ptr_physical_machine_less_by_id_comparator<pm_type>());
+			::std::sort(pms.begin(),
+						pms.end(),
 						detail::ptr_physical_machine_less_comparator<pm_type>());
 			sorted_pms.insert(sorted_pms.end(), pms.begin(), pms.end());
 		}
 		pms = dc.physical_machines(powered_off_power_status);
 		if (!pms.empty())
 		{
+			::std::sort(pms.begin(),
+						pms.end(),
+						detail::ptr_physical_machine_less_by_id_comparator<pm_type>());
 			::std::sort(pms.begin(),
 						pms.end(),
 						detail::ptr_physical_machine_less_comparator<pm_type>());
@@ -103,8 +115,14 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 
 			application_type const& app(ptr_vm->guest_system().application());
 
+			share_container ref_shares;
+			{
+				ref_share_container tmp_shares(ptr_vm->guest_system().resource_shares());
+				ref_shares = share_container(tmp_shares.begin(), tmp_shares.end());
+			}
+
 			// Retrieve the share for every resource of the VM guest system
-			share_container ref_shares(ptr_vm->guest_system().resource_shares());
+			//share_container ref_shares(ptr_vm->guest_system().resource_shares());
             ref_resource_container rress(app.reference_resources());
             ref_resource_iterator rress_end_it(rress.end());
 
@@ -122,7 +140,7 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 				DCS_DEBUG_ASSERT( ptr_pm );
 
 				// Reference to actual resource shares
-				resource_share_map shares;
+				share_container shares;
 				for (share_iterator ref_share_it = ref_shares.begin(); ref_share_it != ref_share_end_it; ++ref_share_it)
 				{
 					physical_resource_category ref_category(ref_share_it->first);
@@ -133,16 +151,17 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 					}
 
 					real_type ref_capacity(app.reference_resource(ref_category).capacity());
-					real_type ref_threshold(app.reference_resource(ref_category).utilization_threshold());
+					//real_type ref_threshold(app.reference_resource(ref_category).utilization_threshold());
 
 					real_type actual_capacity(ptr_pm->resource(ref_category)->capacity());
-					real_type actual_threshold(ptr_pm->resource(ref_category)->utilization_threshold());
+					//real_type actual_threshold(ptr_pm->resource(ref_category)->utilization_threshold());
 
 					real_type share;
+					// Scale share in terms of actual machine
 					share = ::dcs::eesim::scale_resource_share(ref_capacity,
-															   ref_threshold,
+															   //ref_threshold,
 															   actual_capacity,
-															   actual_threshold,
+															   //actual_threshold,
 															   ref_share);
 
 					shares[ref_category] = share;
@@ -163,20 +182,25 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 							)
 						);
 
+					// paranoid-check: consistency
+					DCS_DEBUG_ASSERT( ref_shares.count(res.category()) > 0 );
+
+					// paranoid-check: consistency
+					DCS_DEBUG_ASSERT( shares.count(res.category()) > 0 );
+
 					real_type util(0);
 					util = app.performance_model().tier_measure(
 									ptr_vm->guest_system().id(),
 									utilization_performance_measure
 						);
 
+					// Scale utilization in terms of actual machine
 					util = scale_resource_utilization(res.capacity(),
+													  ref_shares.at(res.category()),
 													  ptr_pm->resource(res.category())->capacity(),
+													  shares.at(res.category()),
 													  util,
 													  ptr_pm->resource(res.category())->utilization_threshold());
-					if (shares.count(res.category()))
-					{
-						util /= shares.at(res.category());
-					}
 
 					utils[res.category()] = util;
 				}
@@ -197,9 +221,9 @@ DCS_DEBUG_TRACE("Placed: VM(" << ptr_vm->id() << ") -> PM(" << ptr_pm->id() << "
 				// Choose the PM with the largest free space
 				typedef typename vms_placement_type::const_iterator vmp_iterator;
 				typedef typename vms_placement_type::share_const_iterator vmp_share_iterator;
-				typedef ::std::map<pm_identifier_type,resource_share_map> pm_share_map;
+				typedef ::std::map<pm_identifier_type,share_container> pm_share_map;
 				typedef typename pm_share_map::const_iterator pm_share_iterator;
-				typedef typename resource_share_map::const_iterator resource_share_iterator;
+				//typedef typename resource_share_map::const_iterator resource_share_iterator;
 
 				pm_share_map pm_shares;
 
@@ -227,14 +251,14 @@ DCS_DEBUG_TRACE("Placed: VM(" << ptr_vm->id() << ") -> PM(" << ptr_pm->id() << "
 
 				// Find the PM with the max free share
 				pm_identifier_type max_pm_id;
-				resource_share_map max_pm_shares;
+				share_container max_pm_shares;
 				pm_share_iterator pm_share_end_it(pm_shares.end());
 				for (pm_share_iterator pm_share_it = pm_shares.begin(); pm_share_it != pm_share_end_it; ++pm_share_it)
 				{
 					pm_identifier_type pm_id(pm_share_it->first);
 
-					resource_share_iterator share_end_it(pm_share_it->second.end());
-					for (resource_share_iterator share_it = pm_share_it->second.begin(); share_it != share_end_it; ++share_it)
+					share_iterator share_end_it(pm_share_it->second.end());
+					for (share_iterator share_it = pm_share_it->second.begin(); share_it != share_end_it; ++share_it)
 					{
 						physical_resource_category category(share_it->first);
 						real_type free_share(share_it->second);

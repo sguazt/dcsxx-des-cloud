@@ -22,11 +22,11 @@ class base_vm_placement_optimal_solver
 	public: typedef typename traits_type::physical_machine_identifier_type physical_machine_identifier_type;
 	public: typedef typename traits_type::virtual_machine_identifier_type virtual_machine_identifier_type;
 	public: typedef ::std::map<virtual_machine_identifier_type,real_type> virtual_machine_utilization_map;
-	private: typedef vm_placement_problem_result<traits_type> problem_result_type;
-	public: typedef typename problem_result_type::physical_virtual_machine_pair_type physical_virtual_machine_pair_type;
-	public: typedef typename problem_result_type::resource_share_container resource_share_container;
-	public: typedef typename problem_result_type::physical_virtual_machine_map physical_virtual_machine_map;
-	public: typedef ::std::map<virtual_machine_identifier_type,resource_share_container> virtual_machine_share_map;
+	public: typedef vm_placement_problem_result<traits_type> problem_result_type;
+//	protected: typedef typename problem_result_type::physical_virtual_machine_pair_type physical_virtual_machine_pair_type;
+	protected: typedef typename problem_result_type::resource_share_container resource_share_container;
+//	protected: typedef typename problem_result_type::physical_virtual_machine_map physical_virtual_machine_map;
+	protected: typedef ::std::map<virtual_machine_identifier_type,resource_share_container> virtual_machine_share_map;
 
 
 	public: base_vm_placement_optimal_solver()
@@ -85,7 +85,14 @@ class base_vm_placement_optimal_solver
 					   ShareFwdIterT vm_share_last)
 	{
 		virtual_machine_utilization_map vm_util_map(vm_util_first, vm_util_last);
-		virtual_machine_share_map vm_share_map(vm_share_first, vm_share_last);
+
+		virtual_machine_share_map vm_share_map;
+		while (vm_share_first != vm_share_last)
+		{
+			vm_share_map[vm_share_first->first] = resource_share_container(vm_share_first->second.begin(),
+																		   vm_share_first->second.end());
+			++vm_share_first;
+		}
 
 		do_solve(dc, wp, wm, ws, vm_util_map, vm_share_map);
 	}

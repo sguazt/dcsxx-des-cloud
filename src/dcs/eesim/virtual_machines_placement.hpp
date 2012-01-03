@@ -153,11 +153,11 @@ class virtual_machines_placement
 							DCS_DEBUG_ASSERT( ptr_vm );
 
 							free_utils[category] -= scale_resource_utilization(ptr_vm->guest_system().application().reference_resource(category).capacity(),
+																			   ptr_vm->guest_system().resource_share(category),
 																			   pm.resource(category)->capacity(),
+																			   share_it->second,
 																			   ptr_vm->guest_system().application().performance_model().tier_measure(ptr_vm->guest_system().id(), ::dcs::eesim::utilization_performance_measure),
-																			   pm.resource(category)->utilization_threshold())
-													/
-													share_it->second;
+																			   pm.resource(category)->utilization_threshold());
 							if (
 									(
 										wanted_utils.count(category) > 0

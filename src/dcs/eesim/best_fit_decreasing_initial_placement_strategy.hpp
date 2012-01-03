@@ -33,25 +33,39 @@ class best_fit_decreasing_initial_placement_strategy: public base_initial_placem
 		typedef typename data_center_type::virtual_machine_pointer vm_pointer;
 		typedef typename pm_type::identifier_type pm_identifier_type;
 		typedef typename vm_type::identifier_type vm_identifier_type;
+		typedef typename application_type::application_tier_type application_tier_type;
 		typedef ::std::vector<pm_pointer> pm_container;
 		typedef ::std::vector<vm_pointer> vm_container;
 		typedef typename pm_container::const_iterator pm_iterator;
 		typedef typename vm_container::const_iterator vm_iterator;
-		typedef ::std::pair<physical_resource_category,real_type> share_type;
-		typedef ::std::vector<share_type> share_container;
+//		typedef ::std::pair<physical_resource_category,real_type> share_type;
+//		typedef ::std::vector<share_type> share_container;
+		typedef typename application_tier_type::resource_share_container ref_share_container;
+		typedef ::std::map<physical_resource_category,real_type> share_container;
 		typedef typename share_container::const_iterator share_iterator;
-		typedef ::std::map<physical_resource_category,real_type> resource_share_map;
 		typedef typename application_type::reference_physical_resource_type ref_resource_type;
 		typedef ::std::map<physical_resource_category,real_type> resource_utilization_map;
 		typedef typename application_type::reference_physical_resource_container ref_resource_container;
 		typedef typename ref_resource_container::const_iterator ref_resource_iterator;
 
+		// Sort physical machines:
+		// - by ID (to preserve order in case of a tie)
+		// - by resource capacity
 		pm_container sorted_pms(dc.physical_machines());
+        ::std::sort(sorted_pms.begin(),
+                    sorted_pms.end(),
+                    detail::ptr_physical_machine_less_by_id_comparator<pm_type>());
 		::std::sort(sorted_pms.begin(),
 					sorted_pms.end(),
 					detail::ptr_physical_machine_greater_comparator<pm_type>());
 
+		// Sort virtual machines:
+		// - by ID (to preserve order in case of a tie)
+		// - by resource share
 		vm_container sorted_vms(dc.active_virtual_machines());
+		::std::sort(sorted_vms.begin(),
+					sorted_vms.end(),
+					detail::ptr_virtual_machine_greater_by_id_comparator<vm_type>());
 		::std::sort(sorted_vms.begin(),
 					sorted_vms.end(),
 					detail::ptr_virtual_machine_greater_comparator<vm_type>());
@@ -73,8 +87,13 @@ DCS_DEBUG_TRACE("#VMs: " << sorted_vms.size());//XXX
 
 			application_type const& app(ptr_vm->guest_system().application());
 
+			share_container ref_shares;
+			{
+				ref_share_container tmp_shares(ptr_vm->guest_system().resource_shares());
+				ref_shares = share_container(tmp_shares.begin(), tmp_shares.end());
+			}
+
 			// Retrieve the share for every resource of the VM guest system
-			share_container ref_shares(ptr_vm->guest_system().resource_shares());
 			ref_resource_container rress(app.reference_resources());
 			ref_resource_iterator rress_end_it(rress.end());
 
@@ -92,7 +111,7 @@ DCS_DEBUG_TRACE("#VMs: " << sorted_vms.size());//XXX
 				DCS_DEBUG_ASSERT( ptr_pm );
 
 				// Reference to actual resource shares
-				resource_share_map shares;
+				share_container shares;
 				for (share_iterator ref_share_it = ref_shares.begin(); ref_share_it != ref_share_end_it; ++ref_share_it)
 				{
 					physical_resource_category ref_category(ref_share_it->first);
@@ -103,16 +122,18 @@ DCS_DEBUG_TRACE("#VMs: " << sorted_vms.size());//XXX
 					}
 
 					real_type ref_capacity(app.reference_resource(ref_category).capacity());
-					real_type ref_threshold(app.reference_resource(ref_category).utilization_threshold());
+					//real_type ref_threshold(app.reference_resource(ref_category).utilization_threshold());
 
 					real_type actual_capacity(ptr_pm->resource(ref_category)->capacity());
-					real_type actual_threshold(ptr_pm->resource(ref_category)->utilization_threshold());
+					//real_type actual_threshold(ptr_pm->resource(ref_category)->utilization_threshold());
 
 					real_type share;
+
+					// Scale share in terms of actual machine
 					share = scale_resource_share(ref_capacity,
-												 ref_threshold,
+												 //ref_threshold,
 												 actual_capacity,
-												 actual_threshold,
+												 //actual_threshold,
 												 ref_share);
 
 					shares[ref_category] = share;
@@ -132,20 +153,25 @@ DCS_DEBUG_TRACE("#VMs: " << sorted_vms.size());//XXX
 							)
 						);
 
+					// paranoid-check: consistency
+					DCS_DEBUG_ASSERT( ref_shares.count(res.category()) > 0 );
+
+					// paranoid-check: consistency
+					DCS_DEBUG_ASSERT( shares.count(res.category()) > 0 );
+
 					real_type util(0);
 					util = app.performance_model().tier_measure(
 									ptr_vm->guest_system().id(),
 									utilization_performance_measure
 						);                            
-													  
+
+					// Scale utilization in terms actual machine
 					util = scale_resource_utilization(res.capacity(),
+													  ref_shares.at(res.category()),
 													  ptr_pm->resource(res.category())->capacity(), 
+													  shares.at(res.category()),
 													  util,
 													  ptr_pm->resource(res.category())->utilization_threshold());
-					if (shares.count(res.category()))
-					{
-						util /= shares.at(res.category());
-					}
 					
 					utils[res.category()] = util;
 				}

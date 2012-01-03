@@ -37,10 +37,14 @@ class first_fit_initial_placement_strategy: public base_initial_placement_strate
 		typedef ::std::vector<vm_pointer> vm_container;
 		typedef typename pm_container::const_iterator pm_iterator;
 		typedef typename vm_container::const_iterator vm_iterator;
-		typedef ::std::pair<physical_resource_category,real_type> share_type;
-		typedef ::std::vector<share_type> share_container;
+//		typedef ::std::pair<physical_resource_category,real_type> share_type;
+//		typedef ::std::vector<share_type> share_container;
+//		typedef typename share_container::const_iterator share_iterator;
+//		typedef ::std::map<physical_resource_category,real_type> resource_share_map;
+		typedef typename application_type::application_tier_type application_tier_type;
+		typedef typename application_tier_type::resource_share_container ref_share_container;
+		typedef ::std::map<physical_resource_category,real_type> share_container;
 		typedef typename share_container::const_iterator share_iterator;
-		typedef ::std::map<physical_resource_category,real_type> resource_share_map;
 		typedef ::std::map<physical_resource_category,real_type> resource_utilization_map;
 		typedef typename application_type::reference_physical_resource_type ref_resource_type;
 		typedef typename application_type::reference_physical_resource_container ref_resource_container;
@@ -65,8 +69,14 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 
 			application_type const& app(ptr_vm->guest_system().application());
 
+			share_container ref_shares;
+			{
+				ref_share_container tmp_shares(ptr_vm->guest_system().resource_shares());
+				ref_shares = share_container(tmp_shares.begin(), tmp_shares.end());
+			}
+
 			// Retrieve the share for every resource of the VM guest system
-			share_container ref_shares(ptr_vm->guest_system().resource_shares());
+			//share_container ref_shares(ptr_vm->guest_system().resource_shares());
 			ref_resource_container rress(app.reference_resources());
 			ref_resource_iterator rress_end_it(rress.end());
 
@@ -84,7 +94,7 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 				DCS_DEBUG_ASSERT( ptr_pm );
 
 				// Reference to actual resource shares
-				resource_share_map shares;
+				share_container shares;
 				for (share_iterator ref_share_it = ref_shares.begin(); ref_share_it != ref_share_end_it; ++ref_share_it)
 				{
 					physical_resource_category ref_category(ref_share_it->first);
@@ -95,16 +105,16 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 					}
 
 					real_type ref_capacity(app.reference_resource(ref_category).capacity());
-					real_type ref_threshold(app.reference_resource(ref_category).utilization_threshold());
+					//real_type ref_threshold(app.reference_resource(ref_category).utilization_threshold());
 
 					real_type actual_capacity(ptr_pm->resource(ref_category)->capacity());
-					real_type actual_threshold(ptr_pm->resource(ref_category)->utilization_threshold());
+					//real_type actual_threshold(ptr_pm->resource(ref_category)->utilization_threshold());
 
 					real_type share;
 					share = ::dcs::eesim::scale_resource_share(ref_capacity,
-															   ref_threshold,
+															   //ref_threshold,
 															   actual_capacity,
-															   actual_threshold,
+															   //actual_threshold,
 															   ref_share);
 
 					shares[ref_category] = share;
@@ -125,6 +135,12 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 							)
 						);
 
+					// paranoid-check: consistency
+					DCS_DEBUG_ASSERT( ref_shares.count(res.category()) > 0 );
+
+					// paranoid-check: consistency
+					DCS_DEBUG_ASSERT( shares.count(res.category()) > 0 );
+
 					real_type util(0);
 					util = app.performance_model().tier_measure(
 									ptr_vm->guest_system().id(),
@@ -132,13 +148,11 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 						);
 
 					util = scale_resource_utilization(res.capacity(),
+													  ref_shares.at(res.category()),
 													  ptr_pm->resource(res.category())->capacity(),
+													  shares.at(res.category()),
 													  util,
 													  ptr_pm->resource(res.category())->utilization_threshold());
-					if (shares.count(res.category()))
-					{
-						util /= shares.at(res.category());
-					}
 
 					utils[res.category()] = util;
 				}

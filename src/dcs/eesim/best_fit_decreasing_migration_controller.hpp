@@ -193,6 +193,7 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << " - Fail-Count: " << fail_count_ << ")");
+::std::cerr << "[bfd_migration_controller] (" << this << ") BEGIN Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << " - Fail-Count: " << fail_count_ << ")" << ::std::endl;///XXX
 
 		typedef typename base_type::data_center_type data_center_type;
 		typedef typename data_center_type::application_type application_type; 
@@ -207,21 +208,22 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 		typedef ::std::vector<vm_pointer> vm_container;
 		typedef typename pm_container::const_iterator pm_iterator;
 		typedef typename vm_container::const_iterator vm_iterator;
-//		typedef ::std::pair<physical_resource_category,real_type> share_type;
-//		typedef ::std::vector<share_type> share_container;
-		typedef typename application_tier_type::resource_share_type share_type;
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
-		typedef typename base_type::vm_share_observer::share_container share_container;
-#else // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
-		typedef typename application_tier_type::resource_share_container share_container;
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
-		typedef typename share_container::const_iterator share_iterator;
 		typedef ::std::map<physical_resource_category,real_type> resource_share_map;
 		typedef ::std::map<physical_resource_category,real_type> resource_utilization_map;
 		typedef typename base_type::virtual_machines_placement_type virtual_machines_placement_type;
 		typedef typename application_type::reference_physical_resource_type ref_resource_type;
 		typedef typename application_type::reference_physical_resource_container ref_resource_container;
 		typedef typename ref_resource_container::const_iterator ref_resource_iterator;
+//		typedef ::std::pair<physical_resource_category,real_type> share_type;
+//		typedef ::std::vector<share_type> share_container;
+		typedef typename application_tier_type::resource_share_type share_type;
+		typedef typename application_tier_type::resource_share_container ref_share_container;
+#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+		typedef typename base_type::vm_share_observer::share_container share_container;
+#else // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+		typedef resource_share_map share_container;
+#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+		typedef typename share_container::const_iterator share_iterator;
 
 		++count_;
 
@@ -234,12 +236,18 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 		{
 			::std::sort(pms.begin(),
 						pms.end(),
+						detail::ptr_physical_machine_greater_by_id_comparator<pm_type>());
+			::std::sort(pms.begin(),
+						pms.end(),
 						detail::ptr_physical_machine_greater_comparator<pm_type>());
 			sorted_pms.insert(sorted_pms.end(), pms.begin(), pms.end());
 		}
 		pms = dc.physical_machines(suspended_power_status);
 		if (!pms.empty())
 		{
+			::std::sort(pms.begin(),
+						pms.end(),
+						detail::ptr_physical_machine_greater_by_id_comparator<pm_type>());
 			::std::sort(pms.begin(),
 						pms.end(),
 						detail::ptr_physical_machine_greater_comparator<pm_type>());
@@ -250,6 +258,9 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 		{
 			::std::sort(pms.begin(),
 						pms.end(),
+						detail::ptr_physical_machine_greater_by_id_comparator<pm_type>());
+			::std::sort(pms.begin(),
+						pms.end(),
 						detail::ptr_physical_machine_greater_comparator<pm_type>());
 			sorted_pms.insert(sorted_pms.end(), pms.begin(), pms.end());
 		}
@@ -257,6 +268,9 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 
 		// Sort virtual machines according to their shares
         vm_container sorted_vms(dc.active_virtual_machines());
+        ::std::sort(sorted_vms.begin(),
+                    sorted_vms.end(),
+                    detail::ptr_virtual_machine_greater_by_id_comparator<vm_type>());
 #ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
 		::std::map<typename traits_type::virtual_machine_identifier_type, share_container> wanted_shares;
 		typedef typename base_type::vm_observer_container::const_iterator vm_observer_iterator;
@@ -329,6 +343,7 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 
 			// paranoid-check: valid pointer.
 			DCS_DEBUG_ASSERT( ptr_vm );
+::std::cerr << "[bfd_migration_controller] Virtual Machine " << *ptr_vm << ::std::endl;//XXX
 
 			if (ptr_vm->power_state() != powered_on_power_status)
 			{
@@ -339,6 +354,7 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 
 			++num_vms;
 
+#if 0 //[ORIGINAL]
 			// Compute and update VM utilization map
 
 			ref_resource_container rress(ptr_vm->guest_system().application().reference_resources());
@@ -379,55 +395,128 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 					vm_util_map_[ptr_vm->id()][res.category()] = new_util;
 				}
 			}
+#endif //[/ORIGINAL]
 
 			application_type const& app(ptr_vm->guest_system().application());
 
-			// Retrieve the share for every resource of the VM guest system
+			// Retrieve reference resource shares
+			share_container ref_shares;
+			{
+				ref_share_container tmp_shares(ptr_vm->guest_system().resource_shares());
+				ref_shares = share_container(tmp_shares.begin(), tmp_shares.end());
+			}
+
+			// Retrieve the observed share for every resource of the VM guest system
 #ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
-			// As reference shares uses the wanted shares collected by
+			// As observed shares uses the wanted shares collected by
 			// monitoring each VM.
-			share_container ref_shares(this->vm_observer_map().at(ptr_vm->id())->wanted_shares);
+			share_container obs_shares(this->vm_observer_map().at(ptr_vm->id())->wanted_shares);
 #else // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
-			// As reference shares uses the ones defined by the tier
+			// As observed shares uses the ones defined by the tier
 			// specifications.
-			share_container ref_shares(ptr_vm->guest_system().resource_shares());
+			//share_container ref_shares(ptr_vm->guest_system().resource_shares());
+			share_container& obs_shares(ref_shares);
 #endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+
+			// Compute and update VM utilization map
+
+			ref_resource_container rress(ptr_vm->guest_system().application().reference_resources());
+			ref_resource_iterator rress_end_it(rress.end());
+			for (ref_resource_iterator rress_it = rress.begin(); rress_it != rress_end_it; ++rress_it)
+			{
+				ref_resource_type res(*rress_it);
+
+				//TODO: CPU resource category not yet handle in app simulation model
+				DCS_ASSERT(
+						res.category() == cpu_resource_category,
+						DCS_EXCEPTION_THROW(
+							::std::runtime_error,
+							"Resource categories other than CPU are not yet implemented."
+						)
+					);
+
+				// paranoid-check: consistency
+				DCS_DEBUG_ASSERT( obs_shares.count(res.category()) > 0 );
+
+				// paranoid-check: consistency
+				DCS_DEBUG_ASSERT( ref_shares.count(res.category()) > 0 );
+
+				real_type obs_util(0);
+
+				// Retrieve current resource utilization
+				obs_util =  ptr_vm->guest_system().application().simulation_model().actual_tier_utilization(
+								ptr_vm->guest_system().id()
+					);
+::std::cerr << "[bfd_migration_controller] Observed Utilization " << obs_util << ::std::endl;//XXX
+
+				real_type obs_share(obs_shares.at(res.category()));
+::std::cerr << "[bfd_migration_controller] Observed Share " << obs_share << ::std::endl;//XXX
+
+				// Scale share in terms of actual machine
+				obs_share = scale_resource_share(res.capacity(),
+												 ptr_vm->vmm().hosting_machine().resource(res.category())->capacity(),
+												 obs_share);
+
+::std::cerr << "[bfd_migration_controller] Scaled (ref -> actual) Observed Share " << obs_share << ::std::endl;//XXX
+::std::cerr << "[bfd_migration_controller] Reference Share " << ref_shares.at(res.category()) << ::std::endl;//XXX
+
+				// Scale utilization in terms of reference machine
+				obs_util = scale_resource_utilization(ptr_vm->vmm().hosting_machine().resource(res.category())->capacity(),
+													  obs_share,
+													  res.capacity(),
+													  ref_shares.at(res.category()),
+													  obs_util,
+													  res.utilization_threshold());
+::std::cerr << "[bfd_migration_controller] Scaled (actual -> reference) Observed Utilization " << obs_util << ::std::endl;//XXX
+
+				if (count_ > 1)
+				{
+					vm_util_map_[ptr_vm->id()][res.category()] = ewma_smooth_*obs_util + (1-ewma_smooth_)*vm_util_map_.at(ptr_vm->id()).at(res.category());
+				}
+				else
+				{
+					vm_util_map_[ptr_vm->id()][res.category()] = obs_util;
+				}
+::std::cerr << "[bfd_migration_controller] Filtered Observed Utilization " << vm_util_map_.at(ptr_vm->id()).at(res.category()) << ::std::endl;//XXX
+			}
 
 			// For each physical machine PM, try to deploy current VM on PM
 			// until a suitable machine (i.e., a machine with sufficient free
 			// capacity) is found.
 			bool placed(false);
 			pm_iterator pm_end_it(sorted_pms.end());
-			share_iterator ref_share_end_it(ref_shares.end());
+			share_iterator obs_share_end_it(obs_shares.end());
 			for (pm_iterator pm_it = sorted_pms.begin(); pm_it != pm_end_it && !placed; ++pm_it)
 			{
 				pm_pointer ptr_pm(*pm_it);
 
 				// paranoid-check: valid pointer.
 				DCS_DEBUG_ASSERT( ptr_pm );
+::std::cerr << "[bfd_migration_controller] Physical Machine " << *ptr_pm << ::std::endl;//XXX
 
 				// Reference to actual resource shares
 				resource_share_map shares;
 
-				for (share_iterator ref_share_it = ref_shares.begin(); ref_share_it != ref_share_end_it; ++ref_share_it)
+				for (share_iterator obs_share_it = obs_shares.begin(); obs_share_it != obs_share_end_it; ++obs_share_it)
 				{
-					physical_resource_category ref_category(ref_share_it->first);
-					real_type ref_share(ref_share_it->second);
+					physical_resource_category res_category(obs_share_it->first);
+					real_type share(obs_share_it->second);
 
-					real_type ref_capacity(app.reference_resource(ref_category).capacity());
+					real_type ref_capacity(app.reference_resource(res_category).capacity());
 					//real_type ref_threshold(app.reference_resource(ref_category).utilization_threshold());
 
-					real_type actual_capacity(ptr_pm->resource(ref_category)->capacity());
+					real_type actual_capacity(ptr_pm->resource(res_category)->capacity());
 					//real_type actual_threshold(ptr_pm->resource(ref_category)->utilization_threshold());
 
-					real_type share;
+::std::cerr << "[bfd_migration_controller] Observed Share " << share << ::std::endl;//XXX
 					share = scale_resource_share(ref_capacity,
 												 //ref_threshold,
 												 actual_capacity,
 												 //actual_threshold,
-												 ref_share);
+												 share);
+::std::cerr << "[bfd_migration_controller] Scaled (ref -> candidate) Observed Share " << share << ::std::endl;//XXX
 
-					shares[ref_category] = share;
+					shares[res_category] = share;
 				}
 
 				// Reference to actual resource utilizaition
@@ -436,16 +525,23 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 				{
 					ref_resource_type res(*rress_it);
 
+					// paranoid-check: consistency
+					DCS_DEBUG_ASSERT( shares.count(res.category()) > 0 );
+
+					// paranoid-check: consistency
+					DCS_DEBUG_ASSERT( ref_shares.count(res.category()) > 0 );
+
 					real_type util(vm_util_map_.at(ptr_vm->id()).at(res.category()));
 
+::std::cerr << "[bfd_migration_controller] Observed Utilization " << util << ::std::endl;//XXX
+					// Scale utilization in terms of the new physical machine
 					util = scale_resource_utilization(res.capacity(),
+													  ref_shares.at(res.category()),
 													  ptr_pm->resource(res.category())->capacity(),
+													  shares.at(res.category()),
 													  util,
 													  ptr_pm->resource(res.category())->utilization_threshold());
-					if (shares.count(res.category()))
-					{
-						util /= shares.at(res.category());
-					}
+::std::cerr << "[bfd_migration_controller] Scaled (ref -> candidate) Observed Utilization " << util << ::std::endl;//XXX
 
 					utils[res.category()] = util;
 				}
@@ -579,6 +675,7 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 		}
 */
 
+::std::cerr << "[bfd_migration_controller] (" << this << ") END Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << " - Fail-Count: " << fail_count_ << ")" << ::std::endl;///XXX
 		DCS_DEBUG_TRACE("(" << this << ") END Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << " - Fail-Count: " << fail_count_ << ")");
 	}
 

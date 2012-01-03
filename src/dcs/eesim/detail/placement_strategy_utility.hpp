@@ -89,24 +89,69 @@ class physical_machine_comparator
 
 
 template <typename PhyMachT>
-struct physical_machine_less_comparator
+struct physical_machine_less_comparator: public physical_machine_comparator< PhyMachT,
+																			 ::std::less<typename PhyMachT::real_type> >
 {
-	bool operator()(PhyMachT const& lhs, PhyMachT const& rhs) const
-	{
-		return physical_machine_comparator< PhyMachT,
-											::std::less<typename PhyMachT::real_type> >()(lhs, rhs);
-	}
+//	bool operator()(PhyMachT const& lhs, PhyMachT const& rhs) const
+//	{
+//		return physical_machine_comparator< PhyMachT,
+//											::std::less<typename PhyMachT::real_type> >()(lhs, rhs);
+//	}
 };
 
 
 template <typename PhyMachT>
-struct physical_machine_greater_comparator
+struct physical_machine_greater_comparator: public physical_machine_comparator< PhyMachT,
+																				::std::greater<typename PhyMachT::real_type> >
 {
-	bool operator()(PhyMachT const& lhs, PhyMachT const& rhs) const
+//	bool operator()(PhyMachT const& lhs, PhyMachT const& rhs) const
+//	{
+//		return physical_machine_comparator< PhyMachT,
+//											::std::greater<typename PhyMachT::real_type> >()(lhs, rhs);
+//	}
+};
+
+
+/// Compare two physical machines according to their ID
+template <typename PhyMachT, typename CompareT = ::std::less<typename PhyMachT::identifier_type> >
+class physical_machine_by_id_comparator
+{
+	public: physical_machine_by_id_comparator(CompareT cmp = CompareT())
+	: cmp_(cmp)
 	{
-		return physical_machine_comparator< PhyMachT,
-											::std::greater<typename PhyMachT::real_type> >()(lhs, rhs);
 	}
+
+
+	public: bool operator()(PhyMachT const& lhs, PhyMachT const& rhs) const
+	{
+		return cmp_(lhs.id(), rhs.id());
+	}
+
+	private: CompareT cmp_;
+}; // physical_machine_by_id_comparator
+
+
+template <typename PhyMachT>
+struct physical_machine_less_by_id_comparator: public physical_machine_by_id_comparator< PhyMachT,
+																						 ::std::less<typename PhyMachT::identifier_type> >
+{
+//	bool operator()(PhyMachT const& lhs, PhyMachT const& rhs) const
+//	{
+//		return physical_machine_by_id_comparator< PhyMachT,
+//												  ::std::less<typename PhyMachT::identifier_type> >()(lhs, rhs);
+//	}
+};
+
+
+template <typename PhyMachT>
+struct physical_machine_greater_by_id_comparator: public physical_machine_by_id_comparator< PhyMachT,
+																							::std::greater<typename PhyMachT::identifier_type> >
+{
+//	bool operator()(PhyMachT const& lhs, PhyMachT const& rhs) const
+//	{
+//		return physical_machine_by_id_comparator< PhyMachT,
+//												  ::std::greater<typename PhyMachT::identifier_type> >()(lhs, rhs);
+//	}
 };
 
 
@@ -164,28 +209,73 @@ class ptr_physical_machine_comparator
 	}
 
 	private: CompareT cmp_;
-}; // physical_machine_comparator
+}; // ptr_physical_machine_comparator
 
 
 template <typename PhyMachT>
-struct ptr_physical_machine_less_comparator
+struct ptr_physical_machine_less_comparator: public ptr_physical_machine_comparator< PhyMachT,
+																					 ::std::less<typename PhyMachT::real_type> >
 {
-	bool operator()(::dcs::shared_ptr<PhyMachT> const& lhs, ::dcs::shared_ptr<PhyMachT> const& rhs) const
-	{
-		return ptr_physical_machine_comparator< PhyMachT,
-												::std::less<typename PhyMachT::real_type> >()(lhs, rhs);
-	}
+//	bool operator()(::dcs::shared_ptr<PhyMachT> const& lhs, ::dcs::shared_ptr<PhyMachT> const& rhs) const
+//	{
+//		return ptr_physical_machine_comparator< PhyMachT,
+//												::std::less<typename PhyMachT::real_type> >()(lhs, rhs);
+//	}
 };
 
 
 template <typename PhyMachT>
-struct ptr_physical_machine_greater_comparator
+struct ptr_physical_machine_greater_comparator: public ptr_physical_machine_comparator< PhyMachT,
+																						::std::greater<typename PhyMachT::real_type> >
 {
-	bool operator()(::dcs::shared_ptr<PhyMachT> const& lhs, ::dcs::shared_ptr<PhyMachT> const& rhs) const
+//	bool operator()(::dcs::shared_ptr<PhyMachT> const& lhs, ::dcs::shared_ptr<PhyMachT> const& rhs) const
+//	{
+//		return ptr_physical_machine_comparator< PhyMachT,
+//												::std::greater<typename PhyMachT::real_type> >()(lhs, rhs);
+//	}
+};
+
+
+/// Compare two physical machines according to their ID
+template <typename PhyMachT, typename CompareT = ::std::less<typename PhyMachT::identifier_type> >
+class ptr_physical_machine_by_id_comparator
+{
+	public: ptr_physical_machine_by_id_comparator(CompareT cmp = CompareT())
+	: cmp_(cmp)
 	{
-		return ptr_physical_machine_comparator< PhyMachT,
-												::std::greater<typename PhyMachT::real_type> >()(lhs, rhs);
 	}
+
+
+	public: bool operator()(::dcs::shared_ptr<PhyMachT> const& lhs, ::dcs::shared_ptr<PhyMachT> const& rhs) const
+	{
+		return cmp_(lhs->id(), rhs->id());
+	}
+
+	private: CompareT cmp_;
+}; // ptr_physical_machine_by_id_comparator
+
+
+template <typename PhyMachT>
+struct ptr_physical_machine_less_by_id_comparator: public ptr_physical_machine_by_id_comparator< PhyMachT,
+																								 ::std::less<typename PhyMachT::identifier_type> >
+{
+//	bool operator()(::dcs::shared_ptr<PhyMachT> const& lhs, ::dcs::shared_ptr<PhyMachT> const& rhs) const
+//	{
+//		return ptr_physical_machine_by_id_comparator< PhyMachT,
+//													  ::std::less<typename PhyMachT::identifier_type> >()(lhs, rhs);
+//	}
+};
+
+
+template <typename PhyMachT>
+struct ptr_physical_machine_greater_by_id_comparator: public ptr_physical_machine_by_id_comparator< PhyMachT,
+																									::std::greater<typename PhyMachT::identifier_type> >
+{
+//	bool operator()(::dcs::shared_ptr<PhyMachT> const& lhs, ::dcs::shared_ptr<PhyMachT> const& rhs) const
+//	{
+//		return ptr_physical_machine_by_id_comparator< PhyMachT,
+//													  ::std::greater<typename PhyMachT::identifier_type> >()(lhs, rhs);
+//	}
 };
 
 
@@ -242,24 +332,57 @@ class virtual_machine_comparator
 
 
 template <typename VirtMachT>
-struct virtual_machine_less_comparator
+struct virtual_machine_less_comparator: public virtual_machine_comparator< VirtMachT,
+																		   ::std::less<typename VirtMachT::real_type> >
 {
-	bool operator()(VirtMachT const& lhs, VirtMachT const& rhs) const
-	{
-		return virtual_machine_comparator< VirtMachT,
-										   ::std::less<typename VirtMachT::real_type> >()(lhs, rhs);
-	}
+//	bool operator()(VirtMachT const& lhs, VirtMachT const& rhs) const
+//	{
+//		return virtual_machine_comparator< VirtMachT,
+//										   ::std::less<typename VirtMachT::real_type> >()(lhs, rhs);
+//	}
 };
 
 
 template <typename VirtMachT>
-struct virtual_machine_greater_comparator
+struct virtual_machine_greater_comparator: public virtual_machine_comparator< VirtMachT,
+																			  ::std::greater<typename VirtMachT::real_type> >
 {
-	bool operator()(VirtMachT const& lhs, VirtMachT const& rhs) const
+//	bool operator()(VirtMachT const& lhs, VirtMachT const& rhs) const
+//	{
+//		return virtual_machine_comparator< VirtMachT,
+//										   ::std::greater<typename VirtMachT::real_type> >()(lhs, rhs);
+//	}
+};
+
+
+/// Compare two virtual machines according to their ID
+template <typename VirtMachT, typename CompareT = ::std::less<typename VirtMachT::identifier_type> >
+class virtual_machine_by_id_comparator
+{
+	public: virtual_machine_by_id_comparator(CompareT cmp = CompareT())
+	: cmp_(cmp)
 	{
-		return virtual_machine_comparator< VirtMachT,
-										   ::std::greater<typename VirtMachT::real_type> >()(lhs, rhs);
 	}
+
+
+	public: bool operator()(VirtMachT const& lhs, VirtMachT const& rhs) const
+	{
+		return cmp_(lhs.id(), rhs.id());
+	}
+
+	private: CompareT cmp_;
+}; // virtual_machine_by_id_comparator
+
+
+template <typename VirtMachT>
+struct virtual_machine_less_by_id_comparator: public virtual_machine_by_id_comparator< VirtMachT, ::std::less<typename VirtMachT::identifier_type> >
+{
+};
+
+
+template <typename VirtMachT>
+struct virtual_machine_greater_by_id_comparator: public virtual_machine_by_id_comparator< VirtMachT, ::std::greater<typename VirtMachT::identifier_type> >
+{
 };
 
 
@@ -312,28 +435,61 @@ class ptr_virtual_machine_comparator
 
 
 	private: CompareT cmp_;
-}; // virtual_machine_comparator
+}; // ptr_virtual_machine_comparator
 
 
 template <typename VirtMachT>
-struct ptr_virtual_machine_less_comparator
+struct ptr_virtual_machine_less_comparator: public ptr_virtual_machine_comparator< VirtMachT,
+																				   ::std::less<typename VirtMachT::real_type> >
 {
-	bool operator()(::dcs::shared_ptr<VirtMachT> const& lhs, ::dcs::shared_ptr<VirtMachT> const& rhs) const
-	{
-		return ptr_virtual_machine_comparator< VirtMachT,
-											   ::std::less<typename VirtMachT::real_type> >()(lhs, rhs);
-	}
+//	bool operator()(::dcs::shared_ptr<VirtMachT> const& lhs, ::dcs::shared_ptr<VirtMachT> const& rhs) const
+//	{
+//		return ptr_virtual_machine_comparator< VirtMachT,
+//											   ::std::less<typename VirtMachT::real_type> >()(lhs, rhs);
+//	}
 };
 
 
 template <typename VirtMachT>
-struct ptr_virtual_machine_greater_comparator
+struct ptr_virtual_machine_greater_comparator: public ptr_virtual_machine_comparator< VirtMachT,
+																					  ::std::greater<typename VirtMachT::real_type> >
 {
-	bool operator()(::dcs::shared_ptr<VirtMachT> const& lhs, ::dcs::shared_ptr<VirtMachT> const& rhs) const
+//	bool operator()(::dcs::shared_ptr<VirtMachT> const& lhs, ::dcs::shared_ptr<VirtMachT> const& rhs) const
+//	{
+//		return ptr_virtual_machine_comparator< VirtMachT,
+//											   ::std::greater<typename VirtMachT::real_type> >()(lhs, rhs);
+//	}
+};
+
+
+/// Compare two virtual machines according to their ID
+template <typename VirtMachT, typename CompareT = ::std::less<typename VirtMachT::identifier_type> >
+class ptr_virtual_machine_by_id_comparator
+{
+	public: ptr_virtual_machine_by_id_comparator(CompareT cmp = CompareT())
+	: cmp_(cmp)
 	{
-		return ptr_virtual_machine_comparator< VirtMachT,
-											   ::std::greater<typename VirtMachT::real_type> >()(lhs, rhs);
 	}
+
+
+	public: bool operator()(::dcs::shared_ptr<VirtMachT> const& lhs, ::dcs::shared_ptr<VirtMachT> const& rhs) const
+	{
+		return cmp_(lhs->id(), rhs->id());
+	}
+
+	private: CompareT cmp_;
+}; // ptr_virtual_machine_by_id_comparator
+
+
+template <typename VirtMachT>
+struct ptr_virtual_machine_less_by_id_comparator: public ptr_virtual_machine_by_id_comparator< VirtMachT, ::std::less<typename VirtMachT::identifier_type> >
+{
+};
+
+
+template <typename VirtMachT>
+struct ptr_virtual_machine_greater_by_id_comparator: public ptr_virtual_machine_by_id_comparator< VirtMachT, ::std::greater<typename VirtMachT::identifier_type> >
+{
 };
 
 

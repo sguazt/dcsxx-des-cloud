@@ -298,9 +298,9 @@ DCS_DEBUG_TRACE("Wanted U: " << want_u);//XXX
 
 								new_share = ::dcs::eesim::scale_resource_share(
 												app.reference_resource(res_category).capacity(),
-												app.reference_resource(res_category).utilization_threshold(),
+												//app.reference_resource(res_category).utilization_threshold(),
 												pm.resource(res_category)->capacity(),
-												pm.resource(res_category)->utilization_threshold(),
+												//pm.resource(res_category)->utilization_threshold(),
 												want_u
 										);
 DCS_DEBUG_TRACE("New Share: " << new_share);//XXX

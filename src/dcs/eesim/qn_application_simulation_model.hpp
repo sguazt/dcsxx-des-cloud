@@ -787,16 +787,17 @@ class qn_application_simulation_model: public base_application_simulation_model<
 DCS_DEBUG_TRACE("New resource share for tier: " << tier_id);//XXX
 DCS_DEBUG_TRACE("New share: " << share);//XXX
 DCS_DEBUG_TRACE("Actual machine capacity: " << this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->capacity());//XXX
-DCS_DEBUG_TRACE("Actual machine threshold: " << this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->utilization_threshold());//XXX
 		real_type multiplier;
-		multiplier = ::dcs::eesim::resource_scaling_factor(
-				this->application().reference_resource(category).capacity(),
-				this->application().reference_resource(category).utilization_threshold(),
-				this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->capacity(),
-				this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->utilization_threshold()
-			);
-DCS_DEBUG_TRACE("Reference to Actual Machine Scaling Factor: " << multiplier);///XXX
-		multiplier *= share;
+//		multiplier = ::dcs::eesim::resource_scaling_factor(
+//				this->application().reference_resource(category).capacity(),
+//				this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->capacity()
+//			);
+//DCS_DEBUG_TRACE("Reference to Actual Machine Scaling Factor: " << multiplier);///XXX
+//::std::cerr << "[qn_simulation_model] Reference to Actual Machine Scaling Factor: " << multiplier << ::std::endl;///XXX
+//		multiplier *= share/this->application().tier(tier_id)->resource_share(category);
+		multiplier = scale_resource_share(this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->capacity(),
+										  this->application().reference_resource(category).capacity(),
+										  share);
 DCS_DEBUG_TRACE("New scaled share: " << multiplier);///XXX
 DCS_DEBUG_TRACE("Old capacity multiplier: " << ptr_svc_node->capacity_multiplier());///XXX
 		//ptr_svc_node->service_strategy().capacity_multiplier(multiplier);
@@ -1111,15 +1112,13 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 				for (customer_utilization_profile_iterator it = customer_profile.begin(); it != profile_end_it; ++it)
 				{
 					typename customer_utilization_profile_iterator::value_type const& item(*it);
-					real_type share;
-					share = ::dcs::eesim::scale_resource_share(
+					real_type util;
+					util = ::dcs::eesim::scale_resource_utilization(
 							this->application().reference_resource(category).capacity(),
-							this->application().reference_resource(category).utilization_threshold(),
 							this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->capacity(),
-							this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->utilization_threshold(),
 							item.utilization()
 						);
-					request_profile(item.begin_time(), item.end_time(), share);
+					request_profile(item.begin_time(), item.end_time(), util);
 				}
 				req.tier_utilization_profile(tier_id, category, request_profile);
 			}

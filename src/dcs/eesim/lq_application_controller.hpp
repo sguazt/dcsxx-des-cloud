@@ -1214,9 +1214,9 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 				// Get the actual resource share from the VM and scale w.r.t. the reference machine
 				real_type actual_share;
 				actual_share = ::dcs::eesim::scale_resource_share(actual_pm.resource(res_category)->capacity(),
-																  actual_pm.resource(res_category)->utilization_threshold(),
+																  //actual_pm.resource(res_category)->utilization_threshold(),
 																  app.reference_resource(res_category).capacity(),
-																  app.reference_resource(res_category).utilization_threshold(),
+																  //app.reference_resource(res_category).utilization_threshold(),
 																  ptr_vm->resource_share(res_category));
 
 //				// Get the reference resource share for the tier from the application specs
