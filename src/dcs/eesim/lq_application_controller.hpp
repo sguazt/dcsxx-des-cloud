@@ -1597,9 +1597,11 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 							else
 							{
 #ifdef DCS_DEBUG
-								::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to " << ::std::max(ptr_vm->resource_share(res_category), default_min_share_) << "." << ::std::endl;
+								::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to max(1, " << ptr_vm->wanted_resource_share(res_category) << ", " << default_min_share_ << ")." << ::std::endl;
 #endif // DCS_DEBUG
-								new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
+								//new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
+								//new_share = ::std::max(ptr_vm->wanted_resource_share(res_category), default_min_share_);
+								new_share = ::std::max(real_type(1), default_min_share_);
 							}
 
 //							DCS_DEBUG_TRACE("APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share);
@@ -1823,9 +1825,11 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 							else
 							{
 #ifdef DCS_DEBUG
-								::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to " << ::std::max(ptr_vm->resource_share(res_category), default_min_share_) << "." << ::std::endl;
+								::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to max(1," << ptr_vm->wanted_resource_share(res_category) << ", " << default_min_share_ << ")." << ::std::endl;
 #endif // DCS_DEBUG
-								new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
+								//new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
+								//new_share = ::std::max(ptr_vm->wanted_resource_share(res_category), default_min_share_);
+								new_share = ::std::max(real_type(1), default_min_share_);
 							}
 
 #if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
