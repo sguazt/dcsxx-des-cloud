@@ -1596,12 +1596,26 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 							}
 							else
 							{
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION)
+# if DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION == 'W'
 #ifdef DCS_DEBUG
-								::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to max(1, " << ptr_vm->wanted_resource_share(res_category) << ", " << default_min_share_ << ")." << ::std::endl;
+								::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to max(" << ptr_vm->wanted_resource_share(res_category) << ", " << default_min_share_ << ")." << ::std::endl;
 #endif // DCS_DEBUG
-								//new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
-								//new_share = ::std::max(ptr_vm->wanted_resource_share(res_category), default_min_share_);
-								new_share = ::std::max(real_type(1), default_min_share_);
+								new_share = ::std::max(ptr_vm->wanted_resource_share(res_category), default_min_share_);
+# elif DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION == 'R'
+#  ifdef DCS_DEBUG
+								::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to max(" << ptr_vm->guest_system().resource_share(res_category) << ", " << default_min_share_ << ")." << ::std::endl;
+#  endif // DCS_DEBUG
+								new_share = ::std::max(ptr_vm->guest_system().resource_share(res_category), default_min_share_);
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
+#  error Unknwon value for DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION.
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
+# ifdef DCS_DEBUG
+								::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to max(" << ptr_vm->resource_share(res_category) << ", " << default_min_share_ << ")." << ::std::endl;
+# endif // DCS_DEBUG
+								new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
 							}
 
 //							DCS_DEBUG_TRACE("APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share);
@@ -1824,12 +1838,26 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 							}
 							else
 							{
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION)
+# if DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION == 'W'
 #ifdef DCS_DEBUG
-								::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to max(1," << ptr_vm->wanted_resource_share(res_category) << ", " << default_min_share_ << ")." << ::std::endl;
+								::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to max(" << ptr_vm->wanted_resource_share(res_category) << ", " << default_min_share_ << ")." << ::std::endl;
 #endif // DCS_DEBUG
-								//new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
-								//new_share = ::std::max(ptr_vm->wanted_resource_share(res_category), default_min_share_);
-								new_share = ::std::max(real_type(1), default_min_share_);
+								new_share = ::std::max(ptr_vm->wanted_resource_share(res_category), default_min_share_);
+# elif DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION == 'R'
+#  ifdef DCS_DEBUG
+								::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to max(" << ptr_vm->guest_system().resource_share(res_category) << ", " << default_min_share_ << ")." << ::std::endl;
+#  endif // DCS_DEBUG
+								new_share = ::std::max(ptr_vm->guest_system().resource_share(res_category), default_min_share_);
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
+#  error Unknwon value for DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION.
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
+# ifdef DCS_DEBUG
+								::std::clog << "[Warning:lq_app_ctrl] APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to max(" << ptr_vm->resource_share(res_category) << ", " << default_min_share_ << ")." << ::std::endl;
+# endif // DCS_DEBUG
+								new_share = ::std::max(ptr_vm->resource_share(res_category), default_min_share_);
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
 							}
 
 #if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
