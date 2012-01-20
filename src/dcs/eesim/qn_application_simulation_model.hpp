@@ -211,6 +211,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 	private: typedef qn_application_simulation_model<TraitsT,UIntT,RealT,UniformRandomGeneratorT,DesEngineT> self_type;
 	public: typedef TraitsT traits_type;
 	public: typedef ::dcs::des::model::qn::queueing_network<UIntT,RealT,UniformRandomGeneratorT,DesEngineT> qn_model_type;
+	public: typedef ::dcs::shared_ptr<qn_model_type> qn_model_pointer;
 	private: typedef ::dcs::des::model::qn::queueing_network_traits<qn_model_type> qn_model_traits_type;
 	private: typedef typename base_type::des_event_source_type des_event_source_type;
 	private: typedef typename base_type::des_event_type des_event_type;
@@ -235,9 +236,9 @@ class qn_application_simulation_model: public base_application_simulation_model<
 
 
 	/// A constructor.
-	public: explicit qn_application_simulation_model(qn_model_type const& model)
+	public: explicit qn_application_simulation_model(qn_model_pointer const& ptr_model)
 	: base_type(),
-	  model_(model),
+	  ptr_model_(ptr_model),
 	  tier_node_map_(),
 	  num_sla_viols_(0),
 	  ptr_num_arrs_stat_(new mean_estimator_statistic_type()),//FIXME: this should be forwarded to the qn_model_type object
@@ -293,6 +294,18 @@ class qn_application_simulation_model: public base_application_simulation_model<
 	}
 
 
+	public: qn_model_type const& qn_model() const
+	{
+		return *ptr_model_;
+	}
+
+
+	public: qn_model_type& qn_model()
+	{
+		return *ptr_model_;
+	}
+
+
 	private: void init()
 	{
 //		if (this->enabled())
@@ -339,7 +352,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 				::dcs::functional::placeholders::_2
 			)
 		);
-		model_.departure_event_source().connect(
+		ptr_model_->departure_event_source().connect(
 			::dcs::functional::bind(
 				&self_type::process_request_departure,
 				this,
@@ -378,7 +391,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 				::dcs::functional::placeholders::_2
 			)
 		);
-		model_.departure_event_source().disconnect(
+		ptr_model_->departure_event_source().disconnect(
 			::dcs::functional::bind(
 				&self_type::process_request_departure,
 				this,
@@ -437,7 +450,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 	{
 		base_type::do_enable(flag);
 
-		model_.enable(flag);
+		ptr_model_->enable(flag);
 
 		// enable/disable statistics
 		typedef typename output_statistic_container::iterator stat_iterator;
@@ -477,19 +490,19 @@ class qn_application_simulation_model: public base_application_simulation_model<
 
 //	private: bool do_enabled() const
 //	{
-//		return model_.enabled();
+//		return ptr_model_->enabled();
 //	}
 
 
 	private: uint_type do_actual_num_arrivals() const
 	{
-		return model_.num_arrivals();
+		return ptr_model_->num_arrivals();
 	}
 
 
 	private: uint_type do_actual_num_departures() const
 	{
-		return model_.num_departures();
+		return ptr_model_->num_departures();
 	}
 
 
@@ -506,31 +519,31 @@ class qn_application_simulation_model: public base_application_simulation_model<
 
 	private: uint_type do_actual_tier_num_arrivals(uint_type tier_id) const
 	{
-		return model_.get_node(node_from_tier(tier_id)).num_arrivals();
+		return ptr_model_->get_node(node_from_tier(tier_id)).num_arrivals();
 	}
 
 
 	private: uint_type do_actual_tier_num_departures(uint_type tier_id) const
 	{
-		return model_.get_node(node_from_tier(tier_id)).num_departures();
+		return ptr_model_->get_node(node_from_tier(tier_id)).num_departures();
 	}
 
 
 	private: real_type do_actual_tier_busy_time(uint_type tier_id) const
 	{
-		return model_.get_node(node_from_tier(tier_id)).busy_time();
+		return ptr_model_->get_node(node_from_tier(tier_id)).busy_time();
 	}
 
 
 //	private: real_type do_actual_tier_queue_length(uint_type tier_id) const
 //	{
-//		return model_.get_node(node_from_tier(tier_id)).queue_length();
+//		return ptr_model_->get_node(node_from_tier(tier_id)).queue_length();
 //	}
 
 
 //	private: real_type do_tier_queue_length(uint_type tier_id) const
 //	{
-//		return model_.get_node(node_from_tier(tier_id)).queue_length();
+//		return ptr_model_->get_node(node_from_tier(tier_id)).queue_length();
 //	}
 
 
@@ -541,7 +554,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 		typedef ::std::vector<customer_pointer> customer_container;
 		typedef typename customer_container::const_iterator customer_iterator;
 
-		node_type const& node = model_.get_node(node_from_tier(tier_id));
+		node_type const& node = ptr_model_->get_node(node_from_tier(tier_id));
 
 		// pre: tier must be a service-station node.
 		DCS_ASSERT(
@@ -626,37 +639,37 @@ class qn_application_simulation_model: public base_application_simulation_model<
 
 	private: des_event_source_type& do_request_arrival_event_source()
 	{
-		return model_.arrival_event_source();
+		return ptr_model_->arrival_event_source();
 	}
 
 
 	private: des_event_source_type const& do_request_arrival_event_source() const
 	{
-		return model_.arrival_event_source();
+		return ptr_model_->arrival_event_source();
 	}
 
 
 	private: des_event_source_type& do_request_departure_event_source()
 	{
-		return model_.departure_event_source();
+		return ptr_model_->departure_event_source();
 	}
 
 
 	private: des_event_source_type const& do_request_departure_event_source() const
 	{
-		return model_.departure_event_source();
+		return ptr_model_->departure_event_source();
 	}
 
 
 	private: des_event_source_type& do_request_tier_arrival_event_source(uint_type tier_id)
 	{
-		return model_.get_node(node_from_tier(tier_id)).arrival_event_source();
+		return ptr_model_->get_node(node_from_tier(tier_id)).arrival_event_source();
 	}
 
 
 	private: des_event_source_type const& do_request_tier_arrival_event_source(uint_type tier_id) const
 	{
-		return model_.get_node(node_from_tier(tier_id)).arrival_event_source();
+		return ptr_model_->get_node(node_from_tier(tier_id)).arrival_event_source();
 	}
 
 
@@ -669,7 +682,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 		typedef typename qn_model_type::node_type node_type;
 		typedef ::dcs::des::model::qn::service_station_node<qn_model_traits_type> service_node_type;
 
-		node_type& node = model_.get_node(node_from_tier(tier_id));
+		node_type& node = ptr_model_->get_node(node_from_tier(tier_id));
 
 		// pre: tier must be a service-station node.
 		DCS_ASSERT(
@@ -698,7 +711,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 		typedef typename qn_model_type::node_type node_type;
 		typedef ::dcs::des::model::qn::service_station_node<qn_model_traits_type> service_node_type;
 
-		node_type const& node = model_.get_node(node_from_tier(tier_id));
+		node_type const& node = ptr_model_->get_node(node_from_tier(tier_id));
 
 		// pre: tier must be a service-station node.
 		DCS_ASSERT(
@@ -720,37 +733,37 @@ class qn_application_simulation_model: public base_application_simulation_model<
 
 	private: des_event_source_type& do_request_tier_departure_event_source(uint_type tier_id)
 	{
-		return model_.get_node(node_from_tier(tier_id)).departure_event_source();
+		return ptr_model_->get_node(node_from_tier(tier_id)).departure_event_source();
 	}
 
 
 	private: des_event_source_type const& do_request_tier_departure_event_source(uint_type tier_id) const
 	{
-		return model_.get_node(node_from_tier(tier_id)).departure_event_source();
+		return ptr_model_->get_node(node_from_tier(tier_id)).departure_event_source();
 	}
 
 
 	private: void do_statistic(performance_measure_category category, output_statistic_pointer const& ptr_stat)
 	{
-		model_.statistic(detail::network_category(category), ptr_stat);
+		ptr_model_->statistic(detail::network_category(category), ptr_stat);
 	}
 
 
 	private: ::std::vector<output_statistic_pointer> do_statistic(performance_measure_category category) const
 	{
-		return model_.statistic(detail::network_category(category));
+		return ptr_model_->statistic(detail::network_category(category));
 	}
 
 
 	private: void do_tier_statistic(uint_type tier_id, performance_measure_category category, output_statistic_pointer const& ptr_stat)
 	{
-		model_.get_node(node_from_tier(tier_id)).statistic(detail::node_category(category), ptr_stat);
+		ptr_model_->get_node(node_from_tier(tier_id)).statistic(detail::node_category(category), ptr_stat);
 	}
 
 
 	private: ::std::vector<output_statistic_pointer> do_tier_statistic(uint_type tier_id, performance_measure_category category) const
 	{
-		return model_.get_node(node_from_tier(tier_id)).statistic(detail::node_category(category));
+		return ptr_model_->get_node(node_from_tier(tier_id)).statistic(detail::node_category(category));
 	}
 
 
@@ -768,7 +781,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 
 		typedef typename qn_model_type::node_type node_type;
 
-		node_type& node = model_.get_node(node_from_tier(tier_id));
+		node_type& node = ptr_model_->get_node(node_from_tier(tier_id));
 
 		DCS_ASSERT(
 				node.category() == ::dcs::des::model::qn::service_station_node_category,
@@ -1132,7 +1145,7 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 
 	//@{ Data Members
 
-	private: qn_model_type model_;
+	private: qn_model_pointer ptr_model_;
 	private: tier_mapping_container tier_node_map_;
 	private: node_mapping_container node_tier_map_;
 //	private: output_statistic_category_container stats_;

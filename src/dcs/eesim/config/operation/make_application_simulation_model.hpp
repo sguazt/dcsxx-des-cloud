@@ -82,13 +82,14 @@ template <
 				typedef typename model_impl_config_type::customer_class_container::const_iterator customer_class_iterator;
 				typedef ::dcs::des::model::qn::queueing_network<uint_type,real_type,urng_type,des_engine_type> model_impl_type;
 				typedef ::dcs::des::model::qn::queueing_network_traits<model_impl_type> model_impl_traits_type;
+				typedef ::dcs::shared_ptr<model_impl_type> model_impl_pointer;
 				//typedef ::dcs::eesim::application_simulation_model_adaptor<traits_type,model_impl_type> simulation_model_impl_type;
 				typedef ::dcs::eesim::qn_application_simulation_model<traits_type,uint_type,real_type,urng_type,des_engine_type> simulation_model_impl_type;
 				typedef ::dcs::des::model::qn::network_node<model_impl_traits_type> node_type;
 				typedef ::std::map< ::std::string, typename node_type::identifier_type > name_to_id_container;
 				typedef ::std::map<uint_type, typename node_type::identifier_type> id_to_id_container;
 
-				model_impl_type model_impl(ptr_rng, ptr_engine, false);
+				model_impl_pointer ptr_model_impl(new model_impl_type(ptr_rng, ptr_engine, false));
 
 				name_to_id_container node_names_ids;
 				id_to_id_container tier_node_ids;
@@ -514,7 +515,7 @@ template <
 						}
 					}
 
-					model_impl.add_node(ptr_node);
+					ptr_model_impl->add_node(ptr_node);
 				}
 
 				// Customer classes
@@ -554,12 +555,12 @@ template <
 
 					ptr_customer_class->reference_node(node_names_ids[class_it->ref_node]);
 
-					model_impl.add_class(ptr_customer_class);
+					ptr_model_impl->add_class(ptr_customer_class);
 				}
 
-				::dcs::shared_ptr<simulation_model_impl_type> ptr_model_impl;
+				::dcs::shared_ptr<simulation_model_impl_type> ptr_sim_model_impl;
 
-				ptr_model_impl = ::dcs::make_shared<simulation_model_impl_type>(model_impl);
+				ptr_sim_model_impl = ::dcs::make_shared<simulation_model_impl_type>(ptr_model_impl);
 
 				// Register tier mappings
 				typename id_to_id_container::const_iterator tier_node_end_it = tier_node_ids.end();
@@ -567,10 +568,10 @@ template <
 					 it != tier_node_end_it;
 					 ++it)
 				{
-					ptr_model_impl->tier_node_mapping(it->first, it->second);
+					ptr_sim_model_impl->tier_node_mapping(it->first, it->second);
 				}
 
-				ptr_model = ptr_model_impl;
+				ptr_model = ptr_sim_model_impl;
 			}
 			break;
 	}
