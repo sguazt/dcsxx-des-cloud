@@ -821,7 +821,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 				&&
 				this->machine().vmm().virtual_machines(powered_on_power_status).size() == 0)
 			{
-::std::cerr << "[default_physical_machine_simulation_model] Auto-powering off machine" << this->machine() << ::std::endl;//XXX
+//::std::cerr << "[default_physical_machine_simulation_model] Auto-powering off machine" << this->machine() << ::std::endl;//XXX
 				this->machine().power_off();
 			}
 #endif // DDCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
@@ -1277,7 +1277,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		}
 		energy += idle_energy*uptime_;
 
-//::std::cerr << "[default_physical_machine_simulation] PM: " << this->machine() << " - BUSY-TIME: " << busy_time << " - UPTIME: " << uptime_ << ::std::endl;//XXX
+::std::cerr << "[default_physical_machine_simulation] PM: " << this->machine() << " - BUSY-TIME: " << busy_time << " - UPTIME: " << uptime_ << " - SIM TIME: " << ctx.simulated_time() << ::std::endl;//XXX
 		// check: machine cannot be busy more than is up (paranoid check)
 		DCS_DEBUG_ASSERT( ::dcs::math::float_traits<real_type>::definitely_less_equal(busy_time, uptime_) );
 
