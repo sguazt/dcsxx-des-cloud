@@ -95,6 +95,12 @@ void log(::std::string const& type, ::std::string const& at, ::std::string const
 //}
 
 inline
+void log_info(::std::string const& at, ::std::string const& msg)
+{
+	detail::logging::log("I", at, msg);
+}
+
+inline
 void log_warn(::std::string const& at, ::std::string const& msg)
 {
 	detail::logging::log("W", at, msg);
