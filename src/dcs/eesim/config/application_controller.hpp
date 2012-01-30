@@ -7,6 +7,7 @@
 #include <dcs/macro.hpp>
 #include <iomanip>
 #include <iosfwd>
+#include <vector>
 
 
 namespace dcs { namespace eesim { namespace config {
@@ -127,6 +128,7 @@ struct application_controller_triggers
 enum application_controller_category
 {
 	dummy_application_controller,
+	fmpc_application_controller,
 	lqi_application_controller,
 //	lqiy_application_controller,
 	lqr_application_controller,
@@ -144,7 +146,7 @@ struct dummy_application_controller_config
 
 
 template <typename RealT, typename UIntT>
-struct lq_application_controller_config
+struct base_application_controller_config
 {
 	typedef RealT real_type;
 	typedef UIntT uint_type;
@@ -153,7 +155,7 @@ struct lq_application_controller_config
 	typedef rls_kulhavy1984_system_identification_config<real_type,uint_type> rls_kulhavy1984_system_identification_config_type;
 	typedef rls_park1991_system_identification_config<real_type,uint_type> rls_park1991_system_identification_config_type;
 
-	lq_application_controller_config()
+	base_application_controller_config()
 	: n_a(0),
 	  n_b(0),
 	  d(0)
@@ -163,9 +165,6 @@ struct lq_application_controller_config
 	uint_type n_a; // output order of the ARX system model
 	uint_type n_b; // input order of the ARX system model
 	uint_type d; // input delay of the ARX system model
-	numeric_matrix<real_type> Q; // state weighting matrix
-	numeric_matrix<real_type> R; // control weighting matrix
-	numeric_matrix<real_type> N; // state-control cross-coupling matrix
 	real_type ewma_smoothing_factor; // The smoothing factor used by the EWMA filter
 	system_identification_category ident_category;
 	::boost::variant<rls_bittanti1990_system_identification_config_type,
@@ -173,6 +172,39 @@ struct lq_application_controller_config
 					 rls_kulhavy1984_system_identification_config_type,
 					 rls_park1991_system_identification_config_type> ident_category_conf;
 //	real_type rls_forgetting_factor; // The forgetting factor used by the RLS algorithm
+};
+
+
+template <typename RealT, typename UIntT>
+struct fmpc_application_controller_config: public base_application_controller_config<RealT,UIntT>
+{
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+	typedef base_application_controller_config<RealT,UIntT> base_type;
+
+	numeric_matrix<real_type> Q; // state weighting matrix
+	numeric_matrix<real_type> R; // control weighting matrix
+	numeric_matrix<real_type> Qf; // final control weighting matrix
+	::std::vector<real_type> xmin; // lower bounds for states
+	::std::vector<real_type> xmax; // upper bounds for states
+	::std::vector<real_type> umin; // lower bounds for control inputs
+	::std::vector<real_type> umax; // upper bounds for control inputs
+	uint_type prediction_horizon;
+	uint_type num_iterations;
+	real_type barrier;
+};
+
+
+template <typename RealT, typename UIntT>
+struct lq_application_controller_config: public base_application_controller_config<RealT,UIntT>
+{
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+	typedef base_application_controller_config<RealT,UIntT> base_type;
+
+	numeric_matrix<real_type> Q; // state weighting matrix
+	numeric_matrix<real_type> R; // control weighting matrix
+	numeric_matrix<real_type> N; // state-control cross-coupling matrix
 };
 
 
@@ -260,6 +292,7 @@ struct application_controller_config
 	typedef RealT real_type;
 	typedef UIntT uint_type;
 	typedef dummy_application_controller_config dummy_controller_config_type;
+	typedef fmpc_application_controller_config<real_type,uint_type> fmpc_controller_config_type;
 	typedef lqi_application_controller_config<real_type,uint_type> lqi_controller_config_type;
 //	typedef lqiy_application_controller_config<real_type,uint_type> lqiy_controller_config_type;
 	typedef lqr_application_controller_config<real_type,uint_type> lqr_controller_config_type;
@@ -273,6 +306,7 @@ struct application_controller_config
 	application_controller_triggers triggers;
 	application_controller_category category;
 	::boost::variant<dummy_controller_config_type,
+					 fmpc_controller_config_type,
 					 lqi_controller_config_type,
 //					 lqiy_controller_config_type,
 					 lqr_controller_config_type,
@@ -355,6 +389,9 @@ template <typename CharT, typename CharTraitsT>
 		case dummy_application_controller:
 			os << "dummy";
 			break;
+		case fmpc_application_controller:
+			os << "fmpc";
+			break;
 		case lqi_application_controller:
 			os << "lqi";
 			break;
@@ -394,17 +431,43 @@ template <typename CharT, typename CharTraitsT>
 
 
 template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
-::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, lq_application_controller_config<RealT,UIntT> const& controller)
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, base_application_controller_config<RealT,UIntT> const& controller)
 {
 	os << " n_a: " << controller.n_a
 	   << ", n_b: " << controller.n_b
 	   << ", d: " << controller.d
-	   << ", Q: " << controller.Q
-	   << ", R: " << controller.R
-	   << ", N: " << controller.N
 //	   << ", forgetting-factor: " << controller.rls_forgetting_factor
 	   << ", system-identification: " << controller.ident_category_conf
 	   << ", smoothing-factor: " << controller.ewma_smoothing_factor;
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, fmpc_application_controller_config<RealT,UIntT> const& controller)
+{
+	os << "<(fmpc-application-controller)"
+	   << static_cast<base_application_controller_config<RealT,UIntT> const&>(controller)
+	   << ", Q: " << controller.Q
+	   << ", R: " << controller.R
+	   << ", Qf: " << controller.Qf
+	   << ", prediction-horizon: " << controller.prediction_horizon
+	   << ", barrier: " << controller.barrier
+	   << ", num-iterations: " << controller.num_iterations
+	   << ">";
+
+	return os;
+}
+
+
+template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, lq_application_controller_config<RealT,UIntT> const& controller)
+{
+	os << static_cast<base_application_controller_config<RealT,UIntT> const&>(controller)
+	   << ", Q: " << controller.Q
+	   << ", R: " << controller.R
+	   << ", N: " << controller.N;
 
 	return os;
 }

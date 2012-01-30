@@ -165,6 +165,47 @@ template <typename TraitsT, typename RealT, typename UIntT>
 				ptr_controller = ::dcs::make_shared<controller_impl_type>(ptr_app, controller_conf.sampling_time);
 			}
 			break;
+		case fmpc_application_controller:
+			{
+				typedef typename controller_config_type::fmpc_controller_config_type controller_config_impl_type;
+				typedef ::dcs::eesim::fmpc_application_controller<traits_type> controller_impl_type;
+				typedef ::dcs::eesim::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
+				typedef ::dcs::shared_ptr<system_identification_strategy_params_type> system_identification_strategy_params_pointer;
+
+				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
+
+				system_identification_strategy_params_pointer ptr_ident_strategy_params;
+				ptr_ident_strategy_params = detail::make_system_identification_strategy_params<traits_type>(controller_conf_impl);
+
+//				application_controller_triggers_type triggers;
+//				triggers.actual_value_sla_ko(controller_conf_impl.triggers.actual_value_sla_ko_enabled);
+//				triggers.predicted_value_sla_ko(controller_conf_impl.triggers.predicted_value_sla_ko_enabled);
+
+				ptr_controller = ::dcs::shared_ptr<controller_impl_type>(
+						new controller_impl_type(
+							controller_conf_impl.n_a,
+							controller_conf_impl.n_b,
+							controller_conf_impl.d,
+							make_ublas_matrix(controller_conf_impl.Q),
+							make_ublas_matrix(controller_conf_impl.R),
+							make_ublas_matrix(controller_conf_impl.Qf),
+							make_ublas_vector(controller_conf_impl.xmin),
+							make_ublas_vector(controller_conf_impl.xmax),
+							make_ublas_vector(controller_conf_impl.umin),
+							make_ublas_vector(controller_conf_impl.umax),
+							controller_conf_impl.prediction_horizon,
+							controller_conf_impl.barrier,
+							controller_conf_impl.num_iterations,
+							ptr_app,
+							controller_conf.sampling_time,
+//							controller_conf_impl.rls_forgetting_factor,
+							ptr_ident_strategy_params,
+							triggers,
+							controller_conf_impl.ewma_smoothing_factor
+						)
+					);
+			}
+			break;
 		case lqi_application_controller:
 			{
 				typedef typename controller_config_type::lqi_controller_config_type controller_config_impl_type;

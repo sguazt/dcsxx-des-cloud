@@ -471,6 +471,10 @@ application_controller_category text_to_application_controller_category(::std::s
 {
 	::std::string istr = ::dcs::string::to_lower_copy(str);
 
+	if (!istr.compare("fmpc"))
+	{
+		return fmpc_application_controller;
+	}
 	if (!istr.compare("lqi"))
 	{
 		return lqi_application_controller;
@@ -2652,7 +2656,7 @@ void operator>>(::YAML::Node const& node, rls_park1991_system_identification_con
 
 
 template <typename RealT, typename UIntT>
-void operator>>(::YAML::Node const& node, lq_application_controller_config<RealT,UIntT>& controller_conf)
+void operator>>(::YAML::Node const& node, base_application_controller_config<RealT,UIntT>& controller_conf)
 {
 	typedef RealT real_type;
 	typedef UIntT uint_type;
@@ -2739,6 +2743,93 @@ void operator>>(::YAML::Node const& node, lq_application_controller_config<RealT
 	{
 		controller_conf.d = 1;
 	}
+}
+
+
+template <typename RealT, typename UIntT>
+void operator>>(::YAML::Node const& node, fmpc_application_controller_config<RealT,UIntT>& controller_conf)
+{
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+	typedef typename fmpc_application_controller_config<real_type,uint_type>::base_type base_controller_config_impl_type;
+
+	::std::string label;
+
+	node >> static_cast<base_controller_config_impl_type&>(controller_conf);
+
+	node["Q"] >> controller_conf.Q;
+	node["R"] >> controller_conf.R;
+	node["Qf"] >> controller_conf.Qf;
+	if (node.FindValue("xmin"))
+	{
+		node["xmin"] >> controller_conf.xmin;
+	}
+	else
+	{
+		controller_conf.xmin = ::std::vector<real_type>(controller_conf.Q.num_rows(), 0);
+	}
+	if (node.FindValue("xmax"))
+	{
+		node["xmax"] >> controller_conf.xmax;
+	}
+	else
+	{
+		controller_conf.xmax = controller_conf.xmin;
+	}
+	if (node.FindValue("umin"))
+	{
+		node["umin"] >> controller_conf.umin;
+	}
+	else
+	{
+		controller_conf.umin = ::std::vector<real_type>(controller_conf.R.num_rows(), 0);
+	}
+	if (node.FindValue("umax"))
+	{
+		node["umax"] >> controller_conf.umax;
+	}
+	else
+	{
+		controller_conf.umax = controller_conf.umin;
+	}
+	if (node.FindValue("prediction-horizon"))
+	{
+		node["prediction-horizon"] >> controller_conf.prediction_horizon;
+	}
+	else
+	{
+		controller_conf.prediction_horizon = 10;
+	}
+	if (node.FindValue("num-iterations"))
+	{
+		node["num-iterations"] >> controller_conf.num_iterations;
+	}
+	else
+	{
+		controller_conf.num_iterations = 5;
+	}
+	if (node.FindValue("barrier"))
+	{
+		node["barrier"] >> controller_conf.barrier;
+	}
+	else
+	{
+		controller_conf.barrier = 0.01;
+	}
+}
+
+
+template <typename RealT, typename UIntT>
+void operator>>(::YAML::Node const& node, lq_application_controller_config<RealT,UIntT>& controller_conf)
+{
+	typedef RealT real_type;
+	typedef UIntT uint_type;
+	typedef typename lq_application_controller_config<real_type,uint_type>::base_type base_controller_config_impl_type;
+
+	::std::string label;
+
+	node >> static_cast<base_controller_config_impl_type&>(controller_conf);
+
 	node["Q"] >> controller_conf.Q;
 	node["R"] >> controller_conf.R;
 	if (node.FindValue("N"))
@@ -2776,6 +2867,18 @@ void operator>>(::YAML::Node const& node, application_controller_config<RealT,UI
 				typedef typename controller_config_type::dummy_controller_config_type controller_config_impl_type;
 
 				controller_config_impl_type controller_conf_impl;
+
+				controller_conf.category_conf = controller_conf_impl;
+			}
+			break;
+		case fmpc_application_controller:
+			{
+				typedef typename controller_config_type::fmpc_controller_config_type controller_config_impl_type;
+				typedef typename controller_config_impl_type::base_type base_controller_config_impl_type;;
+
+				controller_config_impl_type controller_conf_impl;
+
+				node >> static_cast<base_controller_config_impl_type&>(controller_conf_impl);
 
 				controller_conf.category_conf = controller_conf_impl;
 			}

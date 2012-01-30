@@ -53,6 +53,7 @@
 //#include <dcs/control/design/dlqiy.hpp>
 #include <dcs/control/design/dlqr.hpp>
 #include <dcs/control/design/dlqry.hpp>
+#include <dcs/control/design/fmpc.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/des/base_statistic.hpp>
 #include <dcs/des/engine_traits.hpp>
@@ -1282,6 +1283,8 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 				eq_share = ptr_vm->guest_system().resource_share(res_category);
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+				DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " SHARE: ref: " << ptr_vm->guest_system().resource_share(res_category) << " - equilibrium: " << eq_share << " - actual: " << ptr_vm->resource_share(res_category) << " - actual-scaled: " << actual_share);//XXX
+::std::cerr << "APP " << app.id() << " - TIER " << tier_id << " SHARE: ref: " << ptr_vm->guest_system().resource_share(res_category) << " - equilibrium: " << eq_share << " - actual: " << ptr_vm->resource_share(res_category) << " - actual-scaled: " << actual_share << ::std::endl;//XXX
 # if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
 //#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
 //				s(tier_id) = actual_share/eq_share - 1;
@@ -1304,8 +1307,6 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 				u_(u_offset_+tier_id) = s(tier_id)
 									  = actual_share - eq_share;
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
-				DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " SHARE: ref: " << ptr_vm->guest_system().resource_share(res_category) << " - equilibrium: " << eq_share << " - actual: " << ptr_vm->resource_share(res_category) << " - actual-scaled: " << actual_share);//XXX
-//::std::cerr << "APP " << app.id() << " - TIER " << tier_id << " SHARE: ref: " << ptr_vm->guest_system().resource_share(res_category) << " - equilibrium: " << eq_share << " - actual: " << ptr_vm->resource_share(res_category) << " - actual-scaled: " << actual_share << ::std::endl;//XXX
 #else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 //# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
 //#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
@@ -2330,7 +2331,7 @@ class lqi_application_controller: public detail::lq_application_controller<Trait
 		// NOTE: In our case the reference value r is zero
 		//xi_ = xi_- ublas::subrange(x, ublasx::num_rows(A)-ublasx::num_rows(C), ublasx::num_rows(A));
 		//xi_ = xi_- y;
-		xi_ = xi_- ts*y;
+		xi_ = xi_+ ts*y;
 		//xi_ = xi_+ublas::scalar_vector<real_type>(1,1)- ublas::subrange(x, ublasx::num_rows(A)-ublasx::num_rows(C), ublasx::num_rows(A));
 
 		vector_type z(ublasx::num_rows(A)+ublasx::num_rows(C));
@@ -3119,7 +3120,6 @@ class matlab_lqry_application_controller: public detail::lq_application_controll
 }; // matlab_lqry_application_controller
 
 
-/*
 template <typename TraitsT>
 class fmpc_application_controller: public detail::lq_application_controller<TraitsT>
 {
@@ -3130,7 +3130,7 @@ class fmpc_application_controller: public detail::lq_application_controller<Trai
 	public: typedef typename base_type::application_pointer application_pointer;
 	public: typedef typename base_type::system_identification_strategy_params_pointer system_identification_strategy_params_pointer;
 	public: typedef typename base_type::triggers_type triggers_type;
-	private: typedef ::dcs::control::fmpc_controller<real_type> controller_impl_type;
+	private: typedef ::dcs::control::fmpc_controller<real_type,uint_type> controller_impl_type;
 	private: typedef typename base_type::vector_type vector_type;
 	private: typedef typename base_type::matrix_type matrix_type;
 
@@ -3199,7 +3199,6 @@ class fmpc_application_controller: public detail::lq_application_controller<Trai
 	/// The Fast MPC controller
 	private: controller_impl_type controller_;
 }; // fmpc_application_controller
-*/
 
 }} // Namespace dcs::eesim
 
