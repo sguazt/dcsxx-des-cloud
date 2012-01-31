@@ -2878,7 +2878,7 @@ void operator>>(::YAML::Node const& node, application_controller_config<RealT,UI
 
 				controller_config_impl_type controller_conf_impl;
 
-				node >> static_cast<base_controller_config_impl_type&>(controller_conf_impl);
+				node >> static_cast<controller_config_impl_type&>(controller_conf_impl);
 
 				controller_conf.category_conf = controller_conf_impl;
 			}
