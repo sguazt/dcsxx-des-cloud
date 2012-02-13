@@ -216,14 +216,16 @@ template <typename TraitsT>
 		<< "eq_valid_util 'Utilization must be in [0,1] interval'" << ::std::endl
 		<< "eq_obj 'Objective'" << ::std::endl
 		<< ";" << ::std::endl
-		<< "eq_obj .. cost =e= wwp * sum(i, x(i)*(pmpvals(i,'c0') + pmpvals(i,'c1')*sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C')*(s(i,j)+epsilon))) + pmpvals(i,'c2')*sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C')*(s(i,j)+epsilon)))**pmpvals(i,'r'))) + wws * sum(i, sum(j, y(i,j)*abs(s(i,j)*pmpvals(i,'C')/vmpvals(j,'Cr')-1)**2));" << ::std::endl
+		//<< "eq_obj .. cost =e= wwp * sum(i, x(i)*(pmpvals(i,'c0') + pmpvals(i,'c1')*sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C')*(s(i,j)+epsilon))) + pmpvals(i,'c2')*sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C')*(s(i,j)+epsilon)))**pmpvals(i,'r'))) + wws * sum(i, sum(j, y(i,j)*abs(s(i,j)*pmpvals(i,'C')/vmpvals(j,'Cr')-1)**2));" << ::std::endl
+		<< "eq_obj .. cost =e= wwp * sum(i, x(i)*(pmpvals(i,'c0') + pmpvals(i,'c1')*sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C'))) + pmpvals(i,'c2')*sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C')))**pmpvals(i,'r'))) + wws * sum(i, sum(j, y(i,j)*abs(s(i,j)*pmpvals(i,'C')/vmpvals(j,'Cr')-1)**2));" << ::std::endl
 		<< "eq_one_vm_per_mach(j) .. sum(i, y(i,j)) =e= 1;" << ::std::endl
 		<< "eq_vm_on_active_mach1(i,j) .. y(i,j) =l= x(i);" << ::std::endl
 		<< "eq_vm_on_active_mach2(i) .. sum(j, y(i,j)) =g= x(i);" << ::std::endl
 		<< "eq_valid_vm_share(i,j) .. s(i,j) =l= y(i,j);" << ::std::endl
 		<< "eq_min_vm_share(i,j) .. s(i,j) =g= y(i,j)*vmpvals(j,'Sr_min')*vmpvals(j,'Cr')/pmpvals(i,'C');" << ::std::endl
 		<< "eq_max_aggr_vm_share(i) .. sum(j, s(i,j)) =l= pmpvals(i,'S_max');" << ::std::endl
-		<< "eq_valid_util(i) .. sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C')*(s(i,j)+epsilon))) =l= pmpvals(i,'U_max');" << ::std::endl
+		//<< "eq_valid_util(i) .. sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C')*(s(i,j)+epsilon))) =l= pmpvals(i,'U_max');" << ::std::endl
+		<< "eq_valid_util(i) .. sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C'))) =l= pmpvals(i,'U_max');" << ::std::endl
 		<< "model mdl 'Enegy vs Performance cost (initial)' / all /;" << ::std::endl
 		<< "mdl.reslim = 1000000;" << ::std::endl
 		<< "solve mdl using minlp minimizing cost;" << ::std::endl
@@ -542,7 +544,8 @@ template <typename TraitsT, typename UtilFwdIterT, typename ShareFwdIterT>
     	<< "eq_valid_util 'Utilization must be in [0,1] interval'" << ::std::endl
     	<< "eq_obj 'Objective'" << ::std::endl
     	<< ";" << ::std::endl
-		<< "eq_obj .. cost =e= wwp * sum(i, x(i)*(pmpvals(i,'c0') + pmpvals(i,'c1')*sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C')*(s(i,j)+epsilon))) + pmpvals(i,'c2')*sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C')*(s(i,j)+epsilon)))**pmpvals(i,'r')))"
+		//<< "eq_obj .. cost =e= wwp * sum(i, x(i)*(pmpvals(i,'c0') + pmpvals(i,'c1')*sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C')*(s(i,j)+epsilon))) + pmpvals(i,'c2')*sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C')*(s(i,j)+epsilon)))**pmpvals(i,'r')))"
+		<< "eq_obj .. cost =e= wwp * sum(i, x(i)*(pmpvals(i,'c0') + pmpvals(i,'c1')*sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C'))) + pmpvals(i,'c2')*sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C')))**pmpvals(i,'r')))"
 		<< "                 + wwm * sum(i, sum(j, y(i,j)*mc(i,j)))"
 //		<< "                 + wws * sum(i, sum(j, y(i,j)*abs(s(i,j)*pmpvals(i,'C')/vmpvals(j,'Cr')-1)**2));" << ::std::endl
 		<< "                 + wws * sum(i, sum(j, y(i,j)*abs(s(i,j)*pmpvals(i,'C')/vmpvals(j,'Cr')-vmpvals(j,'Sr'))**2));" << ::std::endl
@@ -552,7 +555,8 @@ template <typename TraitsT, typename UtilFwdIterT, typename ShareFwdIterT>
 		<< "eq_valid_vm_share(i,j) .. s(i,j) =l= y(i,j);" << ::std::endl
 		<< "eq_min_vm_share(i,j) .. s(i,j) =g= y(i,j)*vmpvals(j,'Sr_min')*vmpvals(j,'Cr')/pmpvals(i,'C');" << ::std::endl
 		<< "eq_max_aggr_vm_share(i) .. sum(j, s(i,j)) =l= pmpvals(i,'S_max');" << ::std::endl
-		<< "eq_valid_util(i) .. sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C')*(s(i,j)+epsilon))) =l= pmpvals(i,'U_max');" << ::std::endl
+		//<< "eq_valid_util(i) .. sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C')*(s(i,j)+epsilon))) =l= pmpvals(i,'U_max');" << ::std::endl
+		<< "eq_valid_util(i) .. sum(j, y(i,j)*vmpvals(j,'ur')*vmpvals(j,'Cr')/(pmpvals(i,'C'))) =l= pmpvals(i,'U_max');" << ::std::endl
 		<< "model mdl 'Enegy vs Performance cost' / all /;" << ::std::endl
 		<< "mdl.reslim = 1000000;" << ::std::endl
 		<< "solve mdl using minlp minimizing cost;" << ::std::endl
