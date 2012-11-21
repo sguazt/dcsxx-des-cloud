@@ -1,9 +1,9 @@
 /**
- * \file dcs/eesim/configuration_based_application_instance_builder.hpp
+ * \file dcs/eesim/application_controller.hpp
  *
- * \brief Configuration-driver application instance builder.
+ * \brief Plain application instance builder.
  *
- * Copyright (C) 2009-2011  Distributed Computing System (DCS) Group, Computer
+ * Copyright (C) 2009-2010  Distributed Computing System (DCS) Group, Computer
  * Science Department - University of Piemonte Orientale, Alessandria (Italy).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,8 +22,8 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_CONFIGURATION_BASED_APPLICATION_INSTANCE_BUILDER_HPP
-#define DCS_EESIM_CONFIGURATION_BASED_APPLICATION_INSTANCE_BUILDER_HPP
+#ifndef DCS_EESIM_PLAIN_APPLICATION_INSTANCE_BUILDER_HPP
+#define DCS_EESIM_PLAIN_APPLICATION_INSTANCE_BUILDER_HPP
 
 
 #include <dcs/debug.hpp>
@@ -44,58 +44,30 @@
 namespace dcs { namespace eesim {
 
 template <typename TraitsT>
-class configuration_based_application_instance_builder: public base_application_instance_builder<TraitsT>
+class plain_application_instance_builder: public base_application_instance_builder<TraitsT>
 {
 	private: typedef base_application_instance_builder<TraitsT> base_type;
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::real_type real_type;
 	public: typedef typename traits_type::uint_type uint_type;
-	private: typedef typename traits_type::configuration_type configuration_type;
-	public: typedef config::application_config<
-						typename configuration_type::real_type,
-						typename configuration_type::uint_type> application_config_type;
-	private: typedef typename base_type::application_pointer application_pointer;
-	private: typedef typename base_type::application_controller_pointer application_controller_pointer;
-	private: typedef typename base_type::urng_type urng_type;
-	private: typedef typename base_type::application_instance_type application_instance_type;
-	private: typedef typename base_type::application_instance_pointer application_instance_pointer;
+	public: typedef typename base_type::application_pointer application_pointer;
+	public: typedef typename base_type::application_controller_pointer application_controller_pointer;
+	public: typedef typename base_type::application_instance_type application_instance_type;
+	public: typedef typename base_type::application_instance_pointer application_instance_pointer;
 
 
 	/// Default constructor.
-	public: configuration_based_application_instance_builder()
+	public: plain_application_instance_builder()
 	: base_type()
 	{
 	}
 
 
-	public: configuration_based_application_instance_builder(application_config_type const& app_conf)
+	public: plain_application_instance_builder(application_pointer const& ptr_app, application_controller_pointer const& ptr_app_ctrl)
 	: base_type(),
-	  app_conf_(app_conf)
+	  ptr_app_(ptr_app),
+	  ptr_app_ctrl_(ptr_app_ctrl)
 	{
-		init();
-	}
-
-
-	public: void application_config(application_config_type const& app_conf)
-	{
-		app_conf_ = app_conf;
-
-		init();
-	}
-
-
-	private: void init()
-	{
-		this->min_num_instances(app_conf_.builder.min_num_instances);
-		this->max_num_instances(app_conf_.builder.max_num_instances);
-		this->num_preallocated_instances(app_conf_.builder.num_preallocated_instances);
-		this->preallocated_is_endless(app_conf_.builder.preallocated_is_endless);
-		this->start_time_distribution(
-				config::make_probability_distribution<traits_type>(app_conf_.builder.arrival_distribution)
-			);
-		this->run_time_distribution(
-				config::make_probability_distribution<traits_type>(app_conf_.builder.runtime_distribution)
-			);
 	}
 
 
@@ -122,15 +94,6 @@ class configuration_based_application_instance_builder: public base_application_
 		}
 
 		registry_type const& reg(registry_type::instance());
-		application_pointer ptr_app;
-		ptr_app = config::make_application<traits_type>(app_conf_,
-														reg.configuration(),
-														reg.uniform_random_generator_ptr(),
-														reg.des_engine_ptr());
-		application_controller_pointer ptr_app_ctrl;
-		ptr_app_ctrl = config::make_application_controller<traits_type>(app_conf_.controller,
-																		ptr_app);
-		
 //		application_instance_pointer ptr_instance;
 //		ptr_instance = ::dcs::make_shared<application_instance_type>(
 //							new application_instance_type(
@@ -142,8 +105,8 @@ class configuration_based_application_instance_builder: public base_application_
 //					);
 		application_instance_pointer ptr_instance(
 							new application_instance_type(
-									ptr_app,
-									ptr_app_ctrl,
+									ptr_app_,
+									ptr_app_ctrl_,
 									clock+st,
 									rt
 							)
@@ -152,10 +115,11 @@ class configuration_based_application_instance_builder: public base_application_
 	}
 
 
-	private: application_config_type app_conf_;
+	private: application_pointer ptr_app_;
+	private: application_controller_pointer ptr_app_ctrl_;
 }; // application_instance_builder
 
 }} // Namespace dcs::eesim
 
 
-#endif // DCS_EESIM_CONFIGURATION_BASED_APPLICATION_INSTANCE_BUILDER_HPP
+#endif // DCS_EESIM_PLAIN_APPLICATION_INSTANCE_BUILDER_HPP

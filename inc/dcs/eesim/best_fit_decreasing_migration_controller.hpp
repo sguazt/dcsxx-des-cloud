@@ -1,7 +1,7 @@
 /**
- * \file src/dcs/eesim/best_fit_decreasing_migration_controller.hpp
+ * \file dcs/eesim/best_fit_decreasing_migration_controller.hpp
  *
- * \brief Migration Controller based on Mixed-Integer Nonlinear Programming.
+ * \brief Migration Controller based on BEST-FIT DECREASING strategy.
  *
  * Copyright (C) 2009-2011  Distributed Computing System (DCS) Group, Computer
  * Science Department - University of Piemonte Orientale, Alessandria (Italy).
@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
 #ifndef DCS_EESIM_BEST_FIT_DECREASING_MIGRATION_CONTROLLER_HPP

@@ -3,7 +3,7 @@
  *
  * \brief Virtual machine monitor.
  *
- * Copyright (C) 2009-2010  Distributed Computing System (DCS) Group, Computer
+ * Copyright (C) 2009-2012  Distributed Computing System (DCS) Group, Computer
  * Science Department - University of Piemonte Orientale, Alessandria (Italy).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
 #ifndef DCS_EESIM_VIRTUAL_MACHINE_MONITOR_HPP

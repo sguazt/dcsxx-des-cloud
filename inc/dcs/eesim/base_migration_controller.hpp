@@ -1,5 +1,5 @@
 /**
- * \file src/dcs/eesim/base_migration_controller.hpp
+ * \file dcs/eesim/base_migration_controller.hpp
  *
  * \brief Base class for migration controllers.
  *
@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
 #ifndef DCS_EESIM_BASE_MIGRATION_CONTROLLER_HPP

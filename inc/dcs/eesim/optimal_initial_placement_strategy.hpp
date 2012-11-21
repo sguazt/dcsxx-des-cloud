@@ -1,5 +1,5 @@
 /**
- * \file src/dcs/eesim/optimal_initial_placement_strategy.hpp
+ * \file dcs/eesim/optimal_initial_placement_strategy.hpp
  *
  * \brief Optimal initial placement strategy based on mathematical programming. 
  *
@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
 #ifndef DCS_EESIM_OPTIMAL_INITIAL_PLACEMENT_STRATEGY_HPP

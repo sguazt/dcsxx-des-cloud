@@ -1,8 +1,8 @@
 /**
  * \file dcs/eesim/qn_application_controller.hpp
  *
- * \brief Class modeling the application controller component using an LQR
- *  controller.
+ * \brief Class modeling the application controller component based on queueing
+ *  network models.
  *
  * Copyright (C) 2009-2011  Distributed Computing System (DCS) Group, Computer
  * Science Department - University of Piemonte Orientale, Alessandria (Italy).
@@ -20,7 +20,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
 #ifndef DCS_EESIM_QN_APPLICATION_CONTROLLER_HPP
