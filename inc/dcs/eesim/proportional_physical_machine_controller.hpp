@@ -162,6 +162,12 @@ class proportional_physical_machine_controller: public base_physical_machine_con
 						real_type share_sum(share_sums.at(category));
 						real_type threshold(this->machine().resource(category)->utilization_threshold());
 
+#ifdef DCS_EESIM_EXP_PROPORTIONAL_MACH_CONTROLLER_WORK_CONSERVATIVE
+						// Assign share proportionally
+						share *= threshold/share_sum;
+						// The operation below may appear useless. However it is needed to compensate spurious decimal digit derived from the above product.
+						share = ::std::min(share, threshold);
+#else // DCS_EESIM_EXP_PROPORTIONAL_MACH_CONTROLLER_WORK_CONSERVATIVE
 						if (share_sum > threshold)
 						{
 							// Assign share proportionally
@@ -170,6 +176,7 @@ class proportional_physical_machine_controller: public base_physical_machine_con
 							share = ::std::min(share, threshold);
 						}
 						// ... else Assign share as it is originally requested.
+#endif // DCS_EESIM_EXP_PROPORTIONAL_MACH_CONTROLLER_WORK_CONSERVATIVE
 
 						// check: make sure resource share is bounded in [0,1]
 						//        and respects the utilization threshold.
@@ -179,7 +186,7 @@ class proportional_physical_machine_controller: public base_physical_machine_con
 						ptr_vm->resource_share(category, share);
 
 						DCS_DEBUG_TRACE("APP: " << ptr_vm->guest_system().application().id() << ", MACH: " << this->machine().id() << " - Assigned new share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << category << " - Threshold: " << threshold << " - Share Sum: " << share_sum << " ==> Wanted: " << share_it->second << " - Got: " << share);//XXX
-//::std::cerr << "[proportional_machine_controller] APP: " << ptr_vm->guest_system().application().id() << ", MACH: " << this->machine().id() << " - Assigned new share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << category << " - Threshold: " << threshold << " - Share Sum: " << share_sum << " ==> Wanted: " << share_it->second << " - Got: " << share << ::std::endl;//XXX
+::std::cerr << "[proportional_machine_controller] APP: " << ptr_vm->guest_system().application().id() << ", MACH: " << this->machine().id() << " - Assigned new share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Category: " << category << " - Threshold: " << threshold << " - Share Sum: " << share_sum << " ==> Wanted: " << share_it->second << " - Got: " << share << ::std::endl;//XXX
 
 #ifdef DCS_EESIM_EXP_OUTPUT_VM_SHARES
 						detail::dump_vm_share<traits_type>(ptr_vm->id(),

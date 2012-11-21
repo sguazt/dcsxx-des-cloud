@@ -26,6 +26,34 @@
 #ifndef DCS_EESIM_LQ_APPLICATION_CONTROLLER_HPP
 #define DCS_EESIM_LQ_APPLICATION_CONTROLLER_HPP
 
+//@{ Consistency checks for macros
+
+#if !defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION) && defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT)
+# error Normalized non-deviated input is not allowed.
+#endif // !DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION && DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+
+#if !defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION) && defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
+# error Normalized non-deviated output is not allowed.
+#endif // !DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION && DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT) && !(defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION) || defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION))
+# error Dynamic equilibrium with non-deviated input/output is not allowed.
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT && !(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION || DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION)
+
+#ifndef DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
+# define DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION 'C'
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
+#if    DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION != 'C' \
+    && DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION != 'M' \
+    && DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION != 'R' \
+    && DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION != 'W'
+# error Unknwon value for DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION.
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
+
+#ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
+# error Code is out-of-date.
+#endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
+
+//@} Consistency checks for macros
 
 #include <algorithm>
 #include <boost/numeric/ublas/expression_types.hpp>
@@ -98,6 +126,339 @@ namespace dcs { namespace eesim {
 
 namespace detail { namespace /*<unnamed>*/ {
 
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ALT_SS) && DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ALT_SS == 'X'
+
+template <
+//	typename TraitsT,
+	typename SysIdentStrategyT,
+	typename AMatrixExprT,
+	typename BMatrixExprT,
+	typename CMatrixExprT,
+	typename DMatrixExprT
+>
+void make_ss(SysIdentStrategyT const& sys_ident_strategy,
+			 ::boost::numeric::ublas::matrix_container<AMatrixExprT>& A,
+			 ::boost::numeric::ublas::matrix_container<BMatrixExprT>& B,
+			 ::boost::numeric::ublas::matrix_container<CMatrixExprT>& C,
+			 ::boost::numeric::ublas::matrix_container<DMatrixExprT>& D)
+{
+//DCS_DEBUG_TRACE("BEGIN make_ss");//XXX
+	namespace ublas = ::boost::numeric::ublas;
+
+	typedef typename ublas::promote_traits<
+				typename ublas::promote_traits<
+					typename ublas::promote_traits<
+						typename ublas::matrix_traits<AMatrixExprT>::value_type,
+						typename ublas::matrix_traits<BMatrixExprT>::value_type
+					>::promote_type,
+					typename ublas::matrix_traits<CMatrixExprT>::value_type
+				>::promote_type,
+				typename ublas::matrix_traits<DMatrixExprT>::value_type
+			>::promote_type value_type;
+	typedef ::std::size_t size_type; //FIXME: use type-promotion?
+
+	const size_type rls_n_a(sys_ident_strategy.output_order());
+	const size_type rls_n_b(sys_ident_strategy.input_order());
+//	const size_type rls_d(sys_ident_strategy.input_delay());
+	const size_type rls_n_y(sys_ident_strategy.num_outputs());
+	const size_type rls_n_u(sys_ident_strategy.num_inputs());
+	const size_type n_x(rls_n_a*rls_n_y+(rls_n_b-1)*rls_n_u);
+	const size_type n_u(rls_n_u);
+//	const size_type n(::std::max(n_x,n_u));
+	const size_type n_y(1);
+
+	// Create the state matrix A
+	// A=[ 0        I          0         ...  0    0        I          0         ...  0  ;
+	//     0        0          I         ...  0    0        0          I         ...  0  ;
+	//     .        .          .         ...  .    .        .          0         ...  .
+	//     .        .          .         ...  .    .        .          0         ...  .
+	//     .        .          .         ...  .    .        .          0         ...  .
+	// 	   0        0          0         ...  I    0        0          0         ...  I  ;
+	// 	   B_{n_b}  B_{n_b-1}  B_{n_b-2} ...  B_2 -A_{n_a} -A_{n_a-1} -A_{n_a-2} ... -A_1]
+	if (n_x > 0)
+	{
+		size_type broffs(n_x-rls_n_y); // The bottom row offset
+		size_type cboffs0(rls_n_u);
+		size_type cboffs1(cboffs0+((rls_n_b > 2) ? (rls_n_b-2)*rls_n_u : 0));
+		size_type caoffs0(cboffs1+rls_n_y);
+		size_type caoffs1(caoffs0+((rls_n_a > 1) ? (rls_n_a-1)*rls_n_y : 0));
+
+		A().resize(n_x, n_x, false);
+
+		// The upper part of A is set to [0_{k,rls_n_u} I_{k,kb} 0_{k,rls_n_y} I_{k,ka}],
+		// where: k=n_x-rls_n_y, kb=(rls_n_b-2)*rls_n_u, ka=(rls_n_a-1)*rls_n_y.
+		if (cboffs0 > 0)
+		{
+			ublas::subrange(A(), 0, broffs, 0, cboffs0) = ublas::zero_matrix<value_type>(broffs,rls_n_u);
+		}
+		if (cboffs1 > cboffs0)
+		{
+			ublas::subrange(A(), 0, broffs, cboffs0, cboffs1) = ublas::identity_matrix<value_type>(broffs,cboffs1-cboffs0);
+		}
+		if (caoffs0 > cboffs1)
+		{
+			ublas::subrange(A(), 0, broffs, cboffs1, caoffs0) = ublas::zero_matrix<value_type>(broffs,caoffs0-cboffs1);
+		}
+		if (caoffs1 > caoffs0)
+		{
+			ublas::subrange(A(), 0, broffs, caoffs0, caoffs1) = ublas::identity_matrix<value_type>(broffs,caoffs1-caoffs0);
+		}
+
+		// Fill A with B_2, ..., B_{n_b}
+		for (size_type i = 1; i < rls_n_b; ++i)
+		{
+			// Copy matrix B_i from \hat{\Theta} into A.
+			// In A the matrix B_i has to go in (rls_n_b-i)-th position:
+			//   A(k:(k+n),((rls_n_b-i-1)*rls_n_u):((rls_n_b-i)*rls_n_u)) <- B_i
+
+			size_type c2((rls_n_b-i)*rls_n_u);
+			size_type c1(c2-rls_n_u);
+
+			ublas::subrange(A(), broffs, n_x, c1, c2) = sys_ident_strategy.B(i+1);
+		}
+
+		// Fill A with A_1, ..., A_{n_a}
+		for (size_type i = 0; i < rls_n_a; ++i)
+		{
+			// Copy matrix -A_i from \hat{\Theta} into A.
+			// In A the matrix A_i has to go in ((rls_n_b-1)*rls_n_u+rls_n_a-i)-th position:
+			//   A(k:(k+n),((rls_n_b-1)*rls_n_u+(rls_n_a-i-1)*rls_n_y):((rls_n_b-1)*rls_n_u+(rls_n_a-i)*rls_n_y)) <- -A_i
+
+			size_type c2(cboffs1+(rls_n_a-i)*rls_n_y);
+			size_type c1(c2-rls_n_y);
+
+			////ublas::subrange(A(), broffs, n_x, c1, c2) = sys_ident_strategy.A(i+1);
+			ublas::subrange(A(), broffs, n_x, c1, c2) = -sys_ident_strategy.A(i+1);
+			//ublas::subrange(A(), broffs, n_x, c1, c2) = sys_ident_strategy.A(i+1);
+		}
+	}
+	else
+	{
+		A().resize(0, 0, false);
+	}
+//DCS_DEBUG_TRACE("A="<<A);//XXX
+
+	// Create the input matrix B
+	// B=[I  ;
+	//    0  ;
+	//    .	 ;
+	//    .	 ;
+	//    .	 ;
+	//    0  ;
+	//    B_1]
+	if (n_x > 0)
+	{
+		size_type broffs(n_x-rls_n_u); // The bottom row offset
+
+		B().resize(n_x, n_u, false);
+
+		// The upper part of B is set to [I_{n_u,n_u} 0_{k,n_u}]
+		// where: k=n_x-rls_n_u.
+		ublas::subrange(B(), 0, n_u, 0, n_u) = ublas::identity_matrix<value_type>(n_u,n_u);
+		ublas::subrange(B(), n_u, broffs, 0, n_u) = ublas::zero_matrix<value_type>(broffs-n_u,n_u);
+		// The bottom part of B with B_1
+		ublas::subrange(B(), broffs, n_x, 0, n_u) = sys_ident_strategy.B(1);
+	}
+	else
+	{
+		B().resize(0, 0, false);
+	}
+//DCS_DEBUG_TRACE("B="<<B);//XXX
+
+	// Create the output matrix C
+	if (n_x > 0)
+	{
+		size_type rcoffs(n_x-rls_n_y); // The right most column offset
+
+		C().resize(n_y, n_x, false);
+
+		ublas::subrange(C(), 0, n_y, 0, rcoffs) = ublas::zero_matrix<value_type>(n_y,rcoffs);
+		ublas::subrange(C(), 0, n_y, rcoffs, n_x) = ublas::scalar_matrix<value_type>(n_y, rls_n_y, 1);
+	}
+	else
+	{
+		C().resize(0, 0, false);
+	}
+//DCS_DEBUG_TRACE("C="<<C);//XXX
+
+	// Create the transmission matrix D
+	{
+		D().resize(n_y, n_u, false);
+
+		D() = ublas::zero_matrix<value_type>(n_y, n_u);
+	}
+//DCS_DEBUG_TRACE("D="<<D);//XXX
+
+//DCS_DEBUG_TRACE("END make_ss");//XXX
+}
+
+#elif defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ALT_SS) && DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ALT_SS == 'C'
+
+/// Convert an ARX structure to a state-space model in the canonical controllable form.
+template <
+//	typename TraitsT,
+	typename SysIdentStrategyT,
+	typename AMatrixExprT,
+	typename BMatrixExprT,
+	typename CMatrixExprT,
+	typename DMatrixExprT
+>
+//void make_ss(rls_ff_mimo_proxy<TraitsT> const& sys_ident_strategy,
+void make_ss(SysIdentStrategyT const& sys_ident_strategy,
+			 ::boost::numeric::ublas::matrix_container<AMatrixExprT>& A,
+			 ::boost::numeric::ublas::matrix_container<BMatrixExprT>& B,
+			 ::boost::numeric::ublas::matrix_container<CMatrixExprT>& C,
+			 ::boost::numeric::ublas::matrix_container<DMatrixExprT>& D)
+{
+//DCS_DEBUG_TRACE("BEGIN make_ss");//XXX
+	namespace ublas = ::boost::numeric::ublas;
+
+	typedef typename ublas::promote_traits<
+				typename ublas::promote_traits<
+					typename ublas::promote_traits<
+						typename ublas::matrix_traits<AMatrixExprT>::value_type,
+						typename ublas::matrix_traits<BMatrixExprT>::value_type
+					>::promote_type,
+					typename ublas::matrix_traits<CMatrixExprT>::value_type
+				>::promote_type,
+				typename ublas::matrix_traits<DMatrixExprT>::value_type
+			>::promote_type value_type;
+	typedef ::std::size_t size_type; //FIXME: use type-promotion?
+
+	const size_type rls_n_a(sys_ident_strategy.output_order());
+	const size_type rls_n_b(sys_ident_strategy.input_order());
+//	const size_type rls_d(sys_ident_strategy.input_delay());
+	const size_type rls_n_y(sys_ident_strategy.num_outputs());
+	const size_type rls_n_u(sys_ident_strategy.num_inputs());
+	const size_type n_x(rls_n_a*rls_n_y);
+	const size_type n_u(rls_n_b*rls_n_u);
+//	const size_type n(::std::max(n_x,n_u));
+	const size_type n_y(1);
+
+	DCS_ASSERT(
+			rls_n_y <= 1 && rls_n_u <= 1,
+			DCS_EXCEPTION_THROW(
+				::std::runtime_error,
+				"Actually, only SISO cases are hanlded"
+			)
+		);
+	DCS_ASSERT(
+			rls_n_y == rls_n_u,
+			DCS_EXCEPTION_THROW(
+				::std::runtime_error,
+				"Actually, only the same number of channel are treated"
+			)
+		);
+
+	// Create the state matrix A
+	// A=[ 0        I          0         ...  0  ;
+	//     0        0          I         ...  0  ;
+	//     .        .          .         ...  .
+	//     .        .          .         ...  .
+	//     .        .          .         ...  .
+	// 	   0        0          0         ...  I  ;
+	// 	  -A_{n_a} -A_{n_a-1} -A_{n_a-2} ... -A_1]
+	if (n_x > 0)
+	{
+		size_type broffs(n_x-rls_n_y); // The bottom row offset
+
+		A().resize(n_x, n_x, false);
+
+		// The upper part of A is set to [0_{k,rls_n_y} I_{k,k}],
+		// where: k=n_x-rls_n_y.
+		ublas::subrange(A(), 0, broffs, 0, rls_n_y) = ublas::zero_matrix<value_type>(broffs,rls_n_y);
+		ublas::subrange(A(), 0, broffs, rls_n_y, n_x) = ublas::identity_matrix<value_type>(broffs,broffs);
+
+		if (rls_n_a > 0)
+		{
+			// Fill A with A_1, ..., A_{n_a}
+			for (size_type i = 0; i < rls_n_a; ++i)
+			{
+				// Copy matrix -A_i from \hat{\Theta} into A.
+				// In A the matrix A_i has to go in (rls_n_a-i)-th position:
+				//   A(k:(k+n),((rls_n_a-i-1)*rls_n_y):((rls_n_a-i)*rls_n_y)) <- -A_i
+
+				size_type c2((rls_n_a-i)*rls_n_y);
+				size_type c1(c2-rls_n_y);
+
+				////ublas::subrange(A(), broffs, n_x, c1, c2) = sys_ident_strategy.A(i+1);
+				ublas::subrange(A(), broffs, n_x, c1, c2) = -sys_ident_strategy.A(i+1);
+				//ublas::subrange(A(), broffs, n_x, c1, c2) = sys_ident_strategy.A(i+1);
+			}
+		}
+		else
+		{
+			ublas::subrange(A(), broffs, n_x, 0, n_x) = ublas::zero_matrix<value_type>(rls_n_y,n_x);
+		}
+	}
+	else
+	{
+		A().resize(0, 0, false);
+	}
+//DCS_DEBUG_TRACE("A="<<A);//XXX
+
+	// Create the input matrix B
+	// B=[0;
+	//    .;
+	//    .;
+	//    .;
+	//    0;
+	//    I]
+	if (n_x > 0 && rls_n_b > 0)
+	{
+		size_type broffs(n_x-rls_n_u); // The bottom row offset
+
+		B().resize(n_x, n_u, false);
+
+		// The upper part of B is set to 0_{k,n_u}
+		// where: k=n_x-rls_n_u.
+		ublas::subrange(B(), 0, broffs, 0, n_u) = ublas::zero_matrix<value_type>(broffs, n_u);
+		// The lower part of B is set to I_{n_u,n_u}
+		ublas::subrange(B(), broffs, n_x, 0, n_u) = ublas::identity_matrix<value_type(n_u, n_u);
+	}
+	else
+	{
+		B().resize(0, 0, false);
+	}
+//DCS_DEBUG_TRACE("B="<<B);//XXX
+
+	// Create the output matrix C
+	// C=[M_n ... M_0]
+	// where M_i=B_i-B_0*A_i
+	// NOTE: in our case B_0=0, so M_i=B_i
+	if (n_x > 0)
+	{
+		C().resize(n_y, n_x, false);
+
+		for (size_type i = 0; i < rls_n_b; ++i)
+		{
+			size_type c2((rls_n_b-i)*rls_n_u);
+			size_type c1(c2-rls_n_u);
+
+			ublas::subrange(C(), 0, n_y, c1, c2) = sys_ident_strategy.B(i+1);
+		}
+	}
+	else
+	{
+		C().resize(0, 0, false);
+	}
+//DCS_DEBUG_TRACE("C="<<C);//XXX
+
+	// Create the transmission matrix D
+	// D=[B0]
+	// NOTE: in our case B_0=0, so D=[0]
+	{
+		D().resize(n_y, n_u, false);
+
+		D() = ublas::zero_matrix<value_type>(n_y, n_u);
+	}
+//DCS_DEBUG_TRACE("D="<<D);//XXX
+
+//DCS_DEBUG_TRACE("END make_ss");//XXX
+}
+
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ALT_SS
+
 template <
 //	typename TraitsT,
 	typename SysIdentStrategyT,
@@ -167,8 +528,9 @@ void make_ss(SysIdentStrategyT const& sys_ident_strategy,
 			size_type c2((rls_n_a-i)*rls_n_y);
 			size_type c1(c2-rls_n_y);
 
-			//ublas::subrange(A(), broffs, n_x, c1, c2) = sys_ident_strategy.A(i+1);
+			////ublas::subrange(A(), broffs, n_x, c1, c2) = sys_ident_strategy.A(i+1);
 			ublas::subrange(A(), broffs, n_x, c1, c2) = -sys_ident_strategy.A(i+1);
+			//ublas::subrange(A(), broffs, n_x, c1, c2) = sys_ident_strategy.A(i+1);
 		}
 	}
 	else
@@ -241,6 +603,9 @@ void make_ss(SysIdentStrategyT const& sys_ident_strategy,
 
 //DCS_DEBUG_TRACE("END make_ss");//XXX
 }
+
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ALT_SS
+
 
 template <typename TraitsT>
 class lq_application_controller: public base_application_controller<TraitsT>
@@ -517,15 +882,32 @@ class lq_application_controller: public base_application_controller<TraitsT>
 
 			n_p_ = n_s_
 				 = num_tiers;
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ALT_SS) && DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ALT_SS == 'X'
+			n_x_ = n_p_*n_a_+n_s_*(n_b_-1);
+			n_u_ = n_s_;
+			n_y_ = uint_type(1);
+			x_offset_ = (n_x_ > 0) ? (n_x_-n_p_) : 0;
+			u_offset_ = 0;
+#elif defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ALT_SS) && DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ALT_SS == 'C'
+			n_x_ = n_p_*n_a_;
+			n_u_ = n_s_;
+			n_y_ = uint_type(1);
+			x_offset_ = (n_x_ > 0) ? (n_x_-n_p_) : 0;
+			u_offset_ = 0;
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ALT_SS
 			n_x_ = n_p_*n_a_;
 			n_u_ = n_s_*n_b_;
 			n_y_ = uint_type(1);
 			x_offset_ = (n_x_ > 0) ? (n_x_-n_p_) : 0;
 			u_offset_ = (n_u_ > 0) ? (n_u_-n_s_) : 0;
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ALT_SS
+//			x_offset_ = 0;
+//			u_offset_ = 0;
 		}
 	}
 
 
+#if 0 //[EXP-20120201]
 	private: void reset_measures()
 	{
 		// Instead of making a full reset, keep some history of the
@@ -553,6 +935,7 @@ class lq_application_controller: public base_application_controller<TraitsT>
 
 			// Apply the EWMA filter to previously observed measurements
 			//real_type ewma_old_s(ewma_s_.at(category));
+::std::cerr << "APP " << this->application().id() << " - STAT: " << ptr_stat->estimate() << " - OLD EWMA: " << ewma_s_.at(category) << " - Smooth: " << ewma_smooth_ << " - Count: " << count_ << " ==> " << ewma_smooth_*ptr_stat->estimate() + (1-ewma_smooth_)*ewma_s_.at(category) << ::std::endl;//XXX
 			if (ptr_stat->num_observations() > 0)
 			{
 				if (count_ > 1)
@@ -565,6 +948,7 @@ class lq_application_controller: public base_application_controller<TraitsT>
 				}
 			}
 
+::std::cerr << "APP " << this->application().id() << " - STAT: " << ptr_stat->estimate() << " - EWMA: " << ewma_s_.at(category) << ::std::endl;//XXX
 			// Reset stat and set as the first observation a memory of the past
 			ptr_stat->reset();
 			(*ptr_stat)(ewma_s_.at(category));
@@ -596,6 +980,138 @@ class lq_application_controller: public base_application_controller<TraitsT>
 				// Reset stat and set as the first observation a memory of the past
 				ptr_stat->reset();
 				(*ptr_stat)(ewma_tier_s_[tier_id].at(category));
+			}
+		}
+	}
+#endif // 0 [EXP-20120201]
+
+
+	private: void update_measures()
+	{
+		// Instead of making a full reset, keep some history of the
+		// past in order to solve these issues:
+		// - too few observation in the last control period
+		// - not so much representative observations in the last control period.
+		// Actually, the history is stored according to a EWMA filter.
+
+//FIXME: try to use this below to reset stats
+//		::std::for_each(
+//				measures_.begin(),
+//				measures_.end(),
+//				::dcs::functional::bind(
+//						&statistic_type::reset,
+//						(::dcs::functional::placeholders::_1)->second
+//					)
+//			);
+		typedef typename category_statistic_container::iterator measure_iterator;
+
+		measure_iterator measure_end_it(measures_.end());
+		for (measure_iterator it = measures_.begin(); it != measure_end_it; ++it)
+		{
+			performance_measure_category category(it->first);
+			statistic_pointer ptr_stat(it->second);
+
+			// Apply the EWMA filter to previously observed measurements
+			//real_type ewma_old_s(ewma_s_.at(category));
+::std::cerr << "APP " << this->application().id() << " - STAT: " << ptr_stat->estimate() << " - OLD EWMA: " << ewma_s_.at(category) << " - Smooth: " << ewma_smooth_ << " - Count: " << count_ << " ==> " << ewma_smooth_*ptr_stat->estimate() + (1-ewma_smooth_)*ewma_s_.at(category) << ::std::endl;//XXX
+			if (ptr_stat->num_observations() > 0)
+			{
+				if (count_ > 1)
+				{
+					ewma_s_[category] = ewma_smooth_*ptr_stat->estimate() + (1-ewma_smooth_)*ewma_s_.at(category);
+				}
+				else
+				{
+					ewma_s_[category] = ptr_stat->estimate();
+				}
+			}
+			else
+			{
+				(*ptr_stat)(ewma_s_.at(category));
+			}
+
+::std::cerr << "APP " << this->application().id() << " - STAT: " << ptr_stat->estimate() << " - EWMA: " << ewma_s_.at(category) << ::std::endl;//XXX
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+			eq_out_measure_ = ewma_s_.at(category);
+#endif
+		}
+
+		size_type num_tiers(tier_measures_.size());
+		for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+		{
+			measure_end_it = tier_measures_[tier_id].end();
+			for (measure_iterator inner_it = tier_measures_[tier_id].begin(); inner_it != measure_end_it; ++inner_it)
+			{
+				performance_measure_category category(inner_it->first);
+				statistic_pointer ptr_stat(inner_it->second);
+
+				// Apply the EWMA filter to previously observed measurements
+				//real_type ewma_old_s(ewma_tier_s_[tier_id].at(category));
+				if (ptr_stat->num_observations() > 0)
+				{
+					if (count_ > 1)
+					{
+						ewma_tier_s_[tier_id][category] = ewma_smooth_*ptr_stat->estimate() + (1-ewma_smooth_)*ewma_tier_s_[tier_id].at(category);
+					}
+					else
+					{
+						ewma_tier_s_[tier_id][category] = ptr_stat->estimate();
+					}
+				}
+				else
+				{
+					(*ptr_stat)(ewma_tier_s_[tier_id].at(category));
+				}
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+				tier_eq_out_measures_[tier_id] = ewma_tier_s_.at(tier_id).at(category);
+#endif
+			}
+		}
+	}
+
+
+	private: void reset_measures()
+	{
+		// Instead of making a full reset, keep some history of the
+		// past in order to solve these issues:
+		// - too few observation in the last control period
+		// - not so much representative observations in the last control period.
+		// Actually, the history is stored according to a EWMA filter.
+
+//FIXME: try to use this below to reset stats
+//		::std::for_each(
+//				measures_.begin(),
+//				measures_.end(),
+//				::dcs::functional::bind(
+//						&statistic_type::reset,
+//						(::dcs::functional::placeholders::_1)->second
+//					)
+//			);
+		typedef typename category_statistic_container::iterator measure_iterator;
+
+		measure_iterator measure_end_it(measures_.end());
+		for (measure_iterator it = measures_.begin(); it != measure_end_it; ++it)
+		{
+			performance_measure_category category(it->first);
+			statistic_pointer ptr_stat(it->second);
+
+			// Reset stat and set as the first observation a memory of the past
+			ptr_stat->reset();
+//			(*ptr_stat)(ewma_s_.at(category));
+		}
+
+		size_type num_tiers(tier_measures_.size());
+		for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+		{
+			measure_end_it = tier_measures_[tier_id].end();
+			for (measure_iterator inner_it = tier_measures_[tier_id].begin(); inner_it != measure_end_it; ++inner_it)
+			{
+				performance_measure_category category(inner_it->first);
+				statistic_pointer ptr_stat(inner_it->second);
+
+				// Reset stat and set as the first observation a memory of the past
+				ptr_stat->reset();
+//				(*ptr_stat)(ewma_tier_s_[tier_id].at(category));
 			}
 		}
 	}
@@ -636,10 +1152,10 @@ class lq_application_controller: public base_application_controller<TraitsT>
 			   = ctrl_fail_count_
 			   = size_type/*zero*/();
 		ready_ = false;
-		x_ = vector_type(n_x_, 0);
-		u_ = vector_type(n_u_, 0);
+		x_ = vector_type(n_x_, ::std::numeric_limits<real_type>::quiet_NaN());
+		u_ = vector_type(n_u_, ::std::numeric_limits<real_type>::quiet_NaN());
 #if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
-		num_eq_measures_ = 5;
+		num_eq_measures_ = ::std::max(uint_type(5), ::std::max(n_a_, n_b_));
 		next_eq_out_measure_ = 0;
 		eq_out_measure_ = 0;
 		next_tier_eq_out_measures_ = ::std::vector<real_type>(num_eq_measures_,0);
@@ -771,6 +1287,7 @@ class lq_application_controller: public base_application_controller<TraitsT>
 								}
 //								rt *= scale_factor;
 								(*ptr_stat)(rt);
+::std::cerr << "APP " << app.id() << " - TIER: " << tier_id << " - OBSERVATION: " << rt << " (Clock: " << ctx.simulated_time() << ")" << ::std::endl;//XXX
 //								app_rt += rt;
 							}
 						}
@@ -801,6 +1318,7 @@ class lq_application_controller: public base_application_controller<TraitsT>
 					{
 						real_type rt(req.departure_time()-req.arrival_time());
 						(*ptr_stat)(rt);
+::std::cerr << "APP " << app.id() << " - OBSERVATION: " << rt << " (Clock: " << ctx.simulated_time() << ")" << ::std::endl;//XXX
 //						(*ptr_stat)(app_rt);
 					}
 					break;
@@ -893,16 +1411,68 @@ class lq_application_controller: public base_application_controller<TraitsT>
 //		typedef typename category_statistic_container_container::const_iterator tier_iterator;
 
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << "/" << ident_fail_count_ << "/" << ctrl_fail_count_ << ")");
-if ((count_ % 1000) == 0)//XXX
-{//XXX
+//if ((count_ % 1000) == 0)//XXX
+//{//XXX
 ::std::cerr << "APP: " << this->application().id() << " - BEGIN Process CONTROL event -- Actual Output: " << measures_.at(response_time_performance_measure)->estimate() << " (Clock: " << ctx.simulated_time() << " - Counts: " << count_ << "/" << ident_fail_count_ << "/" << ctrl_fail_count_ << ")" << ::std::endl;//XXX
-}//XXX
+//}//XXX
 
 		if (!ready_)
 		{
 			DCS_DEBUG_TRACE("(" << this << ") END Do Process CONTROL event: controller NOT READY (Clock: " << ctx.simulated_time() << " - Count: " << count_ << ")");
 			return;
 		}
+#if 0
+::std::cerr << "BEGIN MANUAL CONTROL" << ::std::endl;//XXX
+{
+	typedef typename traits_type::physical_machine_identifier_type pm_identifier_type;
+	typedef ::std::set<pm_identifier_type> pm_id_container;
+	typedef typename pm_id_container::const_iterator pm_id_iterator;
+	pm_id_container seen_machs;
+	for (size_type tier_id = 0; tier_id < this->application().num_tiers(); ++tier_id)
+	{
+		virtual_machine_pointer ptr_vm(this->application().simulation_model().tier_virtual_machine(tier_id));
+
+		if (ctx.simulated_time() > 3600)
+		{
+			if (ptr_vm->id() == 0)
+			{
+				ptr_vm->wanted_resource_share(cpu_resource_category, 0.75);
+			}
+			else
+			{
+				ptr_vm->wanted_resource_share(cpu_resource_category, 0.25);
+			}
+		}
+		else
+		{
+			if (ptr_vm->id() == 0)
+			{
+				ptr_vm->wanted_resource_share(cpu_resource_category, 0.25);
+			}
+			else
+			{
+				ptr_vm->wanted_resource_share(cpu_resource_category, 0.75);
+			}
+		}
+
+		physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
+		pm_identifier_type pm_id(pm.id());
+
+		if (!seen_machs.count(pm_id))
+		{
+			seen_machs.insert(pm_id);
+		}
+	}
+	pm_id_iterator end_it(seen_machs.end());
+	for (pm_id_iterator it = seen_machs.begin(); it != end_it; ++it)
+	{
+		pm_identifier_type pm_id(*it);
+		this->application().data_centre().physical_machine_controller(pm_id).control();
+	}
+}
+::std::cerr << "END MANUAL CONTROL" << ::std::endl;//XXX
+return;
+#endif // 0
 
 		//bool skip(false);
 
@@ -938,27 +1508,65 @@ if ((count_ % 1000) == 0)//XXX
 
 		++count_;
 
+		update_measures();//EXP-20120130
+
 		// Rotate old with new inputs/outputs:
 		//  x(k) = [p(k-n_a+1) ... p(k)]^T
 		//       = [x_{n_p:n_x}(k-1) p(k)]^T
 		//  u(k) = [s(k-n_b+1) ... s(k)]^T
 		//       = [u_{n_s:n_u}(k-1) s(k)]^T
 		// Check if a measure rotation is needed (always but the first time)
+::std::cerr << "Old x=" << x_ << ::std::endl;//XXX
+::std::cerr << "Old u=" << u_ << ::std::endl;//XXX
 		if (count_ > 1)
 		{
 			// throw away old observations from x and make space for new ones.
 			//detail::rotate(x_, n_a_, n_p_);
 			if (n_x_ > 0)
 			{
-				ublas::subrange(x_, 0, (n_a_-1)*n_p_) = ublas::subrange(x_, n_p_, n_x_);
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ALT_SS)
+::std::cerr << "HERE.1 -- n_b=" << n_b_ << ::std::endl;//XXX
+				if (n_b_ > 1)
+				{
+::std::cerr << "HERE.2" << ::std::endl;//XXX
+					if (n_b_ > 2)
+					{
+::std::cerr << "HERE.3" << ::std::endl;//XXX
+						ublas::subrange(x_, 0, (n_b_-2)*n_s_) = ublas::subrange(x_, n_s_, (n_b_-1)*n_s_);
+::std::cerr << "HERE.4" << ::std::endl;//XXX
+					}
+::std::cerr << "HERE.5" << ::std::endl;//XXX
+					ublas::subrange(x_, (n_b_-2)*n_s_, (n_b_-1)*n_s_) = u_;
+::std::cerr << "HERE.6" << ::std::endl;//XXX
+				}
+::std::cerr << "HERE.7" << ::std::endl;//XXX
+				ublas::subrange(x_, n_s_*(n_b_-1), n_x_-n_p_) = ublas::subrange(x_, (n_b_-1)*n_s_+n_p_, n_x_);
+::std::cerr << "HERE.8" << ::std::endl;//XXX
+				ublas::subrange(x_, n_x_-n_p_, n_x_) = ublas::scalar_vector<real_type>(n_p_, ::std::numeric_limits<real_type>::quiet_NaN());
+::std::cerr << "HERE.9" << ::std::endl;//XXX
+				//ublas::subrange(x_, n_p_, n_x_) = ublas::subrange(x_, 0, n_x_-n_p_);
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ALT_SS
+				//ublas::subrange(x_, 0, (n_a_-1)*n_p_) = ublas::subrange(x_, n_p_, n_x_);
+				ublas::subrange(x_, 0, n_x_-n_p_) = ublas::subrange(x_, n_p_, n_x_);
+				ublas::subrange(x_, n_x_-n_p_, n_x_) = ublas::scalar_vector<real_type>(n_p_, ::std::numeric_limits<real_type>::quiet_NaN());
+				//ublas::subrange(x_, n_p_, n_x_) = ublas::subrange(x_, 0, n_x_-n_p_);
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ALT_SS
 			}
 			// throw away old observations from u and make space for new ones.
 			//detail::rotate(u_, n_b_, n_s_);
 			if (n_u_ > 0)
 			{
-				ublas::subrange(u_, 0, (n_b_-1)*n_s_) = ublas::subrange(u_, n_s_, n_u_);
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ALT_SS)
+				u_ = ublas::scalar_vector<real_type>(n_s_, ::std::numeric_limits<real_type>::quiet_NaN());
+#else
+				//ublas::subrange(u_, 0, (n_b_-1)*n_s_) = ublas::subrange(u_, n_s_, n_u_);
+				ublas::subrange(u_, 0, n_u_-n_s_) = ublas::subrange(u_, n_s_, n_u_);
+				ublas::subrange(u_, n_u_-n_s_, n_u_) = ublas::scalar_vector<real_type>(n_s_, ::std::numeric_limits<real_type>::quiet_NaN());
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_ALT_SS
 			}
 		}
+::std::cerr << "New x=" << x_ << ::std::endl;//XXX
+::std::cerr << "New u=" << u_ << ::std::endl;//XXX
 
 
 		// Collect data for creating control input and state
@@ -1001,38 +1609,57 @@ if ((count_ % 1000) == 0)//XXX
 			//ref_measure = app.sla_cost_model().slo_value(category);
 			////ref_measure = static_cast<real_type>(.5)*app.sla_cost_model().slo_value(category);//EXP
 #if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
-			if (count_ > 1)
+#if 0 // [EXP-20120201]
+			if (count_ > num_eq_measures_)
 			{
 				if ((count_ % num_eq_measures_) == 0)
 				{
-					if (count_ > num_eq_measures_)
-					{
-						eq_out_measure_ = next_eq_out_measure_ / static_cast<real_type>(num_eq_measures_);
-					}
-					else
-					{
-						// The first time take into consideration the additional
-						// measure added when count_ <= 1 representing the
-						// steady-state performance measure (see else branch
-						// below).
-						eq_out_measure_ = next_eq_out_measure_ / static_cast<real_type>(num_eq_measures_+1);
-					}
+//					if (count_ > num_eq_measures_)
+//					{
+//						eq_out_measure_ = next_eq_out_measure_ / static_cast<real_type>(num_eq_measures_);
+//					}
+//					else
+//					{
+//						// The first time take into consideration the additional
+//						// measure added when count_ <= 1 representing the
+//						// steady-state performance measure (see else branch
+//						// below).
+//						eq_out_measure_ = next_eq_out_measure_ / static_cast<real_type>(num_eq_measures_+1);
+//					}
+					eq_out_measure_ = next_eq_out_measure_ / static_cast<real_type>(num_eq_measures_);
 					//next_eq_out_measure_ = ref_measure;
 					next_eq_out_measure_ = eq_out_measure_;
 				}
 				else
 				{
+next_eq_out_measure_ += ewma_s_.at(category);//EXP-20120130
+#if 0
 					next_eq_out_measure_ += ptr_stat->estimate();
+#endif // 0 [EXP-20120130]
 				}
 			}
 			else
 			{
-				eq_out_measure_ = app_perf_model.application_measure(category);
+eq_out_measure_ = ewma_s_.at(category);//EXP-20120130
+#if 0
+				//eq_out_measure_ = app_perf_model.application_measure(category);
+				if (ptr_stat->num_observations() > 0)
+				{
+					eq_out_measure_ = ptr_stat->estimate();
+				}
+				else if (count_ == 1)
+				{
+					eq_out_measure_ = app_perf_model.application_measure(category);
+				}
+				// else leave unchanged...
+#endif // 0 [EXP-20120130]
 			}
+#endif // 0 [EXP-20120201]
 			eq_measure = eq_out_measure_;
 #else
 			eq_measure = app_perf_model.application_measure(category);
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+//actual_measure = ewma_s_.at(category);//EXP-20120130
 			if (ptr_stat->num_observations() > 0)
 			{
 				actual_measure = ptr_stat->estimate();
@@ -1049,8 +1676,8 @@ if ((count_ % 1000) == 0)//XXX
 				// -> Skip the control action
 				//skip = true;
 			}
-DCS_DEBUG_TRACE("APP " << app.id() << " - OBSERVATION: ref: " << app_perf_model.application_measure(category) << " - equilibrium: " << eq_measure << " - actual: " << actual_measure);//XXX
-::std::cerr << "APP " << app.id() << " - OBSERVATION: ref: " << app_perf_model.application_measure(category) << " - equilibrium: " << eq_measure << " - actual: " << actual_measure << ::std::endl;//XXX
+DCS_DEBUG_TRACE("APP " << app.id() << " - CONTROL OBSERVATION: ref: " << app_perf_model.application_measure(category) << " - equilibrium: " << eq_measure << " - actual: " << actual_measure);//XXX
+::std::cerr << "APP " << app.id() << " - CONTROL OBSERVATION: ref: " << app_perf_model.application_measure(category) << " - equilibrium: " << eq_measure << " - actual: " << actual_measure << ::std::endl;//XXX
 
 			if (triggers_.actual_value_sla_ko())
 			{
@@ -1071,15 +1698,15 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - OBSERVATION: ref: " << app_perf_model.
 //#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 //			y(0) = actual_measure/eq_measure - 1;
 //#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
-			y(0) = (actual_measure-app_perf_model.application_measure(category))/eq_measure;
-# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
+			y(0) = actual_measure/eq_measure - 1;
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
 //#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
 //			y(0) = actual_measure - app_perf_model.application_measure(category);
 //#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 //			y(0) = actual_measure - eq_measure;
 //#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
-			y(0) = actual_measure - app_perf_model.application_measure(category);
-# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
+			y(0) = actual_measure - eq_measure;
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
 #else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
 //# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
 ////#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
@@ -1090,7 +1717,8 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - OBSERVATION: ref: " << app_perf_model.
 //# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
 //			y(0) = actual_measure;
 //# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_DEVIATION
-			y(0) = actual_measure - app_perf_model.application_measure(category);
+			//y(0) = actual_measure - eq_measure;
+			y(0) = actual_measure;
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
 
 #ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
@@ -1110,39 +1738,58 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - OBSERVATION: ref: " << app_perf_model.
 									ptr_stat = tier_measures_[tier_id].at(category);
 
 #if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
-									if (count_ > 1)
+#if 0 // [EXP-20120201]
+									if (count_ > num_eq_measures_)
 									{
 										if ((count_ % num_eq_measures_) == 0)
 										{
 											// We have collected a sufficient number of observations to form a new estimate of the equilibrium point
-											if (count_ > num_eq_measures_)
-											{
-												tier_eq_out_measures_[tier_id] = next_tier_eq_out_measures_[tier_id] / static_cast<real_type>(num_eq_measures_);
-											}
-											else
-											{
-												// The first time take into consideration the additional
-												// measure added when count_ <= 1 representing the
-												// steady-state performance measure (see else branch
-												// below).
-												tier_eq_out_measures_[tier_id] = next_tier_eq_out_measures_[tier_id] / static_cast<real_type>(num_eq_measures_+1);
-											}
+//											if (count_ > num_eq_measures_)
+//											{
+//												tier_eq_out_measures_[tier_id] = next_tier_eq_out_measures_[tier_id] / static_cast<real_type>(num_eq_measures_);
+//											}
+//											else
+//											{
+//												// The first time take into consideration the additional
+//												// measure added when count_ <= 1 representing the
+//												// steady-state performance measure (see else branch
+//												// below).
+//												tier_eq_out_measures_[tier_id] = next_tier_eq_out_measures_[tier_id] / static_cast<real_type>(num_eq_measures_+1);
+//											}
+											tier_eq_out_measures_[tier_id] = next_tier_eq_out_measures_[tier_id] / static_cast<real_type>(num_eq_measures_);
 											//next_tier_eq_out_measures_[tier_id] = ref_measure;
 											next_tier_eq_out_measures_[tier_id] = tier_eq_out_measures_[tier_id];
 										}
 										else
 										{
+next_tier_eq_out_measures_[tier_id] += ewma_tier_s_.at(tier_id).at(category);//EXP-20120130
+#if 0
 											next_tier_eq_out_measures_[tier_id] += ptr_stat->estimate();
+#endif // 0 [EXP-20120130]
 										}
 									}
 									else
 									{
-										tier_eq_out_measures_[tier_id] = app_perf_model.tier_measure(tier_id, category);
+tier_eq_out_measures_[tier_id] = ewma_tier_s_.at(tier_id).at(category);//EXP-20120130
+#if 0
+										//tier_eq_out_measures_[tier_id] = app_perf_model.tier_measure(tier_id, category);
+										if (ptr_stat->num_observations() > 0)
+										{
+											tier_eq_out_measures_[tier_id] = ptr_stat->estimate();
+										}
+										else if (count_ == 1)
+										{
+											tier_eq_out_measures_[tier_id] = app_perf_model.tier_measure(tier_id, category);
+										}
+										// else leave unchanged...
+#endif // 0 [EXP-20120130]
 									}
+#endif // 0 [EXP-20120201]
 									eq_measure = tier_eq_out_measures_[tier_id];
 #else
 									eq_measure = app_perf_model.tier_measure(tier_id, category);
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+//actual_measure = ewma_tier_s_.at(tier_id).at(category);//EXP-20120130
 									//ref_measure = static_cast<real_type>(.5)*app_perf_model.tier_measure(tier_id, category);//EXP
 									if (ptr_stat->num_observations() > 0)
 									{
@@ -1160,8 +1807,8 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - OBSERVATION: ref: " << app_perf_model.
 										// -> Skip the control action
 										//skip = true;
 									}
-DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: ref: " << app_perf_model.tier_measure(tier_id, category) << " - equilibrium: " << eq_measure << " - actual: " << actual_measure);//XXX
-::std::cerr << "APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: ref: " << app_perf_model.tier_measure(tier_id, category) << " - equilibrium: " << eq_measure << " - actual: " << actual_measure << ::std::endl;//XXX
+DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " CONTROL OBSERVATION: ref: " << app_perf_model.tier_measure(tier_id, category) << " - equilibrium: " << eq_measure << " - actual: " << actual_measure);//XXX
+::std::cerr << "APP " << app.id() << " - TIER " << tier_id << " CONTROL OBSERVATION: ref: " << app_perf_model.tier_measure(tier_id, category) << " - equilibrium: " << eq_measure << " - actual: " << actual_measure << ::std::endl;//XXX
 #if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION)
 # if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
 //#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
@@ -1171,8 +1818,10 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 //									x_(x_offset_+tier_id) = p(tier_id)
 //														  = actual_measure/eq_measure - 1;
 //#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
-									p(tier_id) = actual_measure/eq_measure - 1;
-									x_(x_offset_+tier_id) = (actual_measure-app_perf_model.tier_measure(tier_id, category))/eq_measure;
+//									p(tier_id) = actual_measure/eq_measure - 1;
+//									x_(x_offset_+tier_id) = (actual_measure-app_perf_model.tier_measure(tier_id, category))/eq_measure;
+									x_(x_offset_+tier_id) = p(tier_id)
+														  = actual_measure/eq_measure - 1;
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
 //#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
 //									p(tier_id) = actual_measure - eq_measure;
@@ -1181,8 +1830,10 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 //									x_(x_offset_+tier_id) = p(tier_id)
 //														  = actual_measure - eq_measure;
 //#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
-									p(tier_id) = actual_measure - eq_measure;
-									x_(x_offset_+tier_id) = actual_measure - app_perf_model.tier_measure(tier_id, category);
+//									p(tier_id) = actual_measure - eq_measure;
+//									x_(x_offset_+tier_id) = actual_measure - app_perf_model.tier_measure(tier_id, category);
+									x_(x_offset_+tier_id) = p(tier_id)
+														  = actual_measure - eq_measure;
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
 #else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
 //# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
@@ -1197,9 +1848,12 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 //									x_(x_offset_+tier_id) = p(tier_id)
 //														  = actual_measure;
 //# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
-									p(tier_id) = actual_measure;
-									x_(x_offset_+tier_id) = actual_measure - app_perf_model.tier_measure(tier_id, category);
+//									p(tier_id) = actual_measure;
+//									x_(x_offset_+tier_id) = actual_measure - app_perf_model.tier_measure(tier_id, category);
+									x_(x_offset_+tier_id) = p(tier_id)
+														  = actual_measure;
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+::std::cerr << "Updated x=" << x_ << ::std::endl;//XXX
 
 #ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
 									// Dump actual tier residence time
@@ -1251,22 +1905,24 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 				real_type eq_share(0); // equilibrium point
 
 # if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
-				if (count_ > 1)
+#if 0 // [EXP-20120201]
+				if (count_ > num_eq_measures_)
 				{
 					if ((count_ % num_eq_measures_) == 0)
 					{
-						if (count_ > num_eq_measures_)
-						{
-							tier_eq_in_measures_[tier_id] = next_tier_eq_in_measures_[tier_id] / static_cast<real_type>(num_eq_measures_);
-						}
-						else
-						{
-							// The first time take into consideration the additional
-							// measure added when count_ <= 1 representing the
-							// steady-state performance measure (see else branch
-							// below).
-							tier_eq_in_measures_[tier_id] = next_tier_eq_in_measures_[tier_id] / static_cast<real_type>(num_eq_measures_+1);
-						}
+//						if (count_ > num_eq_measures_)
+//						{
+//							tier_eq_in_measures_[tier_id] = next_tier_eq_in_measures_[tier_id] / static_cast<real_type>(num_eq_measures_);
+//						}
+//						else
+//						{
+//							// The first time take into consideration the additional
+//							// measure added when count_ <= 1 representing the
+//							// steady-state performance measure (see else branch
+//							// below).
+//							tier_eq_in_measures_[tier_id] = next_tier_eq_in_measures_[tier_id] / static_cast<real_type>(num_eq_measures_+1);
+//						}
+						tier_eq_in_measures_[tier_id] = next_tier_eq_in_measures_[tier_id] / static_cast<real_type>(num_eq_measures_);
 						//next_tier_eq_in_measures_[tier_id] = ref_share;
 						next_tier_eq_in_measures_[tier_id] = tier_eq_in_measures_[tier_id];
 					}
@@ -1277,7 +1933,17 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 				}
 				else
 				{
-					tier_eq_in_measures_[tier_id] =  ptr_vm->guest_system().resource_share(res_category);
+					//tier_eq_in_measures_[tier_id] =  ptr_vm->guest_system().resource_share(res_category);
+					tier_eq_in_measures_[tier_id] =  actual_share;
+				}
+#endif // 0 [EXP-20120201]
+				if (count_ > 1)
+				{
+					tier_eq_in_measures_[tier_id] = ewma_smooth_*actual_share+(1-ewma_smooth_)*tier_eq_in_measures_[tier_id];
+				}
+				else
+				{
+					tier_eq_in_measures_[tier_id] = actual_share;
 				}
 				eq_share = tier_eq_in_measures_[tier_id];
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
@@ -1323,8 +1989,6 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 //# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 				u_(u_offset_+tier_id) = s(tier_id)
 									  = actual_share;
-				DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " SHARE: ref: " << ptr_vm->guest_system().resource_share(res_category) << " - actual: " << ptr_vm->resource_share(res_category) << " - actual-scaled: " << actual_share);//XXX
-//::std::cerr << "APP " << app.id() << " - TIER " << tier_id << " SHARE: ref: " << ptr_vm->guest_system().resource_share(res_category) << " - actual: " << ptr_vm->resource_share(res_category) << " - actual-scaled: " << actual_share << ::std::endl;//XXX
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 
 #ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
@@ -1362,13 +2026,31 @@ DCS_DEBUG_TRACE("p_hat=" << p_hat);//XXX
 DCS_DEBUG_TRACE("Theta_hat=" << ptr_ident_strategy_->Theta_hat());//XXX
 DCS_DEBUG_TRACE("P=" << ptr_ident_strategy_->P());//XXX
 DCS_DEBUG_TRACE("phi=" << ptr_ident_strategy_->phi());//XXX
-//::std::cerr << "APP: " << app.id() << " - RLS estimation:" << ::std::endl;//XXX
-//::std::cerr << "p=" << p << ::std::endl;//XXX
-//::std::cerr << "s=" << s << ::std::endl;//XXX
-//::std::cerr << "p_hat=" << p_hat << ::std::endl;//XXX
-//::std::cerr << "Theta_hat=" << ptr_ident_strategy_->Theta_hat() << ::std::endl;//XXX
-//::std::cerr << "P=" << ptr_ident_strategy_->P() << ::std::endl;//XXX
-//::std::cerr << "phi=" << ptr_ident_strategy_->phi() << ::std::endl;//XXX
+::std::cerr << "APP: " << app.id() << " - RLS estimation:" << ::std::endl;//XXX
+::std::cerr << "p=" << p << ::std::endl;//XXX
+::std::cerr << "s=" << s << ::std::endl;//XXX
+::std::cerr << "p_hat=" << p_hat << ::std::endl;//XXX
+::std::cerr << "Theta_hat=" << ptr_ident_strategy_->Theta_hat() << ::std::endl;//XXX
+::std::cerr << "P=" << ptr_ident_strategy_->P() << ::std::endl;//XXX
+::std::cerr << "phi=" << ptr_ident_strategy_->phi() << ::std::endl;//XXX
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION)
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+//::std::cerr << "==> Estimated RLS output =" << ((p_hat(0)+1)*eq_out_measure_) << ::std::endl;//XXX
+::std::cerr << "==> Estimated RLS output =" << ((ublas::inner_prod(ptr_ident_strategy_->phi(), ublas::column(ptr_ident_strategy_->Theta_hat(),0))+1)*eq_out_measure_) << ::std::endl;//XXX
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+::std::cerr << "==> Estimated RLS output =" << ((ublas::inner_prod(ptr_ident_strategy_->phi(), ublas::column(ptr_ident_strategy_->Theta_hat(),0))+1)*app_perf_model.application_measure(response_time_performance_measure)) << ::std::endl;//XXX
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+::std::cerr << "==> Estimated RLS output =" << (ublas::inner_prod(ptr_ident_strategy_->phi(), ublas::column(ptr_ident_strategy_->Theta_hat(),0))+eq_out_measure_) << ::std::endl;//XXX
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+::std::cerr << "==> Estimated RLS output =" << (ublas::inner_prod(ptr_ident_strategy_->phi(), ublas::column(ptr_ident_strategy_->Theta_hat(),0))+app_perf_model.application_measure(response_time_performance_measure)) << ::std::endl;//XXX
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+::std::cerr << "==> Estimated RLS output =" << ublas::inner_prod(ptr_ident_strategy_->phi(), ublas::column(ptr_ident_strategy_->Theta_hat(),0)) << ::std::endl;//XXX
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
 
 				if (!ublasx::all(ublasx::isfinite(ptr_ident_strategy_->Theta_hat())))
 				{
@@ -1438,7 +2120,11 @@ DCS_DEBUG_TRACE("phi=" << ptr_ident_strategy_->phi());//XXX
 
 			// Check if RLS (and LQR) can be applied.
 			// If not, then no control is performed.
+//#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+//			if (ok && ptr_ident_strategy_->count() > (::std::max(n_a_,n_b_)+num_eq_measures_)) // EXP-20120130
+//#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 			if (ok && ptr_ident_strategy_->count() > ::std::max(n_a_,n_b_))
+//#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 			{
 				// Create the state-space representation of the system model:
 				//  x(k+1) = Ax(k)+Bu(k)
@@ -1466,14 +2152,37 @@ DCS_DEBUG_TRACE("D=" << D);//XXX
 DCS_DEBUG_TRACE("y= " << y);//XXX
 DCS_DEBUG_TRACE("x= " << x_);//XXX
 DCS_DEBUG_TRACE("u= " << u_);//XXX
-//::std::cerr << "APP: " << app.id() << " - Solving LQ with" << ::std::endl;//XXX
-//::std::cerr << "A=" << A << ::std::endl;//XXX
-//::std::cerr << "B=" << B << ::std::endl;//XXX
-//::std::cerr << "C=" << C << ::std::endl;//XXX
-//::std::cerr << "D=" << D << ::std::endl;//XXX
-//::std::cerr << "y= " << y << ::std::endl;//XXX
-//::std::cerr << "x= " << x_ << ::std::endl;//XXX
-//::std::cerr << "u= " << u_ << ::std::endl;//XXX
+::std::cerr << "APP: " << app.id() << " - Solving LQ with" << ::std::endl;//XXX
+::std::cerr << "A=" << A << ::std::endl;//XXX
+::std::cerr << "B=" << B << ::std::endl;//XXX
+::std::cerr << "C=" << C << ::std::endl;//XXX
+::std::cerr << "D=" << D << ::std::endl;//XXX
+::std::cerr << "y= " << y << ::std::endl;//XXX
+::std::cerr << "x= " << x_ << ::std::endl;//XXX
+::std::cerr << "u= " << u_ << ::std::endl;//XXX
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION)
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+//DCS_DEBUG_TRACE("APP: " << app.id() << " - Estimated SS application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,u_))+ublas::prod(D,u_))(0)*eq_out_measure_));//XXX
+::std::cerr << "APP: " << app.id() << " - Estimated SS application response time: " << (eq_out_measure_*(1+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,u_))+ublas::prod(D,u_))(0))) << ::std::endl;//XXX
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+//DCS_DEBUG_TRACE("APP: " << app.id() << " - Estimated SS application response time: " << (app_perf_model.application_measure(response_time_performance_measure)*(1+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,u_))+ublas::prod(D,u_))(0))));//XXX
+::std::cerr << "APP: " << app.id() << " - Estimated SS application response time: " << (app_perf_model.application_measure(response_time_performance_measure)*(1+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,u_))+ublas::prod(D,u_))(0))) << ::std::endl;//XXX
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+//DCS_DEBUG_TRACE("APP: " << app.id() << " - Estimated SS application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,u_))+ublas::prod(D,u_))(0)));//XXX
+//::std::cerr << "APP: " << app.id() << " - Estimated SS application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,u_))+ublas::prod(D,u_))(0)) << ::std::endl;//XXX
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+::std::cerr << "APP: " << app.id() << " - Estimated SS application response time: " << (eq_out_measure_+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,u_))+ublas::prod(D,u_))(0)) << ::std::endl;//XXX
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+::std::cerr << "APP: " << app.id() << " - Estimated SS application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,u_))+ublas::prod(D,u_))(0)) << ::std::endl;//XXX
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+//DCS_DEBUG_TRACE("APP: " << app.id() << " - Estimated SS application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,u_))+ublas::prod(D,u_))(0)));//XXX
+//::std::cerr << "APP: " << app.id() << " - Estimated SS application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,u_))+ublas::prod(D,u_))(0)) << ::std::endl;//XXX
+::std::cerr << "APP: " << app.id() << " - Estimated SS application response time: " << ((ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,u_))+ublas::prod(D,u_))(0)) << ::std::endl;//XXX
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
 				vector_type opt_u;
 				try
 				{
@@ -1493,19 +2202,20 @@ DCS_DEBUG_TRACE("u= " << u_);//XXX
 				{
 DCS_DEBUG_TRACE("APP: " << app.id() << " - Solved!");//XXX
 DCS_DEBUG_TRACE("APP: " << app.id() << " - Optimal Control u*=> " << opt_u);//XXX
-//::std:: cerr << "APP: " << app.id() << " - Optimal Control u*=> " << opt_u << ::std::endl;//XXX
+::std:: cerr << "APP: " << app.id() << " - Optimal Control u*=> " << opt_u << ::std::endl;//XXX
 #if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION)
 # if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
 #  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
 DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)*eq_out_measure_));//XXX
-//::std::cerr << "APP: " << app.id() << " Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)*eq_out_measure_) << ::std::endl;//XXX
+::std::cerr << "APP: " << app.id() << " - Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)*eq_out_measure_) << ::std::endl;//XXX
 #  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)*(1+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0))));//XXX
-//::std::cerr << "APP: " << app.id() << " Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)*(1+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0))) << ::std::endl;//XXX
+::std::cerr << "APP: " << app.id() << " - Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)*(1+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0))) << ::std::endl;//XXX
 #  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
 DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)));//XXX
-//::std::cerr << "APP: " << app.id() << " - Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)) << ::std::endl;//XXX
+::std::cerr << "APP: " << app.id() << " - Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)) << ::std::endl;//XXX
+//::std::cerr << "APP: " << app.id() << " - Expected application response time #2: " << (eq_out_measure_+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)) << ::std::endl;//XXX
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
 #else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
 //# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
@@ -1518,8 +2228,9 @@ DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: "
 //DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: " << (ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0));//XXX
 ////::std::cerr << "APP: " << app.id() << " - Expected application response time: " << (ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0) << ::std::endl;//XXX
 DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)));//XXX
-//::std::cerr << "APP: " << app.id() << " - Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)) << ::std::endl;//XXX
+::std::cerr << "APP: " << app.id() << " - Expected application response time: " << (app_perf_model.application_measure(response_time_performance_measure)+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)) << ::std::endl;//XXX
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+//::std::cerr << "APP: " << app.id() << " - Expected application response time: " << (eq_out_measure_+(ublas::prod(C, ublas::prod(A,x_)+ublas::prod(B,opt_u))+ublas::prod(D,opt_u))(0)) << ::std::endl;//[EXP-20120203]
 
 #ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
 					// Dump predicted tier resource share
@@ -1572,7 +2283,8 @@ DCS_DEBUG_TRACE("APP: " << app.id() << " - Expected application response time: "
 DCS_DEBUG_TRACE("Applying optimal control");//XXX
 					if (triggers_.predicted_value_sla_ko())
 					{
-						vector_type adj_opt_u(opt_u);
+						//vector_type adj_opt_u(opt_u);
+						vector_type adj_opt_u(u_);//EXP-20120201
 
 						for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 						{
@@ -1617,7 +2329,7 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 							real_type new_share(opt_u(u_offset_+tier_id));
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unscaled share: " << new_share);//XXX
-//::std::cerr << "APP : " << app.id() << " - Tier " << tier_id << " --> New Unscaled share: " << new_share << ::std::endl;//XXX
+::std::cerr << "APP: " << app.id() << " - Tier " << tier_id << " --> New Unscaled share: " << new_share << ::std::endl;//XXX
 							new_share = ::dcs::eesim::scale_resource_share(
 											// Reference resource capacity and threshold
 											app.reference_resource(res_category).capacity(),
@@ -1649,25 +2361,28 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 							}
 							else
 							{
-#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION)
-# if DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION == 'W'
+#if DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION == 'W'
 //#  ifdef DCS_DEBUG
 								::std::ostringstream oss;
 								oss << "APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to max(" << ptr_vm->wanted_resource_share(res_category) << ", " << default_min_share_ << ")";
 								::dcs::eesim::log_warn(cls_id_, oss.str());
 //  #endif // DCS_DEBUG
 								new_share = ::std::max(ptr_vm->wanted_resource_share(res_category), default_min_share_);
-# elif DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION == 'R'
+#elif DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION == 'R'
 //#  ifdef DCS_DEBUG
 								::std::ostringstream oss;
 								oss << "APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to max(" << ptr_vm->guest_system().resource_share(res_category) << ", " << default_min_share_ << ")";
 								::dcs::eesim::log_warn(cls_id_, oss.str());
 //#  endif // DCS_DEBUG
 								new_share = ::std::max(ptr_vm->guest_system().resource_share(res_category), default_min_share_);
-# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
-#  error Unknwon value for DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION.
-# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
-#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
+#elif DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION == 'M'
+//#  ifdef DCS_DEBUG
+								::std::ostringstream oss;
+								oss << "APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to " << default_min_share_;
+								::dcs::eesim::log_warn(cls_id_, oss.str());
+//#  endif // DCS_DEBUG
+								new_share = default_min_share_;
+#elif DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION == 'C'
 //# ifdef DCS_DEBUG
 								::std::ostringstream oss;
 								oss << "APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to max(" << ptr_vm->resource_share(res_category) << ", " << default_min_share_ << ")";
@@ -1727,15 +2442,28 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 #if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION)
 # if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
 #  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
-						real_type pred_measure = (app_perf_model.application_measure(response_time_performance_measure)
-												  + (ublas::prod(C, ublas::prod(A,x_)+ ublas::prod(B,opt_u))+ublas::prod(D,adj_opt_u))(0))*eq_measure;
-#  else
+//						real_type pred_measure = (app_perf_model.application_measure(response_time_performance_measure)
+//												  + (ublas::prod(C, ublas::prod(A,x_) + ublas::prod(B,adj_opt_u)) + ublas::prod(D,adj_opt_u))(0)*eq_out_measure_);
+						real_type pred_measure = eq_out_measure_
+												 * (1+(ublas::prod(C, ublas::prod(A,x_) + ublas::prod(B,adj_opt_u)) + ublas::prod(D,adj_opt_u))(0));
+						real_type cur_measure = eq_out_measure_*(1+y(0));
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+//						real_type pred_measure = app_perf_model.application_measure(response_time_performance_measure)
+//												 * (1+ublas::prod(C, ublas::prod(A,x_) + ublas::prod(B,adj_opt_u)) + ublas::prod(D,adj_opt_u))(0);
 						real_type pred_measure = app_perf_model.application_measure(response_time_performance_measure)
-												 * (1+ublas::prod(C, ublas::prod(A,x_)+ ublas::prod(B,opt_u))+ublas::prod(D,adj_opt_u))(0);
+												 * (1+(ublas::prod(C, ublas::prod(A,x_) + ublas::prod(B,adj_opt_u)) + ublas::prod(D,adj_opt_u))(0));
+						real_type cur_measure = app_perf_model.application_measure(response_time_performance_measure)*(1+y(0));
 #  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+						real_type pred_measure = eq_out_measure_
+												 + (ublas::prod(C, ublas::prod(A,x_) + ublas::prod(B,adj_opt_u)) + ublas::prod(D,adj_opt_u))(0);
+						real_type cur_measure = eq_out_measure_+y(0);
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 						real_type pred_measure = app_perf_model.application_measure(response_time_performance_measure)
-												 + (ublas::prod(C, ublas::prod(A,x_)+ ublas::prod(B,opt_u))+ublas::prod(D,adj_opt_u))(0);
+												 + (ublas::prod(C, ublas::prod(A,x_) + ublas::prod(B,adj_opt_u)) + ublas::prod(D,adj_opt_u))(0);
+						real_type cur_measure = app_perf_model.application_measure(response_time_performance_measure)+y(0);
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 # endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
 #else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
 //# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
@@ -1744,17 +2472,21 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 //# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
 //						real_type pred_measure = (ublas::prod(C, ublas::prod(A,x_)+ ublas::prod(B,opt_u))+ublas::prod(D,adj_opt_u))(0);
 //# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
-						real_type pred_measure = app_perf_model.application_measure(response_time_performance_measure)
-												 + (ublas::prod(C, ublas::prod(A,x_)+ ublas::prod(B,opt_u))+ublas::prod(D,adj_opt_u))(0);
+//						real_type pred_measure = app_perf_model.application_measure(response_time_performance_measure)
+//												 + (ublas::prod(C, ublas::prod(A,x_) + ublas::prod(B,adj_opt_u)) + ublas::prod(D,adj_opt_u))(0);
+						real_type pred_measure = (ublas::prod(C, ublas::prod(A,x_) + ublas::prod(B,adj_opt_u)) + ublas::prod(D,adj_opt_u))(0);
+						real_type cur_measure = y(0);
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
-//::std::cerr << "APP: " << app.id() << " - Adjusted Optimal Control u*=> " << adj_opt_u << ::std::endl;//XXX
-//::std::cerr << "APP: " << app.id() << " - Expected application response time after adjustment: " << pred_measure << ::std::endl;//XXX
+::std::cerr << "APP: " << app.id() << " - Adjusted Optimal Control u*=> " << adj_opt_u << ::std::endl;//XXX
+::std::cerr << "APP: " << app.id() << " - Expected application response time after adjustment: " << pred_measure << " - Current: " << cur_measure << ::std::endl;//XXX
 
 						::std::vector<performance_measure_category> cats(1);
 						cats[0] = response_time_performance_measure;
-						::std::vector<real_type> meas(1);
-						meas[0] = pred_measure;
-						if (app.sla_cost_model().satisfied(cats.begin(), cats.end(), meas.begin()))
+						::std::vector<real_type> cur_meas(1);
+						cur_meas[0] = cur_measure;
+						::std::vector<real_type> pred_meas(1);
+						pred_meas[0] = pred_measure;
+						if ((!app.sla_cost_model().satisfied(cats.begin(), cats.end(), cur_meas.begin()) && cur_measure >= pred_measure) || app.sla_cost_model().satisfied(cats.begin(), cats.end(), pred_meas.begin()))
 						{
 							for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 							{
@@ -1816,7 +2548,7 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 									);
 
 								DCS_DEBUG_TRACE("APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " - Category: " << res_category << " - Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (Reference-Point: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share);
-//::std::cerr << "APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (Reference-Point: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << ::std::endl;//XXX
+::std::cerr << "APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (Reference-Point: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << ::std::endl;//XXX
 								ptr_vm->wanted_resource_share(res_category, new_share);
 							}
 						}
@@ -1888,7 +2620,7 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 							real_type new_share(opt_u(u_offset_+tier_id));
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unscaled share: " << new_share);//XXX
-//::std::cerr << "APP : " << app.id() << " - Tier " << tier_id << " --> New Unscaled share: " << new_share << ::std::endl;//XXX
+::std::cerr << "APP : " << app.id() << " - Tier " << tier_id << " --> New Unscaled share: " << new_share << ::std::endl;//XXX
 //							new_share = ::dcs::eesim::scale_resource_share(
 //											// Reference resource capacity and threshold
 //											app.reference_resource(res_category).capacity(),
@@ -1928,25 +2660,28 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 							}
 							else
 							{
-#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION)
-# if DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION == 'W'
+#if DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION == 'W'
 //#  ifdef DCS_DEBUG
 								::std::ostringstream oss;
 								oss << "APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to max(" << ptr_vm->wanted_resource_share(res_category) << ", " << default_min_share_ << ")";
 								::dcs::eesim::log_warn(cls_id_, oss.str());
 //#  endif // DCS_DEBUG
 								new_share = ::std::max(ptr_vm->wanted_resource_share(res_category), default_min_share_);
-# elif DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION == 'R'
+#elif DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION == 'R'
 //#  ifdef DCS_DEBUG
 								::std::ostringstream oss;
 								oss << "APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to max(" << ptr_vm->guest_system().resource_share(res_category) << ", " << default_min_share_ << ")";
 								::dcs::eesim::log_warn(cls_id_, oss.str());
 //#  endif // DCS_DEBUG
 								new_share = ::std::max(ptr_vm->guest_system().resource_share(res_category), default_min_share_);
-# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
-#  error Unknwon value for DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION.
-# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
-#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
+#elif DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION == 'M'
+//#  ifdef DCS_DEBUG
+								::std::ostringstream oss;
+								oss << "APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to " << default_min_share_;
+								::dcs::eesim::log_warn(cls_id_, oss.str());
+//#  endif // DCS_DEBUG
+								new_share = default_min_share_;
+#elif DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION == 'C'
 //# ifdef DCS_DEBUG
 								::std::ostringstream oss;
 								oss << "APP: " << app.id() << " - Optimal share (" << new_share << ") is negative; adjusted to max(" << ptr_vm->resource_share(res_category) << ", " << default_min_share_ << ")";
@@ -1958,10 +2693,10 @@ DCS_DEBUG_TRACE("APP : " << app.id() << " - Tier " << tier_id << " --> New Unsca
 
 #if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
 							DCS_DEBUG_TRACE("APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (Equilibrium-Point: " << tier_eq_out_measures_[tier_id] << " - Reference-Point: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << " (Equilibrium-Point: " << ::dcs::eesim::scale_resource_share(app.reference_resource(res_category).capacity(), pm.resource(res_category)->capacity(), tier_eq_in_measures_[tier_id]) << " - Reference-Point: " << ptr_vm->guest_system().resource_share(res_category) << ")");
-//::std::cerr << "APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (Equilibrium-Point: " << tier_eq_out_measures_[tier_id] << " - Reference-Point: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << " (Equilibrium-Point: " << ::dcs::eesim::scale_resource_share(app.reference_resource(res_category).capacity(), pm.resource(res_category)->capacity(), tier_eq_in_measures_[tier_id]) << " - Reference-Point: " << ptr_vm->guest_system().resource_share(res_category) << ")" << ::std::endl;//XXX
+::std::cerr << "APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (Equilibrium-Point: " << tier_eq_out_measures_[tier_id] << " - Reference-Point: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << " (Equilibrium-Point: " << ::dcs::eesim::scale_resource_share(app.reference_resource(res_category).capacity(), pm.resource(res_category)->capacity(), tier_eq_in_measures_[tier_id]) << " - Reference-Point: " << ptr_vm->guest_system().resource_share(res_category) << ")" << ::std::endl;//XXX
 #else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 							DCS_DEBUG_TRACE("APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " - Category: " << res_category << " - Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (Reference-Point: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share);
-//::std::cerr << "APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (Reference-Point: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << ::std::endl;//XXX
+::std::cerr << "APP: " << app.id() << " - VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << ": " << res_category << " Actual Output: " << tier_measures_[tier_id].at(response_time_performance_measure)->estimate() << " (Reference-Point: " << app_perf_model.tier_measure(tier_id, response_time_performance_measure) << ") - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> New Share: " << new_share << ::std::endl;//XXX
 #endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 
 							ptr_vm->wanted_resource_share(res_category, new_share);
@@ -2007,6 +2742,41 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 					}
 #endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
 				}
+
+//				typedef typename traits_type::physical_machine_identifier_type pm_identifier_type;
+//				typedef ::std::set<pm_identifier_type> pm_id_container;
+//				typedef typename pm_id_container::const_iterator pm_id_iterator;
+//
+//				pm_id_container seen_machs;
+//				for (size_type tier_id = 0; tier_id < num_tiers; ++tier_id)
+//				{
+//					virtual_machine_pointer ptr_vm(app_sim_model.tier_virtual_machine(tier_id));
+//
+//					physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
+//
+//					pm_identifier_type pm_id(pm.id());
+//
+//					if (!seen_machs.count(pm_id))
+//					{
+//						seen_machs.insert(pm_id);
+//					}
+//
+//					physical_resource_category category(cpu_resource_category); //FIXME: CPU category is hard-coded
+//
+//					real_type share(ptr_vm->guest_system().resource_share(category));
+//
+//					ptr_vm->wanted_resource_share(category, share);
+//
+//					::std::ostringstream oss;
+//					oss << "APP: " << app.id() << " - TIER: " << tier_id << " - Control not applied: fallback to reference share: " << share;
+//					::dcs::eesim::log_warn(cls_id_, oss.str());
+//				}
+//				pm_id_iterator end_it(seen_machs.end());
+//				for (pm_id_iterator it = seen_machs.begin(); it != end_it; ++it)
+//				{
+//					pm_identifier_type pm_id(*it);
+//					this->application().data_centre().physical_machine_controller(pm_id).control();
+//				}
 			}
 			else if (!ok)
 			{
@@ -2087,10 +2857,10 @@ DCS_DEBUG_TRACE("Optimal control applied");//XXX
 		// Reset previously collected system measure in order to collect a new ones.
 		reset_measures();
 
-if (((count_-1) % 1000) == 0)//XXX
-{//XXX
+//if (((count_-1) % 1000) == 0)//XXX
+//{//XXX
 ::std::cerr << "APP: " << this->application().id() << " - END Process CONTROL event -- Actual Output: " << measures_.at(response_time_performance_measure)->estimate() << " (Clock: " << ctx.simulated_time() << " - Counts: " << count_ << "/" << ident_fail_count_ << "/" << ctrl_fail_count_ << ")" << ::std::endl;//XXX
-}//XXX
+//}//XXX
 
 		DCS_DEBUG_TRACE("(" << this << ") END Do Process CONTROL event (Clock: " << ctx.simulated_time() << " - Count: " << count_ << "/" << ident_fail_count_ << "/" << ctrl_fail_count_ << ")");
 	}
@@ -2153,7 +2923,7 @@ if (((count_-1) % 1000) == 0)//XXX
 #if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
 	private: uint_type num_eq_measures_;
 	private: real_type next_eq_out_measure_;
-	private: real_type eq_out_measure_;
+	protected: real_type eq_out_measure_;//FIXME
 	private: ::std::vector<real_type> next_tier_eq_out_measures_;
 	private: ::std::vector<real_type> tier_eq_out_measures_;
 //	private: real_type next_eq_in_measure_;
@@ -2301,17 +3071,14 @@ class lqi_application_controller: public detail::lq_application_controller<Trait
 
 	private: vector_type do_optimal_control(vector_type const& x, vector_type const& u, vector_type const& y, matrix_type const& A, matrix_type const& B, matrix_type const& C, matrix_type const& D)
 	{
+		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( u );
+
 		namespace ublas = ::boost::numeric::ublas;
 		namespace ublasx = ::boost::numeric::ublasx;
 
-		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( u );
-
-		vector_type opt_u;
 		//FIXME: since we are using a discrete-time system, should we really use the real sampling time or simply 1?.
 		//real_type ts(this->sampling_time());
 		real_type ts(1);
-
-		controller_.solve(A, B, C, D, ts);
 
 		// Form the augmented state-vector
 		//
@@ -2327,22 +3094,78 @@ class lqi_application_controller: public detail::lq_application_controller<Trait
 		//        = xi(k-1) + (r-Cx(k-1)-Du(k-1))|t_s|
 		//
 
+		uint_type nx(ublasx::size(x));
+		uint_type nu(ublasx::size(u));
+		uint_type ny(ublasx::size(y));
+		uint_type nz(nx+ny);
+
 		// Update the integrated control error.
 		// NOTE: In our case the reference value r is zero
 		//xi_ = xi_- ublas::subrange(x, ublasx::num_rows(A)-ublasx::num_rows(C), ublasx::num_rows(A));
 		//xi_ = xi_- y;
-		xi_ = xi_+ ts*y;
+		//FIXME: response-time performance metric is hard-coded
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION)
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+		vector_type r(ublas::scalar_vector<real_type>(ny, this->application().performance_model().application_measure(response_time_performance_measure)/this->eq_out_measure_-1));
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+		vector_type r(ublas::scalar_vector<real_type>(ny, 0));
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+		vector_type r(ublas::scalar_vector<real_type>(ny, this->application().performance_model().application_measure(response_time_performance_measure)-this->eq_out_measure_));
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+		vector_type r(ublas::scalar_vector<real_type>(ny, 0));
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+		vector_type r(ublas::scalar_vector<real_type>(ny, this->application().performance_model().application_measure(response_time_performance_measure)));
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+		//vector_type r(ublas::scalar_vector<real_type>(ny, 1.0/this->application().performance_model().application_measure(response_time_performance_measure)));//[EXP-20120207]
+		//FIXME: we need to know what y represents (i.e., either a deviation from equilibrium, or a normalized deviation, or an absolute value, ...)
+		//xi_ = xi_+ ts*(r-y-ublas::scalar_vector<real_type>(ublasx::size(y), this->eq_out_measure_)); 
+		xi_ = xi_+ ts*(r-y);
 		//xi_ = xi_+ublas::scalar_vector<real_type>(1,1)- ublas::subrange(x, ublasx::num_rows(A)-ublasx::num_rows(C), ublasx::num_rows(A));
 
-		vector_type z(ublasx::num_rows(A)+ublasx::num_rows(C));
-		ublas::subrange(z, 0, ublasx::num_rows(A)) = x;
-		ublas::subrange(z, ublasx::num_rows(A), ublasx::num_rows(A)+ublasx::num_rows(C)) = xi_;
+		vector_type z(nz);
+		ublas::subrange(z, 0, nx) = x;
+		ublas::subrange(z, nx, nz) = xi_;
+::std::cerr << "APP: " << this->application().id() << " - Control Error: " << (r-y) << " - xi=" << xi_ << " - Extended State: " << z << ::std::endl;//XXX
+
+		vector_type opt_u;
+
+		controller_.solve(A, B, C, D, ts);
 
 //::std::cerr << "[eesim::lqi_controller] z: " << z << ::std::endl;//XXX
 //::std::cerr << "[eesim::lqi_controller] K: " << controller_.gain() << ::std::endl;//XXX
 //::std::cerr << "[eesim::lqi_controller] S: " << controller_.are_solution() << ::std::endl;//XXX
 //::std::cerr << "[eesim::lqi_controller] e: " << controller_.eigenvalues() << ::std::endl;//XXX
 		opt_u = ublas::real(controller_.control(z));
+
+		uint_type ncp(nx+nu);
+		uint_type nrp(nx+ny);
+		matrix_type P(nrp, ncp, 0);
+		ublas::subrange(P, 0, nx, 0, nx) = ublas::identity_matrix<real_type>(nx, nx) - A;
+		ublas::subrange(P, 0, nx, nx, ncp) = B;
+		ublas::subrange(P, nx, nrp, 0, nx) = -C;
+		ublas::subrange(P, nx, nrp, nx, ncp) = D;
+		matrix_type Pt(ublas::trans(P));
+		matrix_type PP(ublas::prod(P, Pt));
+		bool inv = ublasx::inv_inplace(PP);
+		if (inv)
+		{
+			PP = ublas::prod(Pt, PP);
+			vector_type yd(nrp,0);
+			ublas::subrange(yd, nx, nrp) = r;
+			vector_type xdud(ublas::prod(PP, yd));
+			::std::cerr << "COMPENSATION: P=" << P << " ==> (xd,ud)=" << xdud << ", opt_u=" << opt_u << ::std::endl;//XXX
+			opt_u = opt_u + ublas::subrange(xdud, nx, ncp);
+			::std::cerr << "COMPENSATION: P=" << P << " ==> (xd,ud)=" << xdud << ", NEW opt_u=" << opt_u << ::std::endl;//XXX
+		}
+		else
+		{
+			DCS_EXCEPTION_THROW( ::std::runtime_error, "Cannot compute equilibrium control input: Rosenbrock's system matrix is not invertible" );
+		}
 
 		return opt_u;
 	}
@@ -2540,6 +3363,9 @@ class lqr_application_controller: public detail::lq_application_controller<Trait
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( C );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( D );
 
+		namespace ublas = ::boost::numeric::ublas;
+		namespace ublasx = ::boost::numeric::ublasx;
+
 //		// Check: if (A,B) is controllable, then the associated DARE has a
 //		//        positive semidefinite solution.
 //		//        (sufficient but not necessary condition)
@@ -2553,10 +3379,10 @@ class lqr_application_controller: public detail::lq_application_controller<Trait
 		//        (sufficient and necessary condition)
 		if (!::dcs::control::is_stabilizable(A, B, true))
 		{
-			//throw ::std::runtime_error("System (A,B) is not stabilizable (DARE cannot have a positive semidefinite solution).");
 			::std::ostringstream oss;
 			oss << "APP: " << this->application().id() << " - System (A,B) is not stabilizable (the associated DARE cannot have a positive semidefinite solution) [with A=" << A << " and B=" << B << "]";
 			log_warn(base_type::cls_id_, oss.str());
+			throw ::std::runtime_error("System (A,B) is not stabilizable (DARE cannot have a positive semidefinite solution).");
 		}
 //		// Check: if (A,B) controllable and (Q,A) observable, then the
 //		//        associated DARE has a unique and stabilizing solution such
@@ -2577,17 +3403,65 @@ class lqr_application_controller: public detail::lq_application_controller<Trait
 		//        (sufficient and necessary condition)
 		if (!::dcs::control::is_detectable(A, controller_.Q(), true))
 		{
-			//throw ::std::runtime_error("System (Q,A) is not detectable (closed-loop system will not be stable).");
 			::std::ostringstream oss;
-			oss << "APP: " << this->application().id() << " - System (Q,A) is not detectable (closed-loop system will not be stable) [with " << A << " and B=" << B << "]";
+			oss << "APP: " << this->application().id() << " - System (Q,A) is not detectable (closed-loop system will not be stable) [with " << A << " and Q=" << controller_.Q() << "]";
 			log_warn(base_type::cls_id_, oss.str());
+			throw ::std::runtime_error("System (Q,A) is not detectable (closed-loop system will not be stable).");
 		}
 
+
+		uint_type nx(ublas::num_columns(A));
+		uint_type nu(ublas::num_columns(B));
+		uint_type ny(ublas::num_rows(C));
+
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION)
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+		vector_type r(ublas::scalar_vector<real_type>(ny, this->application().performance_model().application_measure(response_time_performance_measure)/this->eq_out_measure_-1));
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+		vector_type r(ublas::scalar_vector<real_type>(ny, 0));
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+		vector_type r(ublas::scalar_vector<real_type>(ny, this->application().performance_model().application_measure(response_time_performance_measure)-this->eq_out_measure_));
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+		vector_type r(ublas::scalar_vector<real_type>(ny, 0));
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+		vector_type r(ublas::scalar_vector<real_type>(ny, this->application().performance_model().application_measure(response_time_performance_measure)));
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
 
 		vector_type opt_u;
 
 		controller_.solve(A, B);
-		opt_u = ::boost::numeric::ublas::real(controller_.control(x));
+		opt_u = ublas::real(controller_.control(x));
+
+		uint_type ncp(nx+nu);
+		uint_type nrp(nx+ny);
+
+		matrix_type P(nrp, ncp, 0);
+		ublas::subrange(P, 0, nx, 0, nx) = ublas::identity_matrix<real_type>(nx, nx) - A;
+		ublas::subrange(P, 0, nx, nx, ncp) = B;
+		ublas::subrange(P, nx, nrp, 0, nx) = -C;
+		ublas::subrange(P, nx, nrp, nx, ncp) = D;
+		matrix_type Pt(ublas::trans(P));
+		matrix_type PP(ublas::prod(P, Pt));
+		bool inv = ublasx::inv_inplace(PP);
+		if (inv)
+		{
+			PP = ublas::prod(Pt, PP);
+			vector_type yd(nrp,0);
+			ublas::subrange(yd, nx, nrp) = r;
+			vector_type xdud(ublas::prod(PP, yd));
+			::std::cerr << "COMPENSATION: P=" << P << " ==> (xd,ud)=" << xdud << ", opt_u=" << opt_u << ::std::endl;//XXX
+			opt_u = opt_u + ublas::subrange(xdud, nx, ncp);
+			::std::cerr << "COMPENSATION: P=" << P << " ==> (xd,ud)=" << xdud << ", NEW opt_u=" << opt_u << ::std::endl;//XXX
+		}
+		else
+		{
+			DCS_EXCEPTION_THROW( ::std::runtime_error, "Cannot compute equilibrium control input: Rosenbrock's system matrix is not invertible" );
+		}
 
 		return opt_u;
 	}
@@ -2791,13 +3665,100 @@ class lqry_application_controller: public detail::lq_application_controller<Trai
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( u );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( y );
 
+		namespace ublas = ::boost::numeric::ublas;
+		namespace ublasx = ::boost::numeric::ublasx;
+
+		// Check: if (A,B) is stabilizable, then the assoicated DARE has a
+		//        positive semidefinite solution.
+		//        (sufficient and necessary condition)
+		if (!::dcs::control::is_stabilizable(A, B, true))
+		{
+			::std::ostringstream oss;
+			oss << "APP: " << this->application().id() << " - System (A,B) is not stabilizable (the associated DARE cannot have a positive semidefinite solution) [with A=" << A << " and B=" << B << "]";
+			log_warn(base_type::cls_id_, oss.str());
+			throw ::std::runtime_error("System (A,B) is not stabilizable (DARE cannot have a positive semidefinite solution).");
+		}
+		// Check: if (A,B) stabilizable and (C'QC,A) detectable, then the
+		//        associated DARE has a unique and stabilizing solution such
+		//        that the closed-loop system:
+		//          x(k+1) = Ax(k) + Bu(k) = (A + BK)x(k)
+		//        is stable (K is the LQRY-optimal state feedback gain).
+		//        (sufficient and necessary condition)
+		matrix_type QQ(ublas::prod(controller_.Q(), C));
+		QQ = ublas::prod(ublas::trans(C), QQ);
+		if (!::dcs::control::is_detectable(A, QQ, true))
+		{
+			::std::ostringstream oss;
+			oss << "APP: " << this->application().id() << " - System (C'QC,A) is not detectable (closed-loop system will not be stable) [with " << A << ", Q=" << controller_.Q() << " and C=" << C << "]";
+			log_warn(base_type::cls_id_, oss.str());
+			throw ::std::runtime_error("System (C'QC,A) is not detectable (closed-loop system will not be stable).");
+		}
+
+//namespace ublas = ::boost::numeric::ublas;
+//namespace ublasx = ::boost::numeric::ublasx;
+//vector_type r(ublas::scalar_vector<real_type>(ublasx::size(y), this->application().performance_model().application_measure(response_time_performance_measure)-this->eq_out_measure_));
+//matrix_type Kv;
+//matrix_type A1(ublas::trans(B));
+//A1 = ublas::prod(A1, controller_.are_solution());
+//matrix_type A2(A1);
+//A1 = ublas::prod(A1, B) + controller_.R();
+//A1 = ublas::prod(A1, controller_.are_solution());
+//A2 = ublas::prod(A2, A);
+//ublasx::lu_solve(A1, A2, Kv);
+//opt_u = ::boost::numeric::ublas::real(controller_.control(x))+ublas::prod(Kv,r);
+
+		uint_type nx(ublas::num_columns(A));
+		uint_type nu(ublas::num_columns(B));
+		uint_type ny(ublas::num_rows(C));
+
+#if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION)
+# if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT)
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+		vector_type r(ublas::scalar_vector<real_type>(ny, this->application().performance_model().application_measure(response_time_performance_measure)/this->eq_out_measure_-1));
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+		vector_type r(ublas::scalar_vector<real_type>(ny, 0));
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+# else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+#  if defined(DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT)
+		vector_type r(ublas::scalar_vector<real_type>(ny, this->application().performance_model().application_measure(response_time_performance_measure)-this->eq_out_measure_));
+#  else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+		vector_type r(ublas::scalar_vector<real_type>(ny, 0));
+#  endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+# endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+		vector_type r(ublas::scalar_vector<real_type>(ny, this->application().performance_model().application_measure(response_time_performance_measure)));
+#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+
 		vector_type opt_u;
 
 		controller_.solve(A, B, C, D);
-//::std::cerr << "[eesim::lqry_controller] K: " << controller_.gain() << ::std::endl;//XXX
-//::std::cerr << "[eesim::lqry_controller] S: " << controller_.are_solution() << ::std::endl;//XXX
-//::std::cerr << "[eesim::lqry_controller] e: " << controller_.eigenvalues() << ::std::endl;//XXX
-		opt_u = ::boost::numeric::ublas::real(controller_.control(x));
+		opt_u = ublas::real(controller_.control(x));
+
+		uint_type ncp(nx+nu);
+		uint_type nrp(nx+ny);
+
+		matrix_type P(nrp, ncp, 0);
+		ublas::subrange(P, 0, nx, 0, nx) = ublas::identity_matrix<real_type>(nx, nx) - A;
+		ublas::subrange(P, 0, nx, nx, ncp) = B;
+		ublas::subrange(P, nx, nrp, 0, nx) = -C;
+		ublas::subrange(P, nx, nrp, nx, ncp) = D;
+		matrix_type Pt(ublas::trans(P));
+		matrix_type PP(ublas::prod(P, Pt));
+		bool inv = ublasx::inv_inplace(PP);
+		if (inv)
+		{
+			PP = ublas::prod(Pt, PP);
+			vector_type yd(nrp,0);
+			ublas::subrange(yd, nx, nrp) = r;
+			vector_type xdud(ublas::prod(PP, yd));
+			::std::cerr << "COMPENSATION: P=" << P << " ==> (xd,ud)=" << xdud << ", opt_u=" << opt_u << ::std::endl;//XXX
+			opt_u = opt_u + ublas::subrange(xdud, nx, ncp);
+			::std::cerr << "COMPENSATION: P=" << P << " ==> (xd,ud)=" << xdud << ", NEW opt_u=" << opt_u << ::std::endl;//XXX
+		}
+		else
+		{
+			DCS_EXCEPTION_THROW( ::std::runtime_error, "Cannot compute equilibrium control input: Rosenbrock's system matrix is not invertible" );
+		}
 
 		return opt_u;
 	}
