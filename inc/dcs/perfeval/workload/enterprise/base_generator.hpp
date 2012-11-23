@@ -20,7 +20,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
 #ifndef DCS_PERFEVAL_WORKLOAD_ENTERPRISE_BASE_GENERATOR_HPP
@@ -41,7 +41,7 @@ namespace dcs { namespace perfeval { namespace workload { namespace enterprise {
  * \tparam RequestCategoryT The type for user request categories.
  * \tparam RealT The type for real numbers.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 //template <typename RequestCategoryT, typename RealT>
 template <typename IntT, typename RealT>

@@ -1467,7 +1467,7 @@ const typename lq_application_controller<TraitsT>::real_type lq_application_cont
  * \brief Application controller based on the Linear-Quadratic-Integrator
  *  control.
  * 
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class lqi_application_controller: public detail::lq_application_controller<TraitsT>
@@ -1895,7 +1895,7 @@ class lqry_application_controller: public detail::lq_application_controller<Trai
  * \brief Application controller based on the Linear-Quadratic-Integrator
  *  control.
  * 
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class matlab_lqi_application_controller: public detail::lq_application_controller<TraitsT>

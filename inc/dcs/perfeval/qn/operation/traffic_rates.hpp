@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
 #ifndef DCS_PERFEVAL_QN_OPERATION_TRAFFIC_RATES_HPP
@@ -111,7 +111,7 @@ struct closed_traffic_rates_traits
  *       John Wiley & Sons, Inc. 1998.
  * .
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename MatrixExprT, typename VectorExprT>
 typename detail::open_traffic_rates_traits<
@@ -224,7 +224,7 @@ typename detail::open_traffic_rates_traits<
  *       John Wiley & Sons, Inc. 1998.
  * .
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename MatrixExprT>
 typename detail::closed_traffic_rates_traits<MatrixExprT>::result_type traffic_rates(::boost::numeric::ublas::matrix_expression<MatrixExprT> const& P)

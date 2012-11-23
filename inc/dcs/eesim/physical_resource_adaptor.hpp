@@ -48,7 +48,7 @@ namespace dcs { namespace eesim {
  * \tparam PhysicalMachineTraitsT Type traits for the adaptee physical resource
  *  class type.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <
 	typename PhysicalResourceT,

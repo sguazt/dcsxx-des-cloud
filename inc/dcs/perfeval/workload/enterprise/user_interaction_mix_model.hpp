@@ -20,7 +20,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * \author Cosimo Anglano, &lt;cosimo.anglano@mfn.unipmn.it&gt;
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
 #ifndef DCS_PERFEVAL_WORKLOAD_ENTERPRISE_USER_INTERACTION_MIX_MODEL_HPP
@@ -83,7 +83,7 @@ namespace dcs { namespace perfeval { namespace workload { namespace enterprise {
  * \f}
  *
  * \author Cosimo Anglano, &lt;cosimo.anglano@mfn.unipmn.it&gt;
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <
 	//typename RequestCategoryT,

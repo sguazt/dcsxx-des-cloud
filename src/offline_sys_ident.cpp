@@ -1911,7 +1911,7 @@ const typename TraitsT::real_type base_system_identificator<TraitsT>::min_share 
  * response time and the unweighted average of the shares each tier had
  * when the request departed from it.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class noagg_measure_noagg_share_siso_system_identificator: public base_system_identificator<TraitsT>
@@ -2221,7 +2221,7 @@ class noagg_measure_noagg_share_siso_system_identificator: public base_system_id
  * response time and the unweighted average of the average shares computed for
  * each tier.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class noagg_measure_agg_mean_share_siso_system_identificator: public base_system_identificator<TraitsT>
@@ -2591,7 +2591,7 @@ class noagg_measure_agg_mean_share_siso_system_identificator: public base_system
  * response time and the unweighted average of the weighted average shares
  * computed for each tier.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class noagg_measure_agg_wmean_share_siso_system_identificator: public base_system_identificator<TraitsT>
@@ -2983,7 +2983,7 @@ class noagg_measure_agg_wmean_share_siso_system_identificator: public base_syste
  * For computing the share of the whole application, we take the unweighted
  * average of the shares assigned to each tier.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class agg_mean_measure_noagg_share_siso_system_identificator: public base_system_identificator<TraitsT>
@@ -3380,7 +3380,7 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
  * For computing the share of the whole application, we take the unweighted
  * average of the shares assigned to each tier.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class agg_mean_measure_agg_mean_share_siso_system_identificator: public base_system_identificator<TraitsT>
@@ -3736,7 +3736,7 @@ class agg_mean_measure_agg_mean_share_siso_system_identificator: public base_sys
  * average of the shares assigned to each tier, weighted by the number of
  * request departed from that tier.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 //TODO: we need to better define the meaning of the weights for the mean shares.
 template <typename TraitsT>
@@ -4170,7 +4170,7 @@ class agg_mean_measure_agg_wmean_share_siso_system_identificator: public base_sy
  * For computing the share of the whole application, we take the unweighted
  * average of the shares assigned to each tier.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class agg_mean_measure_noagg_share_miso_system_identificator: public base_system_identificator<TraitsT>

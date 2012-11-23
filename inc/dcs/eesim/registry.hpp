@@ -83,7 +83,7 @@ namespace detail { namespace /*<unnamed>*/ {
  *  .
  *
  * \author Port4l, http://www.boostcookbook.com/User:/Port4l
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename T>
 class singleton: ::boost::noncopyable

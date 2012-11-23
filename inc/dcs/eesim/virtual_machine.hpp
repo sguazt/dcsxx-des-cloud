@@ -81,7 +81,7 @@ struct share_observer
 /**
  * \brief Model for virtual machines.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class virtual_machine

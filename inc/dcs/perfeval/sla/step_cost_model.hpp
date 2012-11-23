@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
 #ifndef DCS_PERFEVAL_SLA_STEP_COST_MODEL_HPP
@@ -50,7 +50,7 @@ namespace detail {
  * checker function return \c true if \f$x_i \le y_i$ for all \f$i\f$, and
  * \c false otherwise.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 //template <typename RealT>
 struct default_checker
@@ -114,7 +114,7 @@ struct default_checker
  *     \end{cases}
  * \f}
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <
 	typename CategoryT,

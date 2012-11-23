@@ -85,7 +85,7 @@ class base_application_simulation_model;
  *
  * \todo Handle application priority.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class multi_tier_application

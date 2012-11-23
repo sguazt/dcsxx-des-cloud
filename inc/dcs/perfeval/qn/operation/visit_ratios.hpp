@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
 #ifndef DCS_PERFEVAL_QN_OPERATION_VISIT_RATIOS_HPP
@@ -82,7 +82,7 @@ namespace dcs { namespace perfeval { namespace qn {
  *       John Wiley & Sons, Inc. 1998.
  * .
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename MatrixExprT, typename VectorExprT>
 typename ::boost::numeric::ublas::vector_temporary_traits<VectorExprT>::type visit_ratios(::boost::numeric::ublas::matrix_expression<MatrixExprT> const& P,
@@ -198,7 +198,7 @@ typename ::boost::numeric::ublas::vector_temporary_traits<VectorExprT>::type vis
  *       John Wiley & Sons, Inc. 1998.
  * .
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename VectorExprT, typename MatrixExprT>
 typename ::boost::numeric::ublas::vector_temporary_traits<VectorExprT>::type visit_ratios(::boost::numeric::ublas::matrix_expression<MatrixExprT> const& P)
@@ -286,7 +286,7 @@ typename ::boost::numeric::ublas::vector_temporary_traits<VectorExprT>::type vis
  *       John Wiley & Sons, Inc. 1998.
  * .
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 /*TODO: here below is the pseudo code. The main idea is to start from the multidimensional array P of size nn x nc x nn x nc where nn is the number of stations and nc is the number of class and P(i,j,k,h) is the probability the a j-class customer at station j go to station k and change its class to h.
  *

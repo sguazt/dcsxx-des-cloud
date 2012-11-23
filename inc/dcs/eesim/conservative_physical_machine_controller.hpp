@@ -50,7 +50,7 @@ namespace dcs { namespace eesim {
  * - VM2: min(0.80,(0.90-0.30)) = 0.60
  * .
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class conservative_physical_machine_controller: public base_physical_machine_controller<TraitsT>

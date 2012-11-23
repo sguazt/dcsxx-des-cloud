@@ -4,7 +4,7 @@
  * \brief Class containing wrappers for different system identification
  *  strategies.
  *
- * Copyright (C) 2009-2011  Distributed Computing System (DCS) Group, Computer
+ * Copyright (C) 2009-2012  Distributed Computing System (DCS) Group, Computer
  * Science Department - University of Piemonte Orientale, Alessandria (Italy).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,7 +20,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
 #ifndef DCS_EESIM_DETAIL_SYSTEM_IDENTIFICATION_STRATEGIES_HPP
@@ -369,7 +369,7 @@ class rls_system_identification_strategy: public base_system_identification_stra
  *
  * MATLAB Compiler Toolbox implementation version.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class rls_ff_miso_matlab_mcr_proxy
@@ -844,7 +844,7 @@ class rls_ff_miso_matlab_mcr_proxy
  *
  * MATLAB implementation version.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class rls_ff_miso_matlab_app_proxy
@@ -1849,7 +1849,7 @@ DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
  *
  * MATLAB implementation version.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class rpem_ff_miso_matlab_app_proxy
@@ -2951,7 +2951,7 @@ DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
  * \brief Proxy for directly applying the Recursive Least Square with
  *  forgetting-factor algorithm to a MIMO system model.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class rls_ff_mimo_proxy: public rls_system_identification_strategy<TraitsT>
@@ -3176,7 +3176,7 @@ class rls_ff_mimo_proxy: public rls_system_identification_strategy<TraitsT>
  * \brief Proxy to identify a MIMO system model by applying the Recursive Least
  *  Square with forgetting-factor algorithm to several MISO system models.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class rls_ff_miso_proxy: public rls_system_identification_strategy<TraitsT>
@@ -3501,7 +3501,7 @@ DCS_DEBUG_TRACE("END estimation");//XXX
  *    Electronic Letters, Vol. 23, 1991.
  * .
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class rls_park1991_miso_proxy: public rls_system_identification_strategy<TraitsT>
@@ -3821,7 +3821,7 @@ DCS_DEBUG_TRACE("END estimation");//XXX
  * \brief Proxy to identify a MIMO system model by applying the Recursive Least
  *  Square with forgetting-factor algorithm to several MISO system models.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class rls_kulhavy1984_miso_proxy: public rls_system_identification_strategy<TraitsT>
@@ -4116,7 +4116,7 @@ DCS_DEBUG_TRACE("END estimation");//XXX
  * \brief Proxy to identify a MIMO system model by applying the Recursive Least
  *  Square with forgetting-factor algorithm to several MISO system models.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class rls_bittanti1990_miso_proxy: public rls_system_identification_strategy<TraitsT>

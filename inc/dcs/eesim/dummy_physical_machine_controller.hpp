@@ -36,7 +36,7 @@ namespace dcs { namespace eesim {
 /**
  * \brief Dummy physical machine controller.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class dummy_physical_machine_controller: public base_physical_machine_controller<TraitsT>

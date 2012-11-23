@@ -47,7 +47,7 @@ namespace dcs { namespace eesim {
  * when object i is to be packed, find out that bin which after accommodating
  * object i will have the least amount of space left.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class best_fit_initial_placement_strategy: public base_initial_placement_strategy<TraitsT>

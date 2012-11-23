@@ -93,7 +93,7 @@ void dump_vm_share(typename TraitsT::uint_type vm_id, typename TraitsT::uint_typ
  * - VM2: (0.8/(0.3+0.8))*0.9 ~= 0.65454...
  * .
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 template <typename TraitsT>
 class proportional_physical_machine_controller: public base_physical_machine_controller<TraitsT>

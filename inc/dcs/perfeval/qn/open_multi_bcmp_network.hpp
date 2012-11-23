@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
 #ifndef DCS_PERFEVAL_QN_OPEN_MULTI_BCMP_NETWORK_HPP
@@ -76,7 +76,7 @@ namespace dcs { namespace perfeval { namespace qn {
  *    Modeling Techniques and Applications (ASMTA 2010), Cardiff, UK, 2010.
  * .
  *
- * \author Marco Guazzone, &lt;marco.guazzone@mfn.unipmn.it&gt;
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 //template <typename RealVectorT, typename UIntVectorT, typename RealMatrixT>
 template <typename RealT, typename UIntT>
