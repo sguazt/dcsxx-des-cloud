@@ -59,8 +59,8 @@
 ## - srcdirs: list of source paths (relative to $(srcdir)).
 ## - targets: targets executable's filename.
 
-#export targets := eesim offline_sys_ident offline_bench
-export targets := eesim
+#export targets := des_cloud offline_sys_ident offline_bench
+export targets := des_cloud
 #export targets := offline_bench
 #export targets := offline_sys_ident
 export docdir := ./docs
@@ -73,8 +73,8 @@ export xmpdir := ./examples
 export xmp_srcdir := $(xmpdir)/src
 export xmp_builddir := ./build
 export srcdirs := .
-export test_srcdirs := . dcs/perfeval/qn dcs/eesim
-export xmp_srcdirs := . dcs/eesim
+export test_srcdirs := . dcs/perfeval/qn dcs/des/cloud
+export xmp_srcdirs := . dcs/des/cloud
 export libdirs := ./libs/lib
 export test_libdirs :=
 export xmp_libdirs :=
