@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/config/configuration.hpp
+ * \file dcs/des/cloud/config/configuration.hpp
  *
  * \brief Main configuration class.
  *
@@ -30,18 +30,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DCS_EESIM_CONFIG_CONFIGURATION_HPP
-#define DCS_EESIM_CONFIG_CONFIGURATION_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_CONFIGURATION_HPP
+#define DCS_DES_CLOUD_CONFIG_CONFIGURATION_HPP
 
 
-#include <dcs/eesim/config/data_center.hpp>
-#include <dcs/eesim/config/logging.hpp>
-#include <dcs/eesim/config/rng.hpp>
-#include <dcs/eesim/config/simulation.hpp>
+#include <dcs/des/cloud/config/data_center.hpp>
+#include <dcs/des/cloud/config/logging.hpp>
+#include <dcs/des/cloud/config/rng.hpp>
+#include <dcs/des/cloud/config/simulation.hpp>
 #include <iosfwd>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 
 template <typename RealT, typename UIntT>
@@ -123,7 +123,7 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 	return os;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_CONFIGURATION_HPP
+#endif // DCS_DES_CLOUD_CONFIG_CONFIGURATION_HPP

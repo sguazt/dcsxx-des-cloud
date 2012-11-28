@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/application_performance_model_traits.hpp
+ * \file dcs/des/cloud/application_performance_model_traits.hpp
  *
  * \brief Traits class for application performance model.
  *
@@ -22,16 +22,16 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_APPLICATION_PERFORMANCE_MODEL_TRAITS_HPP
-#define DCS_EESIM_APPLICATION_PERFORMANCE_MODEL_TRAITS_HPP
+#ifndef DCS_DES_CLOUD_APPLICATION_PERFORMANCE_MODEL_TRAITS_HPP
+#define DCS_DES_CLOUD_APPLICATION_PERFORMANCE_MODEL_TRAITS_HPP
 
 
-#include <dcs/eesim/performance_measure_category.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
 //#include <dcs/perfeval/qn/open_multi_bcmp_network.hpp>
 //#include <limits>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT, typename ModelT>
 class application_performance_model_traits
@@ -87,7 +87,7 @@ class application_performance_model_traits<
 };
 */
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_APPLICATION_PERFORMANCE_MODEL_TRAITS_HPP
+#endif // DCS_DES_CLOUD_APPLICATION_PERFORMANCE_MODEL_TRAITS_HPP

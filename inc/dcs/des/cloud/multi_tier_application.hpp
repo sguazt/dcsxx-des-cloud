@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/multi_tier_application.hpp
+ * \file dcs/des/cloud/multi_tier_application.hpp
  *
  * \brief Model for multi-tier applications.
  *
@@ -22,22 +22,22 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_MULTI_TIER_APPLICATION_HPP
-#define DCS_EESIM_MULTI_TIER_APPLICATION_HPP
+#ifndef DCS_DES_CLOUD_MULTI_TIER_APPLICATION_HPP
+#define DCS_DES_CLOUD_MULTI_TIER_APPLICATION_HPP
 
 
 #include <cstddef>
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
-#include <dcs/eesim/application_tier.hpp>
-#include <dcs/eesim/base_application_performance_model.hpp>
-#include <dcs/eesim/base_application_simulation_model.hpp>
-#include <dcs/eesim/performance_measure_category.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-#include <dcs/eesim/physical_resource_view.hpp>
-#include <dcs/eesim/registry.hpp>
-#include <dcs/eesim/user_request.hpp>
+#include <dcs/des/cloud/application_tier.hpp>
+#include <dcs/des/cloud/base_application_performance_model.hpp>
+#include <dcs/des/cloud/base_application_simulation_model.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+#include <dcs/des/cloud/physical_resource_view.hpp>
+#include <dcs/des/cloud/registry.hpp>
+#include <dcs/des/cloud/user_request.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
@@ -52,7 +52,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim { 
+namespace dcs { namespace des { namespace cloud { 
 
 template <typename TraitsT>
 class data_center;
@@ -223,7 +223,7 @@ class multi_tier_application
 		// pre: pointer to performance model must be a valid pointer
 		DCS_ASSERT(
 			ptr_model,
-			throw ::std::invalid_argument("[dcs::eesim::multi_tier_application::performance model] Invalid performance model.")
+			throw ::std::invalid_argument("[dcs::des::cloud::multi_tier_application::performance model] Invalid performance model.")
 		);
 
 		ptr_perf_model_ = ptr_model;
@@ -253,7 +253,7 @@ class multi_tier_application
 		// pre: pointer to simulation model must be a valid pointer
 		DCS_ASSERT(
 			ptr_model,
-			throw ::std::invalid_argument("[dcs::eesim::multi_tier_application::simulation model] Invalid simulation model.")
+			throw ::std::invalid_argument("[dcs::des::cloud::multi_tier_application::simulation model] Invalid simulation model.")
 		);
 
 		ptr_sim_model_ = ptr_model;
@@ -309,7 +309,7 @@ class multi_tier_application
 		// pre: pointer to tier must be a valid pointer
 		DCS_ASSERT(
 			ptr_tier,
-			throw ::std::invalid_argument("[dcs::eesim::multi_tier_application::tier] Invalid tier.")
+			throw ::std::invalid_argument("[dcs::des::cloud::multi_tier_application::tier] Invalid tier.")
 		);
 
 		ptr_tier->application(this);
@@ -349,12 +349,12 @@ class multi_tier_application
 		// pre: capacity > 0
 		DCS_ASSERT(
 			capacity > 0,
-			throw ::std::invalid_argument("[dcs::eesim::multi_tier_application::reference_resource] Capacity must a non-negative value.")
+			throw ::std::invalid_argument("[dcs::des::cloud::multi_tier_application::reference_resource] Capacity must a non-negative value.")
 		);
 		// pre: threshold > 0
 		DCS_ASSERT(
 			threshold > 0,
-			throw ::std::invalid_argument("[dcs::eesim::multi_tier_application::reference_resource] Chreshold must a non-negative value.")
+			throw ::std::invalid_argument("[dcs::des::cloud::multi_tier_application::reference_resource] Chreshold must a non-negative value.")
 		);
 
 		reference_resource(reference_physical_resource_type(category, capacity, threshold));
@@ -451,7 +451,7 @@ template <
 			  << ">";
 }
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_MULTI_TIER_APPLICATION_HPP
+#endif // DCS_DES_CLOUD_MULTI_TIER_APPLICATION_HPP

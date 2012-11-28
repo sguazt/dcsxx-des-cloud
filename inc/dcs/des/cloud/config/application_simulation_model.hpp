@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/config/application_simulation_model.hpp
+ * \file dcs/des/cloud/config/application_simulation_model.hpp
  *
  * \brief Configuration for applications performance models.
  *
@@ -30,21 +30,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DCS_EESIM_CONFIG_APPLICATION_SIMULATION_MODEL_HPP
-#define DCS_EESIM_CONFIG_APPLICATION_SIMULATION_MODEL_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_APPLICATION_SIMULATION_MODEL_HPP
+#define DCS_DES_CLOUD_CONFIG_APPLICATION_SIMULATION_MODEL_HPP
 
 
 #include <boost/variant.hpp>
-#include <dcs/eesim/config/metric_category.hpp>
-#include <dcs/eesim/config/numeric_multiarray.hpp>
-#include <dcs/eesim/config/probability_distribution.hpp>
-#include <dcs/eesim/config/statistic.hpp>
+#include <dcs/des/cloud/config/metric_category.hpp>
+#include <dcs/des/cloud/config/numeric_multiarray.hpp>
+#include <dcs/des/cloud/config/probability_distribution.hpp>
+#include <dcs/des/cloud/config/statistic.hpp>
 #include <dcs/macro.hpp>
 #include <iosfwd>
 #include <map>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 enum application_simulation_model_category
 {
@@ -756,7 +756,7 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 	return os;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_APPLICATION_SIMULATION_MODEL_HPP
+#endif // DCS_DES_CLOUD_CONFIG_APPLICATION_SIMULATION_MODEL_HPP

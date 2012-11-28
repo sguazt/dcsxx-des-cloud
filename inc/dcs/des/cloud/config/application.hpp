@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/config/application.hpp
+ * \file dcs/des/cloud/config/application.hpp
  *
  * \brief Configuration for applications.
  *
@@ -30,18 +30,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DCS_EESIM_CONFIG_APPLICATION_HPP
-#define DCS_EESIM_CONFIG_APPLICATION_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_APPLICATION_HPP
+#define DCS_DES_CLOUD_CONFIG_APPLICATION_HPP
 
 
 #include <algorithm>
-#include <dcs/eesim/config/application_builder.hpp>
-#include <dcs/eesim/config/application_controller.hpp>
-#include <dcs/eesim/config/application_performance_model.hpp>
-#include <dcs/eesim/config/application_simulation_model.hpp>
-#include <dcs/eesim/config/application_sla.hpp>
-#include <dcs/eesim/config/application_tier.hpp>
-#include <dcs/eesim/config/physical_resource.hpp>
+#include <dcs/des/cloud/config/application_builder.hpp>
+#include <dcs/des/cloud/config/application_controller.hpp>
+#include <dcs/des/cloud/config/application_performance_model.hpp>
+#include <dcs/des/cloud/config/application_simulation_model.hpp>
+#include <dcs/des/cloud/config/application_sla.hpp>
+#include <dcs/des/cloud/config/application_tier.hpp>
+#include <dcs/des/cloud/config/physical_resource.hpp>
 #include <iosfwd>
 #include <iterator>
 #include <map>
@@ -49,7 +49,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 template <typename RealT, typename UIntT>
 struct application_config
@@ -129,7 +129,7 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 	return os;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_APPLICATION_HPP
+#endif // DCS_DES_CLOUD_CONFIG_APPLICATION_HPP

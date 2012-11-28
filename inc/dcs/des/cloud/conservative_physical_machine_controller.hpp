@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/conservative_physical_machine_controller.hpp
+ * \file dcs/des/cloud/conservative_physical_machine_controller.hpp
  *
  * \brief Physical machine manager based on a conservative policy.
  *
@@ -22,20 +22,20 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_CONSERVATIVE_PHYSICAL_MACHINE_CONTROLLER_HPP
-#define DCS_EESIM_CONSERVATIVE_PHYSICAL_MACHINE_CONTROLLER_HPP
+#ifndef DCS_DES_CLOUD_CONSERVATIVE_PHYSICAL_MACHINE_CONTROLLER_HPP
+#define DCS_DES_CLOUD_CONSERVATIVE_PHYSICAL_MACHINE_CONTROLLER_HPP
 
 
 #include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
-#include <dcs/eesim/base_physical_machine_controller.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-#include <dcs/eesim/power_status.hpp>
-//#include <dcs/eesim/registry.hpp>
+#include <dcs/des/cloud/base_physical_machine_controller.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+#include <dcs/des/cloud/power_status.hpp>
+//#include <dcs/des/cloud/registry.hpp>
 #include <dcs/macro.hpp>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 /**
  * \brief Conservative physical machine controller.
@@ -146,7 +146,7 @@ class conservative_physical_machine_controller: public base_physical_machine_con
 	private: vm_share_container vm_share_map_;
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_CONSERVATIVE_PHYSICAL_MACHINE_CONTROLLER_HPP
+#endif // DCS_DES_CLOUD_CONSERVATIVE_PHYSICAL_MACHINE_CONTROLLER_HPP

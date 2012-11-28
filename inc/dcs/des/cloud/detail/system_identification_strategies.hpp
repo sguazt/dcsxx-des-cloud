@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/detail/system_identification_strategies.hpp
+ * \file dcs/des/cloud/detail/system_identification_strategies.hpp
  *
  * \brief Class containing wrappers for different system identification
  *  strategies.
@@ -23,8 +23,8 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DETAIL_SYSTEM_IDENTIFICATION_STRATEGIES_HPP
-#define DCS_EESIM_DETAIL_SYSTEM_IDENTIFICATION_STRATEGIES_HPP
+#ifndef DCS_DES_CLOUD_DETAIL_SYSTEM_IDENTIFICATION_STRATEGIES_HPP
+#define DCS_DES_CLOUD_DETAIL_SYSTEM_IDENTIFICATION_STRATEGIES_HPP
 
 
 #include <algorithm>
@@ -45,16 +45,16 @@
 #include <boost/numeric/ublasx/operation/size.hpp>
 #include <cmath>
 #include <dcs/debug.hpp>
-#include <dcs/eesim/system_identification_strategy_params.hpp>
+#include <dcs/des/cloud/system_identification_strategy_params.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
 #include <dcs/sysid/algorithm/rls.hpp>
 //#include <exception>
-#if defined(DCS_EESIM_USE_MATLAB_MCR)
-#	include <dcs/eesim/detail/matlab/librls.h>
+#if defined(DCS_DES_CLOUD_USE_MATLAB_MCR)
+#	include <dcs/des/cloud/detail/matlab/librls.h>
 #	include <iostream>
 #	include <mclcppclass.h>
-#elif defined(DCS_EESIM_USE_MATLAB_APP)
+#elif defined(DCS_DES_CLOUD_USE_MATLAB_APP)
 #	if _POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE
 #		include <boost/iostreams/device/file_descriptor.hpp>
 #		include <boost/iostreams/stream_buffer.hpp>
@@ -75,12 +75,12 @@
 #	else // _POSIX_C_SOURCE
 #		error "Unable to find a POSIX compliant system."
 #	endif // _POSIX_C_SOURCE
-#endif // DCS_EESIM_USE_MATLAB_*
+#endif // DCS_DES_CLOUD_USE_MATLAB_*
 #include <stdexcept>
 #include <vector>
 
 
-namespace dcs { namespace eesim { namespace detail {
+namespace dcs { namespace des { namespace cloud { namespace detail {
 
 template <typename TraitsT>
 class base_system_identification_strategy
@@ -361,7 +361,7 @@ class rls_system_identification_strategy: public base_system_identification_stra
 }; // rls_system_identification_strategy
 
 
-#if defined(DCS_EESIM_USE_MATLAB_MCR)
+#if defined(DCS_DES_CLOUD_USE_MATLAB_MCR)
 
 /**
  * \brief Proxy to identify a MIMO system model by applying the Recursive Least
@@ -695,7 +695,7 @@ class rls_ff_miso_matlab_mcr_proxy
 //		{
 //::std::cerr << "[init_matlab] .2" << ::std::endl;//XXX
 //			std::clog << "Could not initialize the MATLAB library properly." << std::endl;
-//			throw ::std::runtime_error("[dcs::eesim::rls_ff_miso_matlab_proxy] Could not initialize the MATLAB library properly.");
+//			throw ::std::runtime_error("[dcs::des::cloud::rls_ff_miso_matlab_proxy] Could not initialize the MATLAB library properly.");
 //		}
 //::std::cerr << "[init_matlab] .3" << ::std::endl;//XXX
 //	}
@@ -758,7 +758,7 @@ class rls_ff_miso_matlab_mcr_proxy
 
 		if (nr != 1 && nc != 1)
 		{
-			throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::detail::rls_ff_miso_matlab_proxy::mw_to_vector] Cannot copy a matrix into a vector.");
+			throw ::std::runtime_error("[dcs::des::cloud::lqr_application_controller::detail::rls_ff_miso_matlab_proxy::mw_to_vector] Cannot copy a matrix into a vector.");
 		}
 
 		if (nr == 1)
@@ -832,10 +832,10 @@ class rls_ff_miso_matlab_mcr_proxy
 }; // rls_ff_miso_matlab_mcr_proxy
 
 
-#elif defined(DCS_EESIM_USE_MATLAB_APP)
+#elif defined(DCS_DES_CLOUD_USE_MATLAB_APP)
 
 
-# if defined(DCS_EESIM_USE_MATLAB_APP_RLS)
+# if defined(DCS_DES_CLOUD_USE_MATLAB_APP_RLS)
 
 
 /**
@@ -1050,12 +1050,12 @@ class rls_ff_miso_matlab_app_proxy
 				initialized_[i] = true;
 			}
 			oss << "); format long;"
-				<< " disp('--- [eesim] ---');"
+				<< " disp('--- [dcs::des::cloud] ---');"
 				<< " disp(['th=', mat2str(th), ]);"
 				<< " disp(['yh=', num2str(yh), ]);"
 				<< " disp(['P=', mat2str(P), ]);"
 				<< " disp(['phi=', mat2str(phi), ]);"
-				<< " disp('--- [/eesim] ---');"
+				<< " disp('--- [/des/cloud] ---');"
 				<< " quit force\"";
 			args.push_back(oss.str());
 
@@ -1248,7 +1248,7 @@ DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
 			else
 			{
 				// Ooops! Unable to get path info.
-				throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy] Unable to get path information.");
+				throw ::std::runtime_error("[dcs::des::cloud::detail::rls_miso_matlab_app_proxy] Unable to get path information.");
 			}
 		}
 
@@ -1277,7 +1277,7 @@ DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
 
 		if (!found)
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app::find_matlab_command] MATLAB not found.");
+			throw ::std::runtime_error("[dcs::des::cloud::detail::rls_miso_matlab_app::find_matlab_command] MATLAB not found.");
 		}
 
 		if (cwd)
@@ -1304,7 +1304,7 @@ DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] pipe(2) failed: "
+			oss << "[dcs::des::cloud::detail::rls_miso_matlab_app_rpoxy::run_matlab] pipe(2) failed: "
 				<< ::std::string(err_str);
 			throw ::std::runtime_error(oss.str());
 		}
@@ -1333,7 +1333,7 @@ DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] fork(2) failed: "
+			oss << "[dcs::des::cloud::detail::rls_miso_matlab_app_rpoxy::run_matlab] fork(2) failed: "
 				<< ::std::string(err_str);
 			throw ::std::runtime_error(oss.str());
 		}
@@ -1360,7 +1360,7 @@ DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
 				{
 					char const* err_str = ::strerror(errno);
 					::std::ostringstream oss;
-					oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] getrlimit(2) failed: "
+					oss << "[dcs::des::cloud::detail::rls_miso_matlab_app_rpoxy::run_matlab] getrlimit(2) failed: "
 						<< ::std::string(err_str);
 					throw ::std::runtime_error(oss.str());
 				}
@@ -1376,7 +1376,7 @@ DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
 			{
 				char const* err_str = ::strerror(errno);
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] getrlimit(2) failed: "
+				oss << "[dcs::des::cloud::detail::rls_miso_matlab_app_rpoxy::run_matlab] getrlimit(2) failed: "
 					<< ::std::string(err_str);
 				throw ::std::runtime_error(oss.str());
 			}
@@ -1398,7 +1398,7 @@ DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
 				{
 					char const* err_str = ::strerror(errno);
 					::std::ostringstream oss;
-					oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] dup2(2) failed: "
+					oss << "[dcs::des::cloud::detail::rls_miso_matlab_app_rpoxy::run_matlab] dup2(2) failed: "
 						<< ::std::string(err_str);
 					throw ::std::runtime_error(oss.str());
 				}
@@ -1486,7 +1486,7 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
 			{
 				char const* err_str = ::strerror(errno);
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] dup2(2) failed: "
+				oss << "[dcs::des::cloud::detail::rls_miso_matlab_app_rpoxy::run_matlab] dup2(2) failed: "
 					<< ::std::string(err_str);
 				throw ::std::runtime_error(oss.str());
 			}
@@ -1511,7 +1511,7 @@ DCS_DEBUG_TRACE("Read from MATLAB --> " << line);//XXX
 
 			if (parse_line)
 			{
-				if (line.find("[/eesim]") != ::std::string::npos)
+				if (line.find("[/des/cloud]") != ::std::string::npos)
 				{
 					// The end of parsable lines
 					parse_line = false;
@@ -1554,7 +1554,7 @@ DCS_DEBUG_TRACE("Parsed as phi=" << phi);//XXX
 			}
 			else
 			{
-				if (line.find("[eesim]") != ::std::string::npos)
+				if (line.find("[dcs::des::cloud]") != ::std::string::npos)
 				{
 					// The beginning of parsable lines
 					parse_line = true;
@@ -1570,13 +1570,13 @@ DCS_DEBUG_TRACE("IS state: " << is.good() << " - " << is.eof() << " - " << is.fa
 //		wait_pid = ::wait(&status);
 //		if (wait_pid != pid)
 //		{
-//			throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy::run_matlab] Unexpected child process.");
+//			throw ::std::runtime_error("[dcs::des::cloud::detail::rls_miso_matlab_app_proxy::run_matlab] Unexpected child process.");
 //		}
 		if (::waitpid(pid, &status, 0) == -1)
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] waitpid(2) failed: "
+			oss << "[dcs::des::cloud::detail::rls_miso_matlab_app_rpoxy::run_matlab] waitpid(2) failed: "
 				<< ::std::string(err_str);
 			throw ::std::runtime_error(oss.str());
 		}
@@ -1627,7 +1627,7 @@ DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
 			}
 			else
 			{
-				throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy] Unable to parse a MATLAB number");
+				throw ::std::runtime_error("[dcs::des::cloud::detail::rls_miso_matlab_app_proxy] Unable to parse a MATLAB number");
 			}
 		}
 	}
@@ -1698,7 +1698,7 @@ DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
 
 			if (ko)
 			{
-				throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy] Unable to parse a MATLAB vector.");
+				throw ::std::runtime_error("[dcs::des::cloud::detail::rls_miso_matlab_app_proxy] Unable to parse a MATLAB vector.");
 			}
 		}
 	}
@@ -1785,7 +1785,7 @@ DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
 
 			if (ko)
 			{
-				throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy] Unable to parse a MATLAB matrix.");
+				throw ::std::runtime_error("[dcs::des::cloud::detail::rls_miso_matlab_app_proxy] Unable to parse a MATLAB matrix.");
 			}
 		}
 	}
@@ -1807,7 +1807,7 @@ DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::process_signals] kill(2) failed: "
+			oss << "[dcs::des::cloud::detail::rls_miso_matlab_app_rpoxy::process_signals] kill(2) failed: "
 				<< ::std::string(err_str);
 			throw ::std::runtime_error(oss.str());
 		}
@@ -1839,7 +1839,7 @@ DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
 }; // rls_ff_miso_matlab_app_proxy
 
 
-# elif defined(DCS_EESIM_USE_MATLAB_APP_RPEM)
+# elif defined(DCS_DES_CLOUD_USE_MATLAB_APP_RPEM)
 
 
 /**
@@ -2086,13 +2086,13 @@ class rpem_ff_miso_matlab_app_proxy
 				initialized_[i] = true;
 			}
 			oss << "); format long;"
-				<< " disp('--- [eesim] ---');"
+				<< " disp('--- [dcs::des::cloud] ---');"
 				<< " disp(['th=', mat2str(th), ]);"
 				<< " disp(['yh=', num2str(yh), ]);"
 				<< " disp(['P=', mat2str(P), ]);"
 				<< " disp(['phi=', mat2str(phi), ]);"
 				<< " disp(['psi=', mat2str(psi), ]);"
-				<< " disp('--- [/eesim] ---');"
+				<< " disp('--- [/des/cloud] ---');"
 				<< " quit force\"";
 			args.push_back(oss.str());
 
@@ -2323,7 +2323,7 @@ DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
 			else
 			{
 				// Ooops! Unable to get path info.
-				throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy] Unable to get path information.");
+				throw ::std::runtime_error("[dcs::des::cloud::detail::rls_miso_matlab_app_proxy] Unable to get path information.");
 			}
 		}
 
@@ -2352,7 +2352,7 @@ DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
 
 		if (!found)
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app::find_matlab_command] MATLAB not found.");
+			throw ::std::runtime_error("[dcs::des::cloud::detail::rls_miso_matlab_app::find_matlab_command] MATLAB not found.");
 		}
 
 		if (cwd)
@@ -2379,7 +2379,7 @@ DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] pipe(2) failed: "
+			oss << "[dcs::des::cloud::detail::rls_miso_matlab_app_rpoxy::run_matlab] pipe(2) failed: "
 				<< ::std::string(err_str);
 			throw ::std::runtime_error(oss.str());
 		}
@@ -2408,7 +2408,7 @@ DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] fork(2) failed: "
+			oss << "[dcs::des::cloud::detail::rls_miso_matlab_app_rpoxy::run_matlab] fork(2) failed: "
 				<< ::std::string(err_str);
 			throw ::std::runtime_error(oss.str());
 		}
@@ -2435,7 +2435,7 @@ DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
 				{
 					char const* err_str = ::strerror(errno);
 					::std::ostringstream oss;
-					oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] getrlimit(2) failed: "
+					oss << "[dcs::des::cloud::detail::rls_miso_matlab_app_rpoxy::run_matlab] getrlimit(2) failed: "
 						<< ::std::string(err_str);
 					throw ::std::runtime_error(oss.str());
 				}
@@ -2451,7 +2451,7 @@ DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
 			{
 				char const* err_str = ::strerror(errno);
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] getrlimit(2) failed: "
+				oss << "[dcs::des::cloud::detail::rls_miso_matlab_app_rpoxy::run_matlab] getrlimit(2) failed: "
 					<< ::std::string(err_str);
 				throw ::std::runtime_error(oss.str());
 			}
@@ -2473,7 +2473,7 @@ DCS_DEBUG_TRACE("New e["<< i << "](k): " << (y()(i)-y_hat(i)));//XXX
 				{
 					char const* err_str = ::strerror(errno);
 					::std::ostringstream oss;
-					oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] dup2(2) failed: "
+					oss << "[dcs::des::cloud::detail::rls_miso_matlab_app_rpoxy::run_matlab] dup2(2) failed: "
 						<< ::std::string(err_str);
 					throw ::std::runtime_error(oss.str());
 				}
@@ -2561,7 +2561,7 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
 			{
 				char const* err_str = ::strerror(errno);
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] dup2(2) failed: "
+				oss << "[dcs::des::cloud::detail::rls_miso_matlab_app_rpoxy::run_matlab] dup2(2) failed: "
 					<< ::std::string(err_str);
 				throw ::std::runtime_error(oss.str());
 			}
@@ -2586,7 +2586,7 @@ DCS_DEBUG_TRACE("Read from MATLAB --> " << line);//XXX
 
 			if (parse_line)
 			{
-				if (line.find("[/eesim]") != ::std::string::npos)
+				if (line.find("[/des/cloud]") != ::std::string::npos)
 				{
 					// The end of parsable lines
 					parse_line = false;
@@ -2623,7 +2623,7 @@ DCS_DEBUG_TRACE("Parsed as psi=" << psi);//XXX
 			}
 			else
 			{
-				if (line.find("[eesim]") != ::std::string::npos)
+				if (line.find("[dcs::des::cloud]") != ::std::string::npos)
 				{
 					// The beginning of parsable lines
 					parse_line = true;
@@ -2639,13 +2639,13 @@ DCS_DEBUG_TRACE("IS state: " << is.good() << " - " << is.eof() << " - " << is.fa
 //		wait_pid = ::wait(&status);
 //		if (wait_pid != pid)
 //		{
-//			throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy::run_matlab] Unexpected child process.");
+//			throw ::std::runtime_error("[dcs::des::cloud::detail::rls_miso_matlab_app_proxy::run_matlab] Unexpected child process.");
 //		}
 		if (::waitpid(pid, &status, 0) == -1)
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::run_matlab] waitpid(2) failed: "
+			oss << "[dcs::des::cloud::detail::rls_miso_matlab_app_rpoxy::run_matlab] waitpid(2) failed: "
 				<< ::std::string(err_str);
 			throw ::std::runtime_error(oss.str());
 		}
@@ -2696,7 +2696,7 @@ DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
 			}
 			else
 			{
-				throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy] Unable to parse a MATLAB number");
+				throw ::std::runtime_error("[dcs::des::cloud::detail::rls_miso_matlab_app_proxy] Unable to parse a MATLAB number");
 			}
 		}
 	}
@@ -2767,7 +2767,7 @@ DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
 
 			if (ko)
 			{
-				throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy] Unable to parse a MATLAB vector.");
+				throw ::std::runtime_error("[dcs::des::cloud::detail::rls_miso_matlab_app_proxy] Unable to parse a MATLAB vector.");
 			}
 		}
 	}
@@ -2854,7 +2854,7 @@ DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
 
 			if (ko)
 			{
-				throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy] Unable to parse a MATLAB matrix.");
+				throw ::std::runtime_error("[dcs::des::cloud::detail::rls_miso_matlab_app_proxy] Unable to parse a MATLAB matrix.");
 			}
 		}
 	}
@@ -2876,7 +2876,7 @@ DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::rls_miso_matlab_app_rpoxy::process_signals] kill(2) failed: "
+			oss << "[dcs::des::cloud::detail::rls_miso_matlab_app_rpoxy::process_signals] kill(2) failed: "
 				<< ::std::string(err_str);
 			throw ::std::runtime_error(oss.str());
 		}
@@ -2912,16 +2912,16 @@ DCS_DEBUG_TRACE("MATLAB exited with an unexpected way");//XXX
 }; // rpem_ff_miso_matlab_app_proxy
 
 
-# else // DCS_EESIM_USE_MATLAB_APP_RLS
+# else // DCS_DES_CLOUD_USE_MATLAB_APP_RLS
 
 
 #  error "Unable to find a suitable algorithm for recursive identification."
 
 
-# endif // DCS_EESIM_USE_MATLAB_APP_*
+# endif // DCS_DES_CLOUD_USE_MATLAB_APP_*
 
 
-#else // DCS_EESIM_USE_MATLAB_*
+#else // DCS_DES_CLOUD_USE_MATLAB_*
 
 
 //template <typename VectorExprT>
@@ -4419,7 +4419,7 @@ DCS_DEBUG_TRACE("END estimation");//XXX
 }; // rls_bittanti1990_miso_proxy
 
 
-#endif // DCS_EESIM_USE_MATLAB_*
+#endif // DCS_DES_CLOUD_USE_MATLAB_*
 
 
 template <typename TraitsT>
@@ -4440,7 +4440,7 @@ template <typename TraitsT>
 				strategy_params_impl_pointer ptr_params_impl = dynamic_cast<strategy_params_impl_pointer>(&params);
 				if (!ptr_params_impl)
 				{
-					throw ::std::runtime_error("[dcs::eesim::detail::make_system_identification_strategy] Failed to retrieve RLS FF strategy parameters.");
+					throw ::std::runtime_error("[dcs::des::cloud::detail::make_system_identification_strategy] Failed to retrieve RLS FF strategy parameters.");
 				}
 				if (ptr_params_impl->mimo_as_miso())
 				{
@@ -4450,7 +4450,7 @@ template <typename TraitsT>
 				}
 				else
 				{
-					throw ::std::runtime_error("[dcs::eesim::detail::make_system_identification_strategy] MIMO RLS (Bittanti, 1990) has not been implemented yet.");
+					throw ::std::runtime_error("[dcs::des::cloud::detail::make_system_identification_strategy] MIMO RLS (Bittanti, 1990) has not been implemented yet.");
 //					typedef rls_bittanti1990_mimo_proxy<traits_type> strategy_impl_type;
 //
 //					ptr_strategy = ::dcs::make_shared<strategy_impl_type>(*ptr_params_impl);
@@ -4464,7 +4464,7 @@ template <typename TraitsT>
 				strategy_params_impl_pointer ptr_params_impl = dynamic_cast<strategy_params_impl_pointer>(&params);
 				if (!ptr_params_impl)
 				{
-					throw ::std::runtime_error("[dcs::eesim::detail::make_system_identification_strategy] Failed to retrieve RLS FF strategy parameters.");
+					throw ::std::runtime_error("[dcs::des::cloud::detail::make_system_identification_strategy] Failed to retrieve RLS FF strategy parameters.");
 				}
 				if (ptr_params_impl->mimo_as_miso())
 				{
@@ -4487,7 +4487,7 @@ template <typename TraitsT>
 				strategy_params_impl_pointer ptr_params_impl = dynamic_cast<strategy_params_impl_pointer>(&params);
 				if (!ptr_params_impl)
 				{
-					throw ::std::runtime_error("[dcs::eesim::detail::make_system_identification_strategy] Failed to retrieve RLS FF strategy parameters.");
+					throw ::std::runtime_error("[dcs::des::cloud::detail::make_system_identification_strategy] Failed to retrieve RLS FF strategy parameters.");
 				}
 				if (ptr_params_impl->mimo_as_miso())
 				{
@@ -4497,7 +4497,7 @@ template <typename TraitsT>
 				}
 				else
 				{
-					throw ::std::runtime_error("[dcs::eesim::detail::make_system_identification_strategy] MIMO RLS (Kulhavy, 1984) has not been implemented yet.");
+					throw ::std::runtime_error("[dcs::des::cloud::detail::make_system_identification_strategy] MIMO RLS (Kulhavy, 1984) has not been implemented yet.");
 //					typedef rls_kulhavy1984_mimo_proxy<traits_type> strategy_impl_type;
 //
 //					ptr_strategy = ::dcs::make_shared<strategy_impl_type>(*ptr_params_impl);
@@ -4511,7 +4511,7 @@ template <typename TraitsT>
 				strategy_params_impl_pointer ptr_params_impl = dynamic_cast<strategy_params_impl_pointer>(&params);
 				if (!ptr_params_impl)
 				{
-					throw ::std::runtime_error("[dcs::eesim::detail::make_system_identification_strategy] Failed to retrieve RLS FF strategy parameters.");
+					throw ::std::runtime_error("[dcs::des::cloud::detail::make_system_identification_strategy] Failed to retrieve RLS FF strategy parameters.");
 				}
 				if (ptr_params_impl->mimo_as_miso())
 				{
@@ -4521,7 +4521,7 @@ template <typename TraitsT>
 				}
 				else
 				{
-					throw ::std::runtime_error("[dcs::eesim::detail::make_system_identification_strategy] MIMO RLS (Park, 1991) has not been implemented yet.");
+					throw ::std::runtime_error("[dcs::des::cloud::detail::make_system_identification_strategy] MIMO RLS (Park, 1991) has not been implemented yet.");
 //					typedef rls_park1991_mimo_proxy<traits_type> strategy_impl_type;
 //
 //					ptr_strategy = ::dcs::make_shared<strategy_impl_type>(*ptr_params_impl);
@@ -4533,7 +4533,7 @@ template <typename TraitsT>
 	return ptr_strategy;
 }
 
-}}} // Namespace dcs::eesim::detail
+}}}} // Namespace dcs::des::cloud::detail
 
 
-#endif // DCS_EESIM_DETAIL_SYSTEM_IDENTIFICATION_STRATEGIES_HPP
+#endif // DCS_DES_CLOUD_DETAIL_SYSTEM_IDENTIFICATION_STRATEGIES_HPP

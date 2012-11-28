@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/config/logging.hpp
+ * \file dcs/des/cloud/config/logging.hpp
  *
  * \brief Configuration for the logging subsystem.
  *
@@ -30,8 +30,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DCS_EESIM_CONFIG_LOGGING_HPP
-#define DCS_EESIM_CONFIG_LOGGING_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_LOGGING_HPP
+#define DCS_DES_CLOUD_CONFIG_LOGGING_HPP
 
 
 #include <boost/variant.hpp>
@@ -39,7 +39,7 @@
 #include <string>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 enum logging_category
 {
@@ -123,7 +123,7 @@ template <typename CharT, typename CharTraitsT>
 	return os;
 }
 
-}}} // Namespace dcs:eesim::config
+}}}} // Namespace dcs:des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_LOGGING_HPP
+#endif // DCS_DES_CLOUD_CONFIG_LOGGING_HPP

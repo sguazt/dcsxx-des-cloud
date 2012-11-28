@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/config/optimal_solver_categories.hpp
+ * \file dcs/des/cloud/config/optimal_solver_categories.hpp
  *
  * \brief Configuration for optimal solver categories.
  *
@@ -30,17 +30,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DCS_EESIM_CONFIG_OPTIMAL_SOLVER_CATEGORIES_HPP
-#define DCS_EESIM_CONFIG_OPTIMAL_SOLVER_CATEGORIES_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_OPTIMAL_SOLVER_CATEGORIES_HPP
+#define DCS_DES_CLOUD_CONFIG_OPTIMAL_SOLVER_CATEGORIES_HPP
 
 
-#include <dcs/eesim/optimal_solver_categories.hpp>
+#include <dcs/des/cloud/optimal_solver_categories.hpp>
 #include <iosfwd>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
-typedef ::dcs::eesim::optimal_solver_categories optimal_solver_categories;
+typedef ::dcs::des::cloud::optimal_solver_categories optimal_solver_categories;
 
 /*
 enum optimal_solver_categories
@@ -127,7 +127,7 @@ template <typename CharT, typename CharTraitsT>
 }
 
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_OPTIMAL_SOLVER_CATEGORIES_HPP
+#endif // DCS_DES_CLOUD_CONFIG_OPTIMAL_SOLVER_CATEGORIES_HPP

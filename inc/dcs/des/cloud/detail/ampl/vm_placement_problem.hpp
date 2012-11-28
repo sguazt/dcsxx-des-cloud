@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/detail/ampl/vm_placement_problem.hpp
+ * \file dcs/des/cloud/detail/ampl/vm_placement_problem.hpp
  *
  * \brief Utilities for VM placement strategies using the AMPL mathematical
  *  environment.
@@ -23,13 +23,13 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DETAIL_AMPL_VM_PLACEMENT_PROBLEM_HPP
-#define DCS_EESIM_DETAIL_AMPL_VM_PLACEMENT_PROBLEM_HPP
+#ifndef DCS_DES_CLOUD_DETAIL_AMPL_VM_PLACEMENT_PROBLEM_HPP
+#define DCS_DES_CLOUD_DETAIL_AMPL_VM_PLACEMENT_PROBLEM_HPP
 
 
 #include <cstddef>
-#include <dcs/eesim/power_status.hpp>
-#include <dcs/eesim/virtual_machines_placement.hpp>
+#include <dcs/des/cloud/power_status.hpp>
+#include <dcs/des/cloud/virtual_machines_placement.hpp>
 #include <dcs/memory.hpp>
 #include <dcs/perfeval/energy.hpp>
 #include <iosfwd>
@@ -41,7 +41,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim { namespace detail { namespace ampl {
+namespace dcs { namespace des { namespace cloud { namespace detail { namespace ampl {
 
 namespace detail { namespace /*<unnamed>*/ {
 
@@ -161,13 +161,13 @@ template <typename TraitsT>
 		pm_ids[i] = ptr_pm->id();
 
 		//FIXME: CPU resource category is hard-coded
-		resource_pointer ptr_resource(ptr_pm->resource(::dcs::eesim::cpu_resource_category));
+		resource_pointer ptr_resource(ptr_pm->resource(::dcs::des::cloud::cpu_resource_category));
 		energy_model_type const& energy_model(ptr_resource->energy_model());
 		//FIXME: Fan2007 energy model type is hard-coded
 		fan2007_energy_model_impl_type const* ptr_energy_model_impl = dynamic_cast<fan2007_energy_model_impl_type const*>(&energy_model);
 		if (!ptr_energy_model_impl)
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::ampl::detail::make_initial_vm_placement_problem_data] Unable to retrieve energy model.");
+			throw ::std::runtime_error("[dcs::des::cloud::detail::ampl::detail::make_initial_vm_placement_problem_data] Unable to retrieve energy model.");
 		}
 		oss << (i+1)
 			<< " " << ptr_energy_model_impl->coefficient(0) // c0
@@ -191,7 +191,7 @@ template <typename TraitsT>
 		application_type const& app(ptr_vm->guest_system().application());
 
 		//FIXME: CPU resource category is hard-coded
-		reference_resource_type const& ref_resource(app.reference_resource(::dcs::eesim::cpu_resource_category));
+		reference_resource_type const& ref_resource(app.reference_resource(::dcs::des::cloud::cpu_resource_category));
 
 		oss << " " << (j+1)
 			<< " " << (ref_resource.capacity()*ref_resource.utilization_threshold())
@@ -255,7 +255,7 @@ template <typename TraitsT>
 					for (vm_placement_share_iterator share_it = init_guess.shares_begin(vmp_it); share_it != end_share_it; ++share_it)
 					{
 						//FIXME: CPU resource category is hard-coded
-						if (init_guess.resource_category(share_it) == ::dcs::eesim::cpu_resource_category)
+						if (init_guess.resource_category(share_it) == ::dcs::des::cloud::cpu_resource_category)
 						{
 							oss << init_guess.resource_share(share_it);
 							found = true;
@@ -264,7 +264,7 @@ template <typename TraitsT>
 
 					if (!found)
 					{
-						throw ::std::runtime_error("[dcs::eesim::detail::gams::make_initial_vm_placement_problem] Incompatible resource categories.");
+						throw ::std::runtime_error("[dcs::des::cloud::detail::gams::make_initial_vm_placement_problem] Incompatible resource categories.");
 					}
 				}
 				else
@@ -460,13 +460,13 @@ template <typename TraitsT, typename UtilFwdIterT, typename ShareFwdIterT>
 		pm_ids[i] = ptr_pm->id();
 
 		//FIXME: CPU resource category is hard-coded
-		resource_pointer ptr_resource(ptr_pm->resource(::dcs::eesim::cpu_resource_category));
+		resource_pointer ptr_resource(ptr_pm->resource(::dcs::des::cloud::cpu_resource_category));
 		energy_model_type const& energy_model(ptr_resource->energy_model());
 		//FIXME: Fan2007 energy model type is hard-coded
 		fan2007_energy_model_impl_type const* ptr_energy_model_impl(dynamic_cast<fan2007_energy_model_impl_type const*>(&energy_model));
 		if (!ptr_energy_model_impl)
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::ampl::detail::make_vm_placement_problem_data] Unable to retrieve energy model.");
+			throw ::std::runtime_error("[dcs::des::cloud::detail::ampl::detail::make_vm_placement_problem_data] Unable to retrieve energy model.");
 		}
 
 		oss << (i+1)
@@ -516,11 +516,11 @@ template <typename TraitsT, typename UtilFwdIterT, typename ShareFwdIterT>
 		application_type const& app(ptr_vm->guest_system().application());
 
 		//FIXME: CPU resource category is hard-coded
-		reference_resource_type const& ref_resource(app.reference_resource(::dcs::eesim::cpu_resource_category));
+		reference_resource_type const& ref_resource(app.reference_resource(::dcs::des::cloud::cpu_resource_category));
 
 		oss << " " << (j+1)
 			<< " " << (ref_resource.capacity()*ref_resource.utilization_threshold())
-//				<< " " << app.performance_model().tier_measure(ptr_vm->guest_system().id(), ::dcs::eesim::utilization_performance_measure)
+//				<< " " << app.performance_model().tier_measure(ptr_vm->guest_system().id(), ::dcs::des::cloud::utilization_performance_measure)
 			<< " " << vm_util_map.at(ptr_vm->id())
 			<< " " << 0.2 //FIXME: Minimum share is hard-coded
 			<< ::std::endl;
@@ -582,7 +582,7 @@ template <typename TraitsT, typename UtilFwdIterT, typename ShareFwdIterT>
 					for (vm_placement_share_iterator share_it = init_guess.shares_begin(vmp_it); share_it != end_share_it; ++share_it)
 					{
 						//FIXME: CPU resource category is hard-coded
-						if (init_guess.resource_category(share_it) == ::dcs::eesim::cpu_resource_category)
+						if (init_guess.resource_category(share_it) == ::dcs::des::cloud::cpu_resource_category)
 						{
 							oss << init_guess.resource_share(share_it);
 							found = true;
@@ -591,7 +591,7 @@ template <typename TraitsT, typename UtilFwdIterT, typename ShareFwdIterT>
 
 					if (!found)
 					{
-						throw ::std::runtime_error("[dcs::eesim::detail::gams::make_initial_vm_placement_problem] Incompatible resource categories.");
+						throw ::std::runtime_error("[dcs::des::cloud::detail::gams::make_initial_vm_placement_problem] Incompatible resource categories.");
 					}
 				}
 				else
@@ -636,7 +636,7 @@ inline
 										  vm_ids);
 }
 
-}} // Namespace detail::<unnamed>
+}}} // Namespace detail::<unnamed>
 
 
 template <typename TraitsT>
@@ -965,7 +965,7 @@ vm_placement_problem<TraitsT> make_vm_placement_problem(data_center<TraitsT> con
 	return problem;
 }
 
-}}}} // Namespace dcs::eesim::detail::ampl
+}}}}} // Namespace dcs::des::cloud::detail::ampl
 
 
-#endif // DCS_EESIM_DETAIL_AMPL_VM_PLACEMENT_PROBLEM_HPP
+#endif // DCS_DES_CLOUD_DETAIL_AMPL_VM_PLACEMENT_PROBLEM_HPP

@@ -1,5 +1,5 @@
 /**
- * \file src/dcs/eesim/detail/matlab/controller_proxies.hpp
+ * \file src/dcs/des/cloud/detail/matlab/controller_proxies.hpp
  *
  * \brief Proxies class for accessing to controllers implemented in MATLAB.
  *
@@ -22,8 +22,8 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DETAIL_MATLAB_CONTROLLER_PROXIES_HPP
-#define DCS_EESIM_DETAIL_MATLAB_CONTROLLER_PROXIES_HPP
+#ifndef DCS_DES_CLOUD_DETAIL_MATLAB_CONTROLLER_PROXIES_HPP
+#define DCS_DES_CLOUD_DETAIL_MATLAB_CONTROLLER_PROXIES_HPP
 
 
 #include <boost/numeric/ublas/expression_types.hpp>
@@ -36,14 +36,14 @@
 #include <boost/numeric/ublasx/operation/size.hpp>
 #include <boost/numeric/ublasx/operation/size.hpp>
 #include <cstddef>
-#include <dcs/eesim/detail/matlab/utility.hpp>
+#include <dcs/des/cloud/detail/matlab/utility.hpp>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 
-namespace dcs { namespace eesim { namespace detail { namespace matlab {
+namespace dcs { namespace des { namespace cloud { namespace detail { namespace matlab {
 
 
 namespace /*<unnamed>*/ {
@@ -80,7 +80,7 @@ DCS_DEBUG_TRACE("Read from MATLAB --> " << line);//XXX
 
 			if (parse_line)
 			{
-				if (line.find("[/eesim]") != ::std::string::npos)
+				if (line.find("[/des/cloud]") != ::std::string::npos)
 				{
 					// The end of parsable lines
 					parse_line = false;
@@ -110,7 +110,7 @@ DCS_DEBUG_TRACE("Parsed as e=" << e_);//XXX
 			}
 			else
 			{
-				if (line.find("[eesim]") != ::std::string::npos)
+				if (line.find("[dcs::des::cloud]") != ::std::string::npos)
 				{
 					// The beginning of parsable lines
 					parse_line = true;
@@ -272,11 +272,11 @@ class dlqi_controller_proxy
 			<< "," << to_str(R_)
 			<< "," << to_str(N_)
 			<< "); format long;"
-			<< " disp('--- [eesim] ---');"
+			<< " disp('--- [dcs::des::cloud] ---');"
 			<< " disp(['K=', mat2str(K), ]);"
 			<< " disp(['S=', mat2str(S), ]);"
 			<< " disp(['e=', mat2str(e), ]);"
-			<< " disp('--- [/eesim] ---');"
+			<< " disp('--- [/des/cloud] ---');"
 			<< "catch me, "
 			<< "disp(['??? Error: ', me.message]);"
 			<< "end;"
@@ -289,7 +289,7 @@ class dlqi_controller_proxy
 		ok = run_matlab_command(find_matlab_command(), args, consumer);
 		if (!ok || !consumer.success())
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::matlab::dlqi_controller_proxy::solve] Wrong state dimensiion.");
+			throw ::std::runtime_error("[dcs::des::cloud::detail::matlab::dlqi_controller_proxy::solve] Wrong state dimensiion.");
 		}
 		K_ = consumer.K();
 		S_ = consumer.S();
@@ -303,7 +303,7 @@ class dlqi_controller_proxy
 		// preconditions: size(x) == num_columns(K_)
 		DCS_ASSERT(
 			::boost::numeric::ublasx::size(x) == ::boost::numeric::ublasx::num_columns(K_),
-			throw ::std::invalid_argument("[dcs::eesim::detail::matlab::dlqi_controller_proxy::control] Wrong state dimensiion.")
+			throw ::std::invalid_argument("[dcs::des::cloud::detail::matlab::dlqi_controller_proxy::control] Wrong state dimensiion.")
 		);
 
 		return -::boost::numeric::ublas::prod(K_, x);
@@ -316,7 +316,7 @@ class dlqi_controller_proxy
 		// preconditions: num_columns(X) == num_columns(K_)
 		DCS_ASSERT(
 			::boost::numeric::ublasx::num_columns(X) == ::boost::numeric::ublasx::num_columns(K_),
-			throw ::std::invalid_argument("[dcs::eesim::detail::matlab::dlqi_controller_proxy::control] Wrong state dimensiion.")
+			throw ::std::invalid_argument("[dcs::des::cloud::detail::matlab::dlqi_controller_proxy::control] Wrong state dimensiion.")
 		);
 		
 		return -::boost::numeric::ublas::prod(K_, ::boost::numeric::ublas::trans(X));
@@ -435,11 +435,11 @@ class dlqr_controller_proxy
 			<< "," << to_str(R_)
 			<< "," << to_str(N_)
 			<< "); format long;"
-			<< " disp('--- [eesim] ---');"
+			<< " disp('--- [dcs::des::cloud] ---');"
 			<< " disp(['K=', mat2str(K), ]);"
 			<< " disp(['S=', mat2str(S), ]);"
 			<< " disp(['e=', mat2str(e), ]);"
-			<< " disp('--- [/eesim] ---');"
+			<< " disp('--- [/des/cloud] ---');"
 			<< "catch me, "
 			<< "disp(['??? Error: ', me.message]);"
 			<< "end;"
@@ -452,7 +452,7 @@ class dlqr_controller_proxy
 		ok = run_matlab_command(find_matlab_command(), args, consumer);
 		if (!ok || !consumer.success())
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::matlab::dlqr_controller_proxy::solve] Wrong state dimensiion.");
+			throw ::std::runtime_error("[dcs::des::cloud::detail::matlab::dlqr_controller_proxy::solve] Wrong state dimensiion.");
 		}
 		K_ = consumer.K();
 		S_ = consumer.S();
@@ -466,7 +466,7 @@ class dlqr_controller_proxy
 		// preconditions: size(x) == num_columns(K_)
 		DCS_ASSERT(
 			::boost::numeric::ublasx::size(x) == ::boost::numeric::ublasx::num_columns(K_),
-			throw ::std::invalid_argument("[dcs::eesim::detail::matlab::dlqr_controller_proxy::control] Wrong state dimensiion.")
+			throw ::std::invalid_argument("[dcs::des::cloud::detail::matlab::dlqr_controller_proxy::control] Wrong state dimensiion.")
 		);
 
 		return -::boost::numeric::ublas::prod(K_, x);
@@ -479,7 +479,7 @@ class dlqr_controller_proxy
 		// preconditions: num_columns(X) == num_columns(K_)
 		DCS_ASSERT(
 			::boost::numeric::ublasx::num_columns(X) == ::boost::numeric::ublasx::num_columns(K_),
-			throw ::std::invalid_argument("[dcs::eesim::detail::matlab::dlqr_controller_proxy::control] Wrong state dimensiion.")
+			throw ::std::invalid_argument("[dcs::des::cloud::detail::matlab::dlqr_controller_proxy::control] Wrong state dimensiion.")
 		);
 		
 		return -::boost::numeric::ublas::prod(K_, ::boost::numeric::ublas::trans(X));
@@ -614,11 +614,11 @@ class dlqry_controller_proxy
 			<< "," << to_str(R_)
 			<< "," << to_str(N_)
 			<< "); format long;"
-			<< " disp('--- [eesim] ---');"
+			<< " disp('--- [dcs::des::cloud] ---');"
 			<< " disp(['K=', mat2str(K), ]);"
 			<< " disp(['S=', mat2str(S), ]);"
 			<< " disp(['e=', mat2str(e), ]);"
-			<< " disp('--- [/eesim] ---');"
+			<< " disp('--- [/des/cloud] ---');"
 			<< "catch me, "
 			<< "disp(['??? Error: ', me.message]);"
 			<< "end;"
@@ -631,7 +631,7 @@ class dlqry_controller_proxy
 		ok = run_matlab_command(find_matlab_command(), args, consumer);
 		if (!ok || !consumer.success())
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::matlab::dlqry_controller_proxy::solve] Wrong state dimensiion.");
+			throw ::std::runtime_error("[dcs::des::cloud::detail::matlab::dlqry_controller_proxy::solve] Wrong state dimensiion.");
 		}
 		K_ = consumer.K();
 		S_ = consumer.S();
@@ -645,7 +645,7 @@ class dlqry_controller_proxy
 		// preconditions: size(x) == num_columns(K_)
 		DCS_ASSERT(
 			::boost::numeric::ublasx::size(x) == ::boost::numeric::ublasx::num_columns(K_),
-			throw ::std::invalid_argument("[dcs::eesim::detail::matlab::dlqry_controller_proxy::control] Wrong state dimensiion.")
+			throw ::std::invalid_argument("[dcs::des::cloud::detail::matlab::dlqry_controller_proxy::control] Wrong state dimensiion.")
 		);
 
 		return -::boost::numeric::ublas::prod(K_, x);
@@ -658,7 +658,7 @@ class dlqry_controller_proxy
 		// preconditions: num_columns(X) == num_columns(K_)
 		DCS_ASSERT(
 			::boost::numeric::ublasx::num_columns(X) == ::boost::numeric::ublasx::num_columns(K_),
-			throw ::std::invalid_argument("[dcs::eesim::detail::matlab::dlqry_controller_proxy::control] Wrong state dimensiion.")
+			throw ::std::invalid_argument("[dcs::des::cloud::detail::matlab::dlqry_controller_proxy::control] Wrong state dimensiion.")
 		);
 		
 		return -::boost::numeric::ublas::prod(K_, ::boost::numeric::ublas::trans(X));
@@ -679,6 +679,6 @@ class dlqry_controller_proxy
 	private: vector_type e_;
 }; // dlqr_controller_proxy
 
-}}}} // Namespace dcs::eesim::detail::matlab
+}}}}} // Namespace dcs::des::cloud::detail::matlab
 
-#endif // DCS_EESIM_DETAIL_MATLAB_CONTROLLER_PROXIES_HPP
+#endif // DCS_DES_CLOUD_DETAIL_MATLAB_CONTROLLER_PROXIES_HPP

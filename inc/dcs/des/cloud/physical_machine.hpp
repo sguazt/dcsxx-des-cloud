@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/physical_machine.hpp
+ * \file dcs/des/cloud/physical_machine.hpp
  *
  * \brief Physical machine.
  *
@@ -22,16 +22,16 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_PHYSICAL_MACHINE_HPP
-#define DCS_EESIM_PHYSICAL_MACHINE_HPP
+#ifndef DCS_DES_CLOUD_PHYSICAL_MACHINE_HPP
+#define DCS_DES_CLOUD_PHYSICAL_MACHINE_HPP
 
 
 #include <dcs/debug.hpp>
-#include <dcs/eesim/base_physical_machine_simulation_model.hpp>
-#include <dcs/eesim/default_physical_machine_simulation_model.hpp>
-#include <dcs/eesim/physical_resource.hpp>
-#include <dcs/eesim/power_status.hpp>
-#include <dcs/eesim/virtual_machine_monitor.hpp>
+#include <dcs/des/cloud/base_physical_machine_simulation_model.hpp>
+#include <dcs/des/cloud/default_physical_machine_simulation_model.hpp>
+#include <dcs/des/cloud/physical_resource.hpp>
+#include <dcs/des/cloud/power_status.hpp>
+#include <dcs/des/cloud/virtual_machine_monitor.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/macro.hpp>
 #include <iostream>
@@ -47,7 +47,7 @@
 //
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class base_physical_machine_simulation_model;
@@ -170,7 +170,7 @@ class physical_machine
 		// safety check
 		DCS_ASSERT(
 			it != resources_.end(),
-			throw ::std::logic_error("[dcs::eesim::physical_machine::resource] Resource not found on this machine.")
+			throw ::std::logic_error("[dcs::des::cloud::physical_machine::resource] Resource not found on this machine.")
 		);
 
 		return it->second;
@@ -289,7 +289,7 @@ class physical_machine
 	public: void suspend()
 	{
 		//FIXME
-		throw ::std::runtime_error("[dcs::eesim::physical_machine::suspend] Not yet implemented in simulation model.");
+		throw ::std::runtime_error("[dcs::des::cloud::physical_machine::suspend] Not yet implemented in simulation model.");
 
 //		power_status_ = suspended_power_status;
 	}
@@ -298,7 +298,7 @@ class physical_machine
 	public: void resume()
 	{
 		//FIXME
-		throw ::std::runtime_error("[dcs::eesim::physical_machine::resume] Not yet implemented in simulation model.");
+		throw ::std::runtime_error("[dcs::des::cloud::physical_machine::resume] Not yet implemented in simulation model.");
 
 //		power_status_ = powered_on_power_status;
 	}
@@ -393,7 +393,7 @@ template <
 }
 
 
-}} // Namespace dcs::esim
+}}} // Namespace dcs::esim
 
 
-#endif // DCS_EESIM_PHYSICAL_MACHINE_HPP
+#endif // DCS_DES_CLOUD_PHYSICAL_MACHINE_HPP

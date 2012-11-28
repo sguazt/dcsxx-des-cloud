@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/data_center.hpp
+ * \file dcs/des/cloud/data_center.hpp
  *
  * \brief Models a data center.
  *
@@ -22,23 +22,23 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DATA_CENTER_HPP
-#define DCS_EESIM_DATA_CENTER_HPP
+#ifndef DCS_DES_CLOUD_DATA_CENTER_HPP
+#define DCS_DES_CLOUD_DATA_CENTER_HPP
 
 
 #include <cstddef>
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
-#include <dcs/eesim/base_application_controller.hpp>
-#include <dcs/eesim/base_physical_machine_controller.hpp>
-#include <dcs/eesim/logging.hpp>
-#include <dcs/eesim/multi_tier_application.hpp>
-#include <dcs/eesim/physical_machine.hpp>
-#include <dcs/eesim/power_status.hpp>
-#include <dcs/eesim/virtual_machine.hpp>
-#include <dcs/eesim/virtual_machines_placement.hpp>
-#include <dcs/eesim/registry.hpp>
+#include <dcs/des/cloud/base_application_controller.hpp>
+#include <dcs/des/cloud/base_physical_machine_controller.hpp>
+#include <dcs/des/cloud/logging.hpp>
+#include <dcs/des/cloud/multi_tier_application.hpp>
+#include <dcs/des/cloud/physical_machine.hpp>
+#include <dcs/des/cloud/power_status.hpp>
+#include <dcs/des/cloud/virtual_machine.hpp>
+#include <dcs/des/cloud/virtual_machines_placement.hpp>
+#include <dcs/des/cloud/registry.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
@@ -49,12 +49,12 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 template <typename TraitsT>
 class data_center_manager;
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 template <typename TraitsT>
 class data_center
@@ -79,9 +79,9 @@ class data_center
 	private: typedef ::std::map<physical_machine_identifier_type,physical_machine_controller_pointer> physical_machine_controller_container;
 	public: typedef virtual_machine<traits_type> virtual_machine_type;
 	public: typedef ::dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 	public: typedef data_center_manager<traits_type>* manager_pointer;
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 	private: typedef ::std::map<virtual_machine_identifier_type,virtual_machine_pointer> virtual_machine_container;
 	private: typedef registry<traits_type> registry_type;
 	private: typedef typename traits_type::uint_type uint_type;
@@ -139,12 +139,12 @@ class data_center
 		// pre: ptr_app must be a valid application pointer.
 		DCS_ASSERT(
 			ptr_app,
-			throw ::std::invalid_argument("[dcs::eesim::add_application] Invalid application.")
+			throw ::std::invalid_argument("[dcs::des::cloud::add_application] Invalid application.")
 		);
 		// pre: ptr_app_control must be a valid application controller pointer.
 		DCS_ASSERT(
 			ptr_app_control,
-			throw ::std::invalid_argument("[dcs::eesim::add_application] Invalid application controller.")
+			throw ::std::invalid_argument("[dcs::des::cloud::add_application] Invalid application controller.")
 		);
 
 		application_identifier_type id;
@@ -172,7 +172,7 @@ class data_center
 		// pre: app_id must be a valid application identifier.
 		DCS_ASSERT(
 			apps_.count(app_id) > 0,
-			throw ::std::invalid_argument("[dcs::eesim::remove_application] Invalid application identifier.")
+			throw ::std::invalid_argument("[dcs::des::cloud::remove_application] Invalid application identifier.")
 		);
 
 		undeploy_application(app_id);
@@ -188,12 +188,12 @@ class data_center
 		// pre: ptr_mach must be a valid physical machine pointer.
 		DCS_ASSERT(
 			ptr_mach,
-			throw ::std::invalid_argument("[dcs::eesim::add_physical_machine] Invalid physical machine.")
+			throw ::std::invalid_argument("[dcs::des::cloud::add_physical_machine] Invalid physical machine.")
 		);
 		// pre: ptr_mach_control must be a valid physical machine controller pointer.
 		DCS_ASSERT(
 			ptr_mach_control,
-			throw ::std::invalid_argument("[dcs::eesim::add_physical_machine] Invalid physical machine controller.")
+			throw ::std::invalid_argument("[dcs::des::cloud::add_physical_machine] Invalid physical machine controller.")
 		);
 
 		physical_machine_identifier_type id;
@@ -214,7 +214,7 @@ class data_center
 		// pre: mach_id must be a valid physical machine identifier.
 		DCS_ASSERT(
 			pms_.count(mach_id) > 0,
-			throw ::std::invalid_argument("[dcs::eesim::remove_physical_machine] Invalid physical machine identifier.")
+			throw ::std::invalid_argument("[dcs::des::cloud::remove_physical_machine] Invalid physical machine identifier.")
 		);
 
 		pms_.erase(mach_id);
@@ -241,7 +241,7 @@ class data_center
 		// pre: mach_id must be a valid physical machine identifier.
 		DCS_ASSERT(
 			pms_.count(id) > 0,
-			throw ::std::invalid_argument("[dcs::eesim::physical_machine_ptr] Invalid physical machine identifier.")
+			throw ::std::invalid_argument("[dcs::des::cloud::physical_machine_ptr] Invalid physical machine identifier.")
 		);
 
 		return pms_.at(id);
@@ -253,7 +253,7 @@ class data_center
 		// pre: mach_id must be a valid physical machine identifier.
 		DCS_ASSERT(
 			pms_.count(id) > 0,
-			throw ::std::invalid_argument("[dcs::eesim::physical_machine_ptr] Invalid physical machine identifier.")
+			throw ::std::invalid_argument("[dcs::des::cloud::physical_machine_ptr] Invalid physical machine identifier.")
 		);
 
 		return pms_[id];
@@ -335,7 +335,7 @@ class data_center
 		// pre: id must be a valid physical machine identifier.
 		DCS_ASSERT(
 			pm_ctrls_.count(id) > 0,
-			throw ::std::invalid_argument("[dcs::eesim::physical_machine_controller] Invalid physical machine identifier.")
+			throw ::std::invalid_argument("[dcs::des::cloud::physical_machine_controller] Invalid physical machine identifier.")
 		);
 
 		return *(pm_ctrls_.at(id));
@@ -347,7 +347,7 @@ class data_center
 		// pre: id must be a valid physical machine identifier.
 		DCS_ASSERT(
 			pm_ctrls_.count(id) > 0,
-			throw ::std::invalid_argument("[dcs::eesim::physical_machine_controller] Invalid physical machine identifier.")
+			throw ::std::invalid_argument("[dcs::des::cloud::physical_machine_controller] Invalid physical machine identifier.")
 		);
 
 		return *(pm_ctrls_[id]);
@@ -358,7 +358,7 @@ class data_center
 		// pre: id must be a valid physical machine identifier.
 		DCS_ASSERT(
 			pm_ctrls_.count(id) > 0,
-			throw ::std::invalid_argument("[dcs::eesim::physical_machine_controller_ptr] Invalid physical machine identifier.")
+			throw ::std::invalid_argument("[dcs::des::cloud::physical_machine_controller_ptr] Invalid physical machine identifier.")
 		);
 
 		return pm_ctrls_.at(id);
@@ -370,7 +370,7 @@ class data_center
 		// pre: id must be a valid physical machine identifier.
 		DCS_ASSERT(
 			pm_ctrls_.count(id) > 0,
-			throw ::std::invalid_argument("[dcs::eesim::physical_machine_controller_ptr] Invalid physical machine identifier.")
+			throw ::std::invalid_argument("[dcs::des::cloud::physical_machine_controller_ptr] Invalid physical machine identifier.")
 		);
 
 		return pm_ctrls_[id];
@@ -382,7 +382,7 @@ class data_center
 		// pre: id must be a valid application identifier.
 		DCS_ASSERT(
 			app_ctrls_.count(id) > 0,
-			throw ::std::invalid_argument("[dcs::eesim::application_controller] Invalid application identifier.")
+			throw ::std::invalid_argument("[dcs::des::cloud::application_controller] Invalid application identifier.")
 		);
 
 		return *(app_ctrls_.at(id));
@@ -394,7 +394,7 @@ class data_center
 		// pre: id must be a valid application identifier.
 		DCS_ASSERT(
 			app_ctrls_.count(id) > 0,
-			throw ::std::invalid_argument("[dcs::eesim::application_controller] Invalid application identifier.")
+			throw ::std::invalid_argument("[dcs::des::cloud::application_controller] Invalid application identifier.")
 		);
 
 		return *(app_ctrls_[id]);
@@ -406,7 +406,7 @@ class data_center
 		// pre: id must be a valid application identifier.
 		DCS_ASSERT(
 			app_ctrls_.count(id) > 0,
-			throw ::std::invalid_argument("[dcs::eesim::application_controller_ptr] Invalid application identifier.")
+			throw ::std::invalid_argument("[dcs::des::cloud::application_controller_ptr] Invalid application identifier.")
 		);
 
 		return app_ctrls_.at(id);
@@ -418,7 +418,7 @@ class data_center
 		// pre: id must be a valid application identifier.
 		DCS_ASSERT(
 			app_ctrls_.count(id) > 0,
-			throw ::std::invalid_argument("[dcs::eesim::application_controller_ptr] Invalid application identifier.")
+			throw ::std::invalid_argument("[dcs::des::cloud::application_controller_ptr] Invalid application identifier.")
 		);
 
 		return app_ctrls_[id];
@@ -482,7 +482,7 @@ class data_center
 				apps_.count(app_id) > 0
 				&&
 				apps_.at(app_id),
-				throw ::std::invalid_argument("[dcs::eesim::data_center::deploy_application] Invalid application identifier.")
+				throw ::std::invalid_argument("[dcs::des::cloud::data_center::deploy_application] Invalid application identifier.")
 			);
 
 ::std::cerr << "[data_center] BEGIN Deploy application: " << apps_.at(app_id) << ::std::endl;//XXX
@@ -526,7 +526,7 @@ class data_center
 				apps_.count(app_id) > 0
 				&&
 				apps_.at(app_id),
-				throw ::std::invalid_argument("[dcs::eesim::data_center::undeploy_application] Invalid application identifier.")
+				throw ::std::invalid_argument("[dcs::des::cloud::data_center::undeploy_application] Invalid application identifier.")
 			);
 
 		typedef typename deployed_application_container::const_iterator app_iterator;
@@ -537,7 +537,7 @@ class data_center
 		// pre: app_id must identify an already deployed application
 		DCS_ASSERT(
 			app_it != deployed_apps_.end(),
-			throw ::std::invalid_argument("[dcs::eesim::data_center::undeploy_application] Cannot undeploy a non-deployed application.")
+			throw ::std::invalid_argument("[dcs::des::cloud::data_center::undeploy_application] Cannot undeploy a non-deployed application.")
 		);
 
 		// destroy all associated VMs
@@ -575,7 +575,7 @@ class data_center
 				apps_.count(id) > 0
 				&&
 				apps_.at(id),
-				throw ::std::invalid_argument("[dcs::eesim::data_center::deployed] Invalid application identifier.")
+				throw ::std::invalid_argument("[dcs::des::cloud::data_center::deployed] Invalid application identifier.")
 			);
 
 		if (deployed_apps_.find(id) != deployed_apps_.end())
@@ -680,7 +680,7 @@ class data_center
 		app_iterator app_it(deployed_apps_.find(id));
 		if (app_it == deployed_apps_.end())
 		{
-			throw ::std::invalid_argument("[dcs::eesim::application_virtual_machines] Invalid application identifier.");
+			throw ::std::invalid_argument("[dcs::des::cloud::application_virtual_machines] Invalid application identifier.");
 		}
 
 		::std::vector<virtual_machine_pointer> vms;
@@ -812,9 +812,9 @@ class data_center
 				ptr_pm->vmm().power_off(ptr_vm);
 				ptr_pm->vmm().destroy_domain(ptr_vm);
 
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 				ptr_mngr_->migration_controller().notify_vm_destruction(ptr_vm);
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 			}
 
 			placement_.displace(*ptr_vm);
@@ -854,9 +854,9 @@ class data_center
 				ptr_pm->vmm().destroy_domain(ptr_vm);
 //				placement_.displace(*ptr_vm);
 
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 				ptr_mngr_->migration_controller().notify_vm_destruction(ptr_vm);
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 			}
 		}
 		placement_.displace_all();
@@ -953,7 +953,7 @@ class data_center
 				::std::ostringstream oss;
 				oss << "Application " << app_id << " '" << *(apps_.at(app_id)) << "' cannot be started: at least one VM has not been placed.";
 
-				log_warn(DCS_EESIM_LOGGING_AT, oss.str());
+				log_warn(DCS_DES_CLOUD_LOGGING_AT, oss.str());
 			}
 		}
 		else
@@ -963,7 +963,7 @@ class data_center
 			::std::ostringstream oss;
 			oss << "Application " << app_id << " '" << *(apps_.at(app_id)) << "' cannot be started because it has been inhibited.";
 
-			log_warn(DCS_EESIM_LOGGING_AT, oss.str());
+			log_warn(DCS_DES_CLOUD_LOGGING_AT, oss.str());
 		}
 
 ::std::cerr << "[data_center] END Start application: " << *(apps_.at(app_id)) << ::std::endl;//XXX
@@ -1049,7 +1049,7 @@ class data_center
 				::std::ostringstream oss;
 				oss << "Application " << app_id << " '" << *(apps_.at(app_id)) << "' cannot be stopped: at least one VM has not been placed.";
 
-				log_warn(DCS_EESIM_LOGGING_AT, oss.str());
+				log_warn(DCS_DES_CLOUD_LOGGING_AT, oss.str());
 			}
 		}
 		else
@@ -1059,7 +1059,7 @@ class data_center
 			::std::ostringstream oss;
 			oss << "Application " << app_id << " '" << *(apps_.at(app_id)) << "' cannot be stopped because it has been inhibited.";
 
-			log_warn(DCS_EESIM_LOGGING_AT, oss.str());
+			log_warn(DCS_DES_CLOUD_LOGGING_AT, oss.str());
 		}
 
 ::std::cerr << "[data_center] END Stop application: " << *(apps_.at(app_id)) << ::std::endl;//XXX
@@ -1088,12 +1088,12 @@ class data_center
 	}
 
 
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 	public: void manager(manager_pointer const& ptr_mngr)
 	{
 		ptr_mngr_ = ptr_mngr;
 	}
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 
 	private: bool inhibited_virtual_machine(virtual_machine_identifier_type id) const
@@ -1212,9 +1212,9 @@ class data_center
 			}
 		}
 
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 		ptr_mngr_->migration_controller().notify_vm_creation(ptr_vm);
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 		// Assign shares to this VM
 		while (first_share != last_share)
@@ -1235,13 +1235,13 @@ class data_center
 	private: virtual_machines_placement_type placement_;
 	private: deployed_application_container deployed_apps_;
 	private: application_id_container inhibited_apps_;
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 	private: manager_pointer ptr_mngr_;
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 }; // data_center
 
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_DATA_CENTER_HPP
+#endif // DCS_DES_CLOUD_DATA_CENTER_HPP

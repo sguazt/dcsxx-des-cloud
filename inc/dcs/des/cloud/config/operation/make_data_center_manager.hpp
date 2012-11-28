@@ -1,22 +1,22 @@
-#ifndef DCS_EESIM_CONFIG_OPERATION_MAKE_DATA_CENTER_MANAGER_HPP
-#define DCS_EESIM_CONFIG_OPERATION_MAKE_DATA_CENTER_MANAGER_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_DATA_CENTER_MANAGER_HPP
+#define DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_DATA_CENTER_MANAGER_HPP
 
 
-//#include <dcs/eesim/base_application_instance_builder.hpp>
-//#include <dcs/eesim/base_incremental_placement_strategy.hpp>
-//#include <dcs/eesim/base_initial_placement_strategy.hpp>
-//#include <dcs/eesim/base_migration_controller.hpp>
-#include <dcs/eesim/config/configuration.hpp>
-#include <dcs/eesim/config/operation/make_application_instance_builder.hpp>
-#include <dcs/eesim/config/operation/make_incremental_placement_strategy.hpp>
-#include <dcs/eesim/config/operation/make_initial_placement_strategy.hpp>
-#include <dcs/eesim/config/operation/make_migration_controller.hpp>
-#include <dcs/eesim/data_center.hpp>
-#include <dcs/eesim/data_center_manager.hpp>
+//#include <dcs/des/cloud/base_application_instance_builder.hpp>
+//#include <dcs/des/cloud/base_incremental_placement_strategy.hpp>
+//#include <dcs/des/cloud/base_initial_placement_strategy.hpp>
+//#include <dcs/des/cloud/base_migration_controller.hpp>
+#include <dcs/des/cloud/config/configuration.hpp>
+#include <dcs/des/cloud/config/operation/make_application_instance_builder.hpp>
+#include <dcs/des/cloud/config/operation/make_incremental_placement_strategy.hpp>
+#include <dcs/des/cloud/config/operation/make_initial_placement_strategy.hpp>
+#include <dcs/des/cloud/config/operation/make_migration_controller.hpp>
+#include <dcs/des/cloud/data_center.hpp>
+#include <dcs/des/cloud/data_center_manager.hpp>
 #include <dcs/memory.hpp>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 template <
 	typename TraitsT,
@@ -24,14 +24,14 @@ template <
 	typename UIntT
 >
 ::dcs::shared_ptr<
-	::dcs::eesim::data_center_manager<TraitsT>
+	::dcs::des::cloud::data_center_manager<TraitsT>
 > make_data_center_manager(configuration<RealT,UIntT> const& conf,
 						   ::dcs::shared_ptr< data_center<TraitsT> > const& ptr_dc)
 {
 	typedef TraitsT traits_type;
 	typedef RealT real_type;
 	typedef UIntT uint_type;
-	typedef ::dcs::eesim::data_center_manager<traits_type> data_center_manager_type;
+	typedef ::dcs::des::cloud::data_center_manager<traits_type> data_center_manager_type;
 	typedef configuration<real_type,uint_type> configuration_type;
 
 
@@ -70,11 +70,11 @@ template <
 		iterator end_it(conf.data_center().applications().end());
 		for (iterator it = conf.data_center().applications().begin(); it != end_it; ++it)
 		{
-//			::dcs::shared_ptr< ::dcs::eesim::multi_tier_application<traits_type> > ptr_app;
+//			::dcs::shared_ptr< ::dcs::des::cloud::multi_tier_application<traits_type> > ptr_app;
 //
 //			ptr_app = make_application<traits_type>(*it, conf, ptr_rng, ptr_des_eng);
 //
-//			::dcs::shared_ptr< ::dcs::eesim::base_application_controller<traits_type> > ptr_app_controller;
+//			::dcs::shared_ptr< ::dcs::des::cloud::base_application_controller<traits_type> > ptr_app_controller;
 //
 //			ptr_app_controller = make_application_controller<traits_type>(it->controller, ptr_app);
 //			ptr_app_controller->application(ptr_app);
@@ -89,7 +89,7 @@ template <
 	return ptr_dc_mngr;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_OPERATION_MAKE_DATA_CENTER_MANAGER_HPP
+#endif // DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_DATA_CENTER_MANAGER_HPP

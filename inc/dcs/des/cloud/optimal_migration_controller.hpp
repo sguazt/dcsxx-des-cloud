@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/optimal_migration_controller.hpp
+ * \file dcs/des/cloud/optimal_migration_controller.hpp
  *
  * \brief Migration Controller based on Mixed-Integer Nonlinear Programming.
  *
@@ -22,8 +22,8 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_OPTIMAL_MIGRATION_CONTROLLER_HPP
-#define DCS_EESIM_OPTIMAL_MIGRATION_CONTROLLER_HPP
+#ifndef DCS_DES_CLOUD_OPTIMAL_MIGRATION_CONTROLLER_HPP
+#define DCS_DES_CLOUD_OPTIMAL_MIGRATION_CONTROLLER_HPP
 
 
 #include <ctime>//XXX
@@ -32,14 +32,14 @@
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/mean_estimator.hpp>
 #include <dcs/des/statistic_categories.hpp>
-#include <dcs/eesim/base_migration_controller.hpp>
-//#include <dcs/eesim/detail/ampl/vm_placement_minlp_solver.hpp>
-//#include <dcs/eesim/detail/couenne/vm_placement_minlp_solver.hpp>
-//#include <dcs/eesim/detail/neos/vm_placement_minlp_solver.hpp>
-#include <dcs/eesim/detail/vm_placement_optimal_solvers.hpp>
-#include <dcs/eesim/logging.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-#include <dcs/eesim/power_status.hpp>
+#include <dcs/des/cloud/base_migration_controller.hpp>
+//#include <dcs/des/cloud/detail/ampl/vm_placement_minlp_solver.hpp>
+//#include <dcs/des/cloud/detail/couenne/vm_placement_minlp_solver.hpp>
+//#include <dcs/des/cloud/detail/neos/vm_placement_minlp_solver.hpp>
+#include <dcs/des/cloud/detail/vm_placement_optimal_solvers.hpp>
+#include <dcs/des/cloud/logging.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+#include <dcs/des/cloud/power_status.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
@@ -50,7 +50,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class optimal_migration_controller: public base_migration_controller<TraitsT>
@@ -229,11 +229,11 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 		typedef typename optimal_solver_type::problem_result_type optimal_solver_result_type;
 		typedef typename application_tier_type::resource_share_container ref_share_container;
 		//typedef typename optimal_solver_type::resource_share_container share_container;
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 		typedef typename base_type::vm_share_observer::share_container share_container;
-#else // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#else // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 		typedef ::std::map<physical_resource_category,real_type> share_container;
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 		typedef ::std::vector<physical_machine_pointer> physical_machine_container;
 		typedef typename physical_machine_container::const_iterator physical_machine_iterator;
 		typedef ::std::map<physical_machine_identifier_type,physical_machine_pointer> physical_machine_id_map;
@@ -281,19 +281,19 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 				ref_shares = share_container(tmp_shares.begin(), tmp_shares.end());
 			}
 
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 			// As observed shares uses the wanted shares collected by
 			// monitoring each VM.
 
 			wanted_share_map[ptr_vm->id()] = share_container(this->vm_observer_map().at(ptr_vm->id())->wanted_shares.begin(),
 															 this->vm_observer_map().at(ptr_vm->id())->wanted_shares.end());
-#else // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#else // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 			// As reference shares uses the ones defined by the tier
 			// specifications.
 
 			wanted_share_map[ptr_vm->id()] = share_container(ref_shares.begin(),
 															 ref_shares.end());
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 			// Compute and update VM utilization map
 
@@ -362,7 +362,7 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 			//optimal_solver_type solver;
 
 //			::std::map<typename traits_type::virtual_machine_identifier_type, share_container> wanted_share_map;
-//#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+//#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 //			// As reference shares uses the wanted shares collected by
 //			// monitoring each VM.
 //
@@ -372,7 +372,7 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 //			{
 //				wanted_share_map[it->first] = resource_share_container(it->second->wanted_shares.begin(), it->second->wanted_shares.end());
 //			}
-//#else // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+//#else // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 //			// As reference shares uses the ones defined by the tier
 //			// specifications.
 //
@@ -389,7 +389,7 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 //				wanted_share_map[ptr_vm->id()] = ptr_vm->guest_system().resource_shares();
 //			}
 //			vms.clear();
-//#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+//#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 			ptr_solver_->solve(dc, wp_, wm_, ws_, vm_util_map_.begin(), vm_util_map_.end(), wanted_share_map.begin(), wanted_share_map.end());
 
@@ -499,7 +499,7 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 			}
 			else
 			{
-				log_warn(DCS_EESIM_LOGGING_AT, "Failed to solve optimization problem. Skip migration.");
+				log_warn(DCS_DES_CLOUD_LOGGING_AT, "Failed to solve optimization problem. Skip migration.");
 				++fail_count_;
 			}
 		}
@@ -507,7 +507,7 @@ class optimal_migration_controller: public base_migration_controller<TraitsT>
 		{
 			// No VMs -> Turn off active PMs
 
-			log_warn(DCS_EESIM_LOGGING_AT, "No VM is running. Power-off active PMs.");
+			log_warn(DCS_DES_CLOUD_LOGGING_AT, "No VM is running. Power-off active PMs.");
 
 			physical_machine_container pms(dc.physical_machines(powered_on_power_status));
 			physical_machine_iterator pm_end_it(pms.end());
@@ -574,7 +574,7 @@ const typename optimal_migration_controller<TraitsT>::real_type optimal_migratio
 template <typename TraitsT>
 const typename optimal_migration_controller<TraitsT>::real_type optimal_migration_controller<TraitsT>::default_ewma_smoothing_factor(0.90);
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_OPTIMAL_MIGRATION_CONTROLLER_HPP
+#endif // DCS_DES_CLOUD_OPTIMAL_MIGRATION_CONTROLLER_HPP

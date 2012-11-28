@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/virtual_machines_placement.hpp
+ * \file dcs/des/cloud/virtual_machines_placement.hpp
  *
  * \brief A placement of VMs.
  *
@@ -22,14 +22,14 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_VIRTUAL_MACHINES_PLACEMENT_HPP
-#define DCS_EESIM_VIRTUAL_MACHINES_PLACEMENT_HPP
+#ifndef DCS_DES_CLOUD_VIRTUAL_MACHINES_PLACEMENT_HPP
+#define DCS_DES_CLOUD_VIRTUAL_MACHINES_PLACEMENT_HPP
 
 
 #include <cstddef>
 #include <dcs/math/traits/float.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-#include <dcs/eesim/utility.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+#include <dcs/des/cloud/utility.hpp>
 #include <iostream>
 #include <map>
 #include <set>
@@ -38,7 +38,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class virtual_machines_placement
@@ -180,7 +180,7 @@ class virtual_machines_placement
 																			   ptr_vm->guest_system().resource_share(category),
 																			   pm.resource(category)->capacity(),
 																			   share_it->second,
-																			   ptr_vm->guest_system().application().performance_model().tier_measure(ptr_vm->guest_system().id(), ::dcs::eesim::utilization_performance_measure),
+																			   ptr_vm->guest_system().application().performance_model().tier_measure(ptr_vm->guest_system().id(), ::dcs::des::cloud::utilization_performance_measure),
 																			   pm.resource(category)->utilization_threshold());
 							if (
 									(
@@ -286,7 +286,7 @@ class virtual_machines_placement
 	{
 		if (!try_place(vm, pm, first_share, last_share, first_util, last_util, dc))
 		{
-			throw ::std::runtime_error("[dcs::eesim::virtual_machines_placement::place] Tried to place an unplaceable VM.");
+			throw ::std::runtime_error("[dcs::des::cloud::virtual_machines_placement::place] Tried to place an unplaceable VM.");
 		}
 	}
 
@@ -325,7 +325,7 @@ class virtual_machines_placement
 
 		if (!try_place(vm, pm, first_share, last_share, first_util, last_util, dc))
 		{
-			throw ::std::runtime_error("[dcs::eesim::virtual_machines_placement::replace] Tried to place an unplaceable VM.");
+			throw ::std::runtime_error("[dcs::des::cloud::virtual_machines_placement::replace] Tried to place an unplaceable VM.");
 		}
 	}
 
@@ -351,12 +351,12 @@ class virtual_machines_placement
 //		// precondition: virtual machine pointer must be a valid pointer
 //		DCS_ASSERT(
 //			ptr_vm,
-//			throw ::std::invalid_argument("[dcs::eesim::virtual_machines_placement::displace] Invalid virtual machine pointer.")
+//			throw ::std::invalid_argument("[dcs::des::cloud::virtual_machines_placement::displace] Invalid virtual machine pointer.")
 //		);
 		// precondition: virtual machine must do exist
 		DCS_ASSERT(
 			by_vm_idx_.count(vm.id()) > 0,
-			throw ::std::invalid_argument("[dcs::eesim::virtual_machines_placement::displace] Unknown virtual machine.")
+			throw ::std::invalid_argument("[dcs::des::cloud::virtual_machines_placement::displace] Unknown virtual machine.")
 		);
 
 		virtual_machine_identifier_type vm_id = vm.id();
@@ -680,7 +680,7 @@ template <
 	return os;
 }
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_VIRTUAL_MACHINES_PLACEMENT_HPP
+#endif // DCS_DES_CLOUD_VIRTUAL_MACHINES_PLACEMENT_HPP

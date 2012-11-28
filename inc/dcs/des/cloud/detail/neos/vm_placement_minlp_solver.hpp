@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/detail/neos/vm_placement_minlp_solver.hpp
+ * \file dcs/des/cloud/detail/neos/vm_placement_minlp_solver.hpp
  *
  * \brief Optimal VM placement strategy based on MINLP for the NEOS server.
  *
@@ -22,33 +22,33 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DETAIL_NEOS_VM_PLACEMENT_MINLP_SOLVER_HPP
-#define DCS_EESIM_DETAIL_NEOS_VM_PLACEMENT_MINLP_SOLVER_HPP
+#ifndef DCS_DES_CLOUD_DETAIL_NEOS_VM_PLACEMENT_MINLP_SOLVER_HPP
+#define DCS_DES_CLOUD_DETAIL_NEOS_VM_PLACEMENT_MINLP_SOLVER_HPP
 
 
-#include <dcs/eesim/best_fit_decreasing_initial_placement_strategy.hpp>
-#include <dcs/eesim/detail/ampl/solver_results.hpp>
-#include <dcs/eesim/detail/ampl/vm_placement_problem.hpp>
-#include <dcs/eesim/detail/ampl/vm_placement_problem_result.hpp>
-#include <dcs/eesim/detail/gams/model_results.hpp>
-#include <dcs/eesim/detail/gams/solver_results.hpp>
-#include <dcs/eesim/detail/gams/vm_placement_problem.hpp>
-#include <dcs/eesim/detail/gams/vm_placement_problem_result.hpp>
-#include <dcs/eesim/detail/neos/client.hpp>
-#include <dcs/eesim/detail/base_initial_vm_placement_optimal_solver.hpp>
-#include <dcs/eesim/detail/base_vm_placement_optimal_solver.hpp>
-#include <dcs/eesim/logging.hpp>
-#include <dcs/eesim/optimal_solver_categories.hpp>
-#include <dcs/eesim/optimal_solver_ids.hpp>
-#include <dcs/eesim/optimal_solver_input_methods.hpp>
-#include <dcs/eesim/optimal_solver_proxies.hpp>
-#include <dcs/eesim/virtual_machines_placement.hpp>
+#include <dcs/des/cloud/best_fit_decreasing_initial_placement_strategy.hpp>
+#include <dcs/des/cloud/detail/ampl/solver_results.hpp>
+#include <dcs/des/cloud/detail/ampl/vm_placement_problem.hpp>
+#include <dcs/des/cloud/detail/ampl/vm_placement_problem_result.hpp>
+#include <dcs/des/cloud/detail/gams/model_results.hpp>
+#include <dcs/des/cloud/detail/gams/solver_results.hpp>
+#include <dcs/des/cloud/detail/gams/vm_placement_problem.hpp>
+#include <dcs/des/cloud/detail/gams/vm_placement_problem_result.hpp>
+#include <dcs/des/cloud/detail/neos/client.hpp>
+#include <dcs/des/cloud/detail/base_initial_vm_placement_optimal_solver.hpp>
+#include <dcs/des/cloud/detail/base_vm_placement_optimal_solver.hpp>
+#include <dcs/des/cloud/logging.hpp>
+#include <dcs/des/cloud/optimal_solver_categories.hpp>
+#include <dcs/des/cloud/optimal_solver_ids.hpp>
+#include <dcs/des/cloud/optimal_solver_input_methods.hpp>
+#include <dcs/des/cloud/optimal_solver_proxies.hpp>
+#include <dcs/des/cloud/virtual_machines_placement.hpp>
 #include <exception>
 #include <string>
 #include <unistd.h>
 
 
-namespace dcs { namespace eesim { namespace detail { namespace neos {
+namespace dcs { namespace des { namespace cloud { namespace detail { namespace neos {
 
 namespace detail { namespace /*<unnamed>*/ {
 
@@ -92,7 +92,7 @@ inline
 	return "";
 }
 
-}} // Namespace detail::<unnamed>
+}}} // Namespace detail::<unnamed>
 
 
 template <typename TraitsT>
@@ -151,7 +151,7 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 		{
 			case ampl_optimal_solver_input_method:
 				{
-					namespace ampl = ::dcs::eesim::detail::ampl;
+					namespace ampl = ::dcs::des::cloud::detail::ampl;
 
 					// Create a new problem
 					// 1. Create a problem in AMPL format
@@ -190,7 +190,7 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 							if (num_fails == default_max_num_fails)
 							{
 								//throw ex;
-								log_warn(DCS_EESIM_LOGGING_AT, ex.what());
+								log_warn(DCS_DES_CLOUD_LOGGING_AT, ex.what());
 								return;
 							}
 							::sleep(zzz_time);
@@ -209,14 +209,14 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 ::std::cerr << "virtual_machine_shares: " << problem_res.virtual_machine_shares() << std::endl;//XXX
 					if (problem_res.solver_result() == ampl::solved_result)
 					{
-						this->result(::dcs::eesim::detail::make_vm_placement_problem_result<traits_type>(problem_descr, problem_res));
+						this->result(::dcs::des::cloud::detail::make_vm_placement_problem_result<traits_type>(problem_descr, problem_res));
 						this->result().solved(true);
 					}
 				}
 				break;
 			case gams_optimal_solver_input_method:
 				{
-					namespace gams = ::dcs::eesim::detail::gams;
+					namespace gams = ::dcs::des::cloud::detail::gams;
 
 					// Create a new problem
 					// 1. Create a problem in AMPL format
@@ -245,11 +245,11 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 						{
 							++num_fails;
 ::std::cerr << "Waiting... (Failure: " << num_fails << "/" << default_max_num_fails << ", Zzz: " << zzz_time << ")" << ::std::endl;//XXX
-							log_warn(DCS_EESIM_LOGGING_AT, ex.what());
+							log_warn(DCS_DES_CLOUD_LOGGING_AT, ex.what());
 //							if (num_fails == default_max_num_fails)
 //							{
 //								//throw ex;
-//								log_warn(DCS_EESIM_LOGGING_AT, ex.what());
+//								log_warn(DCS_DES_CLOUD_LOGGING_AT, ex.what());
 //								return;
 //							}
 							::sleep(zzz_time);
@@ -273,13 +273,13 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 ::std::cerr << "virtual_machine_shares: " << problem_res.virtual_machine_shares() << std::endl;//XXX
 					if (problem_res.solver_result() == gams::normal_completion_solver_result)
 					{
-						this->result(::dcs::eesim::detail::make_vm_placement_problem_result<traits_type>(problem_descr, problem_res));
+						this->result(::dcs::des::cloud::detail::make_vm_placement_problem_result<traits_type>(problem_descr, problem_res));
 						this->result().solved(true);
 					}
 				}
 				break;
 			default:
-				throw ::std::runtime_error("[dcs::eesim::detail::neos::initial_vm_placement_minlp_solver] Input method not supported.");
+				throw ::std::runtime_error("[dcs::des::cloud::detail::neos::initial_vm_placement_minlp_solver] Input method not supported.");
 		}
 	}
 
@@ -385,7 +385,7 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 		{
 			case ampl_optimal_solver_input_method:
 				{
-					namespace ampl = ::dcs::eesim::detail::ampl;
+					namespace ampl = ::dcs::des::cloud::detail::ampl;
 
 					// Create a new problem
 					// 1. Create a problem in AMPL format
@@ -424,7 +424,7 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 							if (num_fails == default_max_num_fails)
 							{
 								//throw ex;
-								log_warn(DCS_EESIM_LOGGING_AT, ex.what());
+								log_warn(DCS_DES_CLOUD_LOGGING_AT, ex.what());
 								return;
 							}
 							::sleep(zzz_time);
@@ -443,14 +443,14 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 ::std::cerr << "virtual_machine_shares: " << problem_res.virtual_machine_shares() << std::endl;//XXX
 					if (problem_res.solver_result() == ampl::solved_result)
 					{
-						this->result(::dcs::eesim::detail::make_vm_placement_problem_result<traits_type>(problem_descr, problem_res));
+						this->result(::dcs::des::cloud::detail::make_vm_placement_problem_result<traits_type>(problem_descr, problem_res));
 						this->result().solved(true);
 					}
 				}
 				break;
 			case gams_optimal_solver_input_method:
 				{
-					namespace gams = ::dcs::eesim::detail::gams;
+					namespace gams = ::dcs::des::cloud::detail::gams;
 
 					// Create a new problem
 					// 1. Create a problem in GAMS format
@@ -486,7 +486,7 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 						{
 							++num_fails;
 ::std::cerr << "Waiting... (Failure: " << num_fails << "/" << default_max_num_fails << ", Zzz: " << zzz_time << ")" << ::std::endl;//XXX
-							log_warn(DCS_EESIM_LOGGING_AT, ex.what());
+							log_warn(DCS_DES_CLOUD_LOGGING_AT, ex.what());
 //							if (num_fails == default_max_num_fails)
 //							{
 //								//throw ex;
@@ -513,13 +513,13 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 ::std::cerr << "virtual_machine_shares: " << problem_res.virtual_machine_shares() << std::endl;//XXX
 					if (problem_res.solver_result() == gams::normal_completion_solver_result)
 					{
-						this->result(::dcs::eesim::detail::make_vm_placement_problem_result<traits_type>(problem_descr, problem_res));
+						this->result(::dcs::des::cloud::detail::make_vm_placement_problem_result<traits_type>(problem_descr, problem_res));
 						this->result().solved(true);
 					}
 				}
 				break;
 			default:
-				throw ::std::runtime_error("[dcs::eesim::detail::neos::vm_placement_minlp_solver] Input method not supported.");
+				throw ::std::runtime_error("[dcs::des::cloud::detail::neos::vm_placement_minlp_solver] Input method not supported.");
 		}
 	}
 
@@ -549,7 +549,7 @@ const typename TraitsT::uint_type vm_placement_minlp_solver<TraitsT>::default_ma
 template <typename TraitsT>
 const typename TraitsT::real_type vm_placement_minlp_solver<TraitsT>::default_initial_sleep_time(5);
 
-}}}} // Namespace dcs::eesim::detail::neos
+}}}}} // Namespace dcs::des::cloud::detail::neos
 
 
-#endif // DCS_EESIM_DETAIL_NEOS_VM_PLACEMENT_MINLP_SOLVER_HPP
+#endif // DCS_DES_CLOUD_DETAIL_NEOS_VM_PLACEMENT_MINLP_SOLVER_HPP

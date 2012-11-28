@@ -1,11 +1,11 @@
-#ifndef DCS_EESIM_CONFIG_RNG_HPP
-#define DCS_EESIM_CONFIG_RNG_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_RNG_HPP
+#define DCS_DES_CLOUD_CONFIG_RNG_HPP
 
 
 #include <iosfwd>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 enum rng_engine_category
 {
@@ -94,7 +94,7 @@ template <typename CharT, typename CharTraitsT, typename UIntT>
 	return os;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_RNG_HPP
+#endif // DCS_DES_CLOUD_CONFIG_RNG_HPP

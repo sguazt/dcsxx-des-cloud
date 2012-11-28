@@ -1,5 +1,5 @@
 /**
- * \file src/dcs/eesim/logging.hpp
+ * \file src/dcs/des/cloud/logging.hpp
  *
  * \brief Logging facilities.
  *
@@ -22,8 +22,8 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_LOGGING_HPP
-#define DCS_EESIM_LOGGING_HPP
+#ifndef DCS_DES_CLOUD_LOGGING_HPP
+#define DCS_DES_CLOUD_LOGGING_HPP
 
 
 #include <cstddef>
@@ -31,33 +31,33 @@
 #include <string>
 
 
-#define DCS_EESIM_LOGGING_EXPAND_(x) x
-#define DCS_EESIM_LOGGING_STRINGIFY_(x) #x
-#define DCS_EESIM_LOGGING_TOSTRING_(x) DCS_EESIM_LOGGING_STRINGIFY_(x)
+#define DCS_DES_CLOUD_LOGGING_EXPAND_(x) x
+#define DCS_DES_CLOUD_LOGGING_STRINGIFY_(x) #x
+#define DCS_DES_CLOUD_LOGGING_TOSTRING_(x) DCS_DES_CLOUD_LOGGING_STRINGIFY_(x)
 
-#define DCS_EESIM_LOGGING_AT0_ __FILE__ ":" DCS_EESIM_LOGGING_TOSTRING_(__LINE__)
+#define DCS_DES_CLOUD_LOGGING_AT0_ __FILE__ ":" DCS_DES_CLOUD_LOGGING_TOSTRING_(__LINE__)
 #if __STDC_VERSION__ >= 199901L || defined(__GNUC__)
 // C99 or more recent versions of GCC have __func__ macro
-//#define DCS_EESIM_LOGGING_AT_ __FILE__ ":" DCS_EESIM_LOGGING_TOSTRING_(__LINE__) ":(" __func__ ")"
-#define DCS_EESIM_LOGGING_AT1_ ::std::string(":(")+::std::string(__func__)+::std::string(")")
+//#define DCS_DES_CLOUD_LOGGING_AT_ __FILE__ ":" DCS_DES_CLOUD_LOGGING_TOSTRING_(__LINE__) ":(" __func__ ")"
+#define DCS_DES_CLOUD_LOGGING_AT1_ ::std::string(":(")+::std::string(__func__)+::std::string(")")
 #elif defined(__GNUC__) || defined(__MSC_VER__)
 // GCC and MS Visual Studio have __FUNCTION__ macro
-#define DCS_EESIM_LOGGING_AT1_ ::std::string(":(")+::std::string(__FUNCTION__)+::std::string(")")
+#define DCS_DES_CLOUD_LOGGING_AT1_ ::std::string(":(")+::std::string(__FUNCTION__)+::std::string(")")
 #else
 // Can't provide function name info
-#define DCS_EESIM_LOGGING_AT1_ /*empty*/
+#define DCS_DES_CLOUD_LOGGING_AT1_ /*empty*/
 #endif // __STDC_VERSION__
 
-#define DCS_EESIM_LOGGING_AT (::std::string(DCS_EESIM_LOGGING_AT0_)+::std::string(DCS_EESIM_LOGGING_AT1_))
+#define DCS_DES_CLOUD_LOGGING_AT (::std::string(DCS_DES_CLOUD_LOGGING_AT0_)+::std::string(DCS_DES_CLOUD_LOGGING_AT1_))
 
-#define DCS_EESIM_LOGGING_LOG_(msgtype,msg) ::std::clog << "[" << DCS_EESIM_LOGGING_EXPAND_(msgtype) << ":" << DCS_EESIM_LOGGING_AT << "] " << DCS_EESIM_LOGGING_EXPAND_(msg) << ::std::endl;
+#define DCS_DES_CLOUD_LOGGING_LOG_(msgtype,msg) ::std::clog << "[" << DCS_DES_CLOUD_LOGGING_EXPAND_(msgtype) << ":" << DCS_DES_CLOUD_LOGGING_AT << "] " << DCS_DES_CLOUD_LOGGING_EXPAND_(msg) << ::std::endl;
 
-#define DCS_EESIM_LOGGING_WARN(msg) DCS_EESIM_LOGGING_LOG_("W",msg)
+#define DCS_DES_CLOUD_LOGGING_WARN(msg) DCS_DES_CLOUD_LOGGING_LOG_("W",msg)
 
-#define DCS_EESIM_LOGGING_ERROR(msg) DCS_EESIM_LOGGING_LOG_("E",msg)
+#define DCS_DES_CLOUD_LOGGING_ERROR(msg) DCS_DES_CLOUD_LOGGING_LOG_("E",msg)
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 //TODO: When C++0x is out we can use something like this
 namespace detail { namespace /*<unnamed>*/ { namespace logging {
@@ -112,6 +112,6 @@ void log_error(::std::string const& at, ::std::string const& msg)
 	detail::logging::log("E", at, msg);
 }
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
-#endif // DCS_EESIM_LOGGING_HPP
+#endif // DCS_DES_CLOUD_LOGGING_HPP

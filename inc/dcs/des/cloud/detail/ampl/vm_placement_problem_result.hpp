@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/detail/ampl/vm_placement_problem_result.hpp
+ * \file dcs/des/cloud/detail/ampl/vm_placement_problem_result.hpp
  *
  * \brief Holds the solution obtained by an optimal VM placement strategy that
  *  uses the AMPL mathematical environment.
@@ -23,22 +23,22 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DETAIL_AMPL_VM_PLACEMENT_PROBLEM_RESULT_HPP
-#define DCS_EESIM_DETAIL_AMPL_VM_PLACEMENT_PROBLEM_RESULT_HPP
+#ifndef DCS_DES_CLOUD_DETAIL_AMPL_VM_PLACEMENT_PROBLEM_RESULT_HPP
+#define DCS_DES_CLOUD_DETAIL_AMPL_VM_PLACEMENT_PROBLEM_RESULT_HPP
 
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <cstddef>
-#include <dcs/eesim/detail/ampl/solver_results.hpp>
-#include <dcs/eesim/detail/ampl/utility.hpp>
+#include <dcs/des/cloud/detail/ampl/solver_results.hpp>
+#include <dcs/des/cloud/detail/ampl/utility.hpp>
 #include <iosfwd>
 #include <limits>
 #include <sstream>
 #include <string>
 
 
-namespace dcs { namespace eesim { namespace detail { namespace ampl {
+namespace dcs { namespace des { namespace cloud { namespace detail { namespace ampl {
 
 class vm_placement_problem_result
 {
@@ -250,7 +250,7 @@ vm_placement_problem_result make_vm_placement_problem_result(::std::string const
 }
 
 
-}}}} // Namespace dcs::eesim::detail::ampl
+}}}}} // Namespace dcs::des::cloud::detail::ampl
 
 
-#endif // DCS_EESIM_DETAIL_AMPL_VM_PLACEMENT_PROBLEM_RESULT_HPP
+#endif // DCS_DES_CLOUD_DETAIL_AMPL_VM_PLACEMENT_PROBLEM_RESULT_HPP

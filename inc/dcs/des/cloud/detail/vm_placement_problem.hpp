@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/detail/vm_placement_problem.hpp
+ * \file dcs/des/cloud/detail/vm_placement_problem.hpp
  *
  * \brief Class representing the result of a VM placement strategy.
  *
@@ -22,20 +22,20 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DETAIL_VM_PLACEMENT_PROBLEM_HPP
-#define DCS_EESIM_DETAIL_VM_PLACEMENT_PROBLEM_HPP
+#ifndef DCS_DES_CLOUD_DETAIL_VM_PLACEMENT_PROBLEM_HPP
+#define DCS_DES_CLOUD_DETAIL_VM_PLACEMENT_PROBLEM_HPP
 
 
 #include <boost/numeric/ublasx/operation/num_columns.hpp>
 #include <boost/numeric/ublasx/operation/num_rows.hpp>
 #include <cstddef>
-#include <dcs/eesim/physical_resource_category.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
 #include <map>
 #include <utility>
 #include <vector>
 
 
-namespace dcs { namespace eesim { namespace detail {
+namespace dcs { namespace des { namespace cloud { namespace detail {
 
 template <typename TraitsT>
 class vm_placement_problem_result
@@ -160,6 +160,6 @@ vm_placement_problem_result<TraitsT> make_vm_placement_problem_result(ProblemDes
 	return res;
 }
 
-}}} // Namespace dcs::eesim::detail
+}}}} // Namespace dcs::des::cloud::detail
 
-#endif // DCS_EESIM_DETAIL_VM_PLACEMENT_PROBLEM_HPP
+#endif // DCS_DES_CLOUD_DETAIL_VM_PLACEMENT_PROBLEM_HPP

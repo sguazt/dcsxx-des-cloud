@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/detail/ampl/vm_placement_minlp_solver.hpp
+ * \file dcs/des/cloud/detail/ampl/vm_placement_minlp_solver.hpp
  *
  * \brief Optimal VM placement strategy formulated as a MINLP problem in the
  *  AMPL mathematical environment.
@@ -23,25 +23,25 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DETAIL_AMPL_VM_PLACEMENT_MINLP_SOLVER_HPP
-#define DCS_EESIM_DETAIL_AMPL_VM_PLACEMENT_MINLP_SOLVER_HPP
+#ifndef DCS_DES_CLOUD_DETAIL_AMPL_VM_PLACEMENT_MINLP_SOLVER_HPP
+#define DCS_DES_CLOUD_DETAIL_AMPL_VM_PLACEMENT_MINLP_SOLVER_HPP
 
 
 #include <cstddef>
-#include <dcs/eesim/best_fit_decreasing_initial_placement_strategy.hpp>
-#include <dcs/eesim/data_center.hpp>
-#include <dcs/eesim/detail/ampl/solver_results.hpp>
-#include <dcs/eesim/detail/ampl/utility.hpp>
-#include <dcs/eesim/detail/ampl/vm_placement_problem.hpp>
-#include <dcs/eesim/detail/ampl/vm_placement_problem_result.hpp>
-#include <dcs/eesim/detail/base_initial_vm_placement_optimal_solver.hpp>
-#include <dcs/eesim/detail/base_vm_placement_optimal_solver.hpp>
-#include <dcs/eesim/optimal_solver_categories.hpp>
-#include <dcs/eesim/optimal_solver_ids.hpp>
-#include <dcs/eesim/optimal_solver_input_methods.hpp>
-#include <dcs/eesim/optimal_solver_proxies.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-#include <dcs/eesim/virtual_machines_placement.hpp>
+#include <dcs/des/cloud/best_fit_decreasing_initial_placement_strategy.hpp>
+#include <dcs/des/cloud/data_center.hpp>
+#include <dcs/des/cloud/detail/ampl/solver_results.hpp>
+#include <dcs/des/cloud/detail/ampl/utility.hpp>
+#include <dcs/des/cloud/detail/ampl/vm_placement_problem.hpp>
+#include <dcs/des/cloud/detail/ampl/vm_placement_problem_result.hpp>
+#include <dcs/des/cloud/detail/base_initial_vm_placement_optimal_solver.hpp>
+#include <dcs/des/cloud/detail/base_vm_placement_optimal_solver.hpp>
+#include <dcs/des/cloud/optimal_solver_categories.hpp>
+#include <dcs/des/cloud/optimal_solver_ids.hpp>
+#include <dcs/des/cloud/optimal_solver_input_methods.hpp>
+#include <dcs/des/cloud/optimal_solver_proxies.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+#include <dcs/des/cloud/virtual_machines_placement.hpp>
 #include <iosfwd>
 #include <sstream>
 #include <stdexcept>
@@ -49,7 +49,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim { namespace detail { namespace ampl {
+namespace dcs { namespace des { namespace cloud { namespace detail { namespace ampl {
 
 namespace detail { namespace /*<unnamed>*/ {
 
@@ -72,9 +72,9 @@ class minlp_input_producer
 }; // minlp_input_producer
 
 
-class minlp_output_consumer: public ::dcs::eesim::detail::ampl::vm_placement_problem_result
+class minlp_output_consumer: public ::dcs::des::cloud::detail::ampl::vm_placement_problem_result
 {
-	private: typedef ::dcs::eesim::detail::ampl::vm_placement_problem_result base_type;
+	private: typedef ::dcs::des::cloud::detail::ampl::vm_placement_problem_result base_type;
 	public: typedef typename base_type::int_type int_type;
 	public: typedef typename base_type::smallint_type smallint_type;
 	public: typedef typename base_type::real_type real_type;
@@ -83,7 +83,7 @@ class minlp_output_consumer: public ::dcs::eesim::detail::ampl::vm_placement_pro
 	public: typedef typename base_type::real_matrix_type real_matrix_type;
 }; // minlp_input_consumer
 
-}} // Namespace detail::<unnamed>
+}}} // Namespace detail::<unnamed>
 
 
 template <typename TraitsT>
@@ -197,9 +197,9 @@ class initial_vm_placement_minlp_solver: public base_initial_vm_placement_optima
 						 consumer);
 
 		// Build the new solution
-		if (consumer.solver_result() == ::dcs::eesim::detail::ampl::solved_result)
+		if (consumer.solver_result() == ::dcs::des::cloud::detail::ampl::solved_result)
 		{
-			this->result(::dcs::eesim::detail::make_vm_placement_problem_result<traits_type>(problem_descr, consumer));
+			this->result(::dcs::des::cloud::detail::make_vm_placement_problem_result<traits_type>(problem_descr, consumer));
 			this->result().solved(true);
 		}
 	}
@@ -324,7 +324,7 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 		// Build the new solution
 		if (consumer.solver_result() == solved_result)
 		{
-			this->result(::dcs::eesim::detail::make_vm_placement_problem_result<traits_type>(problem_descr, consumer));
+			this->result(::dcs::des::cloud::detail::make_vm_placement_problem_result<traits_type>(problem_descr, consumer));
 			this->result().solved(true);
 		}
 	}
@@ -333,7 +333,7 @@ class vm_placement_minlp_solver: public base_vm_placement_optimal_solver<TraitsT
 template <typename TraitsT>
 const optimal_solver_ids vm_placement_minlp_solver<TraitsT>::default_solver_id(couenne_optimal_solver_id);
 
-}}}} // Namespace dcs::eesim::detail::ampl
+}}}}} // Namespace dcs::des::cloud::detail::ampl
 
 
-#endif // DCS_EESIM_DETAIL_AMPL_VM_PLACEMENT_MINLP_SOLVER_HPP
+#endif // DCS_DES_CLOUD_DETAIL_AMPL_VM_PLACEMENT_MINLP_SOLVER_HPP

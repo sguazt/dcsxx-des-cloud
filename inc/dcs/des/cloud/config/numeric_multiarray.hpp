@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/config/numeric_multiarray.hpp
+ * \file dcs/des/cloud/config/numeric_multiarray.hpp
  *
  * \brief Numeric multi-arrays inside configuration.
  *
@@ -30,8 +30,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DCS_EESIM_CONFIG_NUMERIC_MULTIARRAY_HPP
-#define DCS_EESIM_CONFIG_NUMERIC_MULTIARRAY_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_NUMERIC_MULTIARRAY_HPP
+#define DCS_DES_CLOUD_CONFIG_NUMERIC_MULTIARRAY_HPP
 
 
 #include <algorithm>
@@ -45,7 +45,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 namespace detail { namespace /*<unnamed>*/ {
 
@@ -57,7 +57,7 @@ void print_container(ForwardIterT first, ForwardIterT last)
 	::std::cerr << "]";
 }
 
-}} // Namespace detail::<unnamed>
+}}} // Namespace detail::<unnamed>
 
 
 template <typename T>
@@ -102,7 +102,7 @@ class numeric_multiarray
 		// pre: size == distance of data_last from data_first
 		DCS_ASSERT(
 			static_cast< ::std::ptrdiff_t >(sz_) == ::std::distance(data_first, data_last),
-			throw ::std::invalid_argument("[dcs::eesim::config::numeric_multiarray::ctor] Unsufficient number of data.")
+			throw ::std::invalid_argument("[dcs::des::cloud::config::numeric_multiarray::ctor] Unsufficient number of data.")
 		);
 
 		data_ = new value_type[sz_];
@@ -174,7 +174,7 @@ class numeric_multiarray
 	{
 		DCS_ASSERT(
 			dim < dims_.size(),
-			throw ::std::invalid_argument("[dcs::eesim::config::numeric_multiarray::size] Dimension out of range.")
+			throw ::std::invalid_argument("[dcs::des::cloud::config::numeric_multiarray::size] Dimension out of range.")
 		);
 
 		return dims_[dim];
@@ -193,12 +193,12 @@ class numeric_multiarray
 		// pre: data != null pointer
 		DCS_ASSERT(
 			data_,
-			throw ::std::runtime_error("[dcs::des::eesim::config::numeric_multiarray::()] Data not defined.")
+			throw ::std::runtime_error("[dcs::des::cloud::config::numeric_multiarray::()] Data not defined.")
 		);
 		// pre: index is valid
 		DCS_ASSERT(
 			check_index(idx),
-			throw ::std::runtime_error("[dcs::eesim::config::numeric_multiarray::()] Data not defined.")
+			throw ::std::runtime_error("[dcs::des::cloud::config::numeric_multiarray::()] Data not defined.")
 		);
 
 		return data_[data_index(idx)];
@@ -210,12 +210,12 @@ class numeric_multiarray
 		// pre: data != null pointer
 		DCS_ASSERT(
 			data_,
-			throw ::std::runtime_error("[dcs::des::eesim::config::numeric_multiarray::()] Data not defined.")
+			throw ::std::runtime_error("[dcs::des::cloud::config::numeric_multiarray::()] Data not defined.")
 		);
 		// pre: index is valid
 		DCS_ASSERT(
 			check_index(idx),
-			throw ::std::runtime_error("[dcs::eesim::config::numeric_multiarray::()] Data not defined.")
+			throw ::std::runtime_error("[dcs::des::cloud::config::numeric_multiarray::()] Data not defined.")
 		);
 
 		return data_[data_index(idx)];
@@ -830,7 +830,7 @@ void print_array(::std::basic_ostream<CharT,CharTraitsT>& os, numeric_multiarray
 	}
 }
 
-}} // Namespace detail::<unnamed>
+}}} // Namespace detail::<unnamed>
 
 template <typename CharT, typename CharTraitsT, typename ValueT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, numeric_multiarray<ValueT> const& a)
@@ -844,7 +844,7 @@ template <typename CharT, typename CharTraitsT, typename ValueT>
 	return os;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_NUMERIC_MULTIARRAY_HPP
+#endif // DCS_DES_CLOUD_CONFIG_NUMERIC_MULTIARRAY_HPP

@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/qn_application_simulation_model.hpp
+ * \file dcs/des/cloud/qn_application_simulation_model.hpp
  *
  * \brief Class for application simulation models based on queueing
  *  network models.
@@ -23,8 +23,8 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_QN_APPLICATION_SIMULATION_MODEL_HPP
-#define DCS_EESIM_QN_APPLICATION_SIMULATION_MODEL_HPP
+#ifndef DCS_DES_CLOUD_QN_APPLICATION_SIMULATION_MODEL_HPP
+#define DCS_DES_CLOUD_QN_APPLICATION_SIMULATION_MODEL_HPP
 
 
 #include <dcs/debug.hpp>
@@ -36,13 +36,13 @@
 #include <dcs/des/model/qn/queueing_network.hpp>
 #include <dcs/des/model/qn/queueing_network_traits.hpp>
 #include <dcs/des/model/qn/output_statistic_category.hpp>
-#include <dcs/eesim/application_simulation_model_traits.hpp>
-#include <dcs/eesim/base_application_simulation_model.hpp>
-#include <dcs/eesim/performance_measure_category.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-#include <dcs/eesim/registry.hpp>
-#include <dcs/eesim/user_request.hpp>
-#include <dcs/eesim/utility.hpp>
+#include <dcs/des/cloud/application_simulation_model_traits.hpp>
+#include <dcs/des/cloud/base_application_simulation_model.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+#include <dcs/des/cloud/registry.hpp>
+#include <dcs/des/cloud/user_request.hpp>
+#include <dcs/des/cloud/utility.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
@@ -51,13 +51,13 @@
 #include <vector>
 
 //[XXX]
-#ifdef DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+#ifdef DCS_DES_CLOUD_EXP_OUTPUT_VM_MEASURES
 # include <cstdlib>
 # include <iosfwd>
 # include <fstream>
 # include <sstream>
 # include <string>
-#endif // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+#endif // DCS_DES_CLOUD_EXP_OUTPUT_VM_MEASURES
 //[/XXX]
 
 
@@ -66,7 +66,7 @@
 //   maybe we want to handles some other kind of stats.
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 namespace detail { namespace /*<unnamed>*/ {
 
@@ -99,7 +99,7 @@ inline
 			break;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::detail::network_category] Unable to associate a suitable network output statistic category for the given performance measure category.");
+	throw ::std::runtime_error("[dcs::des::cloud::detail::network_category] Unable to associate a suitable network output statistic category for the given performance measure category.");
 }
 
 
@@ -138,7 +138,7 @@ inline
 			break;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::detail::node_category] Unable to associate a suitable node output statistic category for the given performance measure category.");
+	throw ::std::runtime_error("[dcs::des::cloud::detail::node_category] Unable to associate a suitable node output statistic category for the given performance measure category.");
 }
 
 
@@ -165,7 +165,7 @@ bool has_performance_measure(performance_measure_category category)
 }
 
 
-#ifdef DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+#ifdef DCS_DES_CLOUD_EXP_OUTPUT_VM_MEASURES
 
 template <typename TraitsT>
 inline
@@ -218,9 +218,9 @@ void dump_tier_measure(typename TraitsT::uint_type app_id, typename TraitsT::uin
 	}
 }
 
-#endif // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+#endif // DCS_DES_CLOUD_EXP_OUTPUT_VM_MEASURES
 
-}} // Namespace detail::<unnamed>
+}}} // Namespace detail::<unnamed>
 
 
 template <
@@ -447,7 +447,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 
 		if (it == tier_node_map_.end())
 		{
-			throw ::std::logic_error("[dcs::eesim::qn_application_simulation_model::node_from_tier] Tier not mapped.");
+			throw ::std::logic_error("[dcs::des::cloud::qn_application_simulation_model::node_from_tier] Tier not mapped.");
 		}
 
 		return it->second;
@@ -462,7 +462,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 
 		if (it == node_tier_map_.end())
 		{
-			throw ::std::logic_error("[dcs::eesim::qn_application_simulation_model::tier_from_node] Node not mapped.");
+			throw ::std::logic_error("[dcs::des::cloud::qn_application_simulation_model::tier_from_node] Node not mapped.");
 		}
 
 		return it->second;
@@ -584,7 +584,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 		// pre: tier must be a service-station node.
 		DCS_ASSERT(
 				node.category() == ::dcs::des::model::qn::service_station_node_category,
-				throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_tier_in_service_requests] Expected a service station node. Got another kind of node.")
+				throw ::std::runtime_error("[dcs::des::cloud::qn_application_simulation_model::do_tier_in_service_requests] Expected a service station node. Got another kind of node.")
 			);
 
 		service_node_type const* ptr_svc_node(dynamic_cast<service_node_type const*>(&node));
@@ -592,7 +592,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 		// double-check: tier must be a service-station node.
 		DCS_ASSERT(
 				ptr_svc_node,
-				throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_tier_in_service_requests] Unable to get a service station node.")
+				throw ::std::runtime_error("[dcs::des::cloud::qn_application_simulation_model::do_tier_in_service_requests] Unable to get a service station node.")
 			);
 
 		::std::vector<user_request_type> requests;
@@ -631,7 +631,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 		// pre: tier_id is a valid tier identifier.
 		DCS_ASSERT(
 			tier_id < tier_num_arrs_stats_.size(),
-			throw ::std::invalid_argument("[dcs::eesim::application_simulation_model_adaptor::do_tier_num_arrivals] Invalid tier identifier.")
+			throw ::std::invalid_argument("[dcs::des::cloud::application_simulation_model_adaptor::do_tier_num_arrivals] Invalid tier identifier.")
 		);
 
 		return *tier_num_arrs_stats_[tier_id];
@@ -643,7 +643,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 		// pre: tier_id is a valid tier identifier.
 		DCS_ASSERT(
 			tier_id < tier_num_arrs_stats_.size(),
-			throw ::std::invalid_argument("[dcs::eesim::application_simulation_model_adaptor::do_tier_num_departures] Invalid tier identifier.")
+			throw ::std::invalid_argument("[dcs::des::cloud::application_simulation_model_adaptor::do_tier_num_departures] Invalid tier identifier.")
 		);
 
 		return *tier_num_deps_stats_[tier_id];
@@ -712,7 +712,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 		// pre: tier must be a service-station node.
 		DCS_ASSERT(
 				node.category() == ::dcs::des::model::qn::service_station_node_category,
-				throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_request_tier_service_event_source] Expected a service station node. Got another kind of node.")
+				throw ::std::runtime_error("[dcs::des::cloud::qn_application_simulation_model::do_request_tier_service_event_source] Expected a service station node. Got another kind of node.")
 			);
 
 		service_node_type* ptr_svc_node(dynamic_cast<service_node_type*>(&node));
@@ -720,7 +720,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 		// double-check: tier must be a service-station node.
 		DCS_ASSERT(
 				ptr_svc_node,
-				throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_request_tier_service_event_source] Unable to get a service station node.")
+				throw ::std::runtime_error("[dcs::des::cloud::qn_application_simulation_model::do_request_tier_service_event_source] Unable to get a service station node.")
 			);
 
 		return ptr_svc_node->service_event_source();
@@ -741,7 +741,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 		// pre: tier must be a service-station node.
 		DCS_ASSERT(
 				node.category() == ::dcs::des::model::qn::service_station_node_category,
-				throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_request_tier_service_event_source] Expected a service station node. Got another kind of node.")
+				throw ::std::runtime_error("[dcs::des::cloud::qn_application_simulation_model::do_request_tier_service_event_source] Expected a service station node. Got another kind of node.")
 			);
 
 		service_node_type const* ptr_svc_node(dynamic_cast<service_node_type const*>(&node));
@@ -749,7 +749,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 		// double-check: tier must be a service-station node.
 		DCS_ASSERT(
 				ptr_svc_node,
-				throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_request_tier_service_event_source] Unable to get a service station node.")
+				throw ::std::runtime_error("[dcs::des::cloud::qn_application_simulation_model::do_request_tier_service_event_source] Unable to get a service station node.")
 			);
 
 		return ptr_svc_node->service_event_source();
@@ -810,7 +810,7 @@ class qn_application_simulation_model: public base_application_simulation_model<
 
 		DCS_ASSERT(
 				node.category() == ::dcs::des::model::qn::service_station_node_category,
-				throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_resource_share] Expected a service station node. Got another kind of node.")
+				throw ::std::runtime_error("[dcs::des::cloud::qn_application_simulation_model::do_resource_share] Expected a service station node. Got another kind of node.")
 			);
 
 		typedef ::dcs::des::model::qn::service_station_node<qn_model_traits_type> service_node_type;
@@ -819,14 +819,14 @@ class qn_application_simulation_model: public base_application_simulation_model<
 
 		DCS_ASSERT(
 				ptr_svc_node,
-				throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::do_resource_share] Unable to get a service station node.")
+				throw ::std::runtime_error("[dcs::des::cloud::qn_application_simulation_model::do_resource_share] Unable to get a service station node.")
 			);
 
 DCS_DEBUG_TRACE("New resource share for tier: " << tier_id);//XXX
 DCS_DEBUG_TRACE("New share: " << share);//XXX
 DCS_DEBUG_TRACE("Actual machine capacity: " << this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->capacity());//XXX
 		real_type multiplier;
-//		multiplier = ::dcs::eesim::resource_scaling_factor(
+//		multiplier = ::dcs::des::cloud::resource_scaling_factor(
 //				this->application().reference_resource(category).capacity(),
 //				this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->capacity()
 //			);
@@ -874,7 +874,7 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 		num_sla_viols_ = uint_type/*zero*/();
 
 //[XXX]
-#ifdef DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+#ifdef DCS_DES_CLOUD_EXP_OUTPUT_VM_MEASURES
 		for (uint_type tid = 0; tid < this->application().num_tiers(); ++tid)
 		{
 			this->request_tier_departure_event_source(tid).connect(
@@ -887,7 +887,7 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 				)
 			);
 		}
-#endif // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+#endif // DCS_DES_CLOUD_EXP_OUTPUT_VM_MEASURES
 //[/XXX]
 
 //		// schedule life-time events
@@ -925,7 +925,7 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 		}
 
 //[XXX]
-#ifdef DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+#ifdef DCS_DES_CLOUD_EXP_OUTPUT_VM_MEASURES
 		for (uint_type tid = 0; tid < this->application().num_tiers(); ++tid)
 		{
 			this->request_tier_departure_event_source(tid).disconnect(
@@ -938,7 +938,7 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 				)
 			);
 		}
-#endif // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+#endif // DCS_DES_CLOUD_EXP_OUTPUT_VM_MEASURES
 //[/XXX]
 
 		DCS_DEBUG_TRACE("(" << this << ") END Processing SYSTEM-FINALIZATION (Clock: " << ctx.simulated_time() << ")");
@@ -968,9 +968,9 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 			switch (category)
 			{
 				case busy_time_performance_measure:
-					throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::process_request_departure] Busy time as SLO category has not been implemented yet.");//FIXME
+					throw ::std::runtime_error("[dcs::des::cloud::qn_application_simulation_model::process_request_departure] Busy time as SLO category has not been implemented yet.");//FIXME
 				case queue_length_performance_measure:
-					throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::process_request_departure] Queue length as SLO category has not been implemented yet.");//FIXME
+					throw ::std::runtime_error("[dcs::des::cloud::qn_application_simulation_model::process_request_departure] Queue length as SLO category has not been implemented yet.");//FIXME
 				case response_time_performance_measure:
 					{
 						real_type rt = req.departure_time()-req.arrival_time();
@@ -983,14 +983,14 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 					////measures.push_back(tp);
 					break;
 				case utilization_performance_measure:
-					throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::process_request_departure] Utilization as SLO category has not been implemented yet.");//FIXME
+					throw ::std::runtime_error("[dcs::des::cloud::qn_application_simulation_model::process_request_departure] Utilization as SLO category has not been implemented yet.");//FIXME
 			}
-#ifdef DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+#ifdef DCS_DES_CLOUD_EXP_OUTPUT_VM_MEASURES
 			detail::dump_app_measure<traits_type>(this->application().id(),
 												  category,
 												  measures.back(),
 												  this->application().sla_cost_model().slo_value(category));
-#endif // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+#endif // DCS_DES_CLOUD_EXP_OUTPUT_VM_MEASURES
 		}
 
 		if (!this->application().sla_cost_model().satisfied(categories.begin(), categories.end(), measures.begin()))
@@ -1005,7 +1005,7 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 	}
 
 
-#ifdef DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+#ifdef DCS_DES_CLOUD_EXP_OUTPUT_VM_MEASURES
 	private: void process_request_tier_departure(des_event_type const& evt, des_engine_context_type& ctx, uint_type tid)
 	{
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
@@ -1035,9 +1035,9 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 			switch (category)
 			{
 				case busy_time_performance_measure:
-					throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::process_request_departure] Busy time as SLO category has not been implemented yet.");//FIXME
+					throw ::std::runtime_error("[dcs::des::cloud::qn_application_simulation_model::process_request_departure] Busy time as SLO category has not been implemented yet.");//FIXME
 				case queue_length_performance_measure:
-					throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::process_request_departure] Queue length as SLO category has not been implemented yet.");//FIXME
+					throw ::std::runtime_error("[dcs::des::cloud::qn_application_simulation_model::process_request_departure] Queue length as SLO category has not been implemented yet.");//FIXME
 				case response_time_performance_measure:
 					{
 						real_type rt = req.tier_departure_times(req.current_tier()).back()-req.tier_arrival_times(req.current_tier()).back();
@@ -1050,7 +1050,7 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 					////measures.push_back(tp);
 					break;
 				case utilization_performance_measure:
-					throw ::std::runtime_error("[dcs::eesim::qn_application_simulation_model::process_request_departure] Utilization as SLO category has not been implemented yet.");//FIXME
+					throw ::std::runtime_error("[dcs::des::cloud::qn_application_simulation_model::process_request_departure] Utilization as SLO category has not been implemented yet.");//FIXME
 			}
 
 			detail::dump_tier_measure<traits_type>(this->application().id(),
@@ -1062,7 +1062,7 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 
 		DCS_DEBUG_TRACE("(" << this << ") END Processing REQUEST-TIER-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
 	}
-#endif // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+#endif // DCS_DES_CLOUD_EXP_OUTPUT_VM_MEASURES
 
 	//@} Event Handlers
 
@@ -1151,7 +1151,7 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 				{
 					typename customer_utilization_profile_iterator::value_type const& item(*it);
 					real_type util;
-					util = ::dcs::eesim::scale_resource_utilization(
+					util = ::dcs::des::cloud::scale_resource_utilization(
 							this->application().reference_resource(category).capacity(),
 							this->tier_virtual_machine(tier_id)->vmm().hosting_machine().resource(category)->capacity(),
 							item.utilization()
@@ -1184,7 +1184,7 @@ DCS_DEBUG_TRACE("New capacity multiplier: " << ptr_svc_node->capacity_multiplier
 	//@} Data Members
 }; // qn_application_simulation_model
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_QN_APPLICATION_SIMULATION_MODEL_HPP
+#endif // DCS_DES_CLOUD_QN_APPLICATION_SIMULATION_MODEL_HPP

@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/resource_utilization_profile.hpp
+ * \file dcs/des/cloud/resource_utilization_profile.hpp
  *
  * \brief Class for resource utilization profiles.
  *
@@ -22,8 +22,8 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_RESOURCE_UTILIZATION_PROFILE_HPP
-#define DCS_EESIM_RESOURCE_UTILIZATION_PROFILE_HPP
+#ifndef DCS_DES_CLOUD_RESOURCE_UTILIZATION_PROFILE_HPP
+#define DCS_DES_CLOUD_RESOURCE_UTILIZATION_PROFILE_HPP
 
 
 #include <boost/icl/interval.hpp>
@@ -32,7 +32,7 @@
 #include <utility>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 //template <typename TraitsT>
 //class resource_utilization_profile_item
@@ -281,7 +281,7 @@ template <typename CharT, typename CharTraitsT, typename TraitsT>
 	return os;
 }
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_RESOURCE_UTILIZATION_PROFILE_HPP
+#endif // DCS_DES_CLOUD_RESOURCE_UTILIZATION_PROFILE_HPP

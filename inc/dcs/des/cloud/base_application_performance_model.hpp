@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/base_application_performance_model.hpp
+ * \file dcs/des/cloud/base_application_performance_model.hpp
  *
  * \brief Base class for application performance models.
  *
@@ -22,14 +22,14 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_BASE_APPLICATION_PERFORMANCE_MODEL_HPP
-#define DCS_EESIM_BASE_APPLICATION_PERFORMANCE_MODEL_HPP
+#ifndef DCS_DES_CLOUD_BASE_APPLICATION_PERFORMANCE_MODEL_HPP
+#define DCS_DES_CLOUD_BASE_APPLICATION_PERFORMANCE_MODEL_HPP
 
 
-#include <dcs/eesim/performance_measure_category.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class base_application_performance_model
@@ -56,7 +56,7 @@ class base_application_performance_model
 	private: virtual real_type do_tier_measure(uint_type tier_id, performance_measure_category category) const = 0;
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_BASE_EESIM_APPLICATION_PERFORMANCE_MODEL_HPP
+#endif // DCS_BASE_DES_CLOUD_APPLICATION_PERFORMANCE_MODEL_HPP

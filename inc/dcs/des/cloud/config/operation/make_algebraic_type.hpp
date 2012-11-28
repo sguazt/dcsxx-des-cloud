@@ -1,17 +1,17 @@
-#ifndef DCS_EESIM_CONFIG_OPERATION_MAKE_ALGEBRAIC_TYPE_HPP
-#define DCS_EESIM_CONFIG_OPERATION_MAKE_ALGEBRAIC_TYPE_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_ALGEBRAIC_TYPE_HPP
+#define DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_ALGEBRAIC_TYPE_HPP
 
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <cstddef>
-#include <dcs/eesim/config/numeric_matrix.hpp>
-//#include <dcs/eesim/config/numeric_multiarray.hpp>
+#include <dcs/des/cloud/config/numeric_matrix.hpp>
+//#include <dcs/des/cloud/config/numeric_multiarray.hpp>
 #include <iterator>
 #include <vector>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 template <typename T>
 ::boost::numeric::ublas::matrix<T> make_ublas_matrix(numeric_matrix<T> const& m)
@@ -93,6 +93,6 @@ template <typename ForwardIterT>
 	return res;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
-#endif // DCS_EESIM_CONFIG_OPERATION_MAKE_ALGEBRAIC_TYPE_HPP
+#endif // DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_ALGEBRAIC_TYPE_HPP

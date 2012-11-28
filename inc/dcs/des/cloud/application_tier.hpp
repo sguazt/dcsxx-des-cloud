@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/application_tier.hpp
+ * \file dcs/des/cloud/application_tier.hpp
  *
  * \brief Model for a tier of a multi-tier application.
  *
@@ -22,14 +22,14 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_APPLICATION_TIER_HPP
-#define DCS_EESIM_APPLICATION_TIER_HPP
+#ifndef DCS_DES_CLOUD_APPLICATION_TIER_HPP
+#define DCS_DES_CLOUD_APPLICATION_TIER_HPP
 
 
 #include <dcs/assert.hpp>
-#include <dcs/eesim/fwd.hpp>
-#include <dcs/eesim/multi_tier_application.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
+#include <dcs/des/cloud/fwd.hpp>
+#include <dcs/des/cloud/multi_tier_application.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
 //#include <dcs/math/stats/distribution/any_distribution.hpp>
 #include <dcs/memory.hpp>
 #include <map>
@@ -38,7 +38,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 //template <typename Traits>
 //class multi_tier_application;
@@ -148,7 +148,7 @@ class application_tier
 		// pre: category must already be inserted.
 		DCS_ASSERT(
 			it != res_shares_.end(),
-			throw ::std::invalid_argument("[dcs::eesim::application_tier::resource_share] Unhandled resource category.")
+			throw ::std::invalid_argument("[dcs::des::cloud::application_tier::resource_share] Unhandled resource category.")
 		);
 
 		return it->second;
@@ -250,7 +250,7 @@ class application_tier
 	private: application_pointer ptr_app_;
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_APPLICATION_TIER_HPP
+#endif // DCS_DES_CLOUD_APPLICATION_TIER_HPP

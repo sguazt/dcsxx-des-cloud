@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/optimal_solver_proxies.hpp
+ * \file dcs/des/cloud/optimal_solver_proxies.hpp
  *
  * \brief Categories for optimal mathematical solver proxies.
  *
@@ -22,11 +22,11 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_OPTIMAL_SOLVER_PROXIES_HPP
-#define DCS_EESIM_OPTIMAL_SOLVER_PROXIES_HPP
+#ifndef DCS_DES_CLOUD_OPTIMAL_SOLVER_PROXIES_HPP
+#define DCS_DES_CLOUD_OPTIMAL_SOLVER_PROXIES_HPP
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 enum optimal_solver_proxies
 {
@@ -35,7 +35,7 @@ enum optimal_solver_proxies
 	none_optimal_solver_proxy
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_OPTIMAL_SOLVER_PROXIES_HPP
+#endif // DCS_DES_CLOUD_OPTIMAL_SOLVER_PROXIES_HPP

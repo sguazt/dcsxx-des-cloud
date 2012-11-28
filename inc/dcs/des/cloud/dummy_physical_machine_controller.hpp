@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/dummy_physical_machine_controller.hpp
+ * \file dcs/des/cloud/dummy_physical_machine_controller.hpp
  *
  * \brief Dummy Physical Machine Controller.
  *
@@ -22,16 +22,16 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DUMMY_PHYSICAL_MACHINE_CONTROLLER_HPP
-#define DCS_EESIM_DUMMY_PHYSICAL_MACHINE_CONTROLLER_HPP
+#ifndef DCS_DES_CLOUD_DUMMY_PHYSICAL_MACHINE_CONTROLLER_HPP
+#define DCS_DES_CLOUD_DUMMY_PHYSICAL_MACHINE_CONTROLLER_HPP
 
 
 #include <dcs/des/engine_traits.hpp>
-#include <dcs/eesim/base_physical_machine_controller.hpp>
+#include <dcs/des/cloud/base_physical_machine_controller.hpp>
 #include <dcs/macro.hpp>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 /**
  * \brief Dummy physical machine controller.
@@ -67,7 +67,7 @@ class dummy_physical_machine_controller: public base_physical_machine_controller
 	}
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_DUMMY_PHYSICAL_MACHINE_CONTROLLER_HPP
+#endif // DCS_DES_CLOUD_DUMMY_PHYSICAL_MACHINE_CONTROLLER_HPP

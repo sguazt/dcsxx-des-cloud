@@ -1,23 +1,23 @@
-#ifndef DCS_EESIM_CONFIG_OPERATION_MAKE_PHYSICAL_RESOURCE_HPP
-#define DCS_EESIM_CONFIG_OPERATION_MAKE_PHYSICAL_RESOURCE_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_PHYSICAL_RESOURCE_HPP
+#define DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_PHYSICAL_RESOURCE_HPP
 
 
 #include <boost/variant.hpp>
-#include <dcs/eesim/config/operation/make_energy_model.hpp>
-#include <dcs/eesim/config/operation/make_physical_resource_category.hpp>
-#include <dcs/eesim/config/physical_resource.hpp>
-#include <dcs/eesim/physical_resource.hpp>
+#include <dcs/des/cloud/config/operation/make_energy_model.hpp>
+#include <dcs/des/cloud/config/operation/make_physical_resource_category.hpp>
+#include <dcs/des/cloud/config/physical_resource.hpp>
+#include <dcs/des/cloud/physical_resource.hpp>
 #include <dcs/memory.hpp>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 template <typename TraitsT, typename RealT>
 ::dcs::shared_ptr<
-	::dcs::eesim::physical_resource<TraitsT>
+	::dcs::des::cloud::physical_resource<TraitsT>
 > make_physical_resource(physical_resource_config<RealT> const& resource_conf)
 {
-	typedef ::dcs::eesim::physical_resource<TraitsT> physical_resource_type;
+	typedef ::dcs::des::cloud::physical_resource<TraitsT> physical_resource_type;
 	typedef physical_resource_config<RealT> physical_resource_config_type;
 
 	::dcs::shared_ptr<physical_resource_type> ptr_res;
@@ -42,7 +42,7 @@ template <typename TraitsT, typename RealT>
 	return ptr_res;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_OPERATION_MAKE_PHYSICAL_RESOURCE_HPP
+#endif // DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_PHYSICAL_RESOURCE_HPP

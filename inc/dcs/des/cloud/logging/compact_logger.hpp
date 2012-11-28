@@ -1,18 +1,18 @@
-#ifndef DCS_EESIM_LOGGING_COMPACT_LOGGER_HPP
-#define DCS_EESIM_LOGGING_COMPACT_LOGGER_HPP
+#ifndef DCS_DES_CLOUD_LOGGING_COMPACT_LOGGER_HPP
+#define DCS_DES_CLOUD_LOGGING_COMPACT_LOGGER_HPP
 
 
 #include <cstddef>
 #include <ctime>
 #include <dcs/des/engine_traits.hpp>
-#include <dcs/eesim/logging/minimal_logger.hpp>
+#include <dcs/des/cloud/logging/minimal_logger.hpp>
 #include <dcs/macro.hpp>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 
 
-namespace dcs { namespace eesim { namespace logging {
+namespace dcs { namespace des { namespace cloud { namespace logging {
 
 namespace detail { namespace /*<unnamed>*/ {
 
@@ -37,13 +37,13 @@ namespace detail { namespace /*<unnamed>*/ {
 	sz = ::std::strftime(buf, buf_size, "%Y-%m-%d %H:%M:%S %z", &time_info);
 	if (!sz)
 	{
-		throw ::std::runtime_error("[dcs::eesim::logging::detail::date_now] Unexepected error.");
+		throw ::std::runtime_error("[dcs::des::cloud::logging::detail::date_now] Unexepected error.");
 	}
 
 	return ::std::string(buf);
 }
 
-}} // Namespace detail::<unnamed>
+}}} // Namespace detail::<unnamed>
 
 
 template <typename TraitsT>
@@ -137,7 +137,7 @@ class compact_logger: public minimal_logger<TraitsT>
 	}
 };
 
-}}} // Namespace dcs::eesim::logging
+}}}} // Namespace dcs::des::cloud::logging
 
 
-#endif // DCS_EESIM_LOGGING_COMPACT_LOGGER_HPP
+#endif // DCS_DES_CLOUD_LOGGING_COMPACT_LOGGER_HPP

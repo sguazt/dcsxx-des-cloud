@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/traits.hpp
+ * \file dcs/des/cloud/traits.hpp
  *
  * \brief Type traits class.
  *
@@ -22,14 +22,14 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_TRAITS_HPP
-#define DCS_EESIM_TRAITS_HPP
+#ifndef DCS_DES_CLOUD_TRAITS_HPP
+#define DCS_DES_CLOUD_TRAITS_HPP
 
 
 #include <cstddef>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <
 	typename DesEngineT,
@@ -56,7 +56,7 @@ struct traits
 	static const virtual_machine_identifier_type invalid_virtual_machine_id = -1;
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_TRAITS_HPP
+#endif // DCS_DES_CLOUD_TRAITS_HPP

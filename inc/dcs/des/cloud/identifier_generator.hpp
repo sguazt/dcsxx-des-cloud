@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/identifier_generator.hpp
+ * \file dcs/des/cloud/identifier_generator.hpp
  *
  * \brief Entity identifiers generator.
  *
@@ -22,11 +22,11 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_IDENTIFIER_GENERATOR_HPP
-#define DCS_EESIM_IDENTIFIER_GENERATOR_HPP
+#ifndef DCS_DES_CLOUD_IDENTIFIER_GENERATOR_HPP
+#define DCS_DES_CLOUD_IDENTIFIER_GENERATOR_HPP
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename T>
 class identifier_generator
@@ -55,7 +55,7 @@ class identifier_generator
 	private: value_type x_;
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_IDENTIFIER_GENERATOR_HPP
+#endif // DCS_DES_CLOUD_IDENTIFIER_GENERATOR_HPP

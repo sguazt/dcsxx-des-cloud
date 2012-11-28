@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/detail/gams/vm_placement_problem_result.hpp
+ * \file dcs/des/cloud/detail/gams/vm_placement_problem_result.hpp
  *
  * \brief Result categories for optimal solvers based on the GAMS mathematical
  *  environment.
@@ -23,11 +23,11 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DETAIL_GAMS_SOLVER_RESULTS_HPP
-#define DCS_EESIM_DETAIL_GAMS_SOLVER_RESULTS_HPP
+#ifndef DCS_DES_CLOUD_DETAIL_GAMS_SOLVER_RESULTS_HPP
+#define DCS_DES_CLOUD_DETAIL_GAMS_SOLVER_RESULTS_HPP
 
 
-namespace dcs { namespace eesim { namespace detail { namespace gams {
+namespace dcs { namespace des { namespace cloud { namespace detail { namespace gams {
 
 enum solver_results
 {
@@ -47,7 +47,7 @@ enum solver_results
 	unknown_solver_result ///< Fall-back case.
 };
 
-}}}} // Namespace dcs::eesim::detail::gams
+}}}}} // Namespace dcs::des::cloud::detail::gams
 
 
-#endif // DCS_EESIM_DETAIL_GAMS_SOLVER_RESULTS_HPP
+#endif // DCS_DES_CLOUD_DETAIL_GAMS_SOLVER_RESULTS_HPP

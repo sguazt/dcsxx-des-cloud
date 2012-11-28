@@ -1,14 +1,14 @@
-#ifndef DCS_EESIM_CONFIG_PHYSICAL_RESOURCE_HPP
-#define DCS_EESIM_CONFIG_PHYSICAL_RESOURCE_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_PHYSICAL_RESOURCE_HPP
+#define DCS_DES_CLOUD_CONFIG_PHYSICAL_RESOURCE_HPP
 
 
 #include <boost/variant.hpp>
-#include <dcs/eesim/config/energy_model.hpp>
+#include <dcs/des/cloud/config/energy_model.hpp>
 #include <iosfwd>
 #include <string>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 enum physical_resource_category
 {
@@ -99,7 +99,7 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 }
 
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_PHYSICAL_RESOURCE_HPP
+#endif // DCS_DES_CLOUD_CONFIG_PHYSICAL_RESOURCE_HPP

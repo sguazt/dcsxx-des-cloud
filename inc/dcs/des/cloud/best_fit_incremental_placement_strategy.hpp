@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/best_fit_incremental_placement_strategy.hpp
+ * \file dcs/des/cloud/best_fit_incremental_placement_strategy.hpp
  *
  * \brief Incremental VM placement based on BEST-FIT strategy.
  *
@@ -22,23 +22,23 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_BEST_FIT_INCREMENTAL_PLACEMENT_STRATEGY_HPP
-#define DCS_EESIM_BEST_FIT_INCREMENTAL_PLACEMENT_STRATEGY_HPP
+#ifndef DCS_DES_CLOUD_BEST_FIT_INCREMENTAL_PLACEMENT_STRATEGY_HPP
+#define DCS_DES_CLOUD_BEST_FIT_INCREMENTAL_PLACEMENT_STRATEGY_HPP
 
 
 #include <dcs/debug.hpp>
-#include <dcs/eesim/base_incremental_placement_strategy.hpp>
-#include <dcs/eesim/data_center.hpp>
-#include <dcs/eesim/detail/placement_strategy_utility.hpp>
-#include <dcs/eesim/performance_measure_category.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-#include <dcs/eesim/utility.hpp>
-#include <dcs/eesim/virtual_machines_placement.hpp>
+#include <dcs/des/cloud/base_incremental_placement_strategy.hpp>
+#include <dcs/des/cloud/data_center.hpp>
+#include <dcs/des/cloud/detail/placement_strategy_utility.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+#include <dcs/des/cloud/utility.hpp>
+#include <dcs/des/cloud/virtual_machines_placement.hpp>
 #include <map>
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 /// This is substantially a First-Fit decreasing heuristic.
 template <typename TraitsT>
@@ -182,7 +182,7 @@ DCS_DEBUG_TRACE("#VMs: " << vms.size());//XXX
 
 					real_type share;
 					// Scale share in terms of actual machine
-					share = ::dcs::eesim::scale_resource_share(ref_capacity,
+					share = ::dcs::des::cloud::scale_resource_share(ref_capacity,
 															   //ref_threshold,
 															   actual_capacity,
 															   //actual_threshold,
@@ -327,7 +327,7 @@ DCS_DEBUG_TRACE("END Incremental Placement ==> " << deployment);///XXX
 	}
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_BEST_FIT_INCREMENTAL_PLACEMENT_STRATEGY_HPP
+#endif // DCS_DES_CLOUD_BEST_FIT_INCREMENTAL_PLACEMENT_STRATEGY_HPP

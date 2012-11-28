@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/detail/neos/base64.hpp
+ * \file dcs/des/cloud/detail/neos/base64.hpp
  *
  * \brief Base64 coder/deconder.
  *
@@ -26,15 +26,15 @@
  * René Nyffenegger rene.nyffenegger@adp-gmbh.ch
  */
 
-#ifndef DCS_EESIM_DETAIL_NEOS_BASE64_HPP
-#define DCS_EESIM_DETAIL_NEOS_BASE64_HPP
+#ifndef DCS_DES_CLOUD_DETAIL_NEOS_BASE64_HPP
+#define DCS_DES_CLOUD_DETAIL_NEOS_BASE64_HPP
 
 
 #include <cctype>
 #include <string>
 
 
-namespace dcs { namespace eesim { namespace detail { namespace neos {
+namespace dcs { namespace des { namespace cloud { namespace detail { namespace neos {
 
 static const ::std::string base64_chars = 
              "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -160,7 +160,7 @@ static bool is_base64(unsigned char c)
 	return ret;
 }
 
-}}}} // Namespace dcs::eesim::detail::neos
+}}}}} // Namespace dcs::des::cloud::detail::neos
 
 
-#endif // DCS_EESIM_DETAIL_NEOS_BASE64_HPP
+#endif // DCS_DES_CLOUD_DETAIL_NEOS_BASE64_HPP

@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/config/metric_category.hpp
+ * \file dcs/des/cloud/config/metric_category.hpp
  *
  * \brief Configuration for metric categories.
  *
@@ -30,16 +30,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DCS_EESIM_CONFIG_METRIC_CATEGORY_HPP
-#define DCS_EESIM_CONFIG_METRIC_CATEGORY_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_METRIC_CATEGORY_HPP
+#define DCS_DES_CLOUD_CONFIG_METRIC_CATEGORY_HPP
 
 
-#include <dcs/eesim/performance_measure_category.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
 #include <iosfwd>
 #include <stdexcept>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 enum metric_category
 {
@@ -50,42 +50,42 @@ enum metric_category
 	utilization_metric
 };
 
-::dcs::eesim::performance_measure_category to_performance_measure_category(metric_category category)
+::dcs::des::cloud::performance_measure_category to_performance_measure_category(metric_category category)
 {
 	switch (category)
 	{
 		case busy_time_metric:
-			return ::dcs::eesim::busy_time_performance_measure;
+			return ::dcs::des::cloud::busy_time_performance_measure;
 		case queue_length_metric:
-			return ::dcs::eesim::queue_length_performance_measure;
+			return ::dcs::des::cloud::queue_length_performance_measure;
 		case response_time_metric:
-			return ::dcs::eesim::response_time_performance_measure;
+			return ::dcs::des::cloud::response_time_performance_measure;
 		case throughput_metric:
-			return ::dcs::eesim::throughput_performance_measure;
+			return ::dcs::des::cloud::throughput_performance_measure;
 		case utilization_metric:
-			return ::dcs::eesim::utilization_performance_measure;
+			return ::dcs::des::cloud::utilization_performance_measure;
 	}
 
-	throw ::std::logic_error("[dcs::eesim::config::to_performance_measure_category] Unknown metric category.");
+	throw ::std::logic_error("[dcs::des::cloud::config::to_performance_measure_category] Unknown metric category.");
 }
 
 
-metric_category to_metric_category(::dcs::eesim::performance_measure_category category)
+metric_category to_metric_category(::dcs::des::cloud::performance_measure_category category)
 {
 	switch (category)
 	{
-		case ::dcs::eesim::busy_time_performance_measure:
+		case ::dcs::des::cloud::busy_time_performance_measure:
 			return busy_time_metric;
-		case ::dcs::eesim::queue_length_performance_measure:
+		case ::dcs::des::cloud::queue_length_performance_measure:
 			return queue_length_metric;
-		case ::dcs::eesim::response_time_performance_measure:
+		case ::dcs::des::cloud::response_time_performance_measure:
 			return response_time_metric;
-		case ::dcs::eesim::throughput_performance_measure:
+		case ::dcs::des::cloud::throughput_performance_measure:
 			return throughput_metric;
-		case ::dcs::eesim::utilization_performance_measure:
+		case ::dcs::des::cloud::utilization_performance_measure:
 			return utilization_metric;
 		default:
-			throw ::std::logic_error("[dcs::eesim::config::to_metric_category] Unable to convert to performance metric.");
+			throw ::std::logic_error("[dcs::des::cloud::config::to_metric_category] Unable to convert to performance metric.");
 	}
 }
 
@@ -115,7 +115,7 @@ template <typename CharT, typename CharTraitsT>
 	return os;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_METRIC_CATEGORY_HPP
+#endif // DCS_DES_CLOUD_CONFIG_METRIC_CATEGORY_HPP

@@ -1,17 +1,17 @@
-#ifndef DCS_EESIM_CONFIG_OPERATION_MAKE_DES_ENGINE_HPP
-#define DCS_EESIM_CONFIG_OPERATION_MAKE_DES_ENGINE_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_DES_ENGINE_HPP
+#define DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_DES_ENGINE_HPP
 
 
 #include <boost/variant.hpp>
 #include <dcs/des/engine.hpp>
 #include <dcs/des/replications/engine.hpp>
-#include <dcs/eesim/config/configuration.hpp>
-#include <dcs/eesim/config/simulation.hpp>
+#include <dcs/des/cloud/config/configuration.hpp>
+#include <dcs/des/cloud/config/simulation.hpp>
 #include <dcs/memory.hpp>
 #include <stdexcept>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 template <typename RealT, typename UIntT>
 ::dcs::shared_ptr< ::dcs::des::engine<RealT> > make_des_engine(configuration<RealT,UIntT> const& conf)
@@ -85,13 +85,13 @@ template <typename RealT, typename UIntT>
 			}
 			break;
 		default:
-			throw ::std::runtime_error("[dcs::eesim::config::make_des_engine] Unhandled output analysis category.");
+			throw ::std::runtime_error("[dcs::des::cloud::config::make_des_engine] Unhandled output analysis category.");
 	}
 
 	return ptr_eng;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_OPERATION_MAKE_DES_ENGINE_HPP
+#endif // DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_DES_ENGINE_HPP

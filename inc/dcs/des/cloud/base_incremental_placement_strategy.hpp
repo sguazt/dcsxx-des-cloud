@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/base_incremental_placement_strategy.hpp
+ * \file dcs/des/cloud/base_incremental_placement_strategy.hpp
  *
  * \brief Base class for incremental VM placement strategies.
  *
@@ -22,16 +22,16 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_BASE_INCREMENTAL_PLACEMENT_STRATEGY_HPP
-#define DCS_EESIM_BASE_INCREMENTAL_PLACEMENT_STRATEGY_HPP
+#ifndef DCS_DES_CLOUD_BASE_INCREMENTAL_PLACEMENT_STRATEGY_HPP
+#define DCS_DES_CLOUD_BASE_INCREMENTAL_PLACEMENT_STRATEGY_HPP
 
 
-#include <dcs/eesim/data_center.hpp>
-#include <dcs/eesim/virtual_machines_placement.hpp>
+#include <dcs/des/cloud/data_center.hpp>
+#include <dcs/des/cloud/virtual_machines_placement.hpp>
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class base_incremental_placement_strategy
@@ -86,7 +86,7 @@ class base_incremental_placement_strategy
 	private: real_type ref_penalty_;
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_BASE_INCREMENTAL_PLACEMENT_STRATEGY_HPP
+#endif // DCS_DES_CLOUD_BASE_INCREMENTAL_PLACEMENT_STRATEGY_HPP

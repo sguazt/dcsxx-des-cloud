@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/power_status.hpp
+ * \file dcs/des/cloud/power_status.hpp
  *
  * \brief Power statuses.
  *
@@ -22,14 +22,14 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_POWER_STATUS_HPP
-#define DCS_EESIM_POWER_STATUS_HPP
+#ifndef DCS_DES_CLOUD_POWER_STATUS_HPP
+#define DCS_DES_CLOUD_POWER_STATUS_HPP
 
 
 #include <iostream>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 enum power_status
 {
@@ -63,7 +63,7 @@ template <
 	return os;
 }
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_POWER_STATUS_HPP
+#endif // DCS_DES_CLOUD_POWER_STATUS_HPP

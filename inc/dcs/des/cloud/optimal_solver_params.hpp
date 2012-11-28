@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/base_optimal_solver_params.hpp
+ * \file dcs/des/cloud/base_optimal_solver_params.hpp
  *
  * \brief Base class for passing parameters to optimal mathematical solvers.
  *
@@ -22,17 +22,17 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_SYSTEM_OPTIMAL_SOLVER_PARAMS_HPP
-#define DCS_EESIM_SYSTEM_OPTIMAL_SOLVER_PARAMS_HPP
+#ifndef DCS_DES_CLOUD_SYSTEM_OPTIMAL_SOLVER_PARAMS_HPP
+#define DCS_DES_CLOUD_SYSTEM_OPTIMAL_SOLVER_PARAMS_HPP
 
 
-#include <dcs/eesim/optimal_solver_categories.hpp>
-#include <dcs/eesim/optimal_solver_ids.hpp>
-#include <dcs/eesim/optimal_solver_input_methods.hpp>
-#include <dcs/eesim/optimal_solver_proxies.hpp>
+#include <dcs/des/cloud/optimal_solver_categories.hpp>
+#include <dcs/des/cloud/optimal_solver_ids.hpp>
+#include <dcs/des/cloud/optimal_solver_input_methods.hpp>
+#include <dcs/des/cloud/optimal_solver_proxies.hpp>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class base_optimal_solver_params
@@ -97,7 +97,7 @@ class optimal_solver_params: public base_optimal_solver_params<TraitsT>
 	}
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_SYSTEM_OPTIMAL_SOLVER_PARAMS_HPP
+#endif // DCS_DES_CLOUD_SYSTEM_OPTIMAL_SOLVER_PARAMS_HPP

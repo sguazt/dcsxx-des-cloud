@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/application_controller_triggers.hpp
+ * \file dcs/des/cloud/application_controller_triggers.hpp
  *
  * \brief Class for triggering control action in an application controller.
  *
@@ -22,11 +22,11 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_APPLICATION_CONTROLLER_TRIGGERS_HPP
-#define DCS_EESIM_APPLICATION_CONTROLLER_TRIGGERS_HPP
+#ifndef DCS_DES_CLOUD_APPLICATION_CONTROLLER_TRIGGERS_HPP
+#define DCS_DES_CLOUD_APPLICATION_CONTROLLER_TRIGGERS_HPP
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class application_controller_triggers
@@ -73,7 +73,7 @@ class application_controller_triggers
 	private: bool predicted_sla_ko_;
 }; // base_application_controller_triggers
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_APPLICATION_CONTROLLER_TRIGGERS_HPP
+#endif // DCS_DES_CLOUD_APPLICATION_CONTROLLER_TRIGGERS_HPP

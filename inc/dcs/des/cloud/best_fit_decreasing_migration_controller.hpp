@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/best_fit_decreasing_migration_controller.hpp
+ * \file dcs/des/cloud/best_fit_decreasing_migration_controller.hpp
  *
  * \brief Migration Controller based on BEST-FIT DECREASING strategy.
  *
@@ -22,8 +22,8 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_BEST_FIT_DECREASING_MIGRATION_CONTROLLER_HPP
-#define DCS_EESIM_BEST_FIT_DECREASING_MIGRATION_CONTROLLER_HPP
+#ifndef DCS_DES_CLOUD_BEST_FIT_DECREASING_MIGRATION_CONTROLLER_HPP
+#define DCS_DES_CLOUD_BEST_FIT_DECREASING_MIGRATION_CONTROLLER_HPP
 
 
 #include <algorithm>
@@ -33,11 +33,11 @@
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/mean_estimator.hpp>
 #include <dcs/des/statistic_categories.hpp>
-#include <dcs/eesim/base_migration_controller.hpp>
-#include <dcs/eesim/detail/placement_strategy_utility.hpp>
-#include <dcs/eesim/logging.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-#include <dcs/eesim/power_status.hpp>
+#include <dcs/des/cloud/base_migration_controller.hpp>
+#include <dcs/des/cloud/detail/placement_strategy_utility.hpp>
+#include <dcs/des/cloud/logging.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+#include <dcs/des/cloud/power_status.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
@@ -47,7 +47,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class best_fit_decreasing_migration_controller: public base_migration_controller<TraitsT>
@@ -218,11 +218,11 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 //		typedef ::std::vector<share_type> share_container;
 		typedef typename application_tier_type::resource_share_type share_type;
 		typedef typename application_tier_type::resource_share_container ref_share_container;
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 		typedef typename base_type::vm_share_observer::share_container share_container;
-#else // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#else // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 		typedef resource_share_map share_container;
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 		typedef typename share_container::const_iterator share_iterator;
 
 		++count_;
@@ -271,7 +271,7 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
         ::std::sort(sorted_vms.begin(),
                     sorted_vms.end(),
                     detail::ptr_virtual_machine_greater_by_id_comparator<vm_type>());
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 		::std::map<typename traits_type::virtual_machine_identifier_type, share_container> wanted_shares;
 		typedef typename base_type::vm_observer_container::const_iterator vm_observer_iterator;
 		vm_observer_iterator vm_obs_end_it(this->vm_observer_map().end());
@@ -283,11 +283,11 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 					sorted_vms.end(),
 					detail::ptr_virtual_machine_greater_by_share_comparator<vm_type>(wanted_shares.begin(), wanted_shares.end()));
 		wanted_shares.clear();
-#else // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#else // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
         ::std::sort(sorted_vms.begin(),
                     sorted_vms.end(),
                     detail::ptr_virtual_machine_greater_comparator<vm_type>());
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 		uint_type num_vms(0);
 
@@ -407,16 +407,16 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 			}
 
 			// Retrieve the observed share for every resource of the VM guest system
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 			// As observed shares uses the wanted shares collected by
 			// monitoring each VM.
 			share_container obs_shares(this->vm_observer_map().at(ptr_vm->id())->wanted_shares);
-#else // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#else // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 			// As observed shares uses the ones defined by the tier
 			// specifications.
 			//share_container ref_shares(ptr_vm->guest_system().resource_shares());
 			share_container& obs_shares(ref_shares);
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 			// Compute and update VM utilization map
 
@@ -563,7 +563,7 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 
 				::std::ostringstream oss;
 				oss << "Failed to find a placement for VM: " << *ptr_vm << ". Skip migration.";
-				log_warn(DCS_EESIM_LOGGING_AT, oss.str());
+				log_warn(DCS_DES_CLOUD_LOGGING_AT, oss.str());
 
 				return;
 			}
@@ -581,7 +581,7 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 		}
 		else
 		{
-			log_warn(DCS_EESIM_LOGGING_AT, "No VM is running. Power-off active PMs.");
+			log_warn(DCS_DES_CLOUD_LOGGING_AT, "No VM is running. Power-off active PMs.");
 
 			pm_container pms(dc.physical_machines(powered_on_power_status));
 			pm_iterator pm_end_it(pms.end());
@@ -664,13 +664,13 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 			}
 			else
 			{
-				log_warn(DCS_EESIM_LOGGING_AT, "New optimal solution is worst than the previous one. Skip migration.");
+				log_warn(DCS_DES_CLOUD_LOGGING_AT, "New optimal solution is worst than the previous one. Skip migration.");
 				++fail_count_;
 			}
 		}
 		else
 		{
-			log_warn(DCS_EESIM_LOGGING_AT, "Failed to solve optimization problem. Skip migration.");
+			log_warn(DCS_DES_CLOUD_LOGGING_AT, "Failed to solve optimization problem. Skip migration.");
 			++fail_count_;
 		}
 */
@@ -710,7 +710,7 @@ class best_fit_decreasing_migration_controller: public base_migration_controller
 template <typename TraitsT>
 const typename best_fit_decreasing_migration_controller<TraitsT>::real_type best_fit_decreasing_migration_controller<TraitsT>::default_ewma_smoothing_factor(0.70);
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_BEST_FIT_DECREASING_MIGRATION_CONTROLLER_HPP
+#endif // DCS_DES_CLOUD_BEST_FIT_DECREASING_MIGRATION_CONTROLLER_HPP

@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/base_physical_machine_simulation_model.hpp
+ * \file dcs/des/cloud/base_physical_machine_simulation_model.hpp
  *
  * \brief Base class for physical machine simulation models.
  *
@@ -22,21 +22,21 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_BASE_PHYSICAL_MACHINE_SIMULATION_MODEL_HPP
-#define DCS_EESIM_BASE_PHYSICAL_MACHINE_SIMULATION_MODEL_HPP
+#ifndef DCS_DES_CLOUD_BASE_PHYSICAL_MACHINE_SIMULATION_MODEL_HPP
+#define DCS_DES_CLOUD_BASE_PHYSICAL_MACHINE_SIMULATION_MODEL_HPP
 
 
 #include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/entity.hpp>
-#include <dcs/eesim/physical_machine.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-#include <dcs/eesim/virtual_machine.hpp>
+#include <dcs/des/cloud/physical_machine.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+#include <dcs/des/cloud/virtual_machine.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 struct virtual_machine_migration_context
@@ -367,7 +367,7 @@ class base_physical_machine_simulation_model: public ::dcs::des::entity
 	private: physical_machine_pointer ptr_mach_;
 }; // base_physical_machine_simulation_model
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_BASE_PHYSICAL_MACHINE_SIMULATION_MODEL_HPP
+#endif // DCS_DES_CLOUD_BASE_PHYSICAL_MACHINE_SIMULATION_MODEL_HPP

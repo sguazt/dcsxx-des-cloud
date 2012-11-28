@@ -1,14 +1,14 @@
-#ifndef DCS_EESIM_CONFIG_OPERATION_MAKE_ENERGY_MODEL_HPP
-#define DCS_EESIM_CONFIG_OPERATION_MAKE_ENERGY_MODEL_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_ENERGY_MODEL_HPP
+#define DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_ENERGY_MODEL_HPP
 
 
 #include <boost/variant.hpp>
-#include <dcs/eesim/config/energy_model.hpp>
+#include <dcs/des/cloud/config/energy_model.hpp>
 #include <dcs/memory.hpp>
 #include <dcs/perfeval/energy.hpp>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 template <typename RealT, typename VariantT>
 ::dcs::shared_ptr<
@@ -48,7 +48,7 @@ template <typename RealT, typename VariantT>
 	return ptr_model;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_OPERATION_MAKE_ENERGY_MODEL_HPP
+#endif // DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_ENERGY_MODEL_HPP

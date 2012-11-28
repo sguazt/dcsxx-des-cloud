@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/data_center_manager.hpp
+ * \file dcs/des/cloud/data_center_manager.hpp
  *
  * \brief Manager for a data center.
  *
@@ -22,23 +22,23 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DATA_CENTER_MANAGER_HPP
-#define DCS_EESIM_DATA_CENTER_MANAGER_HPP
+#ifndef DCS_DES_CLOUD_DATA_CENTER_MANAGER_HPP
+#define DCS_DES_CLOUD_DATA_CENTER_MANAGER_HPP
 
 
 #include <cmath>
 #include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
-#include <dcs/eesim/application_instance.hpp>
-#include <dcs/eesim/base_application_instance_builder.hpp>
-#include <dcs/eesim/base_incremental_placement_strategy.hpp>
-#include <dcs/eesim/base_initial_placement_strategy.hpp>
-#include <dcs/eesim/base_migration_controller.hpp>
-#include <dcs/eesim/data_center.hpp>
-#include <dcs/eesim/logging.hpp>
-#include <dcs/eesim/registry.hpp>
-#include <dcs/eesim/virtual_machine.hpp>
-#include <dcs/eesim/virtual_machines_placement.hpp>
+#include <dcs/des/cloud/application_instance.hpp>
+#include <dcs/des/cloud/base_application_instance_builder.hpp>
+#include <dcs/des/cloud/base_incremental_placement_strategy.hpp>
+#include <dcs/des/cloud/base_initial_placement_strategy.hpp>
+#include <dcs/des/cloud/base_migration_controller.hpp>
+#include <dcs/des/cloud/data_center.hpp>
+#include <dcs/des/cloud/logging.hpp>
+#include <dcs/des/cloud/registry.hpp>
+#include <dcs/des/cloud/virtual_machine.hpp>
+#include <dcs/des/cloud/virtual_machines_placement.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
@@ -49,7 +49,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class data_center_manager
@@ -123,9 +123,9 @@ class data_center_manager
 		DCS_DEBUG_ASSERT( ptr_dc );
 
 		ptr_dc_ = ptr_dc;
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 		ptr_dc_->manager(this);
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 	}
 
 
@@ -134,7 +134,7 @@ class data_center_manager
 		// paranoid-check: valid pointer
 		DCS_ASSERT(
 				ptr_migrator,
-				throw ::std::invalid_argument("[dcs::eesim::data_center_manager::migration_controller] Invalid pointer.")
+				throw ::std::invalid_argument("[dcs::des::cloud::data_center_manager::migration_controller] Invalid pointer.")
 			);
 
 		ptr_migrator_ = ptr_migrator;
@@ -151,7 +151,7 @@ class data_center_manager
 	}
 
 
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 	public: migration_controller_type& migration_controller()
 	{
 		// paranoid-check: valid pointer
@@ -159,7 +159,7 @@ class data_center_manager
 
 		return *ptr_migrator_;
 	}
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 
 	public: void initial_placement_strategy(initial_placement_strategy_pointer const& ptr_strategy)
@@ -167,7 +167,7 @@ class data_center_manager
 		// paranoid-check: valid pointer
 		DCS_ASSERT(
 				ptr_strategy,
-				throw ::std::invalid_argument("[dcs::eesim::data_center_manager::initial_placement_strategy] Invalid pointer.")
+				throw ::std::invalid_argument("[dcs::des::cloud::data_center_manager::initial_placement_strategy] Invalid pointer.")
 			);
 
 		ptr_init_placement_ = ptr_strategy;
@@ -188,7 +188,7 @@ class data_center_manager
 		// paranoid-check: valid pointer
 		DCS_ASSERT(
 				ptr_strategy,
-				throw ::std::invalid_argument("[dcs::eesim::data_center_manager::incremental_placement_strategy] Invalid pointer.")
+				throw ::std::invalid_argument("[dcs::des::cloud::data_center_manager::incremental_placement_strategy] Invalid pointer.")
 			);
 
 		ptr_incr_placement_ = ptr_strategy;
@@ -209,7 +209,7 @@ class data_center_manager
 		// pre: application instance builder must be a valid pointer.
 		DCS_ASSERT(
 				ptr_app_builder,
-				throw ::std::invalid_argument("[dcs::eesim::data_center_manager::add_application_instance_builder] Invalid pointer.")
+				throw ::std::invalid_argument("[dcs::des::cloud::data_center_manager::add_application_instance_builder] Invalid pointer.")
 			);
 
 		app_builders_.push_back(ptr_app_builder);
@@ -637,7 +637,7 @@ class data_center_manager
 		{
 			registry<traits_type>::instance().des_engine_ptr()->stop_now();
 
-			log_warn(DCS_EESIM_LOGGING_AT, "Unable to stop any application.");
+			log_warn(DCS_DES_CLOUD_LOGGING_AT, "Unable to stop any application.");
 		}
 */
 
@@ -683,7 +683,7 @@ class data_center_manager
 
 		if (!started_apps)
 		{
-			log_warn(DCS_EESIM_LOGGING_AT, "Unable to start any application.");
+			log_warn(DCS_DES_CLOUD_LOGGING_AT, "Unable to start any application.");
 
 			registry<traits_type>::instance().des_engine_ptr()->stop_now();
 
@@ -728,7 +728,7 @@ class data_center_manager
 		stopped_apps = ptr_dc_->stop_applications();
 		if (!stopped_apps)
 		{
-			log_warn(DCS_EESIM_LOGGING_AT, "Unable to stop any application.");
+			log_warn(DCS_DES_CLOUD_LOGGING_AT, "Unable to stop any application.");
 
 			registry<traits_type>::instance().des_engine_ptr()->stop_now();
 
@@ -859,7 +859,7 @@ class data_center_manager
 	private: application_instance_container app_insts_;//EXP
 }; // data_center_manager
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_DATA_CENTER_MANAGER_HPP
+#endif // DCS_DES_CLOUD_DATA_CENTER_MANAGER_HPP

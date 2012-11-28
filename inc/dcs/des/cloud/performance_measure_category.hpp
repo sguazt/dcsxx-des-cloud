@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/performance_measure_category.hpp
+ * \file dcs/des/cloud/performance_measure_category.hpp
  *
  * \brief Categories for application statistics.
  *
@@ -22,15 +22,15 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_PERFORMANCE_MEASURE_CATEGORY_HPP
-#define DCS_EESIM_PERFORMANCE_MEASURE_CATEGORY_HPP
+#ifndef DCS_DES_CLOUD_PERFORMANCE_MEASURE_CATEGORY_HPP
+#define DCS_DES_CLOUD_PERFORMANCE_MEASURE_CATEGORY_HPP
 
 
 #include <dcs/macro.hpp>
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 enum performance_measure_category
 {
@@ -75,7 +75,7 @@ bool for_application_tier(performance_measure_category category)
 	return true;
 }
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_PERFORMANCE_MEASURE_CATEGORY_HPP
+#endif // DCS_DES_CLOUD_PERFORMANCE_MEASURE_CATEGORY_HPP

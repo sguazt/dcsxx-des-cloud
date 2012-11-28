@@ -1,5 +1,5 @@
-#ifndef DCS_EESIM_CONFIG_OPERATION_MAKE_OUTPUT_STATISTIC_HPP
-#define DCS_EESIM_CONFIG_OPERATION_MAKE_OUTPUT_STATISTIC_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_OUTPUT_STATISTIC_HPP
+#define DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_OUTPUT_STATISTIC_HPP
 
 
 #include <boost/variant.hpp>
@@ -18,13 +18,13 @@
 #include <dcs/des/replications/fixed_duration_replication_size_detector.hpp>
 #include <dcs/des/replications/fixed_num_obs_replication_size_detector.hpp>
 #include <dcs/des/statistic_categories.hpp>
-#include <dcs/eesim/base_application_simulation_model.hpp>
+#include <dcs/des/cloud/base_application_simulation_model.hpp>
 #include <dcs/math/constants.hpp>
 #include <dcs/memory.hpp>
 #include <stdexcept>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 namespace detail { namespace /*<unnamed>*/ {
 
@@ -723,13 +723,13 @@ template <
 			}
 			break;
 		default:
-			throw ::std::runtime_error("[dcs::eesim::config::detail::make_independent_replications_output_statistic] Statistic type not hanlded.");
+			throw ::std::runtime_error("[dcs::des::cloud::config::detail::make_independent_replications_output_statistic] Statistic type not hanlded.");
 	} // switch (stat_category) ...
 
 	return ptr_stat;
 }
 
-}} // Namespace detail::<unnamed>
+}}} // Namespace detail::<unnamed>
 
 
 template <
@@ -827,7 +827,7 @@ template <
 				}
 				break;
 			default:
-				throw ::std::runtime_error("[dcs::eesim::config::detail::make_output_statistic] Statistic type not hanlded.");
+				throw ::std::runtime_error("[dcs::des::cloud::config::detail::make_output_statistic] Statistic type not hanlded.");
 		}
 */
 	}
@@ -835,7 +835,7 @@ template <
 	return ptr_stat;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_OPERATION_MAKE_OUTPUT_STATISTIC_HPP
+#endif // DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_OUTPUT_STATISTIC_HPP

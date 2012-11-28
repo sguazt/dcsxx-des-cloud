@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/detail/vm_placement_optmal_solvers.hpp
+ * \file dcs/des/cloud/detail/vm_placement_optmal_solvers.hpp
  *
  * \brief Utilities for VM placement optimal solvers.
  *
@@ -22,20 +22,20 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DETAIL_VM_PLACEMENT_OPTIMAL_SOLVERS_HPP
-#define DCS_EESIM_DETAIL_VM_PLACEMENT_OPTIMAL_SOLVERS_HPP
+#ifndef DCS_DES_CLOUD_DETAIL_VM_PLACEMENT_OPTIMAL_SOLVERS_HPP
+#define DCS_DES_CLOUD_DETAIL_VM_PLACEMENT_OPTIMAL_SOLVERS_HPP
 
 
-#include <dcs/eesim/detail/ampl/vm_placement_minlp_solver.hpp>
-#include <dcs/eesim/detail/base_vm_placement_optimal_solver.hpp>
-#include <dcs/eesim/detail/neos/vm_placement_minlp_solver.hpp>
-#include <dcs/eesim/optimal_solver_categories.hpp>
-#include <dcs/eesim/optimal_solver_params.hpp>
-#include <dcs/eesim/optimal_solver_proxies.hpp>
+#include <dcs/des/cloud/detail/ampl/vm_placement_minlp_solver.hpp>
+#include <dcs/des/cloud/detail/base_vm_placement_optimal_solver.hpp>
+#include <dcs/des/cloud/detail/neos/vm_placement_minlp_solver.hpp>
+#include <dcs/des/cloud/optimal_solver_categories.hpp>
+#include <dcs/des/cloud/optimal_solver_params.hpp>
+#include <dcs/des/cloud/optimal_solver_proxies.hpp>
 #include <dcs/memory.hpp>
 
 
-namespace dcs { namespace eesim { namespace detail {
+namespace dcs { namespace des { namespace cloud { namespace detail {
 
 template <typename TraitsT>
 ::dcs::shared_ptr< base_vm_placement_optimal_solver<TraitsT> > make_vm_placement_optimal_solver(base_optimal_solver_params<TraitsT> const& params)
@@ -68,21 +68,21 @@ template <typename TraitsT>
 //											);
 //							break;
 						default:
-							throw ::std::runtime_error("[dcs::eesim::detail::make_vm_placement_optimal_solver] Solver input method not handled.");
+							throw ::std::runtime_error("[dcs::des::cloud::detail::make_vm_placement_optimal_solver] Solver input method not handled.");
 					}
 					break;
 				default:
-					throw ::std::runtime_error("[dcs::eesim::detail::make_vm_placement_optimal_solver] Solver proxy not handled.");
+					throw ::std::runtime_error("[dcs::des::cloud::detail::make_vm_placement_optimal_solver] Solver proxy not handled.");
 			}
 			break;
 		default:
-			throw ::std::runtime_error("[dcs::eesim::detail::make_vm_placement_optimal_solver] Solver category not handled.");
+			throw ::std::runtime_error("[dcs::des::cloud::detail::make_vm_placement_optimal_solver] Solver category not handled.");
 	}
 
 	return ptr_solver;
 }
 
-}}} // Namespace dcs::eesim::detail
+}}}} // Namespace dcs::des::cloud::detail
 
 
-#endif // DCS_EESIM_DETAIL_VM_PLACEMENT_OPTIMAL_SOLVERS_HPP
+#endif // DCS_DES_CLOUD_DETAIL_VM_PLACEMENT_OPTIMAL_SOLVERS_HPP

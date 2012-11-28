@@ -1,17 +1,17 @@
-#ifndef DCS_EESIM_CONFIG_PHYSICAL_MACHINE_HPP
-#define DCS_EESIM_CONFIG_PHYSICAL_MACHINE_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_PHYSICAL_MACHINE_HPP
+#define DCS_DES_CLOUD_CONFIG_PHYSICAL_MACHINE_HPP
 
 
 #include <algorithm>
-#include <dcs/eesim/config/physical_machine_controller.hpp>
-#include <dcs/eesim/config/physical_resource.hpp>
+#include <dcs/des/cloud/config/physical_machine_controller.hpp>
+#include <dcs/des/cloud/config/physical_resource.hpp>
 #include <iosfwd>
 #include <iterator>
 #include <map>
 #include <string>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 template <typename RealT>
 struct physical_machine_config
@@ -54,7 +54,7 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 	return os;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_PHYSICAL_MACHINE_HPP
+#endif // DCS_DES_CLOUD_CONFIG_PHYSICAL_MACHINE_HPP

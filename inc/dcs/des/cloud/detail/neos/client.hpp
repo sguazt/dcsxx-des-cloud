@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/detail/neos/client.hpp
+ * \file dcs/des/cloud/detail/neos/client.hpp
  *
  * \brief Client for interacting with the NEOS server.
  *
@@ -22,8 +22,8 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DETAIL_NEOS_CLIENT_HPP
-#define DCS_EESIM_DETAIL_NEOS_CLIENT_HPP
+#ifndef DCS_DES_CLOUD_DETAIL_NEOS_CLIENT_HPP
+#define DCS_DES_CLOUD_DETAIL_NEOS_CLIENT_HPP
 
 
 #include <boost/property_tree/ptree.hpp>
@@ -31,10 +31,10 @@
 #include <cstddef>
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
-#include <dcs/eesim/detail/neos/base64.hpp>
-#include <dcs/eesim/optimal_solver_categories.hpp>
-#include <dcs/eesim/optimal_solver_ids.hpp>
-#include <dcs/eesim/optimal_solver_input_methods.hpp>
+#include <dcs/des/cloud/detail/neos/base64.hpp>
+#include <dcs/des/cloud/optimal_solver_categories.hpp>
+#include <dcs/des/cloud/optimal_solver_ids.hpp>
+#include <dcs/des/cloud/optimal_solver_input_methods.hpp>
 #include <dcs/string/algorithm/to_lower.hpp>
 #include <dcs/exception.hpp>
 #include <sstream>
@@ -45,7 +45,7 @@
 #include <xmlrpc-c/client_simple.hpp>
 
 
-namespace dcs { namespace eesim { namespace detail { namespace neos {
+namespace dcs { namespace des { namespace cloud { namespace detail { namespace neos {
 
 enum job_statuses
 {
@@ -411,7 +411,7 @@ static ::std::string to_string(xmlrpc_c::value::type_t type)
 			return "dead";
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::detail::neos::to_string] Unknown XML-RPC type.");
+	throw ::std::runtime_error("[dcs::des::cloud::detail::neos::to_string] Unknown XML-RPC type.");
 }
 
 
@@ -441,7 +441,7 @@ static job_statuses make_job_status(::std::string const& s)
 		return bad_password_job_status;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::detail::neos::make_job_status] Unknown NEOS job status.");
+	throw ::std::runtime_error("[dcs::des::cloud::detail::neos::make_job_status] Unknown NEOS job status.");
 }
 
 
@@ -462,7 +462,7 @@ static ::std::string to_string(job_statuses status)
 			return "Bad Password";
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::detail::neos::to_string] Unknown NEOS job status.");
+	throw ::std::runtime_error("[dcs::des::cloud::detail::neos::to_string] Unknown NEOS job status.");
 }
 
 
@@ -744,7 +744,7 @@ static optimal_solver_ids make_solver_id(::std::string const& s)
 		return worhp_optimal_solver_id;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::detail::neos::make_optimal_solver_category] Unknown NEOS solver id.");
+	throw ::std::runtime_error("[dcs::des::cloud::detail::neos::make_optimal_solver_category] Unknown NEOS solver id.");
 }
 
 
@@ -890,7 +890,7 @@ static ::std::string to_string(optimal_solver_ids id)
 			break;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::detail::neos::to_string] Unknown NEOS solver id.");
+	throw ::std::runtime_error("[dcs::des::cloud::detail::neos::to_string] Unknown NEOS solver id.");
 }
 
 
@@ -968,7 +968,7 @@ static optimal_solver_categories make_solver_category(::std::string const& s)
 		return uco_optimal_solver_category;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::detail::neos::make_optimal_solver_category] Unknown NEOS solver category.");
+	throw ::std::runtime_error("[dcs::des::cloud::detail::neos::make_optimal_solver_category] Unknown NEOS solver category.");
 }
 
 
@@ -1013,7 +1013,7 @@ static ::std::string to_string(optimal_solver_categories category)
 			return "uco";
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::detail::neos::to_string] Unknown NEOS solver category.");
+	throw ::std::runtime_error("[dcs::des::cloud::detail::neos::to_string] Unknown NEOS solver category.");
 }
 
 
@@ -1103,7 +1103,7 @@ static optimal_solver_input_methods make_input_method(::std::string const& s)
 		return zimpl_optimal_solver_input_method;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::detail::neos::make_optimal_solver_input_method] Unknown NEOS input method.");
+	throw ::std::runtime_error("[dcs::des::cloud::detail::neos::make_optimal_solver_input_method] Unknown NEOS input method.");
 }
 
 
@@ -1154,7 +1154,7 @@ static ::std::string to_string(optimal_solver_input_methods method)
 			return "ZIMPL";
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::detail::neos::to_string] Unknown NEOS input method.");
+	throw ::std::runtime_error("[dcs::des::cloud::detail::neos::to_string] Unknown NEOS input method.");
 }
 
 
@@ -1174,7 +1174,7 @@ static solver_info make_solver_info(::std::string const& s)
 		if (epos == ::std::string::npos && k < nk)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::detail::mkae_solver_info] Cannot find ':' in '" << s << "' from position '" << bpos << "'.";
+			oss << "[dcs::des::cloud::detail::neos::detail::mkae_solver_info] Cannot find ':' in '" << s << "' from position '" << bpos << "'.";
 			throw ::std::runtime_error(oss.str());
 		}
 		::std::string item(s.substr(bpos, (epos != ::std::string::npos) ? (epos-bpos) : ::std::string::npos));
@@ -1213,7 +1213,7 @@ static solver_category_info make_solver_category_info(::std::string const& s)
 		if (epos == ::std::string::npos && k < nk)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::detail::make_solver_category_info] Cannot find ':' in '" << s << "' from position '" << bpos << "'.";
+			oss << "[dcs::des::cloud::detail::neos::detail::make_solver_category_info] Cannot find ':' in '" << s << "' from position '" << bpos << "'.";
 			throw ::std::runtime_error(oss.str());
 		}
 		::std::string item(s.substr(bpos, (epos != ::std::string::npos) ? (epos-bpos) : ::std::string::npos));
@@ -1250,7 +1250,7 @@ static solver_info make_solver_info(::std::string const& s, optimal_solver_categ
 		if (epos == ::std::string::npos && k < nk)
 		{
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::neos::detail::make_solver_info] Cannot find ':' in '" << s << "' from position '" << bpos << "'.";
+			oss << "[dcs::des::cloud::detail::neos::detail::make_solver_info] Cannot find ':' in '" << s << "' from position '" << bpos << "'.";
 			throw ::std::runtime_error(oss.str());
 		}
 		::std::string item(s.substr(bpos, (epos != ::std::string::npos) ? (epos-bpos) : ::std::string::npos));
@@ -1281,7 +1281,7 @@ static submitted_job_info make_submitted_job_info(::std::string const& s)
 	return info;
 }
 
-}} // Namespace detail::<unnamed>
+}}} // Namespace detail::<unnamed>
 
 
 /**
@@ -1692,7 +1692,7 @@ class client
 		// pre: offset > 0
 		DCS_ASSERT(
 				offset > 0,
-				throw ::std::invalid_argument("[dcs::eesim::detail::neos::client::intermedia_reusults] Invalid offset.")
+				throw ::std::invalid_argument("[dcs::des::cloud::detail::neos::client::intermedia_reusults] Invalid offset.")
 			);
 
 		::std::string res;
@@ -1800,7 +1800,7 @@ inline
 	// pre: !empty(job_xml)
 	DCS_ASSERT(
 			!job_xml.empty(),
-			throw ::std::invalid_argument("[dcs::eesim::detail::neos::client::execute_job] Invalid job.")
+			throw ::std::invalid_argument("[dcs::des::cloud::detail::neos::client::execute_job] Invalid job.")
 		);
 
 	::std::string res;
@@ -1859,12 +1859,12 @@ inline
 	// pre: !empty(model)
 	DCS_ASSERT(
 			!model.empty(),
-			throw ::std::invalid_argument("[dcs::eesim::detail::neos::client::make_ampl_job] Invalid AMPL model.")
+			throw ::std::invalid_argument("[dcs::des::cloud::detail::neos::client::make_ampl_job] Invalid AMPL model.")
 		);
 	// pre: !empty(data)
 	DCS_ASSERT(
 			!data.empty(),
-			throw ::std::invalid_argument("[dcs::eesim::detail::neos::client::make_ampl_job] Invalid AMPL data.")
+			throw ::std::invalid_argument("[dcs::des::cloud::detail::neos::client::make_ampl_job] Invalid AMPL data.")
 		);
 
 	::boost::property_tree::ptree xml_tree;
@@ -1912,7 +1912,7 @@ inline
 	// pre: !empty(model)
 	DCS_ASSERT(
 			!model.empty(),
-			throw ::std::invalid_argument("[dcs::eesim::detail::neos::client::make_gams_job] Invalid GAMS model.")
+			throw ::std::invalid_argument("[dcs::des::cloud::detail::neos::client::make_gams_job] Invalid GAMS model.")
 		);
 
 	::boost::property_tree::ptree xml_tree;
@@ -1949,7 +1949,7 @@ inline
 	return execute_job(neos, make_gams_job(xml, model, options, gdx, want_gdx, want_log, comments));
 }
 
-}}}} // Namespace dcs::eesim::detail::neos
+}}}}} // Namespace dcs::des::cloud::detail::neos
 
 
-#endif // DCS_EESIM_DETAIL_NEOS_CLIENT_HPP
+#endif // DCS_DES_CLOUD_DETAIL_NEOS_CLIENT_HPP

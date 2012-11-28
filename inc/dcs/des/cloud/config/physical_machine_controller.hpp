@@ -1,5 +1,5 @@
-#ifndef DCS_EESIM_CONFIG_PHYSICAL_MACHINE_CONFIG_HPP
-#define DCS_EESIM_CONFIG_PHYSICAL_MACHINE_CONFIG_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_PHYSICAL_MACHINE_CONFIG_HPP
+#define DCS_DES_CLOUD_CONFIG_PHYSICAL_MACHINE_CONFIG_HPP
 
 
 #include <boost/variant.hpp>
@@ -7,7 +7,7 @@
 #include <iosfwd>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 enum physical_machine_controller_category
 {
@@ -112,7 +112,7 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 	return os;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_PHYSICAL_MACHINE_CONFIG_HPP
+#endif // DCS_DES_CLOUD_CONFIG_PHYSICAL_MACHINE_CONFIG_HPP

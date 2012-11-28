@@ -1,13 +1,13 @@
-#ifndef DCS_EESIM_CONFIG_OPERATION_MAKE_PERFORMANCE_MEASURE_CATEGORY_HPP
-#define DCS_EESIM_CONFIG_OPERATION_MAKE_PERFORMANCE_MEASURE_CATEGORY_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_PERFORMANCE_MEASURE_CATEGORY_HPP
+#define DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_PERFORMANCE_MEASURE_CATEGORY_HPP
 
 
-#include <dcs/eesim/performance_measure_category.hpp>
-#include <dcs/eesim/config/metric_category.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
+#include <dcs/des/cloud/config/metric_category.hpp>
 #include <stdexcept>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 performance_measure_category make_performance_measure_category(metric_category category)
 {
@@ -21,10 +21,10 @@ performance_measure_category make_performance_measure_category(metric_category c
 			break;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::make_performance_measure_category] Performance measure category not handled.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::make_performance_measure_category] Performance measure category not handled.");
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_OPERATION_MAKE_PERFORMANCE_MEASURE_CATEGORY_HPP
+#endif // DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_PERFORMANCE_MEASURE_CATEGORY_HPP

@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/physical_machine_adaptor.hpp
+ * \file dcs/des/cloud/physical_machine_adaptor.hpp
  *
  * \brief Adaptor class for physical machines.
  *
@@ -22,14 +22,14 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_PHYSICAL_MACHINE_ADAPTOR_HPP
-#define DCS_EESIM_PHYSICAL_MACHINE_ADAPTOR_HPP
+#ifndef DCS_DES_CLOUD_PHYSICAL_MACHINE_ADAPTOR_HPP
+#define DCS_DES_CLOUD_PHYSICAL_MACHINE_ADAPTOR_HPP
 
 
 #include <dcs/perfeval/energy/any_model.hpp>
-#include <dcs/eesim/base_physical_machine.hpp>
-#include <dcs/eesim/physical_resource.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
+#include <dcs/des/cloud/base_physical_machine.hpp>
+#include <dcs/des/cloud/physical_resource.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/type_traits/add_reference.hpp>
@@ -39,7 +39,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 /**
  * \brief Adaptor class for physical machines.
@@ -182,7 +182,7 @@ class physical_machine_adaptor: public base_physical_machine<
 	private: any_virtual_machine_monitor<traits_type> vmm_;
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_PHYSICAL_MACHINE_ADAPTOR_HPP
+#endif // DCS_DES_CLOUD_PHYSICAL_MACHINE_ADAPTOR_HPP

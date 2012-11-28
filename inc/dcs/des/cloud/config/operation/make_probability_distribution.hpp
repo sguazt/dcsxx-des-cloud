@@ -1,18 +1,18 @@
-#ifndef DCS_EESIM_CONFIG_OPERATION_MAKE_PROBABILITY_DISTRIBUTION_HPP
-#define DCS_EESIM_CONFIG_OPERATION_MAKE_PROBABILITY_DISTRIBUTION_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_PROBABILITY_DISTRIBUTION_HPP
+#define DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_PROBABILITY_DISTRIBUTION_HPP
 
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/variant.hpp>
-#include <dcs/eesim/config/operation/make_algebraic_type.hpp>
-#include <dcs/eesim/config/probability_distribution.hpp>
-#include <dcs/eesim/workload.hpp>
+#include <dcs/des/cloud/config/operation/make_algebraic_type.hpp>
+#include <dcs/des/cloud/config/probability_distribution.hpp>
+#include <dcs/des/cloud/workload.hpp>
 #include <dcs/math/stats/distributions.hpp>
 #include <stdexcept>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 template <typename TraitsT, typename RealT>
 ::dcs::math::stats::any_distribution<RealT> make_probability_distribution(probability_distribution_config<RealT> const& distr_conf)
@@ -96,7 +96,7 @@ template <typename TraitsT, typename RealT>
 						break;
 					case casale2009_map_characterization:
 						{
-							throw ::std::runtime_error("[dcs::eesim::config::detail::<unnamed>::make_probability_distribution] casale-2009 MAP characterization has not been handled yet.");
+							throw ::std::runtime_error("[dcs::des::cloud::config::detail::<unnamed>::make_probability_distribution] casale-2009 MAP characterization has not been handled yet.");
 						}
 						break;
 				}
@@ -121,7 +121,7 @@ template <typename TraitsT, typename RealT>
 //
 //				distr = ::dcs::math::stats::make_any_distribution(distribution_impl_type(lambda, Q));
 				typedef typename distribution_config_type::mmpp_distribution_config_type distribution_config_impl_type;
-				typedef ::dcs::eesim::mmpp_interarrivals_workload_model<traits_type,real_type> distribution_impl_type;
+				typedef ::dcs::des::cloud::mmpp_interarrivals_workload_model<traits_type,real_type> distribution_impl_type;
 
 				distribution_config_impl_type const& distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
 
@@ -158,7 +158,7 @@ template <typename TraitsT, typename RealT>
 
 				if (distr_conf_impl.rates.size() > 2)
 				{
-					throw ::std::runtime_error("[dcs::eesim::config::detail::<unnamed>::make_probability_distribution] PMPP processes with a number of states > 2 have not been handled yet.");
+					throw ::std::runtime_error("[dcs::des::cloud::config::detail::<unnamed>::make_probability_distribution] PMPP processes with a number of states > 2 have not been handled yet.");
 				}
 
 				distr = ::dcs::math::stats::make_any_distribution(
@@ -175,7 +175,7 @@ template <typename TraitsT, typename RealT>
 			{
 				typedef typename distribution_config_type::timed_step_distribution_config_type distribution_config_impl_type;
 				typedef typename distribution_config_impl_type::phase_container::const_iterator phase_iterator;
-				typedef ::dcs::eesim::timed_step_workload_model<traits_type,real_type> distribution_impl_type;
+				typedef ::dcs::des::cloud::timed_step_workload_model<traits_type,real_type> distribution_impl_type;
 
 				distribution_config_impl_type const& distr_conf_impl = ::boost::get<distribution_config_impl_type>(distr_conf.category_conf);
 
@@ -195,7 +195,7 @@ template <typename TraitsT, typename RealT>
 	return distr;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_OPERATION_MAKE_PROBABILITY_DISTRIBUTION_HPP
+#endif // DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_PROBABILITY_DISTRIBUTION_HPP

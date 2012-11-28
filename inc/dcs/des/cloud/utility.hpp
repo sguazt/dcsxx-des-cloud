@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/utility.hpp
+ * \file dcs/des/cloud/utility.hpp
  *
  * \brief Utility functions.
  *
@@ -22,22 +22,22 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_UTILITY_HPP
-#define DCS_EESIM_UTILITY_HPP
+#ifndef DCS_DES_CLOUD_UTILITY_HPP
+#define DCS_DES_CLOUD_UTILITY_HPP
 
 
 #include <algorithm>
 #include <cmath>
 #include <dcs/macro.hpp>
-#include <dcs/eesim/physical_machine.hpp>
-#include <dcs/eesim/physical_resource.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
+#include <dcs/des/cloud/physical_machine.hpp>
+#include <dcs/des/cloud/physical_resource.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
 #include <limits>
 #include <utility>
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename RealT>
 inline
@@ -232,7 +232,7 @@ RealT scale_resource_utilization(RealT source_capacity,
 }
 
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_UTILITY_HPP
+#endif // DCS_DES_CLOUD_UTILITY_HPP

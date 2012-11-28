@@ -1,9 +1,9 @@
-#ifndef DCS_EESIM_WORKLOAD_TIMED_STEP_HPP
-#define DCS_EESIM_WORKLOAD_TIMED_STEP_HPP
+#ifndef DCS_DES_CLOUD_WORKLOAD_TIMED_STEP_HPP
+#define DCS_DES_CLOUD_WORKLOAD_TIMED_STEP_HPP
 
 
 #include <dcs/assert.hpp>
-#include <dcs/eesim/registry.hpp>
+#include <dcs/des/cloud/registry.hpp>
 #include <dcs/math/stats/distribution/any_distribution.hpp>
 #include <dcs/math/stats/function/rand.hpp>
 #include <iterator>
@@ -13,7 +13,7 @@
 #include <utility>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT, typename ValueT>
 class timed_step_workload_model
@@ -135,7 +135,7 @@ class timed_step_workload_model
 //		if (it == phases_.begin())
 //		{
 //			::std::ostringstream oss;
-//			oss << "[dcs::eesim::timed_step_workload_model::rand] Unable to find a phase for time: " << cur_time << ".";
+//			oss << "[dcs::des::cloud::timed_step_workload_model::rand] Unable to find a phase for time: " << cur_time << ".";
 //			throw ::std::runtime_error(oss.str());
 //		}
 //
@@ -151,7 +151,7 @@ class timed_step_workload_model
 		// pre: one or more phase must exist
 		DCS_ASSERT(
 			!phases_.empty(),
-			throw ::std::runtime_error("[dcs::eesim::timed_step_workload_model::rand] No phase defined.")
+			throw ::std::runtime_error("[dcs::des::cloud::timed_step_workload_model::rand] No phase defined.")
 		);
 
 		if (cur_phase_duration_ > 0 && cur_phase_duration_ >= cur_phase_it_->first)
@@ -201,7 +201,7 @@ class timed_step_workload_model
 	private: mutable bool move_up_;
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_WORKLOAD_TIMED_STEP_HPP
+#endif // DCS_DES_CLOUD_WORKLOAD_TIMED_STEP_HPP

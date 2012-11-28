@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/detail/gams/utility.hpp
+ * \file dcs/des/cloud/detail/gams/utility.hpp
  *
  * \brief Utilities for the GAMS mathematical environment.
  *
@@ -22,8 +22,8 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DETAIL_GAMS_UTILITY_HPP
-#define DCS_EESIM_DETAIL_GAMS_UTILITY_HPP
+#ifndef DCS_DES_CLOUD_DETAIL_GAMS_UTILITY_HPP
+#define DCS_DES_CLOUD_DETAIL_GAMS_UTILITY_HPP
 
 
 #ifdef __GNUC__
@@ -40,7 +40,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <dcs/debug.hpp>
-#include <dcs/eesim/optimal_solver_ids.hpp>
+#include <dcs/des/cloud/optimal_solver_ids.hpp>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -54,7 +54,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim { namespace detail { namespace gams {
+namespace dcs { namespace des { namespace cloud { namespace detail { namespace gams {
 
 template <typename ArgsT, typename ProducerT>
 bool run_gams_command_producer(::std::string const& cmd,
@@ -73,7 +73,7 @@ bool run_gams_command_producer(::std::string const& cmd,
 	{
 		char const* err_str(::strerror(errno));
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::gams::run_gams_command_producer] pipe(2) failed: "
+		oss << "[dcs::des::cloud::detail::gams::run_gams_command_producer] pipe(2) failed: "
 			<< err_str;
 		throw ::std::runtime_error(oss.str());
 	}
@@ -91,7 +91,7 @@ bool run_gams_command_producer(::std::string const& cmd,
 	{
 		char const* err_str(::strerror(errno));
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::gams::run_gams_command_producer] fork(2) failed: "
+		oss << "[dcs::des::cloud::detail::gams::run_gams_command_producer] fork(2) failed: "
 			<< err_str;
 		throw ::std::runtime_error(oss.str());
 	}
@@ -113,7 +113,7 @@ bool run_gams_command_producer(::std::string const& cmd,
 			{
 				char const* err_str = ::strerror(errno);
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::gams::run_gams_command] getrlimit(2) failed: "
+				oss << "[dcs::des::cloud::detail::gams::run_gams_command] getrlimit(2) failed: "
 					<< ::std::string(err_str);
 				throw ::std::runtime_error(oss.str());
 			}
@@ -129,7 +129,7 @@ bool run_gams_command_producer(::std::string const& cmd,
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::gams::run_gams_command] getrlimit(2) failed: "
+			oss << "[dcs::des::cloud::detail::gams::run_gams_command] getrlimit(2) failed: "
 				<< ::std::string(err_str);
 			throw ::std::runtime_error(oss.str());
 		}
@@ -152,7 +152,7 @@ bool run_gams_command_producer(::std::string const& cmd,
 			{
 				char const* err_str(::strerror(errno));
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::gams::run_gams_command_producer] dup2(2) failed: "
+				oss << "[dcs::des::cloud::detail::gams::run_gams_command_producer] dup2(2) failed: "
 					<< err_str;
 				throw ::std::runtime_error(oss.str());
 			}
@@ -234,7 +234,7 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
         {
             char const* err_str(::strerror(errno));
             ::std::ostringstream oss;
-            oss << "[dcs::eesim::detail::matlab::run_matlab] dup2(2) failed: "
+            oss << "[dcs::des::cloud::detail::matlab::run_matlab] dup2(2) failed: "
                 << err_str;
             throw ::std::runtime_error(oss.str());
         }
@@ -267,7 +267,7 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
     {
         char const* err_str = ::strerror(errno);
         ::std::ostringstream oss;
-        oss << "[dcs::eesim::detail::gams::run_gams_command_producer] waitpid(2) failed: "
+        oss << "[dcs::des::cloud::detail::gams::run_gams_command_producer] waitpid(2) failed: "
             << ::std::string(err_str);
         throw ::std::runtime_error(oss.str());
     }
@@ -326,7 +326,7 @@ bool run_gams_command(::std::string const& cmd,
 	{
 		char const* err_str(::strerror(errno));
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::gams::run_gams_command] pipe(2) failed: "
+		oss << "[dcs::des::cloud::detail::gams::run_gams_command] pipe(2) failed: "
 			<< err_str;
 		throw ::std::runtime_error(oss.str());
 	}
@@ -334,7 +334,7 @@ bool run_gams_command(::std::string const& cmd,
 	{
 		char const* err_str(::strerror(errno));
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::gams::run_gams_command] pipe(2) failed: "
+		oss << "[dcs::des::cloud::detail::gams::run_gams_command] pipe(2) failed: "
 			<< err_str;
 		throw ::std::runtime_error(oss.str());
 	}
@@ -352,7 +352,7 @@ bool run_gams_command(::std::string const& cmd,
 	{
 		char const* err_str(::strerror(errno));
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::gams::run_gams_command] fork(2) failed: "
+		oss << "[dcs::des::cloud::detail::gams::run_gams_command] fork(2) failed: "
 			<< err_str;
 		throw ::std::runtime_error(oss.str());
 	}
@@ -374,7 +374,7 @@ bool run_gams_command(::std::string const& cmd,
 			{
 				char const* err_str = ::strerror(errno);
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::gams::run_gams_command] getrlimit(2) failed: "
+				oss << "[dcs::des::cloud::detail::gams::run_gams_command] getrlimit(2) failed: "
 					<< ::std::string(err_str);
 				throw ::std::runtime_error(oss.str());
 			}
@@ -390,7 +390,7 @@ bool run_gams_command(::std::string const& cmd,
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::gams::run_gams_command] getrlimit(2) failed: "
+			oss << "[dcs::des::cloud::detail::gams::run_gams_command] getrlimit(2) failed: "
 				<< ::std::string(err_str);
 			throw ::std::runtime_error(oss.str());
 		}
@@ -413,7 +413,7 @@ bool run_gams_command(::std::string const& cmd,
 			{
 				char const* err_str(::strerror(errno));
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::gams::run_gams_command] dup2(2) failed: "
+				oss << "[dcs::des::cloud::detail::gams::run_gams_command] dup2(2) failed: "
 					<< err_str;
 				throw ::std::runtime_error(oss.str());
 			}
@@ -435,7 +435,7 @@ bool run_gams_command(::std::string const& cmd,
 			{
 				char const* err_str(::strerror(errno));
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::gams::run_gams_command] dup2(2) failed: "
+				oss << "[dcs::des::cloud::detail::gams::run_gams_command] dup2(2) failed: "
 					<< err_str;
 				throw ::std::runtime_error(oss.str());
 			}
@@ -518,7 +518,7 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
         {
             char const* err_str(::strerror(errno));
             ::std::ostringstream oss;
-            oss << "[dcs::eesim::detail::matlab::run_matlab] dup2(2) failed: "
+            oss << "[dcs::des::cloud::detail::matlab::run_matlab] dup2(2) failed: "
                 << err_str;
             throw ::std::runtime_error(oss.str());
         }
@@ -530,7 +530,7 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
         {
             char const* err_str(::strerror(errno));
             ::std::ostringstream oss;
-            oss << "[dcs::eesim::detail::matlab::run_matlab] dup2(2) failed: "
+            oss << "[dcs::des::cloud::detail::matlab::run_matlab] dup2(2) failed: "
                 << err_str;
             throw ::std::runtime_error(oss.str());
         }
@@ -575,7 +575,7 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
     {
         char const* err_str = ::strerror(errno);
         ::std::ostringstream oss;
-        oss << "[dcs::eesim::detail::gams::run_gams_command] waitpid(2) failed: "
+        oss << "[dcs::des::cloud::detail::gams::run_gams_command] waitpid(2) failed: "
             << ::std::string(err_str);
         throw ::std::runtime_error(oss.str());
     }
@@ -628,7 +628,7 @@ void parse_str(::std::string const& text, T& x)
 	}
 	else
 	{
-		throw ::std::runtime_error("[dcs::eesim::detail::gams::parse_str] Unable to parse a GAMS number");
+		throw ::std::runtime_error("[dcs::des::cloud::detail::gams::parse_str] Unable to parse a GAMS number");
 	}
 }
 
@@ -672,7 +672,7 @@ void parse_str(::std::string const& text, ::std::string& x)
 		}
 		else
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::gams::parse_str] Unable to parse a GAMS string");
+			throw ::std::runtime_error("[dcs::des::cloud::detail::gams::parse_str] Unable to parse a GAMS string");
 		}
 	}
 }
@@ -737,7 +737,7 @@ void parse_str(::std::string const& text, ::boost::numeric::ublas::vector<T>& v)
 
 		if (ko)
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::gams::parse_str] Unable to parse a GAMS vector.");
+			throw ::std::runtime_error("[dcs::des::cloud::detail::gams::parse_str] Unable to parse a GAMS vector.");
 		}
 	}
 }
@@ -820,7 +820,7 @@ void parse_str(::std::string const& text, ::boost::numeric::ublas::matrix<T>& A)
 
 		if (ko)
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::gams::parse_str] Unable to parse a GAMS matrix.");
+			throw ::std::runtime_error("[dcs::des::cloud::detail::gams::parse_str] Unable to parse a GAMS matrix.");
 		}
 	}
 }
@@ -913,9 +913,9 @@ inline
 			break;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::detail::gams::to_gams_solver] Solver not usable from GAMS.");
+	throw ::std::runtime_error("[dcs::des::cloud::detail::gams::to_gams_solver] Solver not usable from GAMS.");
 }
 
-}}}} // Namespace dcs::eesim::detail::gams
+}}}}} // Namespace dcs::des::cloud::detail::gams
 
-#endif // DCS_EESIM_DETAIL_GAMS_UTILITY_HPP
+#endif // DCS_DES_CLOUD_DETAIL_GAMS_UTILITY_HPP

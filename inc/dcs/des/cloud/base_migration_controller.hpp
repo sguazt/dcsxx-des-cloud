@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/base_migration_controller.hpp
+ * \file dcs/des/cloud/base_migration_controller.hpp
  *
  * \brief Base class for migration controllers.
  *
@@ -22,8 +22,8 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_BASE_MIGRATION_CONTROLLER_HPP
-#define DCS_EESIM_BASE_MIGRATION_CONTROLLER_HPP
+#ifndef DCS_DES_CLOUD_BASE_MIGRATION_CONTROLLER_HPP
+#define DCS_DES_CLOUD_BASE_MIGRATION_CONTROLLER_HPP
 
 
 #include <dcs/assert.hpp>
@@ -31,9 +31,9 @@
 #include <dcs/des/base_statistic.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/entity.hpp>
-#include <dcs/eesim/data_center.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-#include <dcs/eesim/registry.hpp>
+#include <dcs/des/cloud/data_center.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+#include <dcs/des/cloud/registry.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
@@ -42,15 +42,15 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class base_migration_controller: public ::dcs::des::entity
 {
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 	// Forward declaration
 	protected: struct vm_share_observer;
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 	private: typedef base_migration_controller<TraitsT> self_type;
 	public: typedef TraitsT traits_type;
@@ -71,11 +71,11 @@ class base_migration_controller: public ::dcs::des::entity
 //	protected: typedef ::std::pair<virtual_machine_identifier_type,physical_machine_identifier_type> physical_virtual_machine_pair;
 //	protected: typedef ::std::map<physical_virtual_machine_pair,resource_share_container> physical_virtual_machine_map;
 	private: typedef registry<traits_type> registry_type;
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 	private: typedef typename traits_type::virtual_machine_identifier_type virtual_machine_identifier_type;
 	private: typedef typename data_center_type::virtual_machine_pointer virtual_machine_pointer;
 	protected: typedef ::std::map< virtual_machine_identifier_type,::dcs::shared_ptr<vm_share_observer> > vm_observer_container;
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 
 	private: static const ::std::string control_event_source_name;
@@ -207,7 +207,7 @@ class base_migration_controller: public ::dcs::des::entity
 	}
 
 
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 	public: void notify_vm_creation(virtual_machine_pointer const& ptr_vm)
 	{
 		vm_obs_map_[ptr_vm->id()] = ::dcs::make_shared<vm_share_observer>();
@@ -220,7 +220,7 @@ class base_migration_controller: public ::dcs::des::entity
 		ptr_vm->remove_share_observer(vm_obs_map_.at(ptr_vm->id()));
 		vm_obs_map_.erase(ptr_vm->id());
 	}
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 
 	protected: data_center_pointer controlled_data_center_ptr() const
@@ -513,9 +513,9 @@ class base_migration_controller: public ::dcs::des::entity
 
 	private: void process_sys_finit(des_event_type const& evt, des_engine_context_type& ctx)
 	{
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 		vm_obs_map_.clear();
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 		do_process_sys_finit(evt, ctx);
 	}
 
@@ -529,7 +529,7 @@ class base_migration_controller: public ::dcs::des::entity
 
 		do_process_control(evt, ctx);
 
-//#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+//#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 //		typedef typename vm_observer_container::iterator vm_observer_iterator;
 //
 //		vm_observer_iterator end_it(vm_obs_map_.end());
@@ -538,7 +538,7 @@ class base_migration_controller: public ::dcs::des::entity
 //			it->second->got_shares.clear();
 //			it->second->wanted_shares.clear();
 //		}
-//#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+//#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 	}
 
 	//@} Event Handlers
@@ -598,7 +598,7 @@ class base_migration_controller: public ::dcs::des::entity
 	}
 
 
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 	protected: vm_observer_container const& vm_observer_map() const
 	{
 		return vm_obs_map_;
@@ -609,7 +609,7 @@ class base_migration_controller: public ::dcs::des::entity
 	{
 		return vm_obs_map_;
 	}
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 
 	private: virtual void do_process_control(des_event_type const& evt, des_engine_context_type& ctx) = 0;
@@ -623,7 +623,7 @@ class base_migration_controller: public ::dcs::des::entity
 	//@} Interface Member Functions
 
 
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 	protected: struct vm_share_observer: public share_observer<traits_type>
 	{
 		typedef ::std::map<physical_resource_category,real_type> share_container;
@@ -658,26 +658,26 @@ class base_migration_controller: public ::dcs::des::entity
 		share_container wanted_shares;
 		share_container got_shares;
 	}; // vm_share_observer
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 
 	private: data_center_pointer ptr_dc_;
 	private: real_type ts_;
 	private: des_event_source_pointer ptr_control_evt_src_;
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 	private: vm_observer_container vm_obs_map_;
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 }; // base_migration_controller
 
 template <typename TraitsT>
 const ::std::string base_migration_controller<TraitsT>::control_event_source_name("Control Data Center");
 
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 template <typename TraitsT>
 const typename TraitsT::real_type base_migration_controller<TraitsT>::vm_share_observer::smooth_factor(0.90);
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_BASE_MIGRATION_CONTROLLER_HPP
+#endif // DCS_DES_CLOUD_BASE_MIGRATION_CONTROLLER_HPP

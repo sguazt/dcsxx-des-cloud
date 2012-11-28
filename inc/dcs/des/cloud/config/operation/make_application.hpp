@@ -1,38 +1,38 @@
-#ifndef DCS_EESIM_CONFIG_OPERATION_MAKE_APPLICATION_HPP
-#define DCS_EESIM_CONFIG_OPERATION_MAKE_APPLICATION_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_APPLICATION_HPP
+#define DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_APPLICATION_HPP
 
 
 #include <boost/variant.hpp>
 #include <cstddef>
-#include <dcs/eesim/application_tier.hpp>
-#include <dcs/eesim/config/application.hpp>
-#include <dcs/eesim/config/configuration.hpp>
-#include <dcs/eesim/config/operation/make_application_performance_model.hpp>
-#include <dcs/eesim/config/operation/make_application_simulation_model.hpp>
-#include <dcs/eesim/config/operation/make_application_sla_cost_model.hpp>
-#include <dcs/eesim/config/operation/make_physical_resource_category.hpp>
-#include <dcs/eesim/multi_tier_application.hpp>
+#include <dcs/des/cloud/application_tier.hpp>
+#include <dcs/des/cloud/config/application.hpp>
+#include <dcs/des/cloud/config/configuration.hpp>
+#include <dcs/des/cloud/config/operation/make_application_performance_model.hpp>
+#include <dcs/des/cloud/config/operation/make_application_simulation_model.hpp>
+#include <dcs/des/cloud/config/operation/make_application_sla_cost_model.hpp>
+#include <dcs/des/cloud/config/operation/make_physical_resource_category.hpp>
+#include <dcs/des/cloud/multi_tier_application.hpp>
 #include <dcs/memory.hpp>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 namespace detail { namespace /*<unnamed>*/ {
 
 //FIXME: utilization threshold not yet handled.
 template <typename TraitsT, typename RealT, typename UIntT>
 ::dcs::shared_ptr<
-	::dcs::eesim::multi_tier_application<TraitsT>
-> make_application(::dcs::eesim::config::application_config<RealT,UIntT> const& app_conf,
-				   ::dcs::eesim::config::configuration<RealT,UIntT> const& conf,
+	::dcs::des::cloud::multi_tier_application<TraitsT>
+> make_application(::dcs::des::cloud::config::application_config<RealT,UIntT> const& app_conf,
+				   ::dcs::des::cloud::config::configuration<RealT,UIntT> const& conf,
 				   ::dcs::shared_ptr<typename TraitsT::uniform_random_generator_type> const& ptr_rng,
 				   ::dcs::shared_ptr<typename TraitsT::des_engine_type> const& ptr_engine)
 {
 	typedef TraitsT traits_type;
 	typedef RealT real_type;
 	typedef UIntT uint_type;
-	typedef ::dcs::eesim::multi_tier_application<traits_type> application_type;
-	typedef ::dcs::eesim::config::application_config<real_type,uint_type> application_config_type;
+	typedef ::dcs::des::cloud::multi_tier_application<traits_type> application_type;
+	typedef ::dcs::des::cloud::config::application_config<real_type,uint_type> application_config_type;
 
 	::dcs::shared_ptr<application_type> ptr_app;
 
@@ -46,7 +46,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 
 	// Tiers
 	{
-		typedef ::dcs::eesim::application_tier<traits_type> tier_type;
+		typedef ::dcs::des::cloud::application_tier<traits_type> tier_type;
 		typedef typename application_config_type::tier_config_type tier_config_type;
 		typedef typename application_config_type::tier_container::const_iterator iterator;
 		typedef typename tier_config_type::share_container::const_iterator share_iterator;
@@ -64,7 +64,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 			for (share_iterator share_it = it->shares.begin(); share_it != share_end_it; ++share_it)
 			{
 				ptr_tier->resource_share(
-					::dcs::eesim::config::make_physical_resource_category(share_it->first),
+					::dcs::des::cloud::config::make_physical_resource_category(share_it->first),
 					share_it->second
 				);
 			}
@@ -80,7 +80,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 		for (iterator it = app_conf.reference_resources.begin(); it != end_it; ++it)
 		{
 			ptr_app->reference_resource(
-				::dcs::eesim::config::make_physical_resource_category(it->first),
+				::dcs::des::cloud::config::make_physical_resource_category(it->first),
 				it->second,
 				RealT(1)
 			);
@@ -111,13 +111,13 @@ template <typename TraitsT, typename RealT, typename UIntT>
 	return ptr_app;
 }
 
-}} // Namespace detail::<unnamed>
+}}} // Namespace detail::<unnamed>
 
 
 template <typename TraitsT, typename RealT, typename UIntT>
 inline
 ::dcs::shared_ptr<
-	::dcs::eesim::multi_tier_application<TraitsT>
+	::dcs::des::cloud::multi_tier_application<TraitsT>
 > make_application(application_config<RealT,UIntT> const& app_conf,
 				   configuration<RealT,UIntT> const& conf,
 				   ::dcs::shared_ptr<typename TraitsT::uniform_random_generator_type> const& ptr_rng,
@@ -126,7 +126,7 @@ inline
 	return detail::make_application<TraitsT>(app_conf, conf, ptr_rng, ptr_des_eng);
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_OPERATION_MAKE_APPLICATION_HPP
+#endif // DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_APPLICATION_HPP

@@ -1,5 +1,5 @@
-#ifndef DCS_EESIM_LOGGING_BASE_LOGGER_HPP
-#define DCS_EESIM_LOGGING_BASE_LOGGER_HPP
+#ifndef DCS_DES_CLOUD_LOGGING_BASE_LOGGER_HPP
+#define DCS_DES_CLOUD_LOGGING_BASE_LOGGER_HPP
 
 
 #include <dcs/functional/bind.hpp>
@@ -9,7 +9,7 @@
 #include <string>
 
 
-namespace dcs { namespace eesim { namespace logging {
+namespace dcs { namespace des { namespace cloud { namespace logging {
 
 namespace detail { namespace /*<unnamed>*/ {
 
@@ -19,7 +19,7 @@ struct empty_deleter
 	void operator()(volatile void const*) const {}
 };
 
-}} // Namespace detail::<unnamed>
+}}} // Namespace detail::<unnamed>
 
 
 template <typename TraitsT>
@@ -192,7 +192,7 @@ class base_logger
 	private: ::dcs::shared_ptr<ostream_type> ptr_os_;
 };
 
-}}} // Namespace dcs::eesim::logging
+}}}} // Namespace dcs::des::cloud::logging
 
 
-#endif // DCS_EESIM_LOGGING_BASE_LOGGER_HPP
+#endif // DCS_DES_CLOUD_LOGGING_BASE_LOGGER_HPP

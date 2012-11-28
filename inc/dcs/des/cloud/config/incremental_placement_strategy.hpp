@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/config/incremental_placement_strategy.hpp
+ * \file dcs/des/cloud/config/incremental_placement_strategy.hpp
  *
  * \brief Configuration for incremental placement strategies.
  *
@@ -30,8 +30,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DCS_EESIM_CONFIG_INCREMENTAL_PLACEMENT_STRATEGY_HPP
-#define DCS_EESIM_CONFIG_INCREMENTAL_PLACEMENT_STRATEGY_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_INCREMENTAL_PLACEMENT_STRATEGY_HPP
+#define DCS_DES_CLOUD_CONFIG_INCREMENTAL_PLACEMENT_STRATEGY_HPP
 
 
 #include <boost/variant.hpp>
@@ -39,7 +39,7 @@
 #include <iosfwd>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 enum incremental_placement_strategy_category
 {
@@ -120,7 +120,7 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 	return os;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_INCREMENTAL_PLACEMENT_STRATEGY_HPP
+#endif // DCS_DES_CLOUD_CONFIG_INCREMENTAL_PLACEMENT_STRATEGY_HPP

@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/base_application_simulation_model.hpp
+ * \file dcs/des/cloud/base_application_simulation_model.hpp
  *
  * \brief Base class for application simulation models.
  *
@@ -22,17 +22,17 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_BASE_APPLICATION_SIMULATION_MODEL_HPP
-#define DCS_EESIM_BASE_APPLICATION_SIMULATION_MODEL_HPP
+#ifndef DCS_DES_CLOUD_BASE_APPLICATION_SIMULATION_MODEL_HPP
+#define DCS_DES_CLOUD_BASE_APPLICATION_SIMULATION_MODEL_HPP
 
 
 #include <dcs/des/base_statistic.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/entity.hpp>
-#include <dcs/eesim/multi_tier_application.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-#include <dcs/eesim/registry.hpp>
-#include <dcs/eesim/user_request.hpp>
+#include <dcs/des/cloud/multi_tier_application.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+#include <dcs/des/cloud/registry.hpp>
+#include <dcs/des/cloud/user_request.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
@@ -41,7 +41,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class base_application_simulation_model: public ::dcs::des::entity
@@ -148,7 +148,7 @@ class base_application_simulation_model: public ::dcs::des::entity
 		// pre: tier_id must have an associated VM
 		DCS_ASSERT(
 			it != tier_vm_map_.end(),
-			throw ::std::invalid_argument("[dcs::eesim::base_application_simulation_model::tier_virtual_machine] Tier with no associated VM.")
+			throw ::std::invalid_argument("[dcs::des::cloud::base_application_simulation_model::tier_virtual_machine] Tier with no associated VM.")
 		);
 
 		// check: double check on tier identifier
@@ -566,7 +566,7 @@ class base_application_simulation_model: public ::dcs::des::entity
 	private: real_type stop_time_;
 }; // base_application_simulation_model
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_BASE_APPLICATION_SIMULATION_MODEL_HPP
+#endif // DCS_DES_CLOUD_BASE_APPLICATION_SIMULATION_MODEL_HPP

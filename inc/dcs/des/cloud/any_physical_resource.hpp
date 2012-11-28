@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/any_physical_resource.hpp
+ * \file dcs/des/cloud/any_physical_resource.hpp
  *
  * \brief Generic (type-erased) class for physical resources.
  *
@@ -22,13 +22,13 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_ANY_PHYSICAL_RESOURCE_HPP
-#define DCS_EESIM_ANY_PHYSICAL_RESOURCE_HPP
+#ifndef DCS_DES_CLOUD_ANY_PHYSICAL_RESOURCE_HPP
+#define DCS_DES_CLOUD_ANY_PHYSICAL_RESOURCE_HPP
 
 
-#include <dcs/eesim/base_physical_resource.hpp>
-#include <dcs/eesim/physical_resource_adaptor.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
+#include <dcs/des/cloud/base_physical_resource.hpp>
+#include <dcs/des/cloud/physical_resource_adaptor.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
@@ -37,7 +37,7 @@
 #include <stdexcept>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class any_physical_resource
@@ -176,7 +176,7 @@ template <
 	return os;
 }
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_ANY_PHYSICAL_RESOURCE_HPP
+#endif // DCS_DES_CLOUD_ANY_PHYSICAL_RESOURCE_HPP

@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/base_physical_machine_controller.hpp
+ * \file dcs/des/cloud/base_physical_machine_controller.hpp
  *
  * \brief Base class for physical machine controllers.
  *
@@ -22,23 +22,23 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_BASE_PHYSICAL_MACHINE_CONTROLLER_HPP
-#define DCS_EESIM_BASE_PHYSICAL_MACHINE_CONTROLLER_HPP
+#ifndef DCS_DES_CLOUD_BASE_PHYSICAL_MACHINE_CONTROLLER_HPP
+#define DCS_DES_CLOUD_BASE_PHYSICAL_MACHINE_CONTROLLER_HPP
 
 
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/entity.hpp>
-#include <dcs/eesim/physical_machine.hpp>
-#include <dcs/eesim/registry.hpp>
+#include <dcs/des/cloud/physical_machine.hpp>
+#include <dcs/des/cloud/registry.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
 #include <string>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class base_physical_machine_controller: public ::dcs::des::entity
@@ -388,7 +388,7 @@ class base_physical_machine_controller: public ::dcs::des::entity
 template <typename TraitsT>
 const ::std::string base_physical_machine_controller<TraitsT>::control_event_source_name("Control Machine");
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_BASE_PHYSICAL_MACHINE_CONTROLLER_HPP
+#endif // DCS_DES_CLOUD_BASE_PHYSICAL_MACHINE_CONTROLLER_HPP

@@ -52,22 +52,22 @@
 #include <dcs/des/replications/engine.hpp>
 #include <dcs/des/replications/dummy_num_replications_detector.hpp>
 #include <dcs/des/replications/dummy_replication_size_detector.hpp>
-#include <dcs/eesim/config/configuration.hpp>
-#include <dcs/eesim/config/operation/make_application.hpp>
-#include <dcs/eesim/config/operation/make_des_engine.hpp>
-#include <dcs/eesim/config/operation/make_random_number_generator.hpp>
-#include <dcs/eesim/config/operation/read_file.hpp>
-#include <dcs/eesim/config/yaml.hpp>
-#include <dcs/eesim/data_center.hpp>
-#include <dcs/eesim/data_center_manager.hpp>
-#include <dcs/eesim/performance_measure_category.hpp>
-#include <dcs/eesim/physical_machine.hpp>
-#include <dcs/eesim/physical_resource.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-//#include <dcs/eesim/performance_measure_category.hpp>
-#include <dcs/eesim/registry.hpp>
-#include <dcs/eesim/traits.hpp>
-#include <dcs/eesim/user_request.hpp>
+#include <dcs/des/cloud/config/configuration.hpp>
+#include <dcs/des/cloud/config/operation/make_application.hpp>
+#include <dcs/des/cloud/config/operation/make_des_engine.hpp>
+#include <dcs/des/cloud/config/operation/make_random_number_generator.hpp>
+#include <dcs/des/cloud/config/operation/read_file.hpp>
+#include <dcs/des/cloud/config/yaml.hpp>
+#include <dcs/des/cloud/data_center.hpp>
+#include <dcs/des/cloud/data_center_manager.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
+#include <dcs/des/cloud/physical_machine.hpp>
+#include <dcs/des/cloud/physical_resource.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+//#include <dcs/des/cloud/performance_measure_category.hpp>
+#include <dcs/des/cloud/registry.hpp>
+#include <dcs/des/cloud/traits.hpp>
+#include <dcs/des/cloud/user_request.hpp>
 #include <dcs/perfeval/sla/base_cost_model.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
@@ -103,20 +103,20 @@ typedef long int_type;
 typedef std::size_t size_type;
 typedef dcs::des::engine<real_type> des_engine_type;
 typedef dcs::math::random::base_generator<uint_type> random_generator_type;
-typedef dcs::eesim::traits<
+typedef dcs::des::cloud::traits<
 			des_engine_type,
 			random_generator_type,
-			dcs::eesim::config::configuration<real_type,uint_type>,
+			dcs::des::cloud::config::configuration<real_type,uint_type>,
 			real_type,
 			uint_type,
 			int_type
 		> traits_type;
 typedef dcs::shared_ptr<des_engine_type> des_engine_pointer;
 typedef dcs::shared_ptr<random_generator_type> random_generator_pointer;
-typedef dcs::eesim::registry<traits_type> registry_type;
-typedef dcs::eesim::multi_tier_application<traits_type> application_type;
-typedef dcs::eesim::user_request<traits_type> user_request_type;
-typedef dcs::eesim::virtual_machine<traits_type> virtual_machine_type;
+typedef dcs::des::cloud::registry<traits_type> registry_type;
+typedef dcs::des::cloud::multi_tier_application<traits_type> application_type;
+typedef dcs::des::cloud::user_request<traits_type> user_request_type;
+typedef dcs::des::cloud::virtual_machine<traits_type> virtual_machine_type;
 typedef dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
 typedef ::dcs::math::random::minstd_rand1 random_seeder_type;
 
@@ -232,12 +232,12 @@ struct request_info
 
 template <typename ValueT>
 class dummy_sla_cost_model: public ::dcs::perfeval::sla::base_cost_model<
-										::dcs::eesim::performance_measure_category,
+										::dcs::des::cloud::performance_measure_category,
 										ValueT
 									>
 {
 	private: typedef ::dcs::perfeval::sla::base_cost_model<
-						::dcs::eesim::performance_measure_category,
+						::dcs::des::cloud::performance_measure_category,
 						ValueT
 				> base_type;
 	public: typedef typename base_type::metric_category_type metric_category_type;
@@ -320,11 +320,11 @@ class benchmark
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::real_type real_type;
 	public: typedef typename traits_type::uint_type uint_type;
-	public: typedef dcs::eesim::config::configuration<real_type,uint_type> configuration_type;
-//	public: typedef dcs::eesim::multi_tier_application<traits_type> application_type;
-	public: typedef ::dcs::eesim::physical_machine<traits_type> physical_machine_type;
+	public: typedef dcs::des::cloud::config::configuration<real_type,uint_type> configuration_type;
+//	public: typedef dcs::des::cloud::multi_tier_application<traits_type> application_type;
+	public: typedef ::dcs::des::cloud::physical_machine<traits_type> physical_machine_type;
 	public: typedef ::dcs::shared_ptr<physical_machine_type> physical_machine_pointer;
-	public: typedef ::dcs::eesim::physical_resource<traits_type> physical_resource_type;
+	public: typedef ::dcs::des::cloud::physical_resource<traits_type> physical_resource_type;
 	public: typedef ::dcs::shared_ptr<physical_resource_type> physical_resource_pointer;
 	public: typedef ::application_type::reference_physical_resource_type reference_resource_type;
 	private: typedef ::dcs::des::engine_traits<des_engine_type>::event_type des_event_type;
@@ -376,7 +376,7 @@ class benchmark
 		::std::vector<physical_machine_pointer> pms;
 		::std::vector<virtual_machine_pointer> vms;
 
-		::dcs::eesim::registry<traits_type> const& reg(::dcs::eesim::registry<traits_type>::instance());
+		::dcs::des::cloud::registry<traits_type> const& reg(::dcs::des::cloud::registry<traits_type>::instance());
 
 		des_engine_pointer ptr_des_eng(reg.des_engine_ptr());
 		random_generator_pointer ptr_rng(reg.uniform_random_generator_ptr());
@@ -388,7 +388,7 @@ class benchmark
 		{
 			dcs::shared_ptr<application_type> ptr_app;
 
-			ptr_app = dcs::eesim::config::make_application<traits_type>(*app_it, conf, ptr_rng, ptr_des_eng);
+			ptr_app = dcs::des::cloud::config::make_application<traits_type>(*app_it, conf, ptr_rng, ptr_des_eng);
 
 			ptr_app->id(apps_.size());
 			apps_.push_back(ptr_app);
@@ -426,7 +426,7 @@ class benchmark
 					*dynamic_cast< ::dcs::des::replications::engine<real_type,uint_type>* >(ptr_des_eng.get())
 				);
 			ptr_app->simulation_model().statistic(
-					::dcs::eesim::response_time_performance_measure,
+					::dcs::des::cloud::response_time_performance_measure,
 					ptr_stat
 				);
 			app_stat_map_[ptr_app->id()].push_back(ptr_stat);
@@ -436,7 +436,7 @@ class benchmark
 					*dynamic_cast< ::dcs::des::replications::engine<real_type,uint_type>* >(ptr_des_eng.get())
 				);
 			ptr_app->simulation_model().statistic(
-					::dcs::eesim::response_time_performance_measure,
+					::dcs::des::cloud::response_time_performance_measure,
 					ptr_stat
 				);
 			app_stat_map_[ptr_app->id()].push_back(ptr_stat);
@@ -446,7 +446,7 @@ class benchmark
 					*dynamic_cast< ::dcs::des::replications::engine<real_type,uint_type>* >(ptr_des_eng.get())
 				);
 			ptr_app->simulation_model().statistic(
-					::dcs::eesim::response_time_performance_measure,
+					::dcs::des::cloud::response_time_performance_measure,
 					ptr_stat
 				);
 			app_stat_map_[ptr_app->id()].push_back(ptr_stat);
@@ -458,7 +458,7 @@ class benchmark
 						*dynamic_cast< ::dcs::des::replications::engine<real_type,uint_type>* >(ptr_des_eng.get())
 					);
 				ptr_app->simulation_model().statistic(
-						::dcs::eesim::response_time_performance_measure,
+						::dcs::des::cloud::response_time_performance_measure,
 						ptr_stat
 					);
 				app_stat_map_[ptr_app->id()].push_back(ptr_stat);
@@ -575,7 +575,7 @@ class benchmark
 					);
 				ptr_app->simulation_model().tier_statistic(
 						tier_id,
-						::dcs::eesim::response_time_performance_measure,
+						::dcs::des::cloud::response_time_performance_measure,
 						ptr_stat
 					);
 				tier_stat_map_[ptr_app->id()][tier_id].push_back(ptr_stat);
@@ -586,7 +586,7 @@ class benchmark
 					);
 				ptr_app->simulation_model().tier_statistic(
 						tier_id,
-						::dcs::eesim::response_time_performance_measure,
+						::dcs::des::cloud::response_time_performance_measure,
 						ptr_stat
 					);
 				tier_stat_map_[ptr_app->id()][tier_id].push_back(ptr_stat);
@@ -597,7 +597,7 @@ class benchmark
 					);
 				ptr_app->simulation_model().tier_statistic(
 						tier_id,
-						::dcs::eesim::response_time_performance_measure,
+						::dcs::des::cloud::response_time_performance_measure,
 						ptr_stat
 					);
 				tier_stat_map_[ptr_app->id()][tier_id].push_back(ptr_stat);
@@ -610,7 +610,7 @@ class benchmark
 						);
 					ptr_app->simulation_model().tier_statistic(
 							tier_id,
-							::dcs::eesim::response_time_performance_measure,
+							::dcs::des::cloud::response_time_performance_measure,
 							ptr_stat
 						);
 					tier_stat_map_[ptr_app->id()][tier_id].push_back(ptr_stat);
@@ -622,7 +622,7 @@ class benchmark
 					);
 				ptr_app->simulation_model().tier_statistic(
 						tier_id,
-						::dcs::eesim::utilization_performance_measure,
+						::dcs::des::cloud::utilization_performance_measure,
 						ptr_stat
 					);
 				tier_stat_map_[ptr_app->id()][tier_id].push_back(ptr_stat);
@@ -679,7 +679,7 @@ class benchmark
 			   << "Application: '" << ptr_app->name() << "'" << ::std::endl;
 
 //			statistic_container stats;
-//			stats = ptr_app->simulation_model().statistic(::dcs::eesim::response_time_performance_measure);
+//			stats = ptr_app->simulation_model().statistic(::dcs::des::cloud::response_time_performance_measure);
 //
 //			statistic_iterator stat_end_it(stats.end());
 //			for (statistic_iterator stat_it = stats.begin(); stat_it != stat_end_it; ++stat_it)
@@ -907,7 +907,7 @@ class benchmark
 //
 //		if (sim_stop)
 //		{
-//			::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
+//			::dcs::des::cloud::registry<traits_type>::instance().des_engine_ptr()->stop_now();
 //		}
 
 
@@ -946,7 +946,7 @@ class benchmark
 //
 //		if (num_deps_ == max_num_deps_)
 //		{
-//			::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
+//			::dcs::des::cloud::registry<traits_type>::instance().des_engine_ptr()->stop_now();
 //		}
 
 		DCS_DEBUG_TRACE("END Process REQUEST-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
@@ -1047,15 +1047,15 @@ void process_sys_init_sim_event(des_event_type const& evt, des_engine_context_ty
 
 int main(int argc, char* argv[])
 {
-//	typedef dcs::shared_ptr< dcs::eesim::data_center<traits_type> > data_center_pointer;
-//	typedef dcs::shared_ptr< dcs::eesim::data_center_manager<traits_type> > data_center_manager_pointer;
-	typedef dcs::eesim::config::configuration<real_type,uint_type> configuration_type;
+//	typedef dcs::shared_ptr< dcs::des::cloud::data_center<traits_type> > data_center_pointer;
+//	typedef dcs::shared_ptr< dcs::des::cloud::data_center_manager<traits_type> > data_center_manager_pointer;
+	typedef dcs::des::cloud::config::configuration<real_type,uint_type> configuration_type;
 	typedef dcs::shared_ptr<configuration_type> configuration_pointer;
 //	typedef configuration_type::data_center_config_type data_center_config_type;
 //	typedef data_center_config_type::application_config_container::const_iterator app_iterator;
-//	typedef dcs::eesim::physical_machine<traits_type> physical_machine_type;
+//	typedef dcs::des::cloud::physical_machine<traits_type> physical_machine_type;
 //	typedef dcs::shared_ptr<physical_machine_type> physical_machine_pointer;
-//	typedef dcs::eesim::physical_resource<traits_type> physical_resource_type;
+//	typedef dcs::des::cloud::physical_resource<traits_type> physical_resource_type;
 //	typedef dcs::shared_ptr<physical_resource_type> physical_resource_pointer;
 //	typedef application_type::reference_physical_resource_type reference_resource_type;
 
@@ -1098,9 +1098,9 @@ int main(int argc, char* argv[])
 			case yaml_configuration:
 
 				ptr_conf = dcs::make_shared<configuration_type>(
-							dcs::eesim::config::read_file(
+							dcs::des::cloud::config::read_file(
 								conf_fname,
-								dcs::eesim::config::yaml_reader<real_type,uint_type>()
+								dcs::des::cloud::config::yaml_reader<real_type,uint_type>()
 							)
 						);
 				break;
@@ -1126,10 +1126,10 @@ int main(int argc, char* argv[])
 
 	registry_type& reg(registry_type::instance());
     des_engine_pointer ptr_des_eng;
-    ptr_des_eng = dcs::eesim::config::make_des_engine(*ptr_conf);
+    ptr_des_eng = dcs::des::cloud::config::make_des_engine(*ptr_conf);
     reg.des_engine(ptr_des_eng);
     random_generator_pointer ptr_rng;
-    ptr_rng = dcs::eesim::config::make_random_number_generator(*ptr_conf);
+    ptr_rng = dcs::des::cloud::config::make_random_number_generator(*ptr_conf);
     reg.uniform_random_generator(ptr_rng);
 
 	random_seeder_type seeder(ptr_conf->rng().seed);
@@ -1168,11 +1168,11 @@ int main(int argc, char* argv[])
 //
 //		// Build the random number generator
 //		random_generator_pointer ptr_rng;
-//		ptr_rng = dcs::eesim::config::make_random_number_generator(*ptr_conf);
+//		ptr_rng = dcs::des::cloud::config::make_random_number_generator(*ptr_conf);
 //		reg.uniform_random_generator(ptr_rng);
 //
 //		// Build the application
-//		ptr_app = dcs::eesim::config::make_multi_tier_application<traits_type>(*app_it, *ptr_conf, ptr_rng, ptr_des_eng);
+//		ptr_app = dcs::des::cloud::config::make_multi_tier_application<traits_type>(*app_it, *ptr_conf, ptr_rng, ptr_des_eng);
 //
 //		bench.run(*ptr_app/*, num_samples*/);
 //

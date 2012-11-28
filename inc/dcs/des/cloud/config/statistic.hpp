@@ -1,5 +1,5 @@
-#ifndef DCS_EESIM_CONFIG_STATISTIC_HPP
-#define DCS_EESIM_CONFIG_STATISTIC_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_STATISTIC_HPP
+#define DCS_DES_CLOUD_CONFIG_STATISTIC_HPP
 
 
 #include <boost/variant.hpp>
@@ -9,7 +9,7 @@
 #include <stdexcept>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 enum statistic_category
 {
@@ -78,7 +78,7 @@ struct statistic_config
 			return ::dcs::des::quantile_statistic;
 	}
 
-	throw ::std::logic_error("[dcs::eesim::config::to_des_statistic_category] Unknown statistic category.");
+	throw ::std::logic_error("[dcs::des::cloud::config::to_des_statistic_category] Unknown statistic category.");
 }
 
 
@@ -134,7 +134,7 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 	return os;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_STATISTIC_HPP
+#endif // DCS_DES_CLOUD_CONFIG_STATISTIC_HPP

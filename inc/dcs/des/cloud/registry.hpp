@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/registry.hpp
+ * \file dcs/des/cloud/registry.hpp
  *
  * \brief Global registry class.
  *
@@ -22,17 +22,17 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_REGISTRY_HPP
-#define DCS_EESIM_REGISTRY_HPP
+#ifndef DCS_DES_CLOUD_REGISTRY_HPP
+#define DCS_DES_CLOUD_REGISTRY_HPP
 
 
-#define DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
-//#undef DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
+#define DCS_DES_CLOUD_REGISTRY_USE_ABRAHAMS_SINGLETON
+//#undef DCS_DES_CLOUD_REGISTRY_USE_ABRAHAMS_SINGLETON
 
 
 #include <dcs/config/boost.hpp>
 
-#if defined(DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON)
+#if defined(DCS_DES_CLOUD_REGISTRY_USE_ABRAHAMS_SINGLETON)
 
 # if !DCS_CONFIG_BOOST_CHECK_VERSION(103200) // 1.32
 #  error "Required Boost libraries >= 1.32."
@@ -40,7 +40,7 @@
 
 # include <boost/serialization/singleton.hpp>
 
-#else // DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
+#else // DCS_DES_CLOUD_REGISTRY_USE_ABRAHAMS_SINGLETON
 
 
 # if !DCS_CONFIG_BOOST_CHECK_VERSION(102500) // 1.25
@@ -54,16 +54,16 @@
 # include <dcs/type_traits/add_reference.hpp>
 
 
-#endif // DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
+#endif // DCS_DES_CLOUD_REGISTRY_USE_ABRAHAMS_SINGLETON
 
-#include <dcs/eesim/config/configuration.hpp>
-#include <dcs/eesim/identifier_generator.hpp>
+#include <dcs/des/cloud/config/configuration.hpp>
+#include <dcs/des/cloud/identifier_generator.hpp>
 #include <dcs/memory.hpp>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
-#if !defined(DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON)
+#if !defined(DCS_DES_CLOUD_REGISTRY_USE_ABRAHAMS_SINGLETON)
 
 namespace detail { namespace /*<unnamed>*/ {
 
@@ -128,24 +128,24 @@ template <typename T>
 template <typename T>
 ::boost::scoped_ptr<T> singleton<T>::ptr_t_(0);
 
-}} // Namespace detail::<unnamed>
+}}} // Namespace detail::<unnamed>
 
-#endif // DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
+#endif // DCS_DES_CLOUD_REGISTRY_USE_ABRAHAMS_SINGLETON
 
 
-#if defined(DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON)
+#if defined(DCS_DES_CLOUD_REGISTRY_USE_ABRAHAMS_SINGLETON)
 
 template <typename TraitsT>
 class registry: public ::boost::serialization::singleton< registry<TraitsT> >
 {
 	private: typedef ::boost::serialization::singleton< registry<TraitsT> > base_type;
-#else // DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
+#else // DCS_DES_CLOUD_REGISTRY_USE_ABRAHAMS_SINGLETON
 
 template <typename TraitsT>
 class registry: public detail::singleton< registry<TraitsT> >
 {
 	friend class detail::singleton< registry<TraitsT> >;
-#endif // DCS_EESIM_REGISTRY_USE_ABRAHAMS_SINGLETON
+#endif // DCS_DES_CLOUD_REGISTRY_USE_ABRAHAMS_SINGLETON
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::des_engine_type des_engine_type;
 	public: typedef ::dcs::shared_ptr<des_engine_type> des_engine_pointer;
@@ -334,7 +334,7 @@ class registry: public detail::singleton< registry<TraitsT> >
 	private: virtual_machine_id_generator_type vm_id_gen_;
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_REGISTRY_HPP
+#endif // DCS_DES_CLOUD_REGISTRY_HPP

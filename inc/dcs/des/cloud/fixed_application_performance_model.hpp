@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/fixed_application_performance_model.hpp
+ * \file dcs/des/cloud/fixed_application_performance_model.hpp
  *
  * \brief Fixed application performance model.
  *
@@ -22,18 +22,18 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_FIXED_APPLICATION_PERFORMANCE_MODEL_HPP
-#define DCS_EESIM_FIXED_APPLICATION_PERFORMANCE_MODEL_HPP
+#ifndef DCS_DES_CLOUD_FIXED_APPLICATION_PERFORMANCE_MODEL_HPP
+#define DCS_DES_CLOUD_FIXED_APPLICATION_PERFORMANCE_MODEL_HPP
 
 
 #include <dcs/assert.hpp>
-#include <dcs/eesim/base_application_performance_model.hpp>
-#include <dcs/eesim/performance_measure_category.hpp>
+#include <dcs/des/cloud/base_application_performance_model.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
 #include <map>
 #include <stdexcept>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class fixed_application_performance_model: public base_application_performance_model<TraitsT>
@@ -63,7 +63,7 @@ class fixed_application_performance_model: public base_application_performance_m
 		// pre: category must already be present
 		DCS_ASSERT(
 				app_measure_map_.count(category),
-				throw ::std::invalid_argument("[dcs::eesim::fixed_application_performance_model::do_application_measure] Category not found.")
+				throw ::std::invalid_argument("[dcs::des::cloud::fixed_application_performance_model::do_application_measure] Category not found.")
 			);
 
 		return app_measure_map_.at(category);
@@ -75,12 +75,12 @@ class fixed_application_performance_model: public base_application_performance_m
 		// pre: tier-id must already be present
 		DCS_ASSERT(
 				tier_measure_map_.count(tier_id),
-				throw ::std::invalid_argument("[dcs::eesim::fixed_application_performance_model::do_tier_measure] Tier not found.")
+				throw ::std::invalid_argument("[dcs::des::cloud::fixed_application_performance_model::do_tier_measure] Tier not found.")
 			);
 		// pre: category must already be present
 		DCS_ASSERT(
 				tier_measure_map_.at(tier_id).count(category),
-				throw ::std::invalid_argument("[dcs::eesim::fixed_application_performance_model::do_tier_measure] Category not found.")
+				throw ::std::invalid_argument("[dcs::des::cloud::fixed_application_performance_model::do_tier_measure] Category not found.")
 			);
 
 		return tier_measure_map_.at(tier_id).at(category);
@@ -91,7 +91,7 @@ class fixed_application_performance_model: public base_application_performance_m
 	private: tier_measure_map tier_measure_map_;
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_FIXED_EESIM_APPLICATION_PERFORMANCE_MODEL_HPP
+#endif // DCS_FIXED_DES_CLOUD_APPLICATION_PERFORMANCE_MODEL_HPP

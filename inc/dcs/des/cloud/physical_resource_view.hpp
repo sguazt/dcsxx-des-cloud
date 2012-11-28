@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/physical_resource_view.hpp
+ * \file dcs/des/cloud/physical_resource_view.hpp
  *
  * \brief A partial view on a physical resource.
  *
@@ -22,16 +22,16 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_PHYSICAL_RESOURCE_VIEW_HPP
-#define DCS_EESIM_PHYSICAL_RESOURCE_VIEW_HPP
+#ifndef DCS_DES_CLOUD_PHYSICAL_RESOURCE_VIEW_HPP
+#define DCS_DES_CLOUD_PHYSICAL_RESOURCE_VIEW_HPP
 
 
 #include <dcs/assert.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
 #include <stdexcept>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class physical_resource_view
@@ -103,7 +103,7 @@ class physical_resource_view
 		// pre: c must be >= 0.
 		DCS_ASSERT(
 			c >= 0,
-			throw ::std::domain_error("[dcs::eesim::physical_resource_view::assert_check_capacity] Input value is out-of-range.")
+			throw ::std::domain_error("[dcs::des::cloud::physical_resource_view::assert_check_capacity] Input value is out-of-range.")
 		);
 	}
 
@@ -113,7 +113,7 @@ class physical_resource_view
 		// pre: t must be in the range [0,1].
 		DCS_ASSERT(
 			t >= 0 && t <= 1,
-			throw ::std::domain_error("[dcs::eesim::physical_resource_view::assert_check_threshold] Input value is out-of-range.")
+			throw ::std::domain_error("[dcs::des::cloud::physical_resource_view::assert_check_threshold] Input value is out-of-range.")
 		);
 	}
 
@@ -123,7 +123,7 @@ class physical_resource_view
 	private: real_type threshold_;
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_PHYSICAL_RESOURCE_VIEW_HPP
+#endif // DCS_DES_CLOUD_PHYSICAL_RESOURCE_VIEW_HPP

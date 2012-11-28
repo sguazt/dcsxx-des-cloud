@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/virtual_machine_monitor.hpp
+ * \file dcs/des/cloud/virtual_machine_monitor.hpp
  *
  * \brief Virtual machine monitor.
  *
@@ -22,15 +22,15 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_VIRTUAL_MACHINE_MONITOR_HPP
-#define DCS_EESIM_VIRTUAL_MACHINE_MONITOR_HPP
+#ifndef DCS_DES_CLOUD_VIRTUAL_MACHINE_MONITOR_HPP
+#define DCS_DES_CLOUD_VIRTUAL_MACHINE_MONITOR_HPP
 
 
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
-#include <dcs/eesim/physical_machine.hpp>
-#include <dcs/eesim/power_status.hpp>
-#include <dcs/eesim/virtual_machine.hpp>
+#include <dcs/des/cloud/physical_machine.hpp>
+#include <dcs/des/cloud/power_status.hpp>
+#include <dcs/des/cloud/virtual_machine.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
@@ -40,7 +40,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class physical_machine;
@@ -123,7 +123,7 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 	{
 		DCS_ASSERT(
 			ptr_vm,
-			throw ::std::invalid_argument("[dcs::eesim::virtual_machine_monitor::create_domain] Invalid virtual machine pointer.")
+			throw ::std::invalid_argument("[dcs::des::cloud::virtual_machine_monitor::create_domain] Invalid virtual machine pointer.")
 		);
 
 		ptr_vm->vmm(this);
@@ -135,11 +135,11 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 	{
 		DCS_ASSERT(
 			ptr_vm,
-			throw ::std::invalid_argument("[dcs::eesim::virtual_machine_monitor::destroy_domain] Invalid virtual machine pointer.")
+			throw ::std::invalid_argument("[dcs::des::cloud::virtual_machine_monitor::destroy_domain] Invalid virtual machine pointer.")
 		);
 		DCS_ASSERT(
 			vms_.count(ptr_vm->id()) > 0,
-			throw ::std::runtime_error("[dcs::eesim::virtual_machine_monitor::destroy_domain] Unknown virtual machine.")
+			throw ::std::runtime_error("[dcs::des::cloud::virtual_machine_monitor::destroy_domain] Unknown virtual machine.")
 		);
 
 		if (ptr_vm->power_state() == powered_on_power_status)
@@ -195,7 +195,7 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 	{
 		DCS_ASSERT(
 				vms_.count(id) > 0,
-				throw ::std::runtime_error("[dcs::eesim::virtual_machine_monitor::virtual_machine_ptr] VM not found.")
+				throw ::std::runtime_error("[dcs::des::cloud::virtual_machine_monitor::virtual_machine_ptr] VM not found.")
 			);
 
 		return vms_.at(id);
@@ -219,7 +219,7 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 		// preconditions
 		DCS_ASSERT(
 			vms_.count(ptr_vm->id()) > 0,
-			throw ::std::runtime_error("[dcs::eesim::virtual_machine_monitor::power_on] Unknown virtual machine.")
+			throw ::std::runtime_error("[dcs::des::cloud::virtual_machine_monitor::power_on] Unknown virtual machine.")
 		);
 		DCS_DEBUG_ASSERT( ptr_pm_ );
 
@@ -234,7 +234,7 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 		// preconditions
 		DCS_ASSERT(
 			vms_.count(ptr_vm->id()) > 0,
-			throw ::std::runtime_error("[dcs::eesim::virtual_machine_monitor::power_off] Unknown virtual machine.")
+			throw ::std::runtime_error("[dcs::des::cloud::virtual_machine_monitor::power_off] Unknown virtual machine.")
 		);
 		DCS_DEBUG_ASSERT( ptr_pm_ );
 
@@ -249,7 +249,7 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 		// preconditions
 		DCS_ASSERT(
 			vms_.count(ptr_vm->id()) > 0,
-			throw ::std::runtime_error("[dcs::eesim::virtual_machine_monitor::suspend] Unknown virtual machine.")
+			throw ::std::runtime_error("[dcs::des::cloud::virtual_machine_monitor::suspend] Unknown virtual machine.")
 		);
 		DCS_DEBUG_ASSERT( ptr_pm_ );
 
@@ -262,7 +262,7 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 		// preconditions
 		DCS_ASSERT(
 			vms_.count(ptr_vm->id()) > 0,
-			throw ::std::runtime_error("[dcs::eesim::virtual_machine_monitor::resume] Unknown virtual machine.")
+			throw ::std::runtime_error("[dcs::des::cloud::virtual_machine_monitor::resume] Unknown virtual machine.")
 		);
 		DCS_DEBUG_ASSERT( ptr_pm_ );
 
@@ -276,12 +276,12 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 		// pre: target virtual machine must be set.
 		DCS_ASSERT(
 			ptr_vm,
-			throw ::std::logic_error("[dcs::eesim::virtual_machine_monitor::migrate] target Virtual Machine not set.")
+			throw ::std::logic_error("[dcs::des::cloud::virtual_machine_monitor::migrate] target Virtual Machine not set.")
 		);
 		// pre: target physical machine must be set.
 		DCS_ASSERT(
 			pm.power_state() == powered_on_power_status,
-			throw ::std::logic_error("[dcs::eesim::virtual_machine_monitor::migrate] target Physical Machine not powered on.")
+			throw ::std::logic_error("[dcs::des::cloud::virtual_machine_monitor::migrate] target Physical Machine not powered on.")
 		);
 
 		ptr_pm_->simulation_model().vm_migrate(ptr_vm, pm, false);
@@ -313,7 +313,7 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 		// pre: hosting machine must already be set.
 		DCS_ASSERT(
 			ptr_pm_,
-			throw ::std::logic_error("[dcs::eesim::virtual_machine_monitor::hosting_machine] Physical Machine not set.")
+			throw ::std::logic_error("[dcs::des::cloud::virtual_machine_monitor::hosting_machine] Physical Machine not set.")
 		);
 
 		return *ptr_pm_;
@@ -325,7 +325,7 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 		// pre: hosting machine must already be set.
 		DCS_ASSERT(
 			ptr_pm_,
-			throw ::std::logic_error("[dcs::eesim::virtual_machine_monitor::hosting_machine] Physical Machine not set.")
+			throw ::std::logic_error("[dcs::des::cloud::virtual_machine_monitor::hosting_machine] Physical Machine not set.")
 		);
 
 		return *ptr_pm_;
@@ -340,7 +340,7 @@ class virtual_machine_monitor//: public base_virtual_machine_monitor<TraitsT>
 	private: real_type overhead_;
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_VIRTUAL_MACHINE_MONITOR_HPP
+#endif // DCS_DES_CLOUD_VIRTUAL_MACHINE_MONITOR_HPP

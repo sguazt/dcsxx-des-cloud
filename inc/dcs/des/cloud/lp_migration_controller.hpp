@@ -1,5 +1,5 @@
 /**
- * \file src/dcs/eesim/lp_migration_controller.hpp
+ * \file src/dcs/des/cloud/lp_migration_controller.hpp
  *
  * \brief Migration Controller based on Linear Programming.
  *
@@ -22,28 +22,28 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_LP_MIGRATION_CONTROLLER_HPP
-#define DCS_EESIM_LP_MIGRATION_CONTROLLER_HPP
+#ifndef DCS_DES_CLOUD_LP_MIGRATION_CONTROLLER_HPP
+#define DCS_DES_CLOUD_LP_MIGRATION_CONTROLLER_HPP
 
 #if 0
 
-#undef DCS_EESIM_LP_MIGRATION_CONTROLLER_BASE_TYPE
+#undef DCS_DES_CLOUD_LP_MIGRATION_CONTROLLER_BASE_TYPE
 
 #include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
-#include <dcs/eesim/base_migration_controller.hpp>
-#include <dcs/eesim/detail/config.hpp>
-#if defined(DCS_EESIM_CONFIG_USE_GLPK) && DCS_EESIM_CONFIG_USE_GLPK
+#include <dcs/des/cloud/base_migration_controller.hpp>
+#include <dcs/des/cloud/detail/config.hpp>
+#if defined(DCS_DES_CLOUD_CONFIG_USE_GLPK) && DCS_DES_CLOUD_CONFIG_USE_GLPK
 # include <glpk/glpk.h>
-# define  DCS_EESIM_LP_MIGRATION_CONTROLLER_IMPL_TYPE detail::gplk_migration_controller
-#elif defined(DCS_EESIM_CONFIG_USE_LPSOLVE) && DCS_EESIM_CONFIG_USE_LPSOLVE
+# define  DCS_DES_CLOUD_LP_MIGRATION_CONTROLLER_IMPL_TYPE detail::gplk_migration_controller
+#elif defined(DCS_DES_CLOUD_CONFIG_USE_LPSOLVE) && DCS_DES_CLOUD_CONFIG_USE_LPSOLVE
 # include <dcs/optim/lpsolve.hpp>
-# define  DCS_EESIM_LP_MIGRATION_CONTROLLER_IMPL_TYPE detail::lpsolve_migration_controller
+# define  DCS_DES_CLOUD_LP_MIGRATION_CONTROLLER_IMPL_TYPE detail::lpsolve_migration_controller
 #else
 # error "Unable to use a suitable LP library."
-#endif // DCS_EESIM_CONFIG_USE_GLPK
-#include <dcs/eesim/performance_measure_category.hpp>
-#include <dcs/eesim/power_status.hpp>
+#endif // DCS_DES_CLOUD_CONFIG_USE_GLPK
+#include <dcs/des/cloud/performance_measure_category.hpp>
+#include <dcs/des/cloud/power_status.hpp>
 #include <dcs/memory.hpp>
 #ifdef DCS_DEBUG
 # include <sstream>
@@ -52,7 +52,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 namespace detail { namespace /*<unnamed>*/ {
 
@@ -68,7 +68,7 @@ struct active_machine_predicate: ::std::unary_function<MachinePointerT,bool>
 };
 
 
-#if defined(DCS_EESIM_CONFIG_USE_GLPK) && DCS_EESIM_CONFIG_USE_GLPK
+#if defined(DCS_DES_CLOUD_CONFIG_USE_GLPK) && DCS_DES_CLOUD_CONFIG_USE_GLPK
 
 template <typename TraitsT>
 class gplk_migration_controller
@@ -158,10 +158,10 @@ class gplk_migration_controller
 	private: real_type mw_;
 }; // lpsolve_migration_controller
 
-#endif // DCS_EESIM_CONFIG_USE_GLPK
+#endif // DCS_DES_CLOUD_CONFIG_USE_GLPK
 
 
-#if defined(DCS_EESIM_CONFIG_USE_LPSOLVE) && DCS_EESIM_CONFIG_USE_LPSOLVE
+#if defined(DCS_DES_CLOUD_CONFIG_USE_LPSOLVE) && DCS_DES_CLOUD_CONFIG_USE_LPSOLVE
 
 template <typename TraitsT>
 class lpsolve_migration_controller
@@ -396,16 +396,16 @@ class lpsolve_migration_controller
 	private: real_type mw_;
 }; // lpsolve_migration_controller
 
-#endif // DCS_EESIM_CONFIG_USE_LPSOLVE
+#endif // DCS_DES_CLOUD_CONFIG_USE_LPSOLVE
 
-}} // Namespace detail::<unnamed>
+}}} // Namespace detail::<unnamed>
 
 
 template <typename TraitsT>
 class lp_migration_controller: public base_migration_controller<TraitsT>
 {
 	private: typedef base_migration_controller<TraitsT> base_type;
-	private: typedef DCS_EESIM_LP_MIGRATION_CONTROLLER_IMPL_TYPE<TraitsT> impl_type;
+	private: typedef DCS_DES_CLOUD_LP_MIGRATION_CONTROLLER_IMPL_TYPE<TraitsT> impl_type;
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::real_type real_type;
 	public: typedef typename traits_type::uint_type uint_type;
@@ -466,15 +466,15 @@ class lp_migration_controller: public base_migration_controller<TraitsT>
 
 	private: void make_problem()
 	{
-#if defined(DCS_EESIM_CONFIG_USE_GLPK) && DCS_EESIM_CONFIG_USE_GLPK
+#if defined(DCS_DES_CLOUD_CONFIG_USE_GLPK) && DCS_DES_CLOUD_CONFIG_USE_GLPK
 		glpk_make_problem();
-#elif defined(DCS_EESIM_CONFIG_USE_LPSOLVE) && DCS_EESIM_CONFIG_USE_LPSOLVE
+#elif defined(DCS_DES_CLOUD_CONFIG_USE_LPSOLVE) && DCS_DES_CLOUD_CONFIG_USE_LPSOLVE
 		lpsolve_make_problem();
-#endif // DCS_EESIM_CONFIG_USE_GLPK
+#endif // DCS_DES_CLOUD_CONFIG_USE_GLPK
 	}
 
 
-#if defined(DCS_EESIM_CONFIG_USE_GLPK) && DCS_EESIM_CONFIG_USE_GLPK
+#if defined(DCS_DES_CLOUD_CONFIG_USE_GLPK) && DCS_DES_CLOUD_CONFIG_USE_GLPK
 	private: void glpk_make_problem()
 	{
 		glp_prob* lp = 0;
@@ -484,10 +484,10 @@ class lp_migration_controller: public base_migration_controller<TraitsT>
 		glp_set_obj_dir(lp, GLP_MIN);
 		glp_add_rows(lp, 3);
 	}
-#endif // DCS_EESIM_CONFIG_USE_GLPK
+#endif // DCS_DES_CLOUD_CONFIG_USE_GLPK
 
 
-#if defined(DCS_EESIM_CONFIG_USE_LPSOLVE) && DCS_EESIM_CONFIG_USE_LPSOLVE
+#if defined(DCS_DES_CLOUD_CONFIG_USE_LPSOLVE) && DCS_DES_CLOUD_CONFIG_USE_LPSOLVE
 	private: void lpsolve_make_problem()
 	{
 		typedef ::std::vector<physical_machine_pointer> machine_container;
@@ -684,7 +684,7 @@ class lp_migration_controller: public base_migration_controller<TraitsT>
 		delete[] row;
 		::dcs::optim::lpsolve::free_lp(&lp);
 	}
-#endif // DCS_EESIM_CONFIG_USE_LPSOLVE
+#endif // DCS_DES_CLOUD_CONFIG_USE_LPSOLVE
 
 
 	private: data_center_pointer ptr_dc_;
@@ -696,8 +696,8 @@ class lp_migration_controller: public base_migration_controller<TraitsT>
 	private: real_type mw_;
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 #endif // 0
 
-#endif // DCS_EESIM_LP_MIGRATION_CONTROLLER_HPP
+#endif // DCS_DES_CLOUD_LP_MIGRATION_CONTROLLER_HPP

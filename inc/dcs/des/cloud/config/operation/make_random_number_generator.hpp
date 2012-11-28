@@ -1,15 +1,15 @@
-#ifndef DCS_EESIM_CONFIG_OPERATION_MAKE_RANOMD_NUMBER_GENERATOR_HPP
-#define DCS_EESIM_CONFIG_OPERATION_MAKE_RANOMD_NUMBER_GENERATOR_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_RANOMD_NUMBER_GENERATOR_HPP
+#define DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_RANOMD_NUMBER_GENERATOR_HPP
 
 
-#include <dcs/eesim/config/configuration.hpp>
-#include <dcs/eesim/config/rng.hpp>
+#include <dcs/des/cloud/config/configuration.hpp>
+#include <dcs/des/cloud/config/rng.hpp>
 #include <dcs/math/random.hpp>
 #include <dcs/memory.hpp>
 #include <stdexcept>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 //TODO: missing seeder stuff
 /*
@@ -94,7 +94,7 @@ template <typename RealT, typename UIntT>
 			}
 			break;
 		default:
-			throw ::std::runtime_error("[dcs::eesim::config::make_random_number_generator] Unhandled random number generator category.");
+			throw ::std::runtime_error("[dcs::des::cloud::config::make_random_number_generator] Unhandled random number generator category.");
 	}
 
 	return ptr_rng;
@@ -186,7 +186,7 @@ template <typename RealT, typename UIntT>
 			}
 			break;
 		default:
-			throw ::std::runtime_error("[dcs::eesim::config::make_random_number_generator] Unhandled random number generator category.");
+			throw ::std::runtime_error("[dcs::des::cloud::config::make_random_number_generator] Unhandled random number generator category.");
 	}
 
 	ptr_rng->seed(seed);
@@ -194,7 +194,7 @@ template <typename RealT, typename UIntT>
 	return ptr_rng;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_OPERATION_MAKE_RANOMD_NUMBER_GENERATOR_HPP
+#endif // DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_RANOMD_NUMBER_GENERATOR_HPP

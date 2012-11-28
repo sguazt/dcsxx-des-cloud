@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/detail/system_utility.hpp
+ * \file dcs/des/cloud/detail/system_utility.hpp
  *
  * \brief Utilities to access to system-level functionalities.
  *
@@ -22,8 +22,8 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DETAIL_SYSTEM_UTILITY_HPP
-#define DCS_EESIM_DETAIL_SYSTEM_UTILITY_HPP
+#ifndef DCS_DES_CLOUD_DETAIL_SYSTEM_UTILITY_HPP
+#define DCS_DES_CLOUD_DETAIL_SYSTEM_UTILITY_HPP
 
 
 #include <cstdlib>
@@ -33,7 +33,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim { namespace detail {
+namespace dcs { namespace des { namespace cloud { namespace detail {
 
 ::std::string make_tmp_file(::std::string name)
 {
@@ -85,7 +85,7 @@ inline
     return make_tmp_file(path, of);
 }
 
-}}} // Namespace dcs::eesim::detail
+}}}} // Namespace dcs::des::cloud::detail
 
 
-#endif // DCS_EESIM_DETAIL_SYSTEM_UTILITY_HPP
+#endif // DCS_DES_CLOUD_DETAIL_SYSTEM_UTILITY_HPP

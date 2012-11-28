@@ -1,7 +1,7 @@
 /**
- * \file src/eesim.cpp
+ * \file src/des/cloud.cpp
  *
- * \brief EESim application entry-point.
+ * \brief DCS DES Cloud application entry-point.
  *
  * Copyright (C) 2009-2011  Distributed Computing System (DCS) Group, Computer
  * Science Department - University of Piemonte Orientale, Alessandria (Italy).
@@ -28,22 +28,22 @@
 #include <dcs/assert.hpp>
 #include <dcs/des/engine.hpp>
 #include <dcs/des/engine_traits.hpp>
-#include <dcs/eesim/config/configuration.hpp>
-#include <dcs/eesim/config/operation/make_data_center.hpp>
-#include <dcs/eesim/config/operation/make_data_center_manager.hpp>
-#include <dcs/eesim/config/operation/make_des_engine.hpp>
-#include <dcs/eesim/config/operation/make_logger.hpp>
-#include <dcs/eesim/config/operation/make_random_number_generator.hpp>
-#include <dcs/eesim/config/operation/read_file.hpp>
-#include <dcs/eesim/config/yaml.hpp>
-#include <dcs/eesim/data_center.hpp>
-#include <dcs/eesim/data_center_manager.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-#include <dcs/eesim/performance_measure_category.hpp>
-#include <dcs/eesim/registry.hpp>
-#include <dcs/eesim/virtual_machine.hpp>
-#include <dcs/eesim/traits.hpp>
-#include <dcs/eesim/logging/base_logger.hpp>
+#include <dcs/des/cloud/config/configuration.hpp>
+#include <dcs/des/cloud/config/operation/make_data_center.hpp>
+#include <dcs/des/cloud/config/operation/make_data_center_manager.hpp>
+#include <dcs/des/cloud/config/operation/make_des_engine.hpp>
+#include <dcs/des/cloud/config/operation/make_logger.hpp>
+#include <dcs/des/cloud/config/operation/make_random_number_generator.hpp>
+#include <dcs/des/cloud/config/operation/read_file.hpp>
+#include <dcs/des/cloud/config/yaml.hpp>
+#include <dcs/des/cloud/data_center.hpp>
+#include <dcs/des/cloud/data_center_manager.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
+#include <dcs/des/cloud/registry.hpp>
+#include <dcs/des/cloud/virtual_machine.hpp>
+#include <dcs/des/cloud/traits.hpp>
+#include <dcs/des/cloud/logging/base_logger.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 //#include <dcs/math/random/any_generator.hpp>
@@ -92,15 +92,15 @@ typedef long int_type;
 typedef dcs::des::engine<real_type> des_engine_type;
 typedef dcs::math::random::base_generator<uint_type> random_generator_type;
 //typedef dcs::math::random::base_generator<uint32_t> random_generator_type;
-typedef dcs::eesim::traits<
+typedef dcs::des::cloud::traits<
 			des_engine_type,
 			random_generator_type,
-			dcs::eesim::config::configuration<real_type,uint_type>,
+			dcs::des::cloud::config::configuration<real_type,uint_type>,
 			real_type,
 			uint_type,
 			int_type
 		> traits_type;
-typedef dcs::eesim::registry<traits_type> registry_type;
+typedef dcs::des::cloud::registry<traits_type> registry_type;
 typedef ::dcs::math::random::minstd_rand1 random_seeder_type;
 
 
@@ -128,61 +128,61 @@ void info()
 //	::std::cerr << "Usage: " << prog_name << " conf_file" << std::endl;
 	::std::cerr << "Executable name: " << prog_name << ::std::endl
 				<< "Features:" << ::std::endl
-#ifdef DCS_EESIM_EXP_OUTPUT_VM_SHARES
+#ifdef DCS_DES_CLOUD_EXP_OUTPUT_VM_SHARES
 				<< "  OUTPUT_VM_SHARES=on" << ::std::endl
-#else // DCS_EESIM_EXP_OUTPUT_VM_SHARES
+#else // DCS_DES_CLOUD_EXP_OUTPUT_VM_SHARES
 				<< "  OUTPUT_VM_SHARES=off" << ::std::endl
-#endif // DCS_EESIM_EXP_OUTPUT_VM_SHARES
-#ifdef DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+#endif // DCS_DES_CLOUD_EXP_OUTPUT_VM_SHARES
+#ifdef DCS_DES_CLOUD_EXP_OUTPUT_VM_MEASURES
 				<< "  OUTPUT_VM_MEASURES=on" << ::std::endl
-#else // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
+#else // DCS_DES_CLOUD_EXP_OUTPUT_VM_MEASURES
 				<< "  OUTPUT_VM_MEASURES=off" << ::std::endl
-#endif // DCS_EESIM_EXP_OUTPUT_VM_MEASURES
-#ifdef DCS_EESIM_EXP_OUTPUT_RLS_DATA
+#endif // DCS_DES_CLOUD_EXP_OUTPUT_VM_MEASURES
+#ifdef DCS_DES_CLOUD_EXP_OUTPUT_RLS_DATA
 				<< "  OUTPUT_RLS_DATA=on" << ::std::endl
-#else // DCS_EESIM_EXP_OUTPUT_RLS_DATA
+#else // DCS_DES_CLOUD_EXP_OUTPUT_RLS_DATA
 				<< "  OUTPUT_RLS_DATA=off" << ::std::endl
-#endif // DCS_EESIM_EXP_OUTPUT_RLS_DATA
-#ifdef DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
+#endif // DCS_DES_CLOUD_EXP_OUTPUT_RLS_DATA
+#ifdef DCS_DES_CLOUD_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 				<< "  LQ_APP_CONTROLLER_USE_INPUT_DEVIATION=on" << ::std::endl
-#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
+#else // DCS_DES_CLOUD_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
 				<< "  LQ_APP_CONTROLLER_USE_INPUT_DEVIATION=off" << ::std::endl
-#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
-#ifdef DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#endif // DCS_DES_CLOUD_EXP_LQ_APP_CONTROLLER_USE_INPUT_DEVIATION
+#ifdef DCS_DES_CLOUD_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 				<< "  LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT=on" << ::std::endl
-#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#else // DCS_DES_CLOUD_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
 				<< "  LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT=off" << ::std::endl
-#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
-#ifdef DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+#endif // DCS_DES_CLOUD_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_INPUT
+#ifdef DCS_DES_CLOUD_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
 				<< "  LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION=on" << ::std::endl
-#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+#else // DCS_DES_CLOUD_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
 				<< "  LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION=off" << ::std::endl
-#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
-#ifdef DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+#endif // DCS_DES_CLOUD_EXP_LQ_APP_CONTROLLER_USE_OUTPUT_DEVIATION
+#ifdef DCS_DES_CLOUD_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
 				<< "  LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT=on" << ::std::endl
-#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+#else // DCS_DES_CLOUD_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
 				<< "  LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT=off" << ::std::endl
-#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
-#ifdef DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+#endif // DCS_DES_CLOUD_EXP_LQ_APP_CONTROLLER_USE_NORMALIZED_OUTPUT
+#ifdef DCS_DES_CLOUD_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 				<< "  LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT=on" << ::std::endl
-#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+#else // DCS_DES_CLOUD_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
 				<< "  LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT=off" << ::std::endl
-#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_LQ_APP_CONTROLLER_USE_DYNAMIC_EQUILIBRIUM_POINT
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 				<< "  MIGR_CONTROLLER_MONITOR_VMS=on" << ::std::endl
-#else // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#else // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 				<< "  MIGR_CONTROLLER_MONITOR_VMS=off" << ::std::endl
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
-#ifdef DCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
 				<< "  PHYSICAL_MACHINES_AUTO_POWER_OFF=on" << ::std::endl
-#else // DCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
+#else // DCS_DES_CLOUD_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
 				<< "  PHYSICAL_MACHINES_AUTO_POWER_OFF=off" << ::std::endl
-#endif // DCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
-#ifdef DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
-				<< "  LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION=" << static_cast<int>(DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION) << ::std::endl
-#else // DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
+#endif // DCS_DES_CLOUD_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
+#ifdef DCS_DES_CLOUD_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
+				<< "  LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION=" << static_cast<int>(DCS_DES_CLOUD_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION) << ::std::endl
+#else // DCS_DES_CLOUD_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
 				<< "  LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION=default" << ::std::endl
-#endif // DCS_EESIM_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
+#endif // DCS_DES_CLOUD_EXP_LQ_APP_CONTROLLER_NEGATIVE_SHARE_ACTION
 				;
 }
 
@@ -274,19 +274,19 @@ bool get_option(ForwardIterT begin, ForwardIterT end, std::string const& option)
 
 
 inline
-::std::string to_string(::dcs::eesim::performance_measure_category category)
+::std::string to_string(::dcs::des::cloud::performance_measure_category category)
 {
 	switch (category)
 	{
-		case ::dcs::eesim::busy_time_performance_measure:
+		case ::dcs::des::cloud::busy_time_performance_measure:
 			return ::std::string("Busy Time");
-		case ::dcs::eesim::queue_length_performance_measure:
+		case ::dcs::des::cloud::queue_length_performance_measure:
 			return ::std::string("Queue Length");
-		case ::dcs::eesim::response_time_performance_measure:
+		case ::dcs::des::cloud::response_time_performance_measure:
 			return ::std::string("Response Time");
-		case ::dcs::eesim::throughput_performance_measure:
+		case ::dcs::des::cloud::throughput_performance_measure:
 			return ::std::string("Throughput");
-		case ::dcs::eesim::utilization_performance_measure:
+		case ::dcs::des::cloud::utilization_performance_measure:
 			return ::std::string("Utilization");
 		default:
 			break;
@@ -297,19 +297,19 @@ inline
 
 
 inline
-::std::string to_yaml_id(::dcs::eesim::performance_measure_category category)
+::std::string to_yaml_id(::dcs::des::cloud::performance_measure_category category)
 {
 	switch (category)
 	{
-		case ::dcs::eesim::busy_time_performance_measure:
+		case ::dcs::des::cloud::busy_time_performance_measure:
 			return ::std::string("busy-time");
-		case ::dcs::eesim::queue_length_performance_measure:
+		case ::dcs::des::cloud::queue_length_performance_measure:
 			return ::std::string("queue-length");
-		case ::dcs::eesim::response_time_performance_measure:
+		case ::dcs::des::cloud::response_time_performance_measure:
 			return ::std::string("response-time");
-		case ::dcs::eesim::throughput_performance_measure:
+		case ::dcs::des::cloud::throughput_performance_measure:
 			return ::std::string("throughput");
-		case ::dcs::eesim::utilization_performance_measure:
+		case ::dcs::des::cloud::utilization_performance_measure:
 			return ::std::string("utilization");
 		default:
 			break;
@@ -323,9 +323,9 @@ template <typename TraitsT>
 class simulated_system
 {
 	public: typedef TraitsT traits_type;
-	public: typedef ::dcs::eesim::data_center<traits_type> data_center_type;
+	public: typedef ::dcs::des::cloud::data_center<traits_type> data_center_type;
 	public: typedef ::dcs::shared_ptr<data_center_type> data_center_pointer;
-	public: typedef ::dcs::eesim::data_center_manager<traits_type> data_center_manager_type;
+	public: typedef ::dcs::des::cloud::data_center_manager<traits_type> data_center_manager_type;
 	public: typedef ::dcs::shared_ptr<data_center_manager_type> data_center_manager_pointer;
 
 
@@ -412,7 +412,7 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<
 //			vm_share_iterator share_end_it = vm_placement.shares_end(place_it);
 //			for (vm_share_iterator share_it = vm_placement.shares_begin(place_it); share_it != share_end_it; ++share_it)
 //			{
-//				::dcs::eesim::physical_resource_category category(vm_placement.resource_category(share_it));
+//				::dcs::des::cloud::physical_resource_category category(vm_placement.resource_category(share_it));
 //				real_type share(vm_placement.resource_share(share_it));
 //
 //				os << indent << indent
@@ -430,7 +430,7 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<
 		typedef typename virtual_machine_type::statistic_pointer statistic_pointer;
 		typedef ::std::vector<statistic_pointer> vm_statistic_container;
 		typedef typename vm_statistic_container::const_iterator vm_statistic_iterator;
-		typedef ::std::map< ::dcs::eesim::physical_resource_category, vm_statistic_container> vm_resource_statistic_map;
+		typedef ::std::map< ::dcs::des::cloud::physical_resource_category, vm_statistic_container> vm_resource_statistic_map;
 		typedef typename vm_resource_statistic_map::const_iterator vm_resource_statistic_iterator;
 
 		os << ::std::endl << "-- Virtual Machines --" << ::std::endl;
@@ -503,7 +503,7 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<
 		typedef typename application_type::application_tier_pointer application_tier_pointer;
 		typedef ::std::vector<application_tier_pointer> tier_container;
 		typedef typename tier_container::const_iterator tier_iterator;
-		typedef ::dcs::eesim::performance_measure_category statistic_category_type;
+		typedef ::dcs::des::cloud::performance_measure_category statistic_category_type;
 		typedef ::std::vector<statistic_category_type> statistic_category_container;
 		typedef typename statistic_category_container::const_iterator statistic_category_iterator;
 
@@ -530,16 +530,16 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<
 			statistic_category_container stat_categories;
 
 			//[FIXME] statistic categories are hard-coded
-			//stat_categories.push_back(::dcs::eesim::response_time_performance_measure);
+			//stat_categories.push_back(::dcs::des::cloud::response_time_performance_measure);
 			//[/FIXME]
 
-			stat_categories = ::dcs::eesim::performance_measure_categories();
+			stat_categories = ::dcs::des::cloud::performance_measure_categories();
 			statistic_category_iterator stat_cat_end_it = stat_categories.end();
 			for (statistic_category_iterator stat_cat_it = stat_categories.begin(); stat_cat_it != stat_cat_end_it; ++stat_cat_it)
 			{
 				statistic_category_type stat_category(*stat_cat_it);
 
-				if (::dcs::eesim::for_application(stat_category))
+				if (::dcs::des::cloud::for_application(stat_category))
 				{
 					os << indent << indent << indent
 					   << to_string(stat_category) << ": " << ::std::endl;
@@ -579,7 +579,7 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_system<
 				{
 					statistic_category_type stat_category(*stat_cat_it);
 
-					if (::dcs::eesim::for_application_tier(stat_category))
+					if (::dcs::des::cloud::for_application_tier(stat_category))
 					{
 						os << indent << indent << indent
 						   << to_string(stat_category) << ": " << ::std::endl;
@@ -672,7 +672,7 @@ void yaml_report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_sy
 		typedef typename virtual_machine_type::statistic_pointer statistic_pointer;
 		typedef ::std::vector<statistic_pointer> vm_statistic_container;
 		typedef typename vm_statistic_container::const_iterator vm_statistic_iterator;
-		typedef ::std::map< ::dcs::eesim::physical_resource_category, vm_statistic_container> vm_resource_statistic_map;
+		typedef ::std::map< ::dcs::des::cloud::physical_resource_category, vm_statistic_container> vm_resource_statistic_map;
 		typedef typename vm_resource_statistic_map::const_iterator vm_resource_statistic_iterator;
 
 		yaml << ::YAML::Key << "virtual-machines" << ::YAML::Value;
@@ -765,7 +765,7 @@ void yaml_report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_sy
 		typedef typename application_type::application_tier_pointer application_tier_pointer;
 		typedef ::std::vector<application_tier_pointer> tier_container;
 		typedef typename tier_container::const_iterator tier_iterator;
-		typedef ::dcs::eesim::performance_measure_category statistic_category_type;
+		typedef ::dcs::des::cloud::performance_measure_category statistic_category_type;
 		typedef ::std::vector<statistic_category_type> statistic_category_container;
 		typedef typename statistic_category_container::const_iterator statistic_category_iterator;
 
@@ -806,13 +806,13 @@ void yaml_report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_sy
 			yaml << ::YAML::Key << "stddev" << ::YAML::Value << ptr_app->simulation_model().num_sla_violations().standard_deviation();
 			yaml << ::YAML::EndMap;
 
-			statistic_category_container stat_categories(::dcs::eesim::performance_measure_categories());
+			statistic_category_container stat_categories(::dcs::des::cloud::performance_measure_categories());
 			statistic_category_iterator stat_cat_end_it = stat_categories.end();
 			for (statistic_category_iterator stat_cat_it = stat_categories.begin(); stat_cat_it != stat_cat_end_it; ++stat_cat_it)
 			{
 				statistic_category_type stat_category(*stat_cat_it);
 
-				if (::dcs::eesim::for_application(stat_category))
+				if (::dcs::des::cloud::for_application(stat_category))
 				{
 					yaml << ::YAML::Key << to_yaml_id(stat_category) << ::YAML::Value;
 
@@ -873,7 +873,7 @@ void yaml_report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, simulated_sy
 				{
 					statistic_category_type stat_category(*stat_cat_it);
 
-					if (::dcs::eesim::for_application_tier(stat_category))
+					if (::dcs::des::cloud::for_application_tier(stat_category))
 					{
 						yaml << ::YAML::Key << to_yaml_id(stat_category) << ::YAML::Value;
 
@@ -1024,7 +1024,7 @@ void process_sys_init_sim_event(des_event_type const& evt, des_engine_context_ty
 //	typename CharTraitsT,
 //	typename TraitsT
 //>
-//void process_sys_finit_sim_event(des_event_type const& evt, des_engine_context_type& ctx, ::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr< ::dcs::eesim::data_center<TraitsT> > const& ptr_dc)
+//void process_sys_finit_sim_event(des_event_type const& evt, des_engine_context_type& ctx, ::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr< ::dcs::des::cloud::data_center<TraitsT> > const& ptr_dc)
 template <typename TraitsT>
 void process_sys_finit_sim_event(des_event_type const& evt, des_engine_context_type& ctx, simulated_system<TraitsT> const* sys)
 {
@@ -1074,21 +1074,21 @@ int main(int argc, char* argv[])
 //	typedef dcs::des::engine<real_type> des_engine_type;
 ////	typedef dcs::math::random::base_generator<real_type> random_generator_type;
 //	typedef dcs::math::random::base_generator<uint_type> random_generator_type;
-//	typedef dcs::eesim::traits<
+//	typedef dcs::des::cloud::traits<
 //				des_engine_type,
 //				random_generator_type,
 //				real_type,
 //				uint_type,
 //				int_type
 //			> traits_type;
-//	typedef dcs::eesim::registry<traits_type> registry_type;
-	typedef dcs::eesim::config::configuration<real_type,uint_type> configuration_type;
+//	typedef dcs::des::cloud::registry<traits_type> registry_type;
+	typedef dcs::des::cloud::config::configuration<real_type,uint_type> configuration_type;
 	typedef dcs::shared_ptr<configuration_type> configuration_pointer;
 	typedef dcs::shared_ptr<des_engine_type> des_engine_pointer;
 	typedef dcs::shared_ptr<random_generator_type> random_generator_pointer;
-	//typedef dcs::eesim::data_center<traits_type> data_center_type;
-	typedef dcs::shared_ptr< dcs::eesim::data_center<traits_type> > data_center_pointer;
-	typedef dcs::shared_ptr< dcs::eesim::data_center_manager<traits_type> > data_center_manager_pointer;
+	//typedef dcs::des::cloud::data_center<traits_type> data_center_type;
+	typedef dcs::shared_ptr< dcs::des::cloud::data_center<traits_type> > data_center_pointer;
+	typedef dcs::shared_ptr< dcs::des::cloud::data_center_manager<traits_type> > data_center_manager_pointer;
 
 
 #ifdef DCS_DEBUG
@@ -1104,7 +1104,7 @@ int main(int argc, char* argv[])
 	}
 
 
-	std::cout << "--- EESim start at " << detail::strtime() << "." << std::endl;
+	std::cout << "--- DCS DES Cloud start at " << detail::strtime() << "." << std::endl;
 	std::cout << "--------------------------------------------------------------------------------" << std::endl;
 
 
@@ -1162,9 +1162,9 @@ int main(int argc, char* argv[])
 			case yaml_configuration:
 
 				ptr_conf = dcs::make_shared<configuration_type>(
-							dcs::eesim::config::read_file(
+							dcs::des::cloud::config::read_file(
 								conf_fname,
-								::dcs::eesim::config::yaml_reader<real_type,uint_type>()
+								::dcs::des::cloud::config::yaml_reader<real_type,uint_type>()
 							)
 						);
 				break;
@@ -1191,10 +1191,10 @@ int main(int argc, char* argv[])
 	registry_type& reg(registry_type::instance());
 	reg.configuration(ptr_conf);
 	des_engine_pointer ptr_des_eng;
-	ptr_des_eng = dcs::eesim::config::make_des_engine(*ptr_conf);
+	ptr_des_eng = dcs::des::cloud::config::make_des_engine(*ptr_conf);
 	reg.des_engine(ptr_des_eng);
 	random_generator_pointer ptr_rng;
-	ptr_rng = dcs::eesim::config::make_random_number_generator(*ptr_conf);//OK
+	ptr_rng = dcs::des::cloud::config::make_random_number_generator(*ptr_conf);//OK
 //	ptr_rng = dcs::make_shared<dcs::math::random::mt19937>(5489UL);//XXX
 	reg.uniform_random_generator(ptr_rng);
 
@@ -1226,8 +1226,8 @@ int main(int argc, char* argv[])
 	}
 
 	// Attach a simulation observer
-	dcs::shared_ptr< dcs::eesim::logging::base_logger<traits_type> > ptr_sim_log;
-	ptr_sim_log = dcs::eesim::config::make_logger<traits_type>(*ptr_conf);
+	dcs::shared_ptr< dcs::des::cloud::logging::base_logger<traits_type> > ptr_sim_log;
+	ptr_sim_log = dcs::des::cloud::config::make_logger<traits_type>(*ptr_conf);
 	//FIXME: makes it user configurable
 	//FIXME: makes sinks more flexible like:
 	//       ...->sink(text_file_sink("sim-obs.log"))
@@ -1239,8 +1239,8 @@ int main(int argc, char* argv[])
 	// Build the Data Center
 	data_center_pointer ptr_dc;
 	data_center_manager_pointer ptr_dc_mngr;
-	ptr_dc = dcs::eesim::config::make_data_center<traits_type>(*ptr_conf, ptr_rng, ptr_des_eng);
-	ptr_dc_mngr = dcs::eesim::config::make_data_center_manager<traits_type>(*ptr_conf, ptr_dc);
+	ptr_dc = dcs::des::cloud::config::make_data_center<traits_type>(*ptr_conf, ptr_rng, ptr_des_eng);
+	ptr_dc_mngr = dcs::des::cloud::config::make_data_center_manager<traits_type>(*ptr_conf, ptr_dc);
 
 	sys.data_center(ptr_dc);
 	sys.data_center_manager(ptr_dc_mngr);
@@ -1260,7 +1260,7 @@ int main(int argc, char* argv[])
 	std::cout << "--------------------------------------------------------------------------------" << std::endl;
 
 
-	std::cout << "--- EESim stop at " << detail::strtime() << "." << std::endl;
+	std::cout << "--- DCS DES Cloud stop at " << detail::strtime() << "." << std::endl;
 
 	if (!outdata_fname.empty())
 	{

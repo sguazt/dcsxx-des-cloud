@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/detail/ampl/utility.hpp
+ * \file dcs/des/cloud/detail/ampl/utility.hpp
  *
  * \brief Utilities for optimal VM placement strategies
  *  based on the AMPL mathematical environment.
@@ -23,8 +23,8 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DETAIL_AMPL_UTILITY_HPP
-#define DCS_EESIM_DETAIL_AMPL_UTILITY_HPP
+#ifndef DCS_DES_CLOUD_DETAIL_AMPL_UTILITY_HPP
+#define DCS_DES_CLOUD_DETAIL_AMPL_UTILITY_HPP
 
 
 #ifdef __GNUC__
@@ -41,7 +41,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <dcs/debug.hpp>
-#include <dcs/eesim/optimal_solver_ids.hpp>
+#include <dcs/des/cloud/optimal_solver_ids.hpp>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -55,7 +55,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim { namespace detail { namespace ampl {
+namespace dcs { namespace des { namespace cloud { namespace detail { namespace ampl {
 
 /*
 ::std::string make_tmp_file(::std::string name)
@@ -117,7 +117,7 @@ bool run_ampl_command_producer(::std::string const& cmd,
 	{
 		char const* err_str(::strerror(errno));
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::ampl::run_ampl_command_producer] pipe(2) failed: "
+		oss << "[dcs::des::cloud::detail::ampl::run_ampl_command_producer] pipe(2) failed: "
 			<< err_str;
 		throw ::std::runtime_error(oss.str());
 	}
@@ -135,7 +135,7 @@ bool run_ampl_command_producer(::std::string const& cmd,
 	{
 		char const* err_str(::strerror(errno));
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::ampl::run_ampl_command_producer] fork(2) failed: "
+		oss << "[dcs::des::cloud::detail::ampl::run_ampl_command_producer] fork(2) failed: "
 			<< err_str;
 		throw ::std::runtime_error(oss.str());
 	}
@@ -157,7 +157,7 @@ bool run_ampl_command_producer(::std::string const& cmd,
 			{
 				char const* err_str = ::strerror(errno);
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::ampl::run_ampl_command] getrlimit(2) failed: "
+				oss << "[dcs::des::cloud::detail::ampl::run_ampl_command] getrlimit(2) failed: "
 					<< ::std::string(err_str);
 				throw ::std::runtime_error(oss.str());
 			}
@@ -173,7 +173,7 @@ bool run_ampl_command_producer(::std::string const& cmd,
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::ampl::run_ampl_command] getrlimit(2) failed: "
+			oss << "[dcs::des::cloud::detail::ampl::run_ampl_command] getrlimit(2) failed: "
 				<< ::std::string(err_str);
 			throw ::std::runtime_error(oss.str());
 		}
@@ -196,7 +196,7 @@ bool run_ampl_command_producer(::std::string const& cmd,
 			{
 				char const* err_str(::strerror(errno));
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::ampl::run_ampl_command_producer] dup2(2) failed: "
+				oss << "[dcs::des::cloud::detail::ampl::run_ampl_command_producer] dup2(2) failed: "
 					<< err_str;
 				throw ::std::runtime_error(oss.str());
 			}
@@ -278,7 +278,7 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
         {
             char const* err_str(::strerror(errno));
             ::std::ostringstream oss;
-            oss << "[dcs::eesim::detail::matlab::run_matlab] dup2(2) failed: "
+            oss << "[dcs::des::cloud::detail::matlab::run_matlab] dup2(2) failed: "
                 << err_str;
             throw ::std::runtime_error(oss.str());
         }
@@ -311,7 +311,7 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
     {
         char const* err_str = ::strerror(errno);
         ::std::ostringstream oss;
-        oss << "[dcs::eesim::detail::ampl::run_ampl_command_producer] waitpid(2) failed: "
+        oss << "[dcs::des::cloud::detail::ampl::run_ampl_command_producer] waitpid(2) failed: "
             << ::std::string(err_str);
         throw ::std::runtime_error(oss.str());
     }
@@ -370,7 +370,7 @@ bool run_ampl_command(::std::string const& cmd,
 	{
 		char const* err_str(::strerror(errno));
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::ampl::run_ampl_command] pipe(2) failed: "
+		oss << "[dcs::des::cloud::detail::ampl::run_ampl_command] pipe(2) failed: "
 			<< err_str;
 		throw ::std::runtime_error(oss.str());
 	}
@@ -378,7 +378,7 @@ bool run_ampl_command(::std::string const& cmd,
 	{
 		char const* err_str(::strerror(errno));
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::ampl::run_ampl_command] pipe(2) failed: "
+		oss << "[dcs::des::cloud::detail::ampl::run_ampl_command] pipe(2) failed: "
 			<< err_str;
 		throw ::std::runtime_error(oss.str());
 	}
@@ -396,7 +396,7 @@ bool run_ampl_command(::std::string const& cmd,
 	{
 		char const* err_str(::strerror(errno));
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::ampl::run_ampl_command] fork(2) failed: "
+		oss << "[dcs::des::cloud::detail::ampl::run_ampl_command] fork(2) failed: "
 			<< err_str;
 		throw ::std::runtime_error(oss.str());
 	}
@@ -418,7 +418,7 @@ bool run_ampl_command(::std::string const& cmd,
 			{
 				char const* err_str = ::strerror(errno);
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::ampl::run_ampl_command] getrlimit(2) failed: "
+				oss << "[dcs::des::cloud::detail::ampl::run_ampl_command] getrlimit(2) failed: "
 					<< ::std::string(err_str);
 				throw ::std::runtime_error(oss.str());
 			}
@@ -434,7 +434,7 @@ bool run_ampl_command(::std::string const& cmd,
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::ampl::run_ampl_command] getrlimit(2) failed: "
+			oss << "[dcs::des::cloud::detail::ampl::run_ampl_command] getrlimit(2) failed: "
 				<< ::std::string(err_str);
 			throw ::std::runtime_error(oss.str());
 		}
@@ -457,7 +457,7 @@ bool run_ampl_command(::std::string const& cmd,
 			{
 				char const* err_str(::strerror(errno));
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::ampl::run_ampl_command] dup2(2) failed: "
+				oss << "[dcs::des::cloud::detail::ampl::run_ampl_command] dup2(2) failed: "
 					<< err_str;
 				throw ::std::runtime_error(oss.str());
 			}
@@ -479,7 +479,7 @@ bool run_ampl_command(::std::string const& cmd,
 			{
 				char const* err_str(::strerror(errno));
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::ampl::run_ampl_command] dup2(2) failed: "
+				oss << "[dcs::des::cloud::detail::ampl::run_ampl_command] dup2(2) failed: "
 					<< err_str;
 				throw ::std::runtime_error(oss.str());
 			}
@@ -562,7 +562,7 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
         {
             char const* err_str(::strerror(errno));
             ::std::ostringstream oss;
-            oss << "[dcs::eesim::detail::matlab::run_matlab] dup2(2) failed: "
+            oss << "[dcs::des::cloud::detail::matlab::run_matlab] dup2(2) failed: "
                 << err_str;
             throw ::std::runtime_error(oss.str());
         }
@@ -574,7 +574,7 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
         {
             char const* err_str(::strerror(errno));
             ::std::ostringstream oss;
-            oss << "[dcs::eesim::detail::matlab::run_matlab] dup2(2) failed: "
+            oss << "[dcs::des::cloud::detail::matlab::run_matlab] dup2(2) failed: "
                 << err_str;
             throw ::std::runtime_error(oss.str());
         }
@@ -619,7 +619,7 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
     {
         char const* err_str = ::strerror(errno);
         ::std::ostringstream oss;
-        oss << "[dcs::eesim::detail::ampl::run_ampl_command] waitpid(2) failed: "
+        oss << "[dcs::des::cloud::detail::ampl::run_ampl_command] waitpid(2) failed: "
             << ::std::string(err_str);
         throw ::std::runtime_error(oss.str());
     }
@@ -672,7 +672,7 @@ void parse_str(::std::string const& text, T& x)
 	}
 	else
 	{
-		throw ::std::runtime_error("[dcs::eesim::detail::ampl::parse_str] Unable to parse a AMPL number");
+		throw ::std::runtime_error("[dcs::des::cloud::detail::ampl::parse_str] Unable to parse a AMPL number");
 	}
 }
 
@@ -716,7 +716,7 @@ void parse_str(::std::string const& text, ::std::string& x)
 		}
 		else
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::ampl::parse_str] Unable to parse a AMPL string");
+			throw ::std::runtime_error("[dcs::des::cloud::detail::ampl::parse_str] Unable to parse a AMPL string");
 		}
 	}
 }
@@ -787,7 +787,7 @@ void parse_str(::std::string const& text, ::boost::numeric::ublas::vector<T>& v)
 
 		if (ko)
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::ampl::parse_str] Unable to parse a AMPL vector.");
+			throw ::std::runtime_error("[dcs::des::cloud::detail::ampl::parse_str] Unable to parse a AMPL vector.");
 		}
 	}
 }
@@ -876,7 +876,7 @@ void parse_str(::std::string const& text, ::boost::numeric::ublas::matrix<T>& A)
 
 		if (ko)
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::ampl::parse_str] Unable to parse a AMPL matrix.");
+			throw ::std::runtime_error("[dcs::des::cloud::detail::ampl::parse_str] Unable to parse a AMPL matrix.");
 		}
 	}
 }
@@ -971,9 +971,9 @@ inline
 			break;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::detail::ampl::to_ampl_solver] Solver not usable from AMPL.");
+	throw ::std::runtime_error("[dcs::des::cloud::detail::ampl::to_ampl_solver] Solver not usable from AMPL.");
 }
 
-}}}} // Namespace dcs::eesim::detail::ampl
+}}}}} // Namespace dcs::des::cloud::detail::ampl
 
-#endif // DCS_EESIM_DETAIL_AMPL_UTILITY_HPP
+#endif // DCS_DES_CLOUD_DETAIL_AMPL_UTILITY_HPP

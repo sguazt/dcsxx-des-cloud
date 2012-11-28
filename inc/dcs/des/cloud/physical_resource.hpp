@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/physical_resource.hpp
+ * \file dcs/des/cloud/physical_resource.hpp
  *
  * \brief A physical resource.
  *
@@ -22,14 +22,14 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_PHYSICAL_RESOURCE_HPP
-#define DCS_EESIM_PHYSICAL_RESOURCE_HPP
+#ifndef DCS_DES_CLOUD_PHYSICAL_RESOURCE_HPP
+#define DCS_DES_CLOUD_PHYSICAL_RESOURCE_HPP
 
 
 #include <dcs/perfeval/energy/base_model.hpp>
 #include <dcs/perfeval/energy/constant_model.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-#include <dcs/eesim/physical_resource_view.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+#include <dcs/des/cloud/physical_resource_view.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
@@ -38,7 +38,7 @@
 #include <string>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class physical_resource: public physical_resource_view<TraitsT>
@@ -208,7 +208,7 @@ template <
 			  << ">";
 }
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_PHYSICAL_RESOURCE_HPP
+#endif // DCS_DES_CLOUD_PHYSICAL_RESOURCE_HPP

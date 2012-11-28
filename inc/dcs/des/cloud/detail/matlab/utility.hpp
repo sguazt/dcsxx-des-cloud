@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/detail/matlab/utility.hpp
+ * \file dcs/des/cloud/detail/matlab/utility.hpp
  *
  * \brief Utilities to interface with the MATLAB environment.
  *
@@ -22,8 +22,8 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DETAIL_MATLAB_UTILITY_HPP
-#define DCS_EESIM_DETAIL_MATLAB_UTILITY_HPP
+#ifndef DCS_DES_CLOUD_DETAIL_MATLAB_UTILITY_HPP
+#define DCS_DES_CLOUD_DETAIL_MATLAB_UTILITY_HPP
 
 
 //FIXME: It seems this is not the best way to check for a POSIX-compliant system
@@ -59,7 +59,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim { namespace detail { namespace matlab {
+namespace dcs { namespace des { namespace cloud { namespace detail { namespace matlab {
 
 template <typename ValueT>
 static ::std::string to_str(::std::vector<ValueT> const& v, bool column = true)
@@ -173,7 +173,7 @@ bool run_matlab_command(::std::string const& cmd,
 	{
 		char const* err_str = ::strerror(errno);
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::matlab::run_matlab_command] pipe(2) failed: "
+		oss << "[dcs::des::cloud::detail::matlab::run_matlab_command] pipe(2) failed: "
 			<< ::std::string(err_str);
 		throw ::std::runtime_error(oss.str());
 	}
@@ -202,7 +202,7 @@ bool run_matlab_command(::std::string const& cmd,
 	{
 		char const* err_str = ::strerror(errno);
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::matlab::run_matlab_command] fork(2) failed: "
+		oss << "[dcs::des::cloud::detail::matlab::run_matlab_command] fork(2) failed: "
 			<< ::std::string(err_str);
 		throw ::std::runtime_error(oss.str());
 	}
@@ -229,7 +229,7 @@ bool run_matlab_command(::std::string const& cmd,
 			{
 				char const* err_str = ::strerror(errno);
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::matlab::run_matlab_command] getrlimit(2) failed: "
+				oss << "[dcs::des::cloud::detail::matlab::run_matlab_command] getrlimit(2) failed: "
 					<< ::std::string(err_str);
 				throw ::std::runtime_error(oss.str());
 			}
@@ -245,7 +245,7 @@ bool run_matlab_command(::std::string const& cmd,
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::matlab::run_matlab_command] getrlimit(2) failed: "
+			oss << "[dcs::des::cloud::detail::matlab::run_matlab_command] getrlimit(2) failed: "
 				<< ::std::string(err_str);
 			throw ::std::runtime_error(oss.str());
 		}
@@ -267,7 +267,7 @@ bool run_matlab_command(::std::string const& cmd,
 			{
 				char const* err_str = ::strerror(errno);
 				::std::ostringstream oss;
-				oss << "[dcs::eesim::detail::matlab::run_matlab_command] dup2(2) failed: "
+				oss << "[dcs::des::cloud::detail::matlab::run_matlab_command] dup2(2) failed: "
 					<< ::std::string(err_str);
 				throw ::std::runtime_error(oss.str());
 			}
@@ -355,7 +355,7 @@ for (::std::size_t i=0; i < args.size(); ++i)//XXX
 		{
 			char const* err_str = ::strerror(errno);
 			::std::ostringstream oss;
-			oss << "[dcs::eesim::detail::matlab::run_matlab_command] dup2(2) failed: "
+			oss << "[dcs::des::cloud::detail::matlab::run_matlab_command] dup2(2) failed: "
 				<< ::std::string(err_str);
 			throw ::std::runtime_error(oss.str());
 		}
@@ -380,13 +380,13 @@ DCS_DEBUG_TRACE("IS state: " << is.good() << " - " << is.eof() << " - " << is.fa
 //		wait_pid = ::wait(&status);
 //		if (wait_pid != pid)
 //		{
-//			throw ::std::runtime_error("[dcs::eesim::detail::rls_miso_matlab_app_proxy::run_matlab] Unexpected child process.");
+//			throw ::std::runtime_error("[dcs::des::cloud::detail::rls_miso_matlab_app_proxy::run_matlab] Unexpected child process.");
 //		}
 	if (::waitpid(pid, &status, 0) == -1)
 	{
 		char const* err_str = ::strerror(errno);
 		::std::ostringstream oss;
-		oss << "[dcs::eesim::detail::matlab::run_matlab_command] waitpid(2) failed: "
+		oss << "[dcs::des::cloud::detail::matlab::run_matlab_command] waitpid(2) failed: "
 			<< ::std::string(err_str);
 		throw ::std::runtime_error(oss.str());
 	}
@@ -442,7 +442,7 @@ void parse_str(::std::string const& text, T& x)
 		}
 		else
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::matlab::parse_str] Unable to parse a MATLAB number");
+			throw ::std::runtime_error("[dcs::des::cloud::detail::matlab::parse_str] Unable to parse a MATLAB number");
 		}
 	}
 }
@@ -513,7 +513,7 @@ void parse_str(::std::string const& text, ::boost::numeric::ublas::vector<T>& v)
 
 		if (ko)
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::matlab::parse_str] Unable to parse a MATLAB vector.");
+			throw ::std::runtime_error("[dcs::des::cloud::detail::matlab::parse_str] Unable to parse a MATLAB vector.");
 		}
 	}
 }
@@ -600,7 +600,7 @@ void parse_str(::std::string const& text, ::boost::numeric::ublas::matrix<T>& A)
 
 		if (ko)
 		{
-			throw ::std::runtime_error("[dcs::eesim::detail::matlab::parse_str] Unable to parse a MATLAB matrix.");
+			throw ::std::runtime_error("[dcs::des::cloud::detail::matlab::parse_str] Unable to parse a MATLAB matrix.");
 		}
 	}
 }
@@ -613,6 +613,6 @@ inline
 	return cmd_name;
 }
 
-}}}} // Namespace dcs::eesim::detail::matlab
+}}}}} // Namespace dcs::des::cloud::detail::matlab
 
-#endif // DCS_EESIM_DETAIL_MATLAB_UTILITY_HPP
+#endif // DCS_DES_CLOUD_DETAIL_MATLAB_UTILITY_HPP

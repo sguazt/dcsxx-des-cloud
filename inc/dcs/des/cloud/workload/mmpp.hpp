@@ -1,5 +1,5 @@
-#ifndef DCS_EESIM_WORKLOAD_MMPP_HPP
-#define DCS_EESIM_WORKLOAD_MMPP_HPP
+#ifndef DCS_DES_CLOUD_WORKLOAD_MMPP_HPP
+#define DCS_DES_CLOUD_WORKLOAD_MMPP_HPP
 
 
 #include <algorithm>
@@ -20,7 +20,7 @@
 #include <dcs/math/stats/function/rand.hpp>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT, typename ValueT>
 class mmpp_interarrivals_workload_model
@@ -231,7 +231,7 @@ class mmpp_interarrivals_workload_model
 	private: value_type st_;
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_WORKLOAD_MMPP_HPP
+#endif // DCS_DES_CLOUD_WORKLOAD_MMPP_HPP

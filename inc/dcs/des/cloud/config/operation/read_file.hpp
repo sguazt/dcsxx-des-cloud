@@ -1,11 +1,11 @@
-#ifndef DCS_EESIM_CONFIG_READ_FILE_HPP
-#define DCS_EESIM_CONFIG_READ_FILE_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_READ_FILE_HPP
+#define DCS_DES_CLOUD_CONFIG_READ_FILE_HPP
 
 
-#include <dcs/eesim/config/configuration.hpp>
+#include <dcs/des/cloud/config/configuration.hpp>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 template <typename ReaderT>
 configuration<typename ReaderT::real_type,typename ReaderT::uint_type> read_file(::std::string const& fname, ReaderT reader)
@@ -13,7 +13,7 @@ configuration<typename ReaderT::real_type,typename ReaderT::uint_type> read_file
 	return reader.read(fname);
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_READ_FILE_HPP
+#endif // DCS_DES_CLOUD_CONFIG_READ_FILE_HPP

@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/user_request.hpp
+ * \file dcs/des/cloud/user_request.hpp
  *
  * \brief Class modeling a user request.
  *
@@ -22,20 +22,20 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_USER_REQUEST_HPP
-#define DCS_EESIM_USER_REQUEST_HPP
+#ifndef DCS_DES_CLOUD_USER_REQUEST_HPP
+#define DCS_DES_CLOUD_USER_REQUEST_HPP
 
 
 #include <cstddef>
 //#include <limits>
-#include <dcs/eesim/physical_resource_category.hpp>
-#include <dcs/eesim/resource_utilization_profile.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+#include <dcs/des/cloud/resource_utilization_profile.hpp>
 #include <iosfwd>
 #include <map>
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class user_request
@@ -237,7 +237,7 @@ template <
 			  << ">";
 }
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_USER_REQUEST_HPP
+#endif // DCS_DES_CLOUD_USER_REQUEST_HPP

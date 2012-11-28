@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/configuration_based_application_instance_builder.hpp
+ * \file dcs/des/cloud/configuration_based_application_instance_builder.hpp
  *
  * \brief Configuration-driver application instance builder.
  *
@@ -22,26 +22,26 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_CONFIGURATION_BASED_APPLICATION_INSTANCE_BUILDER_HPP
-#define DCS_EESIM_CONFIGURATION_BASED_APPLICATION_INSTANCE_BUILDER_HPP
+#ifndef DCS_DES_CLOUD_CONFIGURATION_BASED_APPLICATION_INSTANCE_BUILDER_HPP
+#define DCS_DES_CLOUD_CONFIGURATION_BASED_APPLICATION_INSTANCE_BUILDER_HPP
 
 
 #include <dcs/debug.hpp>
-#include <dcs/eesim/application_instance.hpp>
-#include <dcs/eesim/base_application_controller.hpp>
-#include <dcs/eesim/base_application_instance_builder.hpp>
-#include <dcs/eesim/config/application.hpp>
-#include <dcs/eesim/config/operation//make_application.hpp>
-#include <dcs/eesim/config/operation//make_application_controller.hpp>
-#include <dcs/eesim/config/operation//make_probability_distribution.hpp>
-#include <dcs/eesim/multi_tier_application.hpp>
-#include <dcs/eesim/registry.hpp>
+#include <dcs/des/cloud/application_instance.hpp>
+#include <dcs/des/cloud/base_application_controller.hpp>
+#include <dcs/des/cloud/base_application_instance_builder.hpp>
+#include <dcs/des/cloud/config/application.hpp>
+#include <dcs/des/cloud/config/operation//make_application.hpp>
+#include <dcs/des/cloud/config/operation//make_application_controller.hpp>
+#include <dcs/des/cloud/config/operation//make_probability_distribution.hpp>
+#include <dcs/des/cloud/multi_tier_application.hpp>
+#include <dcs/des/cloud/registry.hpp>
 #include <dcs/math/stats/distribution/any_distribution.hpp>
 #include <dcs/math/stats/function/rand.hpp>
 #include <limits>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class configuration_based_application_instance_builder: public base_application_instance_builder<TraitsT>
@@ -155,7 +155,7 @@ class configuration_based_application_instance_builder: public base_application_
 	private: application_config_type app_conf_;
 }; // application_instance_builder
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_CONFIGURATION_BASED_APPLICATION_INSTANCE_BUILDER_HPP
+#endif // DCS_DES_CLOUD_CONFIGURATION_BASED_APPLICATION_INSTANCE_BUILDER_HPP

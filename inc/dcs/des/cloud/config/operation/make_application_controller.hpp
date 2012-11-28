@@ -1,26 +1,26 @@
-#ifndef DCS_EESIM_CONFIG_OPERATION_MAKE_APPLICATION_CONTROLLER_HPP
-#define DCS_EESIM_CONFIG_OPERATION_MAKE_APPLICATION_CONTROLLER_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_APPLICATION_CONTROLLER_HPP
+#define DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_APPLICATION_CONTROLLER_HPP
 
 
 #include <boost/variant.hpp>
-#include <dcs/eesim/application_controller_triggers.hpp>
-#include <dcs/eesim/base_application_controller.hpp>
-#include <dcs/eesim/config/application_controller.hpp>
-#include <dcs/eesim/dummy_application_controller.hpp>
-#include <dcs/eesim/lq_application_controller.hpp>
-#include <dcs/eesim/qn_application_controller.hpp>
-#include <dcs/eesim/system_identification_strategy_params.hpp>
+#include <dcs/des/cloud/application_controller_triggers.hpp>
+#include <dcs/des/cloud/base_application_controller.hpp>
+#include <dcs/des/cloud/config/application_controller.hpp>
+#include <dcs/des/cloud/dummy_application_controller.hpp>
+#include <dcs/des/cloud/lq_application_controller.hpp>
+#include <dcs/des/cloud/qn_application_controller.hpp>
+#include <dcs/des/cloud/system_identification_strategy_params.hpp>
 #include <dcs/memory.hpp>
 #include <stdexcept>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 namespace detail { namespace /*<unnamed>*/ {
 
 template <typename RealT, typename UIntT, typename TraitsT>
 void make_common_system_identification_strategy_params(base_rls_system_identification_config<RealT,UIntT> const& ident_conf,
-													   ::dcs::eesim::rls_system_identification_strategy_params<TraitsT>& params)
+													   ::dcs::des::cloud::rls_system_identification_strategy_params<TraitsT>& params)
 {
 	params.mimo_as_miso(ident_conf.mimo_as_miso);
 	params.max_covariance_heuristic(ident_conf.enable_max_cov_heuristic);
@@ -32,12 +32,12 @@ void make_common_system_identification_strategy_params(base_rls_system_identific
 
 template <typename TraitsT, typename ControllerConfigT>
 ::dcs::shared_ptr<
-	::dcs::eesim::base_system_identification_strategy_params<TraitsT>
+	::dcs::des::cloud::base_system_identification_strategy_params<TraitsT>
 > make_system_identification_strategy_params(ControllerConfigT const& controller_conf)
 {
 	typedef TraitsT traits_type;
 	typedef ControllerConfigT controller_config_type;
-	typedef ::dcs::eesim::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
+	typedef ::dcs::des::cloud::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
 	typedef ::dcs::shared_ptr<system_identification_strategy_params_type> system_identification_strategy_params_pointer;
 
 	system_identification_strategy_params_pointer ptr_strategy_params;
@@ -47,7 +47,7 @@ template <typename TraitsT, typename ControllerConfigT>
 		case rls_bittanti1990_system_identification:
 			{
 				typedef typename controller_config_type::rls_bittanti1990_system_identification_config_type ident_category_config_impl_type;
-				typedef ::dcs::eesim::rls_bittanti1990_system_identification_strategy_params<traits_type> system_identification_strategy_params_impl_type;
+				typedef ::dcs::des::cloud::rls_bittanti1990_system_identification_strategy_params<traits_type> system_identification_strategy_params_impl_type;
 				typedef ::dcs::shared_ptr<system_identification_strategy_params_impl_type> system_identification_strategy_params_impl_pointer;
 
 				ident_category_config_impl_type const& ident_conf_impl = ::boost::get<ident_category_config_impl_type>(controller_conf.ident_category_conf);
@@ -67,7 +67,7 @@ template <typename TraitsT, typename ControllerConfigT>
 		case rls_ff_system_identification:
 			{
 				typedef typename controller_config_type::rls_ff_system_identification_config_type ident_category_config_impl_type;
-				typedef ::dcs::eesim::rls_ff_system_identification_strategy_params<traits_type> system_identification_strategy_params_impl_type;
+				typedef ::dcs::des::cloud::rls_ff_system_identification_strategy_params<traits_type> system_identification_strategy_params_impl_type;
 				typedef ::dcs::shared_ptr<system_identification_strategy_params_impl_type> system_identification_strategy_params_impl_pointer;
 
 				ident_category_config_impl_type const& ident_conf_impl = ::boost::get<ident_category_config_impl_type>(controller_conf.ident_category_conf);
@@ -86,7 +86,7 @@ template <typename TraitsT, typename ControllerConfigT>
 		case rls_kulhavy1984_system_identification:
 			{
 				typedef typename controller_config_type::rls_kulhavy1984_system_identification_config_type ident_category_config_impl_type;
-				typedef ::dcs::eesim::rls_kulhavy1984_system_identification_strategy_params<traits_type> system_identification_strategy_params_impl_type;
+				typedef ::dcs::des::cloud::rls_kulhavy1984_system_identification_strategy_params<traits_type> system_identification_strategy_params_impl_type;
 				typedef ::dcs::shared_ptr<system_identification_strategy_params_impl_type> system_identification_strategy_params_impl_pointer;
 
 				ident_category_config_impl_type const& ident_conf_impl = ::boost::get<ident_category_config_impl_type>(controller_conf.ident_category_conf);
@@ -105,7 +105,7 @@ template <typename TraitsT, typename ControllerConfigT>
 		case rls_park1991_system_identification:
 			{
 				typedef typename controller_config_type::rls_park1991_system_identification_config_type ident_category_config_impl_type;
-				typedef ::dcs::eesim::rls_park1991_system_identification_strategy_params<traits_type> system_identification_strategy_params_impl_type;
+				typedef ::dcs::des::cloud::rls_park1991_system_identification_strategy_params<traits_type> system_identification_strategy_params_impl_type;
 				typedef ::dcs::shared_ptr<system_identification_strategy_params_impl_type> system_identification_strategy_params_impl_pointer;
 
 				ident_category_config_impl_type const& ident_conf_impl = ::boost::get<ident_category_config_impl_type>(controller_conf.ident_category_conf);
@@ -123,27 +123,27 @@ template <typename TraitsT, typename ControllerConfigT>
 			}
 			break;
 		default:
-			throw ::std::runtime_error("[dcs::eesim::config::make_data_center] RLS variant not yet implemented.");
+			throw ::std::runtime_error("[dcs::des::cloud::config::make_data_center] RLS variant not yet implemented.");
 	}
 
 	return ptr_strategy_params;
 }
 
-}} // Namespace detail::<unnamed>
+}}} // Namespace detail::<unnamed>
 
 
 template <typename TraitsT, typename RealT, typename UIntT>
 ::dcs::shared_ptr<
-	::dcs::eesim::base_application_controller<TraitsT>
+	::dcs::des::cloud::base_application_controller<TraitsT>
 > make_application_controller(application_controller_config<RealT,UIntT> const& controller_conf,
-							  ::dcs::shared_ptr< ::dcs::eesim::multi_tier_application<TraitsT> > const& ptr_app)
+							  ::dcs::shared_ptr< ::dcs::des::cloud::multi_tier_application<TraitsT> > const& ptr_app)
 {
 	typedef TraitsT traits_type;
-	typedef ::dcs::eesim::base_application_controller<traits_type> controller_type;
+	typedef ::dcs::des::cloud::base_application_controller<traits_type> controller_type;
 	typedef application_controller_config<RealT,UIntT> controller_config_type;
-	typedef ::dcs::eesim::multi_tier_application<traits_type> application_type;
+	typedef ::dcs::des::cloud::multi_tier_application<traits_type> application_type;
 	typedef ::dcs::shared_ptr<application_type> application_pointer;
-	typedef ::dcs::eesim::application_controller_triggers<traits_type> application_controller_triggers_type;
+	typedef ::dcs::des::cloud::application_controller_triggers<traits_type> application_controller_triggers_type;
 
 	::dcs::shared_ptr<controller_type> ptr_controller;
 
@@ -156,7 +156,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 		case dummy_application_controller:
 			{
 				//typedef typename controller_config_type::dummy_controller_config_type controller_config_impl_type;
-				typedef ::dcs::eesim::dummy_application_controller<traits_type> controller_impl_type;
+				typedef ::dcs::des::cloud::dummy_application_controller<traits_type> controller_impl_type;
 
 				//controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
 
@@ -168,8 +168,8 @@ template <typename TraitsT, typename RealT, typename UIntT>
 		case fmpc_application_controller:
 			{
 				typedef typename controller_config_type::fmpc_controller_config_type controller_config_impl_type;
-				typedef ::dcs::eesim::fmpc_application_controller<traits_type> controller_impl_type;
-				typedef ::dcs::eesim::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
+				typedef ::dcs::des::cloud::fmpc_application_controller<traits_type> controller_impl_type;
+				typedef ::dcs::des::cloud::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
 				typedef ::dcs::shared_ptr<system_identification_strategy_params_type> system_identification_strategy_params_pointer;
 
 				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
@@ -209,8 +209,8 @@ template <typename TraitsT, typename RealT, typename UIntT>
 		case lqi_application_controller:
 			{
 				typedef typename controller_config_type::lqi_controller_config_type controller_config_impl_type;
-				typedef ::dcs::eesim::lqi_application_controller<traits_type> controller_impl_type;
-				typedef ::dcs::eesim::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
+				typedef ::dcs::des::cloud::lqi_application_controller<traits_type> controller_impl_type;
+				typedef ::dcs::des::cloud::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
 				typedef ::dcs::shared_ptr<system_identification_strategy_params_type> system_identification_strategy_params_pointer;
 
 				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
@@ -253,8 +253,8 @@ template <typename TraitsT, typename RealT, typename UIntT>
 //		case lqiy_application_controller:
 //			{
 //				typedef typename controller_config_type::lqiy_controller_config_type controller_config_impl_type;
-//				typedef ::dcs::eesim::lqiy_application_controller<traits_type> controller_impl_type;
-//				typedef ::dcs::eesim::base_system_identification_strategy<traits_type> system_identification_strategy_type;
+//				typedef ::dcs::des::cloud::lqiy_application_controller<traits_type> controller_impl_type;
+//				typedef ::dcs::des::cloud::base_system_identification_strategy<traits_type> system_identification_strategy_type;
 //				typedef ::dcs::shared_ptr<system_identification_strategy_type> system_identification_strategy_pointer;
 //
 //				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
@@ -283,8 +283,8 @@ template <typename TraitsT, typename RealT, typename UIntT>
 		case lqr_application_controller:
 			{
 				typedef typename controller_config_type::lqr_controller_config_type controller_config_impl_type;
-				typedef ::dcs::eesim::lqr_application_controller<traits_type> controller_impl_type;
-				typedef ::dcs::eesim::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
+				typedef ::dcs::des::cloud::lqr_application_controller<traits_type> controller_impl_type;
+				typedef ::dcs::des::cloud::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
 				typedef ::dcs::shared_ptr<system_identification_strategy_params_type> system_identification_strategy_params_pointer;
 
 				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
@@ -317,8 +317,8 @@ template <typename TraitsT, typename RealT, typename UIntT>
 		case lqry_application_controller:
 			{
 				typedef typename controller_config_type::lqry_controller_config_type controller_config_impl_type;
-				typedef ::dcs::eesim::lqry_application_controller<traits_type> controller_impl_type;
-				typedef ::dcs::eesim::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
+				typedef ::dcs::des::cloud::lqry_application_controller<traits_type> controller_impl_type;
+				typedef ::dcs::des::cloud::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
 				typedef ::dcs::shared_ptr<system_identification_strategy_params_type> system_identification_strategy_params_pointer;
 
 				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
@@ -347,8 +347,8 @@ template <typename TraitsT, typename RealT, typename UIntT>
 		case matlab_lqi_application_controller:
 			{
 				typedef typename controller_config_type::matlab_lqi_controller_config_type controller_config_impl_type;
-				typedef ::dcs::eesim::matlab_lqi_application_controller<traits_type> controller_impl_type;
-				typedef ::dcs::eesim::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
+				typedef ::dcs::des::cloud::matlab_lqi_application_controller<traits_type> controller_impl_type;
+				typedef ::dcs::des::cloud::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
 				typedef ::dcs::shared_ptr<system_identification_strategy_params_type> system_identification_strategy_params_pointer;
 
 				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
@@ -391,8 +391,8 @@ template <typename TraitsT, typename RealT, typename UIntT>
 		case matlab_lqr_application_controller:
 			{
 				typedef typename controller_config_type::matlab_lqr_controller_config_type controller_config_impl_type;
-				typedef ::dcs::eesim::matlab_lqr_application_controller<traits_type> controller_impl_type;
-				typedef ::dcs::eesim::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
+				typedef ::dcs::des::cloud::matlab_lqr_application_controller<traits_type> controller_impl_type;
+				typedef ::dcs::des::cloud::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
 				typedef ::dcs::shared_ptr<system_identification_strategy_params_type> system_identification_strategy_params_pointer;
 
 				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
@@ -420,8 +420,8 @@ template <typename TraitsT, typename RealT, typename UIntT>
 		case matlab_lqry_application_controller:
 			{
 				typedef typename controller_config_type::matlab_lqry_controller_config_type controller_config_impl_type;
-				typedef ::dcs::eesim::matlab_lqry_application_controller<traits_type> controller_impl_type;
-				typedef ::dcs::eesim::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
+				typedef ::dcs::des::cloud::matlab_lqry_application_controller<traits_type> controller_impl_type;
+				typedef ::dcs::des::cloud::base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
 				typedef ::dcs::shared_ptr<system_identification_strategy_params_type> system_identification_strategy_params_pointer;
 
 				controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
@@ -449,7 +449,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 		case qn_application_controller:
 			{
 				//typedef typename controller_config_type::qn_controller_config_type controller_config_impl_type;
-				typedef ::dcs::eesim::qn_application_controller<traits_type> controller_impl_type;
+				typedef ::dcs::des::cloud::qn_application_controller<traits_type> controller_impl_type;
 
 				//controller_config_impl_type const& controller_conf_impl = ::boost::get<controller_config_impl_type>(controller_conf.category_conf);
 
@@ -466,7 +466,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 	return ptr_controller;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_OPERATION_MAKE_APPLICATION_CONTROLLER_HPP
+#endif // DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_APPLICATION_CONTROLLER_HPP

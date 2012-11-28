@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/detail/base_vm_placement_optimal_solver.hpp
+ * \file dcs/des/cloud/detail/base_vm_placement_optimal_solver.hpp
  *
  * \brief Base class for VM placement based on optimal strategies.
  *
@@ -22,20 +22,20 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DETAIL_BASE_VM_PLACEMENT_OPTIMAL_SOLVER_HPP
-#define DCS_EESIM_DETAIL_BASE_VM_PLACEMENT_OPTIMAL_SOLVER_HPP
+#ifndef DCS_DES_CLOUD_DETAIL_BASE_VM_PLACEMENT_OPTIMAL_SOLVER_HPP
+#define DCS_DES_CLOUD_DETAIL_BASE_VM_PLACEMENT_OPTIMAL_SOLVER_HPP
 
 
-#include <dcs/eesim/data_center.hpp>
-#include <dcs/eesim/optimal_solver_categories.hpp>
-#include <dcs/eesim/optimal_solver_ids.hpp>
-#include <dcs/eesim/optimal_solver_input_methods.hpp>
-#include <dcs/eesim/optimal_solver_proxies.hpp>
-#include <dcs/eesim/detail/vm_placement_problem.hpp>
+#include <dcs/des/cloud/data_center.hpp>
+#include <dcs/des/cloud/optimal_solver_categories.hpp>
+#include <dcs/des/cloud/optimal_solver_ids.hpp>
+#include <dcs/des/cloud/optimal_solver_input_methods.hpp>
+#include <dcs/des/cloud/optimal_solver_proxies.hpp>
+#include <dcs/des/cloud/detail/vm_placement_problem.hpp>
 #include <map>
 
 
-namespace dcs { namespace eesim { namespace detail {
+namespace dcs { namespace des { namespace cloud { namespace detail {
 
 template <typename TraitsT>
 class base_vm_placement_optimal_solver
@@ -159,7 +159,7 @@ class base_vm_placement_optimal_solver
 	private: problem_result_type result_;
 };
 
-}}} // Namespace dcs::eesim::detail
+}}}} // Namespace dcs::des::cloud::detail
 
 
-#endif // DCS_EESIM_DETAIL_BASE_VM_PLACEMENT_OPTIMAL_SOLVER_HPP
+#endif // DCS_DES_CLOUD_DETAIL_BASE_VM_PLACEMENT_OPTIMAL_SOLVER_HPP

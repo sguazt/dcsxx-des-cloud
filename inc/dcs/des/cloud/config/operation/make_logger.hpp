@@ -1,26 +1,26 @@
-#ifndef DCS_EESIM_CONFIG_OPERATION_MAKE_LOGGER_HPP
-#define DCS_EESIM_CONFIG_OPERATION_MAKE_LOGGER_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_LOGGER_HPP
+#define DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_LOGGER_HPP
 
 
 #include <boost/variant.hpp>
-#include <dcs/eesim/config/configuration.hpp>
-#include <dcs/eesim/config/logging.hpp>
-#include <dcs/eesim/logging/base_logger.hpp>
-#include <dcs/eesim/logging/compact_logger.hpp>
-#include <dcs/eesim/logging/dummy_logger.hpp>
-#include <dcs/eesim/logging/minimal_logger.hpp>
+#include <dcs/des/cloud/config/configuration.hpp>
+#include <dcs/des/cloud/config/logging.hpp>
+#include <dcs/des/cloud/logging/base_logger.hpp>
+#include <dcs/des/cloud/logging/compact_logger.hpp>
+#include <dcs/des/cloud/logging/dummy_logger.hpp>
+#include <dcs/des/cloud/logging/minimal_logger.hpp>
 #include <dcs/memory.hpp>
 #include <iosfwd>
 #include <stdexcept>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 template <typename TraitsT, typename RealT, typename UIntT>
-::dcs::shared_ptr< ::dcs::eesim::logging::base_logger<TraitsT> > make_logger(configuration<RealT,UIntT> const& conf)
+::dcs::shared_ptr< ::dcs::des::cloud::logging::base_logger<TraitsT> > make_logger(configuration<RealT,UIntT> const& conf)
 {
 	typedef TraitsT traits_type;
-	typedef ::dcs::eesim::logging::base_logger<TraitsT> logging_type;
+	typedef ::dcs::des::cloud::logging::base_logger<TraitsT> logging_type;
 	typedef configuration<RealT,UIntT> config_type;
 	typedef typename config_type::logging_config_type logging_config_type;
 
@@ -32,7 +32,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 		{
 			case compact_logging:
 				{
-					typedef ::dcs::eesim::logging::compact_logger<traits_type> logger_impl_type;
+					typedef ::dcs::des::cloud::logging::compact_logger<traits_type> logger_impl_type;
 					typedef typename logging_config_type::compact_logging_type logging_conf_impl_type;
 
 					logging_conf_impl_type const& logging_conf_impl = ::boost::get<logging_conf_impl_type>(conf.logging().category_conf);
@@ -69,7 +69,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 
 								if (sink_impl.name.empty())
 								{
-									throw ::std::runtime_error("[dcs::eesim::config::make_logger] File name not specified for the file sink.");
+									throw ::std::runtime_error("[dcs::des::cloud::config::make_logger] File name not specified for the file sink.");
 								}
 
 								ptr_logger->sink(sink_impl.name);
@@ -80,7 +80,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 				break;
 			case minimal_logging:
 				{
-					typedef ::dcs::eesim::logging::minimal_logger<traits_type> logger_impl_type;
+					typedef ::dcs::des::cloud::logging::minimal_logger<traits_type> logger_impl_type;
 					typedef typename logging_config_type::minimal_logging_type logging_conf_impl_type;
 
 					logging_conf_impl_type const& logging_conf_impl = ::boost::get<logging_conf_impl_type>(conf.logging().category_conf);
@@ -117,7 +117,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 
 								if (sink_impl.name.empty())
 								{
-									throw ::std::runtime_error("[dcs::eesim::config::make_logger] File name not specified for the file sink.");
+									throw ::std::runtime_error("[dcs::des::cloud::config::make_logger] File name not specified for the file sink.");
 								}
 
 								ptr_logger->sink(sink_impl.name);
@@ -132,14 +132,14 @@ template <typename TraitsT, typename RealT, typename UIntT>
 	{
 		// Create a dummy logger in case no logging is enabled.
 
-		typedef ::dcs::eesim::logging::dummy_logger<traits_type> logger_impl_type;
+		typedef ::dcs::des::cloud::logging::dummy_logger<traits_type> logger_impl_type;
 		ptr_logger = ::dcs::make_shared<logger_impl_type>();
 	}
 
 	return ptr_logger;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_OPERATION_MAKE_LOGGER_HPP
+#endif // DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_LOGGER_HPP

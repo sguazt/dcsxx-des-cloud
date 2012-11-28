@@ -1,37 +1,37 @@
-#ifndef DCS_EESIM_CONFIG_YAML_HPP
-#define DCS_EESIM_CONFIG_YAML_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_YAML_HPP
+#define DCS_DES_CLOUD_CONFIG_YAML_HPP
 
 
 #include <cstddef>
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
-#include <dcs/eesim/config/application.hpp>
-#include <dcs/eesim/config/application_builder.hpp>
-#include <dcs/eesim/config/application_controller.hpp>
-#include <dcs/eesim/config/application_performance_model.hpp>
-#include <dcs/eesim/config/application_simulation_model.hpp>
-#include <dcs/eesim/config/application_sla.hpp>
-#include <dcs/eesim/config/application_tier.hpp>
-#include <dcs/eesim/config/configuration.hpp>
-#include <dcs/eesim/config/data_center.hpp>
-#include <dcs/eesim/config/incremental_placement_strategy.hpp>
-#include <dcs/eesim/config/initial_placement_strategy.hpp>
-#include <dcs/eesim/config/logging.hpp>
-#include <dcs/eesim/config/metric_category.hpp>
-#include <dcs/eesim/config/migration_controller.hpp>
-#include <dcs/eesim/config/numeric_matrix.hpp>
-#include <dcs/eesim/config/numeric_multiarray.hpp>
-#include <dcs/eesim/config/optimal_solver_categories.hpp>
-#include <dcs/eesim/config/optimal_solver_ids.hpp>
-#include <dcs/eesim/config/optimal_solver_input_methods.hpp>
-#include <dcs/eesim/config/optimal_solver_proxies.hpp>
-#include <dcs/eesim/config/physical_machine.hpp>
-#include <dcs/eesim/config/physical_machine_controller.hpp>
-#include <dcs/eesim/config/physical_resource.hpp>
-#include <dcs/eesim/config/probability_distribution.hpp>
-#include <dcs/eesim/config/rng.hpp>
-#include <dcs/eesim/config/simulation.hpp>
-#include <dcs/eesim/config/statistic.hpp>
+#include <dcs/des/cloud/config/application.hpp>
+#include <dcs/des/cloud/config/application_builder.hpp>
+#include <dcs/des/cloud/config/application_controller.hpp>
+#include <dcs/des/cloud/config/application_performance_model.hpp>
+#include <dcs/des/cloud/config/application_simulation_model.hpp>
+#include <dcs/des/cloud/config/application_sla.hpp>
+#include <dcs/des/cloud/config/application_tier.hpp>
+#include <dcs/des/cloud/config/configuration.hpp>
+#include <dcs/des/cloud/config/data_center.hpp>
+#include <dcs/des/cloud/config/incremental_placement_strategy.hpp>
+#include <dcs/des/cloud/config/initial_placement_strategy.hpp>
+#include <dcs/des/cloud/config/logging.hpp>
+#include <dcs/des/cloud/config/metric_category.hpp>
+#include <dcs/des/cloud/config/migration_controller.hpp>
+#include <dcs/des/cloud/config/numeric_matrix.hpp>
+#include <dcs/des/cloud/config/numeric_multiarray.hpp>
+#include <dcs/des/cloud/config/optimal_solver_categories.hpp>
+#include <dcs/des/cloud/config/optimal_solver_ids.hpp>
+#include <dcs/des/cloud/config/optimal_solver_input_methods.hpp>
+#include <dcs/des/cloud/config/optimal_solver_proxies.hpp>
+#include <dcs/des/cloud/config/physical_machine.hpp>
+#include <dcs/des/cloud/config/physical_machine_controller.hpp>
+#include <dcs/des/cloud/config/physical_resource.hpp>
+#include <dcs/des/cloud/config/probability_distribution.hpp>
+#include <dcs/des/cloud/config/rng.hpp>
+#include <dcs/des/cloud/config/simulation.hpp>
+#include <dcs/des/cloud/config/statistic.hpp>
 #include <dcs/math/constants.hpp>
 #include <dcs/math/function/round.hpp>
 #include <dcs/string/algorithm/to_lower.hpp>
@@ -44,7 +44,7 @@
 #include <yaml-cpp/yaml.h>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 namespace detail { namespace /*<unnamed>*/ {
 
@@ -61,7 +61,7 @@ logging_category text_to_logging_category(::std::string const& str)
 		return compact_logging;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_logging_category] Unknown logging category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_logging_category] Unknown logging category.");
 }
 
 
@@ -78,7 +78,7 @@ logging_sink_category text_to_logging_sink_category(::std::string const& str)
 		return file_logging_sink;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_logging_sink_category] Unknown logging sink category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_logging_sink_category] Unknown logging sink category.");
 }
 
 
@@ -99,7 +99,7 @@ stream_logging_sink_category text_to_stream_logging_sink_category(::std::string 
 		return stdout_stream_logging_sink;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_stream_logging_sink_category] Unknown stream logging sink category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_stream_logging_sink_category] Unknown stream logging sink category.");
 }
 
 
@@ -124,7 +124,7 @@ physical_resource_category text_to_physical_resource_category(::std::string cons
 		return nic_resource;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_physical_resource_category] Unknown physical resource category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_physical_resource_category] Unknown physical resource category.");
 }
 
 
@@ -145,7 +145,7 @@ metric_category text_to_metric_category(::std::string str)
 		return utilization_metric;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::metric_category] Unknown metric category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::metric_category] Unknown metric category.");
 }
 
 
@@ -162,7 +162,7 @@ energy_model_category text_to_energy_model_category(::std::string const& str)
 		return fan2007_energy_model;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_energy_model_category] Unknown energy model category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_energy_model_category] Unknown energy model category.");
 }
 
 
@@ -195,7 +195,7 @@ rng_engine_category text_to_rng_engine_category(::std::string const& str)
 		return mt19937_rng_engine;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_rng_engine_category] Unknown random number generation engine category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_rng_engine_category] Unknown random number generation engine category.");
 }
 
 
@@ -212,7 +212,7 @@ rng_seeder_category text_to_rng_seeder_category(::std::string const& str)
 		return none_rng_seeder;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_rng_seeder_category] Unknown random number generation seeder category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_rng_seeder_category] Unknown random number generation seeder category.");
 }
 
 
@@ -225,7 +225,7 @@ output_analysis_category text_to_output_analysis_category(::std::string const& s
 		return independent_replications_output_analysis;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_output_analysis_category] Unknown simulation output analysis category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_output_analysis_category] Unknown simulation output analysis category.");
 }
 
 
@@ -242,7 +242,7 @@ statistic_category text_to_statistic_category(::std::string const& str)
 		return quantile_statistic;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_statistic_category] Unknown simulation statistic category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_statistic_category] Unknown simulation statistic category.");
 }
 
 
@@ -287,7 +287,7 @@ probability_distribution_category text_to_probability_distribution_category(::st
 		return timed_step_probability_distribution;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_probability_distribution_category] Unknown probability distribution category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_probability_distribution_category] Unknown probability distribution category.");
 }
 
 
@@ -312,7 +312,7 @@ qn_node_category text_to_qn_node_category(::std::string const& str)
 		return qn_sink_node;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_qn_node_category] Unknown queueing network node category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_qn_node_category] Unknown queueing network node category.");
 }
 
 
@@ -329,7 +329,7 @@ qn_customer_class_category text_to_qn_customer_class_category(::std::string cons
 		return qn_open_customer_class;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_qn_customer_class_category] Unknown queueing network customer class category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_qn_customer_class_category] Unknown queueing network customer class category.");
 }
 
 
@@ -346,7 +346,7 @@ qn_routing_strategy_category text_to_qn_routing_strategy_category(::std::string 
 		return qn_probabilistic_routing_strategy;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_qn_routing_strategy_category] Unknown queueing network routing strategy category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_qn_routing_strategy_category] Unknown queueing network routing strategy category.");
 }
 
 
@@ -371,7 +371,7 @@ qn_scheduling_policy_category text_to_qn_scheduling_policy_category(::std::strin
 		return qn_round_robin_scheduling_policy;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_qn_scheduling_policy_category] Unknown queueing network scheduling policy.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_qn_scheduling_policy_category] Unknown queueing network scheduling policy.");
 }
 
 
@@ -396,7 +396,7 @@ qn_service_strategy_category text_to_qn_service_strategy_category(::std::string 
 		return qn_round_robin_service_strategy;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_qn_service_strategy_category] Unknown queueing network service strategy category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_qn_service_strategy_category] Unknown queueing network service strategy category.");
 }
 
 
@@ -425,7 +425,7 @@ initial_placement_strategy_category text_to_initial_placement_strategy_category(
 		return optimal_initial_placement_strategy;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_initial_placement_strategy_category] Unknown initial VM placement strategy category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_initial_placement_strategy_category] Unknown initial VM placement strategy category.");
 }
 
 
@@ -442,7 +442,7 @@ incremental_placement_strategy_category text_to_incremental_placement_strategy_c
 		return best_fit_decreasing_incremental_placement_strategy;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_incremental_placement_strategy_category] Unknown incremental VM placement strategy category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_incremental_placement_strategy_category] Unknown incremental VM placement strategy category.");
 }
 
 
@@ -463,7 +463,7 @@ migration_controller_category text_to_migration_controller_category(::std::strin
 		return dummy_migration_controller;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_migration_controller_category Unknown migration controller category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_migration_controller_category Unknown migration controller category.");
 }
 
 
@@ -512,7 +512,7 @@ application_controller_category text_to_application_controller_category(::std::s
 		return qn_application_controller;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_application_controller_category] Unknown application controller category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_application_controller_category] Unknown application controller category.");
 }
 
 
@@ -533,7 +533,7 @@ physical_machine_controller_category text_to_physical_machine_controller_categor
 		return dummy_physical_machine_controller;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_physical_machine_controller_category] Unknown physical machine controller category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_physical_machine_controller_category] Unknown physical machine controller category.");
 }
 
 
@@ -550,7 +550,7 @@ map_probability_distribution_characterization_category text_to_map_characterizat
 		return casale2009_map_characterization;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_map_characterization_category] Unknown MAP characterization category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_map_characterization_category] Unknown MAP characterization category.");
 }
 
 
@@ -567,7 +567,7 @@ sla_model_category text_to_sla_model_category(::std::string const& str)
 		return none_sla_model;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_sla_model_category] Unknown SLA model category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_sla_model_category] Unknown SLA model category.");
 }
 
 
@@ -584,7 +584,7 @@ num_replications_detector_category text_to_num_replications_detector_category(::
 		return banks2005_num_replications_detector;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_num_replications_detector_category Unknown number of replications detector category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_num_replications_detector_category Unknown number of replications detector category.");
 }
 
 
@@ -601,7 +601,7 @@ replication_size_detector_category text_to_replication_size_detector_category(::
 		return fixed_num_obs_replication_size_detector;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_replication_size_detector_category] Unknown replication size detector category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_replication_size_detector_category] Unknown replication size detector category.");
 }
 
 
@@ -630,7 +630,7 @@ system_identification_category text_to_system_identification_category(::std::str
 //		return dummy_system_identification;
 //	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_system_identification_category] Unknown system identification category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_system_identification_category] Unknown system identification category.");
 }
 
 
@@ -647,7 +647,7 @@ application_performance_model_category text_to_application_performance_model_cat
 		return fixed_application_performance_model;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_application_performance_model_category] Unknown application performance model category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_application_performance_model_category] Unknown application performance model category.");
 }
 
 
@@ -724,7 +724,7 @@ optimal_solver_categories text_to_optimal_solver_category(::std::string const& s
 		return uco_optimal_solver_category;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_optimal_solver_category] Unknown optimal solver category.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_optimal_solver_category] Unknown optimal solver category.");
 }
 
 
@@ -813,7 +813,7 @@ optimal_solver_input_methods text_to_optimal_solver_input_method(::std::string c
 		return zimpl_optimal_solver_input_method;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_optimal_solver_input_method] Unknown optimal solver input method.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_optimal_solver_input_method] Unknown optimal solver input method.");
 }
 
 
@@ -1130,7 +1130,7 @@ optimal_solver_ids text_to_optimal_solver_id(::std::string const& str)
 		return xpressmp_optimal_solver_id;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_optimal_solver_id] Unknown optimal solver id.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_optimal_solver_id] Unknown optimal solver id.");
 }
 
 
@@ -1147,10 +1147,10 @@ optimal_solver_proxies text_to_optimal_solver_proxy(::std::string const& str)
 		return none_optimal_solver_proxy;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::config::detail::text_to_optimal_solver_proxy] Unknown optimal solver proxy.");
+	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_optimal_solver_proxy] Unknown optimal solver proxy.");
 }
 
-}} // Namespace detail::<unnamed>
+}}} // Namespace detail::<unnamed>
 
 
 template <typename T>
@@ -1629,7 +1629,7 @@ void operator>>(::YAML::Node const& node, application_performance_model_config<R
 				}
 				else
 				{
-					throw ::std::runtime_error("[dcs::eesim::config::>>] Missing both visit ratios and routing probabilities.");
+					throw ::std::runtime_error("[dcs::des::cloud::config::>>] Missing both visit ratios and routing probabilities.");
 				}
 				node["service-times"] >> conf_impl.service_times;
 				node["num-servers"] >> conf_impl.num_servers;
@@ -1951,7 +1951,7 @@ void operator>>(::YAML::Node const& node, qn_node_config<RealT,UIntT>& node_conf
 							}
 							break;
 						default:
-							throw ::std::runtime_error("[dcs::eesim::config::>>] The service strategy of a delay node can only be 'infinite-server'.");
+							throw ::std::runtime_error("[dcs::des::cloud::config::>>] The service strategy of a delay node can only be 'infinite-server'.");
 					}
 				}
 
@@ -2057,7 +2057,7 @@ void operator>>(::YAML::Node const& node, qn_node_config<RealT,UIntT>& node_conf
 					switch (node_impl_conf.service_category)
 					{
 						case qn_infinite_server_service_strategy:
-							throw ::std::runtime_error("[dcs::eesim::config::>>] The service strategy of a queue node cannot be 'infinite-server'.");
+							throw ::std::runtime_error("[dcs::des::cloud::config::>>] The service strategy of a queue node cannot be 'infinite-server'.");
 						case qn_load_independent_service_strategy:
 							{
 								typedef typename node_impl_config_type::load_independent_service_strategy_config_type service_config_impl_type;
@@ -2220,7 +2220,7 @@ void operator>>(::YAML::Node const& node, qn_customer_class_config<RealT,UIntT>&
 
 		if (node_cat != qn_source_node)
 		{
-			throw ::std::runtime_error("[dcs::eesim::config::>>] Reference nodes of an open customer class can only be source nodes.");
+			throw ::std::runtime_error("[dcs::des::cloud::config::>>] Reference nodes of an open customer class can only be source nodes.");
 		}
 	}
 	else
@@ -2231,7 +2231,7 @@ void operator>>(::YAML::Node const& node, qn_customer_class_config<RealT,UIntT>&
 
 		if (node_cat != qn_queue_node && node_cat != qn_delay_node)
 		{
-			throw ::std::runtime_error("[dcs::eesim::config::>>] Reference nodes of an closed customer class can only be queueing or delay nodes.");
+			throw ::std::runtime_error("[dcs::des::cloud::config::>>] Reference nodes of an closed customer class can only be queueing or delay nodes.");
 		}
 	}
 	ref_node["name"] >> customer_class_conf.ref_node;
@@ -2280,7 +2280,7 @@ void operator>>(::YAML::Node const& node, application_simulation_model_config<Re
 	}
 	else
 	{
-		throw ::std::runtime_error("[dcs::eesim::config::>>] Unknown application simulation model.");
+		throw ::std::runtime_error("[dcs::des::cloud::config::>>] Unknown application simulation model.");
 	}
 
 	model.category = model_category;
@@ -3008,7 +3008,7 @@ void operator>>(::YAML::Node const& node, application_controller_config<RealT,UI
 		node["sampling-time"] >> controller_conf.sampling_time;
 		if (controller_conf.sampling_time <= 0)
 		{
-			throw ::std::runtime_error("[dcs::eesim::config::>>] Invalid sampling time for application controller: non-positive value.");
+			throw ::std::runtime_error("[dcs::des::cloud::config::>>] Invalid sampling time for application controller: non-positive value.");
 		}
 	}
 	else
@@ -3256,7 +3256,7 @@ void operator>>(::YAML::Node const& node, physical_machine_controller_config<Rea
 			node["sampling-time"] >> controller_conf.sampling_time;
 			if (controller_conf.sampling_time <= 0)
 			{
-				throw ::std::runtime_error("[dcs::eesim::config::>>] Invalid sampling time for physical machine controller: non-positive value.");
+				throw ::std::runtime_error("[dcs::des::cloud::config::>>] Invalid sampling time for physical machine controller: non-positive value.");
 			}
 		}
 		else
@@ -3549,7 +3549,7 @@ void operator>>(::YAML::Node const& node, migration_controller_config<RealT>& co
 		node["sampling-time"] >> controller_conf.sampling_time;
 		if (controller_conf.sampling_time <= 0)
 		{
-			throw ::std::runtime_error("[dcs::eesim::config::>>] Invalid sampling time for migration controller: non-positive value.");
+			throw ::std::runtime_error("[dcs::des::cloud::config::>>] Invalid sampling time for migration controller: non-positive value.");
 		}
 	}
 	else
@@ -3565,11 +3565,11 @@ class yaml_reader
 	public: typedef RealT real_type;
 	public: typedef UIntT uint_type;
 	public: typedef configuration<RealT,UIntT> configuration_type;
-	private: static const ::std::string tag_dcs_eesim;
-	private: static const ::std::string tag_dcs_eesim_app;
-	private: static const ::std::string tag_dcs_eesim_matrix;
-//	private: static const ::std::string tag_dcs_eesim_perf_qn;
-//	private: static const ::std::string tag_dcs_eesim_sim_qn;
+	private: static const ::std::string tag_dcs_cloud;
+	private: static const ::std::string tag_dcs_cloud_app;
+	private: static const ::std::string tag_dcs_cloud_matrix;
+//	private: static const ::std::string tag_dcs_cloud_perf_qn;
+//	private: static const ::std::string tag_dcs_cloud_sim_qn;
 
 
 	public: yaml_reader()
@@ -3588,7 +3588,7 @@ class yaml_reader
 		::std::ifstream ifs(fname.c_str());
 		if (ifs.fail())
 		{
-			throw ::std::invalid_argument("[dcs::eesim::config::yaml_reader::read] Unable to open file '" + fname + "'.");
+			throw ::std::invalid_argument("[dcs::des::cloud::config::yaml_reader::read] Unable to open file '" + fname + "'.");
 		}
 
 		configuration_type conf;
@@ -3789,18 +3789,18 @@ class yaml_reader
 					::std::cerr << "Warning: traverse: unknown/unsupported node type" << ::std::endl;
 			}
 		}
-//		else if (!tag.compare(0, tag_dcs_eesim.length(), tag_dcs_eesim))
+//		else if (!tag.compare(0, tag_dcs_cloud.length(), tag_dcs_cloud))
 //		{
 //			::std::cout << indent << "(tag: " << node.Tag() << ")" << ::std::endl;
 //		}
-		else if (!tag.compare(tag_dcs_eesim_sim_qn_node))
+		else if (!tag.compare(tag_dcs_cloud_sim_qn_node))
 		{
 			::std::cout << indent << "(tag: " << node.Tag() << ")" << ::std::endl;
 			detail::matrix<double> m;
 			node >> m;
 			::std::cout << "Matrix: " << m << std::endl;
 		}
-		else if (!tag.compare(tag_dcs_eesim_matrix))
+		else if (!tag.compare(tag_dcs_cloud_matrix))
 		{
 			::std::cout << indent << "(tag: " << node.Tag() << ")" << ::std::endl;
 			detail::matrix<double> m;
@@ -3816,15 +3816,15 @@ class yaml_reader
 };
 
 template <typename RealT, typename UIntT>
-const ::std::string yaml_reader<RealT,UIntT>::tag_dcs_eesim = ::std::string("tag:dcs.di.unipmn.it,2010:eesim/");
+const ::std::string yaml_reader<RealT,UIntT>::tag_dcs_cloud = ::std::string("tag:dcs.di.unipmn.it,2010:cloud/");
 
 template <typename RealT, typename UIntT>
-const ::std::string yaml_reader<RealT,UIntT>::tag_dcs_eesim_app = yaml_reader::tag_dcs_eesim + ::std::string("app");
+const ::std::string yaml_reader<RealT,UIntT>::tag_dcs_cloud_app = yaml_reader::tag_dcs_cloud + ::std::string("app");
 
 template <typename RealT, typename UIntT>
-const ::std::string yaml_reader<RealT,UIntT>::tag_dcs_eesim_matrix = ::std::string("tag:dcs.di.unipmn.it,2010:eesim/matrix");
+const ::std::string yaml_reader<RealT,UIntT>::tag_dcs_cloud_matrix = ::std::string("tag:dcs.di.unipmn.it,2010:cloud/matrix");
 
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
-#endif // DCS_EESIM_CONFIG_YAML_HPP
+#endif // DCS_DES_CLOUD_CONFIG_YAML_HPP

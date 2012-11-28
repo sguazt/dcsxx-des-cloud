@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/physical_resource_category.hpp
+ * \file dcs/des/cloud/physical_resource_category.hpp
  *
  * \brief Categories for physical resources.
  *
@@ -22,11 +22,11 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_PHYSICAL_RESOURCE_CATEGORY_HPP
-#define DCS_EESIM_PHYSICAL_RESOURCE_CATEGORY_HPP
+#ifndef DCS_DES_CLOUD_PHYSICAL_RESOURCE_CATEGORY_HPP
+#define DCS_DES_CLOUD_PHYSICAL_RESOURCE_CATEGORY_HPP
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 enum physical_resource_category
 {
@@ -38,7 +38,7 @@ enum physical_resource_category
 	//network_down_resource_category,
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_PHYSICAL_RESOURCE_CATEGORY_HPP
+#endif // DCS_DES_CLOUD_PHYSICAL_RESOURCE_CATEGORY_HPP

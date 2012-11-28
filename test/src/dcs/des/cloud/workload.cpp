@@ -3,9 +3,9 @@
 #include <dcs/math/stats/distributions.hpp>
 #include <dcs/math/random/mersenne_twister.hpp>
 #include <dcs/des/replications/engine.hpp>
-#include <dcs/eesim/registry.hpp>
-#include <dcs/eesim/traits.hpp>
-#include <dcs/eesim/workload.hpp>
+#include <dcs/des/cloud/registry.hpp>
+#include <dcs/des/cloud/traits.hpp>
+#include <dcs/des/cloud/workload.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
@@ -17,14 +17,14 @@ typedef unsigned long uint_type;
 typedef long int_type;
 typedef dcs::des::replications::engine<real_type,uint_type> des_engine_type;
 typedef dcs::math::random::mt19937 random_generator_type;
-typedef dcs::eesim::traits<
+typedef dcs::des::cloud::traits<
             des_engine_type,
             random_generator_type,
             real_type,
             uint_type,
             int_type
         > traits_type;
-typedef dcs::eesim::registry<traits_type> registry_type;
+typedef dcs::des::cloud::registry<traits_type> registry_type;
 typedef dcs::shared_ptr<des_engine_type> des_engine_pointer;
 typedef dcs::shared_ptr<random_generator_type> random_generator_pointer;
 //typedef ::dcs::math::random::minstd_rand1 random_seeder_type;
@@ -123,9 +123,9 @@ void process_sys_finit(des_event_type const& evt, des_engine_context_type& ctx, 
 
 
 inline
-::dcs::eesim::timed_step_workload_model<traits_type,real_type> make_timed_step_workload()
+::dcs::des::cloud::timed_step_workload_model<traits_type,real_type> make_timed_step_workload()
 {
-	::dcs::eesim::timed_step_workload_model<traits_type,real_type> workload;
+	::dcs::des::cloud::timed_step_workload_model<traits_type,real_type> workload;
 
 	workload.add_phase(0, ::dcs::math::stats::exponential_distribution<real_type>(0.6));
 	workload.add_phase(min_replication_len/3.0, ::dcs::math::stats::exponential_distribution<real_type>(1.0));
@@ -136,7 +136,7 @@ inline
 
 
 inline
-::dcs::eesim::mmpp_interarrivals_workload_model<traits_type,real_type> make_mmpp_interarrivals_workload()
+::dcs::des::cloud::mmpp_interarrivals_workload_model<traits_type,real_type> make_mmpp_interarrivals_workload()
 {
 	const ::std::size_t n(2);
 
@@ -152,7 +152,7 @@ inline
 	p0(0) = 0;
 	p0(1) = 1;
 
-	return ::dcs::eesim::mmpp_interarrivals_workload_model<traits_type,real_type>(lambda, Q, p0);
+	return ::dcs::des::cloud::mmpp_interarrivals_workload_model<traits_type,real_type>(lambda, Q, p0);
 }
 
 

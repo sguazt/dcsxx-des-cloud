@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/config/numeric_matrix.hpp
+ * \file dcs/des/cloud/config/numeric_matrix.hpp
  *
  * \brief Numeric matrices inside configuration.
  *
@@ -30,8 +30,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DCS_EESIM_CONFIG_NUMERIC_MATRIX_HPP
-#define DCS_EESIM_CONFIG_NUMERIC_MATRIX_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_NUMERIC_MATRIX_HPP
+#define DCS_DES_CLOUD_CONFIG_NUMERIC_MATRIX_HPP
 
 
 #include <algorithm>
@@ -42,7 +42,7 @@
 #include <stdexcept>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 template <typename T>
 class numeric_matrix
@@ -70,17 +70,17 @@ class numeric_matrix
 		// pre: #rows > 0
 		DCS_ASSERT(
 			nr_ > 0,
-			throw ::std::invalid_argument("[dcs::eesim::config::numeric_matrix::ctor] Invalid number of rows.")
+			throw ::std::invalid_argument("[dcs::des::cloud::config::numeric_matrix::ctor] Invalid number of rows.")
 		);
 		// pre: #columns > 0
 		DCS_ASSERT(
 			nc_ > 0,
-			throw ::std::invalid_argument("[dcs::eesim::config::numeric_matrix::ctor] Invalid number of columns.")
+			throw ::std::invalid_argument("[dcs::des::cloud::config::numeric_matrix::ctor] Invalid number of columns.")
 		);
 		// pre: size == distance of data_last from data_first
 		DCS_ASSERT(
 			static_cast< ::std::ptrdiff_t >(nr_*nc_) == ::std::distance(data_first, data_last),
-			throw ::std::invalid_argument("[dcs::eesim::config::numeric_matrix::ctor] Unsufficient number of data.")
+			throw ::std::invalid_argument("[dcs::des::cloud::config::numeric_matrix::ctor] Unsufficient number of data.")
 		);
 
 		size_type sz = nr_*nc_;
@@ -136,12 +136,12 @@ class numeric_matrix
 		// pre: #rows > 0
 		DCS_ASSERT(
 			nr_ > 0,
-			throw ::std::invalid_argument("[dcs::eesim::config::numeric_matrix::ctor] Invalid number of rows.")
+			throw ::std::invalid_argument("[dcs::des::cloud::config::numeric_matrix::ctor] Invalid number of rows.")
 		);
 		// pre: #columns > 0
 		DCS_ASSERT(
 			nc_ > 0,
-			throw ::std::invalid_argument("[dcs::eesim::config::numeric_matrix::ctor] Invalid number of columns.")
+			throw ::std::invalid_argument("[dcs::des::cloud::config::numeric_matrix::ctor] Invalid number of columns.")
 		);
 
 		size_type sz = nr_*nc_;
@@ -209,17 +209,17 @@ class numeric_matrix
 		// pre: data != null pointer
 		DCS_ASSERT(
 			data_,
-			throw ::std::runtime_error("[dcs::des::eesim::config::numeric_matrix::()] Data not defined.")
+			throw ::std::runtime_error("[dcs::des::cloud::config::numeric_matrix::()] Data not defined.")
 		);
 		// pre: r < #rows
 		DCS_ASSERT(
 			r < nr_,
-			throw ::std::invalid_argument("[dcs::des::eesim::config::numeric_matrix::()] Row out of range.")
+			throw ::std::invalid_argument("[dcs::des::cloud::config::numeric_matrix::()] Row out of range.")
 		);
 		// pre: c < #columns
 		DCS_ASSERT(
 			c < nc_,
-			throw ::std::invalid_argument("[dcs::des::eesim::config::numeric_matrix::()] Columns out of range.")
+			throw ::std::invalid_argument("[dcs::des::cloud::config::numeric_matrix::()] Columns out of range.")
 		);
 
 		return data_[make_index(r,c)];
@@ -231,17 +231,17 @@ class numeric_matrix
 		// pre: data != null pointer
 		DCS_ASSERT(
 			data_,
-			throw ::std::runtime_error("[dcs::des::eesim::config::numeric_matrix::()] Data not defined.")
+			throw ::std::runtime_error("[dcs::des::cloud::config::numeric_matrix::()] Data not defined.")
 		);
 		// pre: r < #rows
 		DCS_ASSERT(
 			r < nr_,
-			throw ::std::invalid_argument("[dcs::des::eesim::config::numeric_matrix::()] Row out of range.")
+			throw ::std::invalid_argument("[dcs::des::cloud::config::numeric_matrix::()] Row out of range.")
 		);
 		// pre: c < #columns
 		DCS_ASSERT(
 			c < nc_,
-			throw ::std::invalid_argument("[dcs::des::eesim::config::numeric_matrix::()] Columns out of range.")
+			throw ::std::invalid_argument("[dcs::des::cloud::config::numeric_matrix::()] Columns out of range.")
 		);
 
 		return data_[make_index(r,c)];
@@ -295,7 +295,7 @@ template <typename CharT, typename CharTraitsT, typename ValueT>
 	return os;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_NUMERIC_MATRIX_HPP
+#endif // DCS_DES_CLOUD_CONFIG_NUMERIC_MATRIX_HPP

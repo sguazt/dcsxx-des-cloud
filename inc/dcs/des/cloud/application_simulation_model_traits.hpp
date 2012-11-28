@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/application_simulation_model_traits.hpp
+ * \file dcs/des/cloud/application_simulation_model_traits.hpp
  *
  * \brief Traits class for application simulation model.
  *
@@ -22,18 +22,18 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_APPLICATION_SIMULATION_MODEL_TRAITS_HPP
-#define DCS_EESIM_APPLICATION_SIMULATION_MODEL_TRAITS_HPP
+#ifndef DCS_DES_CLOUD_APPLICATION_SIMULATION_MODEL_TRAITS_HPP
+#define DCS_DES_CLOUD_APPLICATION_SIMULATION_MODEL_TRAITS_HPP
 
 
 #include <boost/any.hpp>
 #include <dcs/des/base_statistic.hpp>
 #include <dcs/des/engine_traits.hpp>
-#include <dcs/eesim/performance_measure_category.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
 #include <dcs/memory.hpp>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT, typename ModelT>
 class application_simulation_model_traits
@@ -107,7 +107,7 @@ class application_simulation_model_traits
 	public: static real_type actual_tier_busy_time(model_type const& model, foreign_identifier_type foreign_id);
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_APPLICATION_SIMULATION_MODEL_TRAITS_HPP
+#endif // DCS_DES_CLOUD_APPLICATION_SIMULATION_MODEL_TRAITS_HPP

@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/qn_application_controller.hpp
+ * \file dcs/des/cloud/qn_application_controller.hpp
  *
  * \brief Class modeling the application controller component based on queueing
  *  network models.
@@ -23,8 +23,8 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_QN_APPLICATION_CONTROLLER_HPP
-#define DCS_EESIM_QN_APPLICATION_CONTROLLER_HPP
+#ifndef DCS_DES_CLOUD_QN_APPLICATION_CONTROLLER_HPP
+#define DCS_DES_CLOUD_QN_APPLICATION_CONTROLLER_HPP
 
 
 //#include <algorithm>
@@ -40,13 +40,13 @@
 //#include <dcs/des/base_statistic.hpp>
 #include <dcs/des/engine_traits.hpp>
 //#include <dcs/des/mean_estimator.hpp>
-#include <dcs/eesim/base_application_controller.hpp>
-#include <dcs/eesim/multi_tier_application.hpp>
-#include <dcs/eesim/performance_measure_category.hpp>
-#include <dcs/eesim/physical_machine.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-//#include <dcs/eesim/registry.hpp>
-#include <dcs/eesim/utility.hpp>
+#include <dcs/des/cloud/base_application_controller.hpp>
+#include <dcs/des/cloud/multi_tier_application.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
+#include <dcs/des/cloud/physical_machine.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+//#include <dcs/des/cloud/registry.hpp>
+#include <dcs/des/cloud/utility.hpp>
 //#include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
@@ -59,7 +59,7 @@
 //
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class qn_application_controller: public base_application_controller<TraitsT>
@@ -175,7 +175,7 @@ DCS_DEBUG_TRACE("Applying control");//XXX
 					physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
 
 					real_type share;
-					share = ::dcs::eesim::scale_resource_share(
+					share = ::dcs::des::cloud::scale_resource_share(
 							// Reference resource capacity and threshold
 							app.reference_resource(res_category).capacity(),
 							app.reference_resource(res_category).utilization_threshold(),
@@ -212,7 +212,7 @@ DCS_DEBUG_TRACE("Control applied");//XXX
 
 				// Actual to Reference resource scaling factor
 //				real_type scale_factor;
-//				scale_factor = ::dcs::eesim::resource_scaling_factor(
+//				scale_factor = ::dcs::des::cloud::resource_scaling_factor(
 //						pm.resource(res_category)->capacity(),
 //						pm.resource(res_category)->utilization_threshold(),
 //						app.reference_resource(res_category).capacity(),
@@ -264,7 +264,7 @@ DCS_DEBUG_TRACE("Tier Busy Time: " << app_sim_model.actual_tier_busy_time(s));//
 //
 //									// Compute the service share as the utilization needed in the actual machine.
 //
-//									new_share = ::dcs::eesim::scale_resource_share(
+//									new_share = ::dcs::des::cloud::scale_resource_share(
 //													app.reference_resource(res_category).capacity(),
 //													app.reference_resource(res_category).utilization_threshold(),
 //													pm.resource(res_category)->capacity(),
@@ -296,7 +296,7 @@ DCS_DEBUG_TRACE("Wanted U: " << want_u);//XXX
 
 								// Compute the service share as the utilization needed in the actual machine.
 
-								new_share = ::dcs::eesim::scale_resource_share(
+								new_share = ::dcs::des::cloud::scale_resource_share(
 												app.reference_resource(res_category).capacity(),
 												//app.reference_resource(res_category).utilization_threshold(),
 												pm.resource(res_category)->capacity(),
@@ -307,7 +307,7 @@ DCS_DEBUG_TRACE("New Share: " << new_share);//XXX
 							}
 							break;
 						default:
-							throw ::std::runtime_error("[dcs::eesim::qn_application_controller::do_process_control] Currently only the response-time statistic is handled.");
+							throw ::std::runtime_error("[dcs::des::cloud::qn_application_controller::do_process_control] Currently only the response-time statistic is handled.");
 					}
 
 					new_share = ::std::max(new_share, default_min_share_);
@@ -327,7 +327,7 @@ DCS_DEBUG_TRACE("Assigning new wanted share: VM: " << ptr_vm->name() << " (" << 
 template <typename TraitsT>
 const typename qn_application_controller<TraitsT>::real_type qn_application_controller<TraitsT>::default_min_share_ = 0.01;
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_QN_APPLICATION_CONTROLLER_HPP
+#endif // DCS_DES_CLOUD_QN_APPLICATION_CONTROLLER_HPP

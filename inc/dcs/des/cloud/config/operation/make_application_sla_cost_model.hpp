@@ -1,16 +1,16 @@
-#ifndef DCS_EESIM_CONFIG_OPERATION_MAKE_APPLICATION_SLA_COST_MODEL_HPP
-#define DCS_EESIM_CONFIG_OPERATION_MAKE_APPLICATION_SLA_COST_MODEL_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_APPLICATION_SLA_COST_MODEL_HPP
+#define DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_APPLICATION_SLA_COST_MODEL_HPP
 
 
 #include <boost/variant.hpp>
-#include <dcs/eesim/config/application_sla.hpp>
-#include <dcs/eesim/config/operation/make_performance_measure_category.hpp>
-#include <dcs/eesim/performance_measure_category.hpp>
+#include <dcs/des/cloud/config/application_sla.hpp>
+#include <dcs/des/cloud/config/operation/make_performance_measure_category.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
 #include <dcs/perfeval/sla.hpp>
 #include <stdexcept>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 template <typename ValueT>
 struct response_time_sla_checker
@@ -79,13 +79,13 @@ template <typename ValueT>
 			break;
 	}
 
-	throw ::std::runtime_error("[dcs::eesim::detail::make_performance_measure_checker] Unable to create a SLA checker for performance measure category.");
+	throw ::std::runtime_error("[dcs::des::cloud::detail::make_performance_measure_checker] Unable to create a SLA checker for performance measure category.");
 }
 
 
 template <typename TraitsT, typename RealT>
 ::dcs::perfeval::sla::any_cost_model<
-	::dcs::eesim::performance_measure_category,
+	::dcs::des::cloud::performance_measure_category,
 	typename TraitsT::real_type,
 	typename TraitsT::real_type
 > make_application_sla_cost_model(application_sla_config<RealT> const& sla_conf)
@@ -94,7 +94,7 @@ template <typename TraitsT, typename RealT>
 	typedef application_sla_config<RealT> sla_config_type;
 	typedef typename traits_type::real_type target_real_type;
 	typedef ::dcs::perfeval::sla::any_cost_model<
-				::dcs::eesim::performance_measure_category,
+				::dcs::des::cloud::performance_measure_category,
 				target_real_type,
 				target_real_type> sla_type;
 	typedef typename sla_config_type::metric_container metric_container;
@@ -107,7 +107,7 @@ template <typename TraitsT, typename RealT>
 		case step_sla_model:
 			{
 				typedef ::dcs::perfeval::sla::step_cost_model<
-								::dcs::eesim::performance_measure_category,
+								::dcs::des::cloud::performance_measure_category,
 								target_real_type,
 								target_real_type> sla_impl_type;
 				typedef typename sla_config_type::step_sla_model_config_type sla_config_impl_type;
@@ -136,7 +136,7 @@ template <typename TraitsT, typename RealT>
 		case none_sla_model:
 			{
 				typedef ::dcs::perfeval::sla::always_satisfied_cost_model<
-								::dcs::eesim::performance_measure_category,
+								::dcs::des::cloud::performance_measure_category,
 								target_real_type,
 								target_real_type> sla_impl_type;
 				typedef typename sla_config_type::none_sla_model_config_type sla_config_impl_type;
@@ -151,7 +151,7 @@ template <typename TraitsT, typename RealT>
 	return sla;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_OPERATION_MAKE_APPLICATION_SLA_COST_MODEL_HPP
+#endif // DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_APPLICATION_SLA_COST_MODEL_HPP

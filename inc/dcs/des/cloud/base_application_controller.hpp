@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/base_application_controller.hpp
+ * \file dcs/des/cloud/base_application_controller.hpp
  *
  * \brief Base class for application controllers.
  *
@@ -22,23 +22,23 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_BASE_APPLICATION_CONTROLLER_HPP
-#define DCS_EESIM_BASE_APPLICATION_CONTROLLER_HPP
+#ifndef DCS_DES_CLOUD_BASE_APPLICATION_CONTROLLER_HPP
+#define DCS_DES_CLOUD_BASE_APPLICATION_CONTROLLER_HPP
 
 
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/entity.hpp>
-#include <dcs/eesim/multi_tier_application.hpp>
-#include <dcs/eesim/registry.hpp>
+#include <dcs/des/cloud/multi_tier_application.hpp>
+#include <dcs/des/cloud/registry.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
 #include <string>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class base_application_controller: public ::dcs::des::entity
@@ -372,7 +372,7 @@ class base_application_controller: public ::dcs::des::entity
 template <typename TraitsT>
 const ::std::string base_application_controller<TraitsT>::control_event_source_name("Control Application");
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_BASE_APPLICATION_CONTROLLER_HPP
+#endif // DCS_DES_CLOUD_BASE_APPLICATION_CONTROLLER_HPP

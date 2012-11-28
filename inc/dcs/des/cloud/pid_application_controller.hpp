@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/application_controller.hpp
+ * \file dcs/des/cloud/application_controller.hpp
  *
  * \brief Class modeling the application controller component.
  *
@@ -22,8 +22,8 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_PID_APPLICATION_CONTROLLER_HPP
-#define DCS_EESIM_PID_APPLICATION_CONTROLLER_HPP
+#ifndef DCS_DES_CLOUD_PID_APPLICATION_CONTROLLER_HPP
+#define DCS_DES_CLOUD_PID_APPLICATION_CONTROLLER_HPP
 
 
 #include <boost/numeric/ublas/matrix.hpp>
@@ -31,9 +31,9 @@
 #include <boost/numeric/ublas/vector_expression.hpp>
 #include <boost/numeric/ublas/matrix_expression.hpp>
 #include <dcs/control/design/pid_controller.hpp>
-#include <dcs/eesim/base_application_statistics_retriever.hpp>
-#include <dcs/eesim/multi_tier_application.hpp>
-#include <dcs/eesim/registry.hpp>
+#include <dcs/des/cloud/base_application_statistics_retriever.hpp>
+#include <dcs/des/cloud/multi_tier_application.hpp>
+#include <dcs/des/cloud/registry.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
@@ -42,7 +42,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class pid_application_controller
@@ -219,7 +219,7 @@ const typename TraitsT::real_type pid_application_controller<TraitsT>::default_K
 template <typename TraitsT>
 const typename TraitsT::real_type pid_application_controller<TraitsT>::default_sample_time = 1;
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_PID_APPLICATION_CONTROLLER_HPP
+#endif // DCS_DES_CLOUD_PID_APPLICATION_CONTROLLER_HPP

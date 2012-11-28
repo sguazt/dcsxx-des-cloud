@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/config/initial_placement_strategy.hpp
+ * \file dcs/des/cloud/config/initial_placement_strategy.hpp
  *
  * \brief Configuration for initial placement strategies.
  *
@@ -30,20 +30,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DCS_EESIM_CONFIG_INITIAL_PLACEMENT_STRATEGY_HPP
-#define DCS_EESIM_CONFIG_INITIAL_PLACEMENT_STRATEGY_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_INITIAL_PLACEMENT_STRATEGY_HPP
+#define DCS_DES_CLOUD_CONFIG_INITIAL_PLACEMENT_STRATEGY_HPP
 
 
 #include <boost/variant.hpp>
-#include <dcs/eesim/optimal_solver_categories.hpp>
-#include <dcs/eesim/optimal_solver_ids.hpp>
-#include <dcs/eesim/optimal_solver_input_methods.hpp>
-#include <dcs/eesim/optimal_solver_proxies.hpp>
+#include <dcs/des/cloud/optimal_solver_categories.hpp>
+#include <dcs/des/cloud/optimal_solver_ids.hpp>
+#include <dcs/des/cloud/optimal_solver_input_methods.hpp>
+#include <dcs/des/cloud/optimal_solver_proxies.hpp>
 #include <dcs/macro.hpp>
 #include <iosfwd>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 enum initial_placement_strategy_category
 {
@@ -204,7 +204,7 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 	return os;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_INITIAL_PLACEMENT_STRATEGY_HPP
+#endif // DCS_DES_CLOUD_CONFIG_INITIAL_PLACEMENT_STRATEGY_HPP

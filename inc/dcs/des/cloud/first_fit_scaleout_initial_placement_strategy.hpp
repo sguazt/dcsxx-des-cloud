@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/first_fit_scaleout_initial_placement_strategy.hpp
+ * \file dcs/des/cloud/first_fit_scaleout_initial_placement_strategy.hpp
  *
  * \brief Initial VM placement based a FIRST-FIT scale-out strategy.
  *
@@ -22,24 +22,24 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_FIRST_FIT_SCALEOUT_INITIAL_PLACEMENT_STRATEGY_HPP
-#define DCS_EESIM_FIRST_FIT_SCALEOUT_INITIAL_PLACEMENT_STRATEGY_HPP
+#ifndef DCS_DES_CLOUD_FIRST_FIT_SCALEOUT_INITIAL_PLACEMENT_STRATEGY_HPP
+#define DCS_DES_CLOUD_FIRST_FIT_SCALEOUT_INITIAL_PLACEMENT_STRATEGY_HPP
 
 
 #include <cstddef>
 #include <dcs/debug.hpp>
-#include <dcs/eesim/base_initial_placement_strategy.hpp>
-#include <dcs/eesim/data_center.hpp>
-#include <dcs/eesim/performance_measure_category.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-#include <dcs/eesim/utility.hpp>
-#include <dcs/eesim/virtual_machines_placement.hpp>
+#include <dcs/des/cloud/base_initial_placement_strategy.hpp>
+#include <dcs/des/cloud/data_center.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+#include <dcs/des/cloud/utility.hpp>
+#include <dcs/des/cloud/virtual_machines_placement.hpp>
 #include <map>
 #include <set>
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 /// Assign at most one virtual machine to each physical machine.
 template <typename TraitsT>
@@ -90,7 +90,7 @@ DCS_DEBUG_TRACE("#VMs: " << nvms);//XXX
 
 		if (nvms > npms)
 		{
-			throw ::std::logic_error("[dcs::eesim::first_fit_scaleout_initial_placement_strategy] Too many virtual machines.");
+			throw ::std::logic_error("[dcs::des::cloud::first_fit_scaleout_initial_placement_strategy] Too many virtual machines.");
 		}
 
 		virtual_machines_placement<traits_type> deployment;
@@ -227,7 +227,7 @@ DCS_DEBUG_TRACE("END Initial Placement ==> " << deployment);///XXX
 	}
 }; // first_fit_scaleout_initial_placement_strategy
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_FIRST_FIT_SCALEOUT_INITIAL_PLACEMENT_STRATEGY_HPP
+#endif // DCS_DES_CLOUD_FIRST_FIT_SCALEOUT_INITIAL_PLACEMENT_STRATEGY_HPP

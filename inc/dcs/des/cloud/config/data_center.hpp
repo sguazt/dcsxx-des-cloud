@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/config/data_center.hpp
+ * \file dcs/des/cloud/config/data_center.hpp
  *
  * \brief Configuration for data centers.
  *
@@ -30,22 +30,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DCS_EESIM_CONFIG_DATA_CENTER_CONFIG_HPP
-#define DCS_EESIM_CONFIG_DATA_CENTER_CONFIG_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_DATA_CENTER_CONFIG_HPP
+#define DCS_DES_CLOUD_CONFIG_DATA_CENTER_CONFIG_HPP
 
 
 #include <algorithm>
-#include <dcs/eesim/config/application.hpp>
-#include <dcs/eesim/config/initial_placement_strategy.hpp>
-#include <dcs/eesim/config/incremental_placement_strategy.hpp>
-#include <dcs/eesim/config/migration_controller.hpp>
-#include <dcs/eesim/config/physical_machine.hpp>
+#include <dcs/des/cloud/config/application.hpp>
+#include <dcs/des/cloud/config/initial_placement_strategy.hpp>
+#include <dcs/des/cloud/config/incremental_placement_strategy.hpp>
+#include <dcs/des/cloud/config/migration_controller.hpp>
+#include <dcs/des/cloud/config/physical_machine.hpp>
 #include <iosfwd>
 #include <iterator>
 #include <vector>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 template <typename RealT, typename UIntT>
 class data_center_config
@@ -160,7 +160,7 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 	return os;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_DATA_CENTER_CONFIG_HPP
+#endif // DCS_DES_CLOUD_CONFIG_DATA_CENTER_CONFIG_HPP

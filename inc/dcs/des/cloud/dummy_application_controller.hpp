@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/dummy_application_controller.hpp
+ * \file dcs/des/cloud/dummy_application_controller.hpp
  *
  * \brief Class modeling the application controller component using an LQR
  *  controller.
@@ -23,16 +23,16 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DUMMY_APPLICATION_CONTROLLER_HPP
-#define DCS_EESIM_DUMMY_APPLICATION_CONTROLLER_HPP
+#ifndef DCS_DES_CLOUD_DUMMY_APPLICATION_CONTROLLER_HPP
+#define DCS_DES_CLOUD_DUMMY_APPLICATION_CONTROLLER_HPP
 
 
-#include <dcs/eesim/base_application_controller.hpp>
+#include <dcs/des/cloud/base_application_controller.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class dummy_application_controller: public base_application_controller<TraitsT>
@@ -69,7 +69,7 @@ class dummy_application_controller: public base_application_controller<TraitsT>
 	}
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_DUMMY_APPLICATION_CONTROLLER_HPP
+#endif // DCS_DES_CLOUD_DUMMY_APPLICATION_CONTROLLER_HPP

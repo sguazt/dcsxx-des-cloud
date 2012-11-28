@@ -26,15 +26,15 @@
  */
 
 #include <algorithm>
-//#if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
+//#if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
 //# include <boost/accumulators/accumulators.hpp>
 //# include <boost/accumulators/statistics/stats.hpp>
-//# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN)
+//# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN)
 //#  include <boost/accumulators/statistics/mean.hpp>
-//# elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_WEIGHTED_MEAN)
+//# elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_WEIGHTED_MEAN)
 //#  include <boost/accumulators/statistics/weighted_mean.hpp>
-//# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
-//#endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+//# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
+//#endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublasx/operation/size.hpp>
 #include <boost/variant.hpp>
@@ -45,23 +45,23 @@
 #include <dcs/des/engine.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/replications/engine.hpp>
-#include <dcs/eesim/config/configuration.hpp>
-#include <dcs/eesim/config/operation/make_application.hpp>
-//#include <dcs/eesim/config/operation/make_data_center.hpp>
-#include <dcs/eesim/config/operation/make_des_engine.hpp>
-#include <dcs/eesim/config/operation/make_random_number_generator.hpp>
-#include <dcs/eesim/config/operation/read_file.hpp>
-#include <dcs/eesim/config/yaml.hpp>
-#include <dcs/eesim/data_center.hpp>
-#include <dcs/eesim/data_center_manager.hpp>
-#include <dcs/eesim/performance_measure_category.hpp>
-#include <dcs/eesim/physical_machine.hpp>
-#include <dcs/eesim/physical_resource.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-//#include <dcs/eesim/performance_measure_category.hpp>
-#include <dcs/eesim/registry.hpp>
-#include <dcs/eesim/traits.hpp>
-#include <dcs/eesim/user_request.hpp>
+#include <dcs/des/cloud/config/configuration.hpp>
+#include <dcs/des/cloud/config/operation/make_application.hpp>
+//#include <dcs/des/cloud/config/operation/make_data_center.hpp>
+#include <dcs/des/cloud/config/operation/make_des_engine.hpp>
+#include <dcs/des/cloud/config/operation/make_random_number_generator.hpp>
+#include <dcs/des/cloud/config/operation/read_file.hpp>
+#include <dcs/des/cloud/config/yaml.hpp>
+#include <dcs/des/cloud/data_center.hpp>
+#include <dcs/des/cloud/data_center_manager.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
+#include <dcs/des/cloud/physical_machine.hpp>
+#include <dcs/des/cloud/physical_resource.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+//#include <dcs/des/cloud/performance_measure_category.hpp>
+#include <dcs/des/cloud/registry.hpp>
+#include <dcs/des/cloud/traits.hpp>
+#include <dcs/des/cloud/user_request.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/math/constants.hpp>
@@ -149,21 +149,21 @@ typedef long int_type;
 typedef std::size_t size_type;
 typedef dcs::des::engine<real_type> des_engine_type;
 typedef dcs::math::random::base_generator<uint_type> random_generator_type;
-typedef dcs::eesim::traits<
+typedef dcs::des::cloud::traits<
 			des_engine_type,
 			random_generator_type,
-			dcs::eesim::config::configuration<real_type,uint_type>,
+			dcs::des::cloud::config::configuration<real_type,uint_type>,
 			real_type,
 			uint_type,
 			int_type
 		> traits_type;
 typedef dcs::shared_ptr<des_engine_type> des_engine_pointer;
 typedef dcs::shared_ptr<random_generator_type> random_generator_pointer;
-typedef dcs::eesim::registry<traits_type> registry_type;
-typedef dcs::eesim::multi_tier_application<traits_type> application_type;
+typedef dcs::des::cloud::registry<traits_type> registry_type;
+typedef dcs::des::cloud::multi_tier_application<traits_type> application_type;
 typedef dcs::shared_ptr<application_type> application_pointer;
-typedef dcs::eesim::user_request<traits_type> user_request_type;
-typedef dcs::eesim::virtual_machine<traits_type> virtual_machine_type;
+typedef dcs::des::cloud::user_request<traits_type> user_request_type;
+typedef dcs::des::cloud::virtual_machine<traits_type> virtual_machine_type;
 typedef dcs::shared_ptr<virtual_machine_type> virtual_machine_pointer;
 
 
@@ -524,7 +524,7 @@ class gaussian_signal_generator: public base_signal_generator<ValueT>
  
 	private: vector_type do_generate()
 	{
-		random_generator_pointer ptr_rng(::dcs::eesim::registry<traits_type>::instance().uniform_random_generator_ptr());
+		random_generator_pointer ptr_rng(::dcs::des::cloud::registry<traits_type>::instance().uniform_random_generator_ptr());
 
 		::std::size_t n(distrs_.size());
 		vector_type u(n);
@@ -790,7 +790,7 @@ class uniform_signal_generator: public base_signal_generator<ValueT>
  
 	private: vector_type do_generate()
 	{
-		random_generator_pointer ptr_rng(::dcs::eesim::registry<traits_type>::instance().uniform_random_generator_ptr());
+		random_generator_pointer ptr_rng(::dcs::des::cloud::registry<traits_type>::instance().uniform_random_generator_ptr());
 
 		::std::size_t n(distrs_.size());
 		vector_type u(n);
@@ -1146,7 +1146,7 @@ struct none_share_aggregation_info
 {
 	typedef TraitsT traits_type;
 	typedef typename traits_type::real_type real_type;
-	typedef ::dcs::eesim::physical_resource_category resource_category_type;
+	typedef ::dcs::des::cloud::physical_resource_category resource_category_type;
 	typedef ::std::map<resource_category_type,real_type> resource_share_map; // category => share
 
 	resource_share_map share_map;
@@ -1157,7 +1157,7 @@ struct mean_share_aggregation_info
 {
 	typedef TraitsT traits_type;
 	typedef typename traits_type::real_type real_type;
-	typedef ::dcs::eesim::physical_resource_category resource_category_type;
+	typedef ::dcs::des::cloud::physical_resource_category resource_category_type;
 	typedef detail::mean_statistic<real_type> share_statistic_type;
 	typedef ::std::map<resource_category_type,share_statistic_type> resource_share_stat_map; // category => share-stat
 
@@ -1169,7 +1169,7 @@ struct weighted_mean_share_aggregation_info
 {
 	typedef TraitsT traits_type;
 	typedef typename traits_type::real_type real_type;
-	typedef ::dcs::eesim::physical_resource_category resource_category_type;
+	typedef ::dcs::des::cloud::physical_resource_category resource_category_type;
 	typedef detail::weighted_mean_statistic<real_type> share_statistic_type;
 	typedef ::std::map<resource_category_type,real_type> resource_share_map; // category => share
 	typedef ::std::map<resource_category_type,share_statistic_type> resource_share_stat_map; // category => share-stat
@@ -1213,7 +1213,7 @@ struct sysid_siso_request_info: public sysid_base_request_info<TraitsT>
 //{
 //	typedef TraitsT traits_type;
 //	typedef typename traits_type::real_type real_type;
-//	typedef ::dcs::eesim::physical_resource_category resource_category_type;
+//	typedef ::dcs::des::cloud::physical_resource_category resource_category_type;
 //	typedef ::std::map<resource_category_type,real_type> resource_share_map; // category => share
 //	typedef resource_share_map resource_share_stat_map;
 //
@@ -1226,34 +1226,34 @@ struct sysid_siso_request_info: public sysid_base_request_info<TraitsT>
 //{
 //	typedef TraitsT traits_type;
 //	typedef typename traits_type::real_type real_type;
-//	typedef ::dcs::eesim::physical_resource_category resource_category_type;
+//	typedef ::dcs::des::cloud::physical_resource_category resource_category_type;
 //	typedef ::std::map<resource_category_type,real_type> resource_share_map; // category => share
-//#if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+//#if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 //	typedef resource_share_map resource_share_stat_map;
-//#else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-//# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+//#else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
+//# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
 //	typedef detail::mean_statistic<real_type> share_statistic_type;
-//# elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+//# elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 //	typedef typename traits_type::uint_type uint_type;
 //	typedef detail::weighted_mean_statistic<real_type> share_statistic_type;
-//# else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
+//# else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
 //#  error "Aggregate share type not yet implemented!"
-//# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+//# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 //	typedef ::std::map<resource_category_type,share_statistic_type> resource_share_stat_map;
-//#endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+//#endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 //
 //	resource_share_stat_map share_map;
-//#if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
-//# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+//#if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
+//# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
 ////	uint_type share_count;
-//# elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+//# elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 //	real_type last_share_change_time;
 ////	real_type weigths_sum;
 //	resource_share_map old_share_map;
-//# else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
+//# else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
 //#  error "Aggregate share type not yet implemented!"
-//# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
-//#endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+//# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
+//#endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 //}; // sysid_siso_request_info
 
 
@@ -1292,34 +1292,34 @@ struct sysid_miso_request_info: public sysid_base_request_info<TraitsT>
 //	typedef TraitsT traits_type;
 //	typedef typename traits_type::uint_type uint_type;
 //	typedef typename traits_type::real_type real_type;
-//	typedef ::dcs::eesim::physical_resource_category resource_category_type;
+//	typedef ::dcs::des::cloud::physical_resource_category resource_category_type;
 //	typedef ::std::map<resource_category_type, ::std::map<uint_type,real_type> > resource_share_map; // category => {tier_id => share}
-//#if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+//#if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 //	typedef resource_share_map resource_share_stat_map;
-//#else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-//# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+//#else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
+//# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
 //	typedef detail::mean_statistic<real_type> share_statistic_type;
-//# elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+//# elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 //	typedef detail::weighted_mean_statistic<real_type> share_statistic_type;
-//# else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+//# else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 //#  error "Aggregate share type not yet implemented!"
-//# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+//# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 //	typedef ::std::map<resource_category_type, ::std::map<uint_type,share_statistic_type> > resource_share_stat_map;
-//#endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+//#endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 //
 ////	resource_share_map share_map;//OK
 //	resource_share_stat_map share_map;
-//#if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
-//# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+//#if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
+//# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
 ////	uint_type share_count;
-//# elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+//# elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 //	real_type last_share_change_time;
 ////	real_type weigths_sum;
 //	resource_share_map old_share_map;
-//# else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
+//# else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
 //#  error "Aggregate share type not yet implemented!"
-//# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
-//#endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+//# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
+//#endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 //}; // sysid_miso_request_info
 
 
@@ -1370,10 +1370,10 @@ class base_system_identificator
 	private: typedef base_system_identificator<TraitsT> self_type;
 	public: typedef TraitsT traits_type;
 	public: typedef typename traits_type::real_type real_type;
-//	public: typedef dcs::eesim::multi_tier_application<traits_type> application_type;
-	public: typedef ::dcs::eesim::physical_machine<traits_type> physical_machine_type;
+//	public: typedef dcs::des::cloud::multi_tier_application<traits_type> application_type;
+	public: typedef ::dcs::des::cloud::physical_machine<traits_type> physical_machine_type;
 	public: typedef ::dcs::shared_ptr<physical_machine_type> physical_machine_pointer;
-	public: typedef ::dcs::eesim::physical_resource<traits_type> physical_resource_type;
+	public: typedef ::dcs::des::cloud::physical_resource<traits_type> physical_resource_type;
 	public: typedef ::dcs::shared_ptr<physical_resource_type> physical_resource_pointer;
 	public: typedef ::application_type::reference_physical_resource_type reference_resource_type;
 	public: typedef detail::base_filter<real_type> filter_type;
@@ -1386,7 +1386,7 @@ class base_system_identificator
 	protected: typedef ::dcs::shared_ptr<signal_generator_type> signal_generator_pointer;
 	private: typedef detail::sysid_state<traits_type> sysid_state_type;
 	protected: typedef ::dcs::shared_ptr<sysid_state_type> sysid_state_pointer;
-	protected: typedef ::dcs::eesim::physical_resource_category physical_resource_category_type;
+	protected: typedef ::dcs::des::cloud::physical_resource_category physical_resource_category_type;
 	protected: typedef ::std::vector<real_type> tier_share_container; // tier => share
 	protected: typedef ::std::map<physical_resource_category_type, tier_share_container> resource_tier_share_map; // category => {tier => share}
 
@@ -1431,7 +1431,7 @@ class base_system_identificator
 		ptr_sysid_state->max_num_obs = max_num_obs;
 		ptr_sysid_state->out_filter_info = out_filter_info;
 
-		des_engine_pointer ptr_des_eng(::dcs::eesim::registry<traits_type>::instance().des_engine_ptr());
+		des_engine_pointer ptr_des_eng(::dcs::des::cloud::registry<traits_type>::instance().des_engine_ptr());
 
 		ptr_des_eng->system_initialization_event_source().connect(
 				::dcs::functional::bind(
@@ -1716,7 +1716,7 @@ class base_system_identificator
 
 	private: void schedule_excite_system_event()
 	{
-		des_engine_pointer ptr_des_eng(::dcs::eesim::registry<traits_type>::instance().des_engine_ptr());
+		des_engine_pointer ptr_des_eng(::dcs::des::cloud::registry<traits_type>::instance().des_engine_ptr());
 		ptr_des_eng->schedule_event(ptr_excite_sys_evt_src_, ptr_des_eng->simulated_time()+excite_ts_);
 	}
 
@@ -1768,7 +1768,7 @@ class base_system_identificator
 
 //		if (ptr_sysid_state->num_deps == ptr_sysid_state->max_num_deps)
 //		{
-//			::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
+//			::dcs::des::cloud::registry<traits_type>::instance().des_engine_ptr()->stop_now();
 //		}
 
 		DCS_DEBUG_TRACE("END Process REQUEST-DEPARTURE (Clock: " << ctx.simulated_time() << ")");
@@ -2005,8 +2005,8 @@ class noagg_measure_noagg_share_siso_system_identificator: public base_system_id
 
 		// - Compute the application-level share
 
-		//typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
-		typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
+		//typedef ::std::map< ::dcs::des::cloud::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
+		typedef ::std::map< ::dcs::des::cloud::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
 
 		uint_type num_tiers(ptr_app->num_tiers());
 		resource_share_map app_share_map;
@@ -2095,7 +2095,7 @@ class noagg_measure_noagg_share_siso_system_identificator: public base_system_id
 
 		if (ptr_sysid_state->num_obs == ptr_sysid_state->max_num_obs)
 		{
-			::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
+			::dcs::des::cloud::registry<traits_type>::instance().des_engine_ptr()->stop_now();
 		}
 	}
 
@@ -2315,8 +2315,8 @@ class noagg_measure_agg_mean_share_siso_system_identificator: public base_system
 
 		// - Compute the application-level share
 
-//		typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
-		typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
+//		typedef ::std::map< ::dcs::des::cloud::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
+		typedef ::std::map< ::dcs::des::cloud::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
 
 		uint_type num_tiers(ptr_app->num_tiers());
 		resource_share_map app_share_map;
@@ -2405,7 +2405,7 @@ class noagg_measure_agg_mean_share_siso_system_identificator: public base_system
 
 		if (ptr_sysid_state->num_obs == ptr_sysid_state->max_num_obs)
 		{
-			::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
+			::dcs::des::cloud::registry<traits_type>::instance().des_engine_ptr()->stop_now();
 		}
 	}
 
@@ -2687,8 +2687,8 @@ class noagg_measure_agg_wmean_share_siso_system_identificator: public base_syste
 
 		// - Compute the application-level share
 
-//		typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
-		typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
+//		typedef ::std::map< ::dcs::des::cloud::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
+		typedef ::std::map< ::dcs::des::cloud::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
 
 		uint_type num_tiers(ptr_app->num_tiers());
 		resource_share_map app_share_map;
@@ -2777,7 +2777,7 @@ class noagg_measure_agg_wmean_share_siso_system_identificator: public base_syste
 
 		if (ptr_sysid_state->num_obs == ptr_sysid_state->max_num_obs)
 		{
-			::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
+			::dcs::des::cloud::registry<traits_type>::instance().des_engine_ptr()->stop_now();
 		}
 	}
 
@@ -3190,8 +3190,8 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 		print_data(ctx, ptr_app);
 /*
 
-		//typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
-		typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
+		//typedef ::std::map< ::dcs::des::cloud::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
+		typedef ::std::map< ::dcs::des::cloud::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
 
 		//TODO: make-me a class member parameterizable by the user.
 		const real_type smooth_factor(1.0);
@@ -3277,15 +3277,15 @@ class agg_mean_measure_noagg_share_siso_system_identificator: public base_system
 
 		if (ptr_sysid_state->num_obs == ptr_sysid_state->max_num_obs)
 		{
-			::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
+			::dcs::des::cloud::registry<traits_type>::instance().des_engine_ptr()->stop_now();
 		}
 	}
 
 
 	private: void print_data(des_engine_context_type const& ctx, application_pointer const& ptr_app)
 	{
-		//typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
-		typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
+		//typedef ::std::map< ::dcs::des::cloud::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
+		typedef ::std::map< ::dcs::des::cloud::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
 		typedef typename resource_share_map::const_iterator resource_share_iterator;
 
 		uint_type num_tiers(ptr_app->num_tiers());
@@ -3405,7 +3405,7 @@ class agg_mean_measure_agg_mean_share_siso_system_identificator: public base_sys
 	private: typedef ::std::vector<measure_statistic_type> measure_statistic_container;
 	private: typedef ::std::vector<real_type> measure_container;
 	private: typedef detail::mean_statistic<real_type> share_statistic_type;
-	private: typedef ::dcs::eesim::physical_resource_category resource_category_type;
+	private: typedef ::dcs::des::cloud::physical_resource_category resource_category_type;
 	private: typedef ::std::map<resource_category_type,share_statistic_type> share_statistic_map;
 	private: typedef ::std::vector<share_statistic_map> share_statistic_container;
 
@@ -3491,8 +3491,8 @@ class agg_mean_measure_agg_mean_share_siso_system_identificator: public base_sys
 
 		// - Compute the application-level share
 
-		//typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
-		typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
+		//typedef ::std::map< ::dcs::des::cloud::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
+		typedef ::std::map< ::dcs::des::cloud::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
 		typedef typename resource_share_map::const_iterator resource_share_iterator;
 
 		resource_share_map app_share_map;
@@ -3711,7 +3711,7 @@ class agg_mean_measure_agg_mean_share_siso_system_identificator: public base_sys
 
 		if (ptr_sysid_state->num_obs == ptr_sysid_state->max_num_obs)
 		{
-			::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
+			::dcs::des::cloud::registry<traits_type>::instance().des_engine_ptr()->stop_now();
 		}
 	}
 
@@ -3762,7 +3762,7 @@ class agg_mean_measure_agg_wmean_share_siso_system_identificator: public base_sy
 	private: typedef ::std::vector<measure_statistic_type> measure_statistic_container;
 	private: typedef ::std::vector<real_type> measure_container;
 	private: typedef detail::weighted_mean_statistic<real_type> share_statistic_type;
-	private: typedef ::dcs::eesim::physical_resource_category resource_category_type;
+	private: typedef ::dcs::des::cloud::physical_resource_category resource_category_type;
 	private: typedef ::std::map<resource_category_type,share_statistic_type> share_statistic_map;
 	private: typedef ::std::vector<share_statistic_map> share_statistic_container;
 
@@ -3848,8 +3848,8 @@ class agg_mean_measure_agg_wmean_share_siso_system_identificator: public base_sy
 
 //		// - Compute the application-level share
 //
-////	typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
-//		typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
+////	typedef ::std::map< ::dcs::des::cloud::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
+//		typedef ::std::map< ::dcs::des::cloud::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
 //		typedef typename resource_share_map::const_iterator resource_share_iterator;
 //
 //		resource_share_map app_share_map;
@@ -4053,8 +4053,8 @@ class agg_mean_measure_agg_wmean_share_siso_system_identificator: public base_sy
 		//TODO: make-me a class member parameterizable by the user.
 		const real_type smooth_factor(1.0);
 
-////	typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
-		typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
+////	typedef ::std::map< ::dcs::des::cloud::physical_resource_category, detail::weighted_mean_statistic<real_type> > resource_share_map;
+		typedef ::std::map< ::dcs::des::cloud::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
 		typedef typename resource_share_map::const_iterator resource_share_iterator;
 
 		// Output tier-level and application-level execution info
@@ -4149,7 +4149,7 @@ class agg_mean_measure_agg_wmean_share_siso_system_identificator: public base_sy
 
 		if (ptr_sysid_state->num_obs == ptr_sysid_state->max_num_obs)
 		{
-			::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
+			::dcs::des::cloud::registry<traits_type>::instance().des_engine_ptr()->stop_now();
 		}
 	}
 
@@ -4382,7 +4382,7 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 
 		print_data(ctx, ptr_app);
 /*
-		typedef ::std::map< ::dcs::eesim::physical_resource_category, ::std::vector<real_type> > resource_share_map;
+		typedef ::std::map< ::dcs::des::cloud::physical_resource_category, ::std::vector<real_type> > resource_share_map;
 
 		//TODO: make-me a class member parameterizable by the user.
 		const real_type smooth_factor(1.0);
@@ -4494,7 +4494,7 @@ class agg_mean_measure_noagg_share_miso_system_identificator: public base_system
 
 		if (ptr_sysid_state->num_obs == ptr_sysid_state->max_num_obs)
 		{
-			::dcs::eesim::registry<traits_type>::instance().des_engine_ptr()->stop_now();
+			::dcs::des::cloud::registry<traits_type>::instance().des_engine_ptr()->stop_now();
 		}
 	}
 
@@ -4582,29 +4582,29 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 	private: typedef detail::sysid_siso_request_info<traits_type> sysid_request_info_impl_type;
 	private: typedef ::dcs::shared_ptr<sysid_request_info_type> sysid_request_info_pointer;
 	private: typedef ::dcs::shared_ptr<sysid_request_info_impl_type> sysid_request_info_impl_pointer;
-#if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN)
+#if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN)
 	private: typedef detail::mean_statistic<real_type> measure_statistic_type;
-# elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_WEIGHTED_MEAN)
+# elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_WEIGHTED_MEAN)
 	private: typedef detail::weighted_mean_statistic<real_type> measure_statistic_type;
-# else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
+# else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
 #  error "Aggregate measure type not yet implemented!"
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
 	private: typedef ::std::vector<measure_statistic_type> measure_statistic_container;
 	private: typedef ::std::vector<real_type> measure_container;
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
-#  if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
+#  if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
 	private: typedef detail::mean_statistic<real_type> share_statistic_type;
-#  elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+#  elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 	private: typedef detail::weighted_mean_statistic<real_type> share_statistic_type;
-#  else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
+#  else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
 #   error "Aggregate share type not yet implemented!"
-#  endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
-	private: typedef ::dcs::eesim::physical_resource_category resource_category_type;
+#  endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+	private: typedef ::dcs::des::cloud::physical_resource_category resource_category_type;
 	private: typedef ::std::map<resource_category_type,share_statistic_type> share_statistic_map;
 	private: typedef ::std::vector<share_statistic_map> share_statistic_container;
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-#endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
+#endif //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 
 
 	public: siso_system_identificator(real_type excite_ts)
@@ -4639,13 +4639,13 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 		}
 		::std::cout << ",\"rt\"" << ::std::endl;
 
-#if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
+#if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
 		avg_rt_ = measure_statistic_container(ptr_app->num_tiers()+1);
 		aggavg_rt_ = measure_container(ptr_app->num_tiers(), 0);//FIXME: what is the right size: num_tiers or (num_tiers+1)?
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 		avg_shares_ = share_statistic_container(ptr_app->num_tiers()+1);
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-#endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
+#endif //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 	}
 
 
@@ -4682,14 +4682,14 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 
 		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
-#if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
+#if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
 		::std::cout << "-1" // Fake tier-id representing the entire application
 					<< "," << req.id()
 					<< "," << req.arrival_time()
 					<< "," << ctx.simulated_time();
-#endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+#endif //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 
-		typedef ::std::map< ::dcs::eesim::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
+		typedef ::std::map< ::dcs::des::cloud::physical_resource_category, detail::mean_statistic<real_type> > resource_share_map;
 
 		uint_type num_tiers(ptr_app->num_tiers());
 		resource_share_map app_share_map;
@@ -4707,7 +4707,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 			// check: paranoid check
 			DCS_DEBUG_ASSERT( ptr_req_info_impl );
 
-#if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
+#if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
 			typedef virtual_machine_type::resource_share_container resource_share_container;
 			typedef resource_share_container::const_iterator resource_share_iterator;
 
@@ -4724,15 +4724,15 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 				//      weighted mean where the weight is the tier residence time
 
 //				::std::cout << "," << res_it->first
-# if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+# if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 //							<< "," << ptr_req_info_impl->share_map[res_it->first];
 				(app_share_map[res_it->first])(ptr_req_info_impl->share_map[res_it->first]);
-# else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+# else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 //							<< "," << ptr_req_info_impl->share_map[res_it->first].estimate();
 				(app_share_map[res_it->first])(ptr_req_info_impl->share_map[res_it->first].estimate());
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 			}
-#endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+#endif //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 		}
 
 		typedef typename resource_share_map::const_iterator resource_share_iterator;
@@ -4745,27 +4745,27 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 
 		real_type rt(ctx.simulated_time()-req.arrival_time());
 
-#if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
+#if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
 		::std::cout << "," << rt
 					<< ::std::endl;
-#else //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+#else //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN)
 		(avg_rt_[num_tiers])(rt);
 
-#  if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+#  if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 		for (resource_share_iterator res_it = app_share_map.begin(); res_it != res_end_it; ++res_it)
 		{
-#   if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+#   if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
 			(avg_shares_[num_tiers][res_it->first])(res_it->second.estimate());
-#   elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+#   elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 			(avg_shares_[num_tiers][res_it->first])(res_it->second.estimate(), 1);
 #   else
 #    error "Aggregate share type not yet implemented!"
-#   endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+#   endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 		}
-#  endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-# elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_WEIGHTED_MEAN)
+#  endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
+# elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_WEIGHTED_MEAN)
 		real_type w(1);
 		real_type excite_start_time(ctx.simulated_time()-this->sampling_time());
 		if (req.arrival_time() < excite_start_time)
@@ -4775,22 +4775,22 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 
 		(avg_rt_[num_tiers])(rt, w);
 
-#  if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+#  if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 		for (resource_share_iterator res_it = app_share_map.begin(); res_it != res_end_it; ++res_it)
 		{
-#   if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+#   if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
 			(avg_shares_[num_tiers][res_it->first])(res_it->second.estimate());
-#   elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+#   elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 			(avg_shares_[num_tiers][res_it->first])(res_it->second.estimate(), w);
 #   else
 #    error "Aggregate share type not yet implemented!"
-#   endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+#   endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 		}
-#  endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+#  endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 # else
 #  error "Aggregate measure type not yet implemented!"
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
-#endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
+#endif //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 
 		for (uint_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 		{
@@ -4810,7 +4810,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 
 		sysid_request_info_pointer ptr_req_info(ptr_sysid_state->req_info_maps[tier_id][req.id()]);
 		ptr_req_info->arr_time = ctx.simulated_time();
-#if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+#if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 		typedef virtual_machine_type::resource_share_container resource_share_container;
 		typedef resource_share_container::const_iterator resource_share_iterator;
 
@@ -4824,22 +4824,22 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 		resource_share_iterator end_it(resource_shares.end());
 		for (resource_share_iterator it = resource_shares.begin(); it != end_it; ++it)
 		{
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
 			(ptr_req_info_impl->share_map[it->first])(it->second);
-# elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+# elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 			ptr_req_info_impl->old_share_map[it->first] = it->second;
 # else
 #  error "Aggregate share type not yet implemented!"
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 		}
 		ptr_req_info_impl->done = false;
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
-# elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+# elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 		ptr_req_info_impl->last_share_change_time = ptr_req_info_impl->arr_time;
 # else
 #  error "Aggregate share type not yet implemented!"
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
-#endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
+#endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 	}
 
 
@@ -4848,7 +4848,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
-#if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+#if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 		// To the just finished request assigne the share currently assigned to this tier
 
 		typedef virtual_machine_type::resource_share_container resource_share_container;
@@ -4875,7 +4875,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// Aggregated shares are updated later (see TIER-REQUEST-DEPARTURE event handler)
-#endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+#endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 	}
 
 
@@ -4892,14 +4892,14 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 
 		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
-#if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
+#if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
 		// Output execution info for this request
 
 		::std::cout << tier_id
 					<< "," << req.id()
 					<< "," << req.tier_arrival_times(tier_id).back()
 					<< "," << ctx.simulated_time();
-#endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+#endif //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 
 		sysid_request_info_pointer ptr_req_info(ptr_sysid_state->req_info_maps[tier_id][req.id()]);
 
@@ -4924,89 +4924,89 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 
 		resource_share_container resource_shares(ptr_vm->resource_shares());
 		resource_share_iterator res_end_it(resource_shares.end());
-#if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+#if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 		// Shares are weighted by the amount of time they have influenced this request execution.
 
 		real_type w(ctx.simulated_time()-ptr_req_info_impl->last_share_change_time);
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
-#endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
+#endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 		for (resource_share_iterator res_it = resource_shares.begin(); res_it != res_end_it; ++res_it)
 		{
-#if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+#if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 			// Update aggregated values.
 			// (Note: simple mean aggregation need not to be updated; it is only at the beginning of the request and at every excite signal).
 
 //			ptr_req_info_impl->done = true;
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 			real_type last_share(ptr_req_info_impl->old_share_map.at(res_it->first));
 			(ptr_req_info_impl->share_map[res_it->first])(last_share, w);
 			ptr_req_info_impl->old_share_map[res_it->first] = res_it->second;
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
-#endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
+#endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 
-#if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
+#if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
 			::std::cout << "," << res_it->first
-# if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+# if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 						<< "," << ptr_req_info_impl->share_map[res_it->first];
-# else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+# else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 						<< "," << ptr_req_info_impl->share_map[res_it->first].estimate();
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-#endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
+#endif //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 		}
 
 		real_type rt(ctx.simulated_time()-ptr_req_info_impl->arr_time);
 
-#if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
+#if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
 		::std::cout << "," << rt
 					<< ::std::endl;
-#else //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+#else //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 		// Update aggregated measure value
 
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN)
 		(avg_rt_[tier_id])(rt);
 
-#  if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+#  if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 		// Update aggregated share value for the aggregated measure value
 		for (resource_share_iterator res_it = resource_shares.begin(); res_it != res_end_it; ++res_it)
 		{
-#   if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+#   if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
 			(avg_shares_[tier_id][res_it->first])(ptr_req_info_impl->share_map[res_it->first].estimate());
-#   elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+#   elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 			(avg_shares_[tier_id][res_it->first])(ptr_req_info_impl->share_map[res_it->first].estimate(), 1);
-#   else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
+#   else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
 #    error "Aggregate share type not yet implemented!"
-#   endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+#   endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 		}
-#  endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-# elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_WEIGHTED_MEAN)
-#  if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES) && defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+#  endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
+# elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_WEIGHTED_MEAN)
+#  if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES) && defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 		w = 1;
-#  else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+#  else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 		real_type w(1);
-#  endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+#  endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 		real_type excite_start_time(ctx.simulated_time()-this->sampling_time());
 		if (ptr_req_info_impl->arr_time < excite_start_time)
 		{
 			w = ptr_req_info_impl->arr_time/excite_start_time;
 		}
 		(avg_rt_[tier_id])(rt, w);
-#  if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+#  if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 		for (resource_share_iterator res_it = resource_shares.begin(); res_it != res_end_it; ++res_it)
 		{
-#   if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+#   if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
 			(avg_shares_[tier_id][res_it->first])(ptr_req_info_impl->share_map[res_it->first].estimate());
-#   elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+#   elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 			(avg_shares_[tier_id][res_it->first])(ptr_req_info_impl->share_map[res_it->first].estimate(), w);
-#   else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
+#   else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
 #    error "Aggregate share type not yet implemented!"
-#   endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+#   endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 		}
-#  endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+#  endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 # else
 #  error "Aggregate measure type not yet implemented!"
-# endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
-#endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+# endif //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
+#endif //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 	}
 
 
@@ -5018,7 +5018,7 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 		// - Aggregated Measures / Non-aggregated Shares: do nothing
 		// - Aggregated Measures / Aggregated Shares: update state information of each running request
 
-#if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+#if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 		// For each tier, for each in-service request, for each resource category, update the mean share
 
 		typedef typename sysid_state_type::request_info_map request_info_map;
@@ -5061,19 +5061,19 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 					continue;
 				}
 
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
 				// empty
-# elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+# elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 				real_type w(ctx.simulated_time()-ptr_req_info_impl->last_share_change_time);
 				ptr_req_info_impl->last_share_change_time = ctx.simulated_time();
 # else
 #  error "Aggregate share type not yet implemented!"
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 				for (resource_share_iterator res_it = resource_shares.begin(); res_it != res_end_it; ++res_it)
 				{
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
 					(ptr_req_info_impl->share_map[res_it->first])(res_it->second);
-# elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+# elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 					// Computer the weighted mean until the "old" share.
 					// We cannot take into consideration the new share here, because we
 					// cannot compute its weight.
@@ -5081,13 +5081,13 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 					ptr_req_info_impl->old_share_map[res_it->first] = res_it->second;
 # else
 #  error "Aggregate share type not yet implemented!"
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 				}
 			}
 		}
-#endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+#endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 
-#if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
+#if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
 		for (::std::size_t tier_id = 0; tier_id < ptr_app->num_tiers(); ++tier_id)
 		{
 			if (avg_rt_[tier_id].size() == 0)
@@ -5112,14 +5112,14 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 			resource_share_iterator end_it(resource_shares.end());
 			for (resource_share_iterator it = resource_shares.begin(); it != end_it; ++it)
 			{
-# if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+# if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 				::std::cout << "," << it->first
 							<< "," << it->second;
-# else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+# else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 				::std::cout << "," << it->first
 							<< "," << avg_shares_[tier_id].at(it->first).estimate(); // FIXME: ok!
 //							<< "," << avg_shares_[tier_id].estimate(); // FIXME: ko!
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 			}
 
 			const real_type alpha(1.0);
@@ -5131,26 +5131,26 @@ class siso_system_identificator: public base_system_identificator<TraitsT>
 		}
 
 		avg_rt_ = measure_statistic_container(ptr_app->num_tiers()+1);
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 		avg_shares_ = share_statistic_container(ptr_app->num_tiers()+1);
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-#else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
+#else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sig_gen );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
-#endif// DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+#endif// DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 	}
 
 
-#if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
+#if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
 	private: measure_statistic_container avg_rt_;
 	private: measure_container aggavg_rt_;
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 	private: share_statistic_container avg_shares_;
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-#endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
+#endif //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 }; // siso_system_identificator
 
 
@@ -5174,29 +5174,29 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 	private: typedef detail::sysid_miso_request_info<traits_type> sysid_request_info_impl_type;
 	private: typedef ::dcs::shared_ptr<sysid_request_info_type> sysid_request_info_pointer;
 	private: typedef ::dcs::shared_ptr<sysid_request_info_impl_type> sysid_request_info_impl_pointer;
-#if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN)
+#if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN)
 	private: typedef detail::mean_statistic<real_type> measure_statistic_type;
-# elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_WEIGHTED_MEAN)
+# elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_WEIGHTED_MEAN)
 	private: typedef detail::weighted_mean_statistic<real_type> measure_statistic_type;
-# else //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
+# else //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
 #  error "Aggregate measure type not yet implemented!"
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
 	private: typedef ::std::vector<measure_statistic_type> measure_statistic_container;
 	private: typedef ::std::vector<real_type> measure_container;
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
-#  if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
+#  if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
 	private: typedef detail::mean_statistic<real_type> share_statistic_type;
-#  elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+#  elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 	private: typedef detail::weighted_mean_statistic<real_type> share_statistic_type;
-#  else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+#  else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 #   error "Aggregate share type not yet implemented!"
-#  endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
-	private: typedef ::dcs::eesim::physical_resource_category resource_category_type;
+#  endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+	private: typedef ::dcs::des::cloud::physical_resource_category resource_category_type;
 	private: typedef ::std::map<resource_category_type, ::std::map<uint_type,share_statistic_type> > share_statistic_map;
 	private: typedef ::std::vector<share_statistic_map> share_statistic_container;
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-#endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
+#endif //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 
 
 	public: miso_system_identificator(real_type excite_ts)
@@ -5236,13 +5236,13 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		}
 		::std::cout << ",\"rt\"" << ::std::endl;
 
-#if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
+#if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
 		avg_rt_ = measure_statistic_container(num_tiers+1);
 		aggavg_rt_ = measure_container(num_tiers, 0);//FIXME: what is the right size: num_tiers or (num_tiers+1)?
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 		avg_shares_ = share_statistic_container(num_tiers+1);
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-#endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
+#endif //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 	}
 
 
@@ -5285,15 +5285,15 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
 //		uint_type front_tid(0);// We take shares and arrival time referred to the first tier
-#if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
+#if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
 		::std::cout << "-1" // Fake tier-id representing the entire application
 					<< "," << req.id()
 					<< "," << req.arrival_time()
 					<< "," << ctx.simulated_time();
-#endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+#endif //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 
 		typedef ::std::map<uint_type,real_type> tier_share_map; // tier => share
-		typedef ::std::map< ::dcs::eesim::physical_resource_category, tier_share_map > resource_tier_share_map; // category => {tier => share}
+		typedef ::std::map< ::dcs::des::cloud::physical_resource_category, tier_share_map > resource_tier_share_map; // category => {tier => share}
 
 		uint_type num_tiers(ptr_app->num_tiers());
 		resource_tier_share_map app_share_map;
@@ -5311,7 +5311,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 			// check: paranoid check
 			DCS_DEBUG_ASSERT( ptr_req_info_impl );
 
-#if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
+#if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
 			typedef virtual_machine_type::resource_share_container resource_share_container;
 			typedef resource_share_container::const_iterator resource_share_iterator;
 
@@ -5328,15 +5328,15 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 
 				if (ptr_req_info_impl->share_map[res_it->first].count(tier_id))
 				{
-# if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+# if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 					share = ptr_req_info_impl->share_map[res_it->first].at(tier_id);
-# else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+# else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 					share = ptr_req_info_impl->share_map[res_it->first].at(tier_id).estimate();
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 				}
 				app_share_map[res_it->first][tier_id] = share;
 			}
-#endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+#endif //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 		}
 
 		typedef typename resource_tier_share_map::const_iterator resource_tier_share_iterator;
@@ -5356,30 +5356,30 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 
 		real_type rt(ctx.simulated_time()-req.arrival_time());
 
-#if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
+#if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
 		::std::cout << "," << rt << ::std::endl;
-#else //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+#else //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN)
         (avg_rt_[num_tiers])(rt);
 
-#  if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+#  if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 		for (resource_tier_share_iterator res_it = app_share_map.begin(); res_it != res_end_it; ++res_it)
 		{
 			tier_share_iterator share_end_it(res_it->second.end());
 			for (tier_share_iterator share_it = res_it.second.begin(); share_it != share_end_it; ++share_it)
 			{
-#   if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+#   if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
             	(avg_shares_[num_tiers][res_it->first][share_it->first])(share_it->second);
-#   elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+#   elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
             	(avg_shares_[num_tiers][res_it->first][share_it->first])(share_it->second, 1);
-#   else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+#   else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 #    error "Aggregate share type not yet implemented!"
-#   endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+#   endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 			}
         }
-#  endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-# elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_WEIGHTED_MEAN)
+#  endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
+# elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_WEIGHTED_MEAN)
 		real_type w(1);
         real_type excite_start_time(ctx.simulated_time()-this->sampling_time());
         if (req.arrival_time() < excite_start_time)
@@ -5387,26 +5387,26 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
             w = req.arrival_time()/excite_start_time;
         }
         (avg_rt_[num_tiers])(rt, w);
-#  if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+#  if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 		for (resource_tier_share_iterator res_it = app_share_map.begin(); res_it != res_end_it; ++res_it)
 		{
 			tier_share_iterator share_end_it(res_it->second.end());
 			for (tier_share_iterator share_it = res_it.second.begin(); share_it != share_end_it; ++share_it)
 			{
-#   if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+#   if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
             	(avg_shares_[num_tiers][res_it->first][share_it->first])(share_it->second);
-#   elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+#   elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
             	(avg_shares_[num_tiers][res_it->first][share_it->first])(share_it->second, w);
-#   else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+#   else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 #    error "Aggregate share type not yet implemented!"
-#   endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+#   endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 			}
         }
-#  endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-# else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
+#  endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
+# else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
 #  error "Aggregate measure type not yet implemented!"
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
-#endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
+#endif //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 
 
 
@@ -5426,17 +5426,17 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 //		{
 //			for (uint_type tid = 0; tid < num_tiers; ++tid)
 //			{
-//#   if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+//#   if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
 //				(avg_shares_[num_tiers][it->first][tid])(ptr_req_info_impl->share_map[it->first].at(tid).estimate());
-//#   elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+//#   elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 //				(avg_shares_[num_tiers][it->first][tid])(ptr_req_info_impl->share_map[it->first].at(tid).estimate(), 1);
-//#   else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+//#   else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 //#    error "Aggregate share type not yet implemented!"
-//#   endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+//#   endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 //			}
 //		}
-//#  endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-//# elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_WEIGHTED_MEAN)
+//#  endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
+//# elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_WEIGHTED_MEAN)
 //		real_type w(1);
 //		real_type excite_start_time(ctx.simulated_time()-this->sampling_time());
 //		if (req.arrival_time() < excite_start_time)
@@ -5444,7 +5444,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 //			w = req.arrival_time()/excite_start_time;
 //		}
 //		(avg_rt_[num_tiers])(rt, w);
-//#  if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+//#  if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 //		typedef virtual_machine_type::resource_share_container resource_share_container;
 //		typedef resource_share_container::const_iterator resource_share_iterator;
 //
@@ -5459,20 +5459,20 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 //		{
 //			for (uint_type tid = 0; tid < num_tiers; ++tid)
 //			{
-//#   if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+//#   if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
 //				(avg_shares_[num_tiers][it->first][tid])(ptr_req_info_impl->share_map[it->first].at(tid).estimate());
-//#   elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+//#   elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 //				(avg_shares_[num_tiers][it->first][tid])(ptr_req_info_impl->share_map[it->first].at(tid).estimate(), w);
-//#   else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+//#   else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 //#    error "Aggregate share type not yet implemented!"
-//#   endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+//#   endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 //			}
 //		}
-//#  endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-//# else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
+//#  endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
+//# else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
 //#  error "Aggregate measure type not yet implemented!"
-//# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
-//#endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+//# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
+//#endif //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 
 		for (uint_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 		{
@@ -5493,7 +5493,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		sysid_request_info_pointer ptr_req_info(ptr_sysid_state->req_info_maps[tier_id][req.id()]);
 		ptr_req_info->arr_time = ctx.simulated_time();
 
-#if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+#if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 		typedef virtual_machine_type::resource_share_container resource_share_container;
 		typedef resource_share_container::const_iterator resource_share_iterator;
 
@@ -5512,24 +5512,24 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 			resource_share_iterator end_it(resource_shares.end());
 			for (resource_share_iterator it = resource_shares.begin(); it != end_it; ++it)
 			{
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
 				(ptr_req_info_impl->share_map[it->first][tid])(it->second);
-# elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+# elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 				ptr_req_info_impl->old_share_map[it->first][tid] = it->second;
-# else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+# else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 #  error "Aggregate share type not yet implemented!"
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 			}
 		}
 		ptr_req_info_impl->done = false;
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
 //		ptr_req_info_impl->share_count = 1;
-# elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+# elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 		ptr_req_info_impl->last_share_change_time = ptr_req_info_impl->arr_time;
-# else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+# else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 #  error "Aggregate share type not yet implemented!"
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
-#endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
+#endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 	}
 
 
@@ -5538,7 +5538,7 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 
-#if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+#if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 		typedef virtual_machine_type::resource_share_container resource_share_container;
 		typedef resource_share_container::const_iterator resource_share_iterator;
 
@@ -5563,13 +5563,13 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 				::dcs::dynamic_pointer_cast<sysid_request_info_impl_type>(ptr_req_info)->share_map[it->first][tid] = it->second;
 			}
 		}
-#else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+#else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( tier_id );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
 
 		// Aggregated shares are updated later (see TIER-REQUEST-DEPARTURE event handler)
-#endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+#endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 	}
 
 
@@ -5586,12 +5586,12 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 
 		user_request_type req = ptr_app->simulation_model().request_state(evt);
 
-#if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
+#if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
 		::std::cout << tier_id
 					<< "," << req.id()
 					<< "," << req.tier_arrival_times(tier_id).back()
 					<< "," << ctx.simulated_time();
-#endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+#endif //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 
 		sysid_request_info_pointer ptr_req_info(ptr_sysid_state->req_info_maps[tier_id][req.id()]);
 
@@ -5616,18 +5616,18 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 
 		resource_share_container resource_shares(ptr_vm->resource_shares());
 		resource_share_iterator res_end_it(resource_shares.end());
-#if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES) || defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+#if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES) || defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 		uint_type num_tiers(ptr_app->num_tiers());
-#endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
-#if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+#endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
+#if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
         real_type w(ctx.simulated_time()-ptr_req_info_impl->last_share_change_time);
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
-#endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
+#endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 		for (resource_share_iterator res_it = resource_shares.begin(); res_it != res_end_it; ++res_it)
 		{
-#if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+#if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 			for (uint_type tid = 0; tid < num_tiers; ++tid)
 			{
 				virtual_machine_pointer ptr_vm2(ptr_app->simulation_model().tier_virtual_machine(tid));
@@ -5639,9 +5639,9 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 				(ptr_req_info_impl->share_map[res_it->first][tid])(last_share, w);
 				ptr_req_info_impl->old_share_map[res_it->first][tid] = ptr_vm2->resource_share(res_it->first);
 			}
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
-#endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-#if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN
+#endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
+#if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
 			::std::cout << "," << res_it->first;
 			for (uint_type tid = 0; tid < num_tiers; ++tid)
 			{
@@ -5649,20 +5649,20 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 
 				if (ptr_req_info_impl->share_map[res_it->first].count(tid))
 				{
-# if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+# if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 					share = ptr_req_info_impl->share_map[res_it->first].at(tid);
-# else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+# else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
                     share = ptr_req_info_impl->share_map[res_it->first].at(tid).estimate();
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 				}
 				::std::cout << "," << share;
 			}
-#endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+#endif //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 		}
 
 		real_type rt(ctx.simulated_time()-ptr_req_info->arr_time);
 
-#if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
+#if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
 //FIXME: Keep M/D/1 or return back to M/M/1?
 //#if 0
 //		if (tier_id == 0)
@@ -5677,67 +5677,67 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 //		{
 //			// Treat the other tiers as a M/M/1 queue
 //			::std::cout << "," << rt
-//						<< "," << detail::relative_deviation(rt, ptr_app->performance_model().tier_measure(tier_id, ::dcs::eesim::response_time_performance_measure))
+//						<< "," << detail::relative_deviation(rt, ptr_app->performance_model().tier_measure(tier_id, ::dcs::des::cloud::response_time_performance_measure))
 //						<< ::std::endl;
 //		}
 //#else
 //		::std::cout << "," << rt
-//					<< "," << detail::relative_deviation(rt, ptr_app->performance_model().tier_measure(tier_id, ::dcs::eesim::response_time_performance_measure))
+//					<< "," << detail::relative_deviation(rt, ptr_app->performance_model().tier_measure(tier_id, ::dcs::des::cloud::response_time_performance_measure))
 //					<< ::std::endl;
 //#endif
 		::std::cout << "," << rt << ::std::endl;
-#else //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN)
+#else //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN)
 		// Update aggregated measure value
         (avg_rt_[tier_id])(rt);
 
-#  if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+#  if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 		// Update aggregated share values for the aggregated measure value
         for (resource_share_iterator res_it = resource_shares.begin(); res_it != res_end_it; ++res_it)
         {
 			for (uint_type tid = 0; tid < num_tiers; ++tid)
 			{
-#   if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+#   if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
             	(avg_shares_[tier_id][res_it->first][tid])(ptr_req_info_impl->share_map[res_it->first].at(tid).estimate());
-#   elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+#   elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
             	(avg_shares_[tier_id][res_it->first][tid])(ptr_req_info_impl->share_map[res_it->first].at(tid).estimate(), 1);
-#   else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+#   else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 #    error "Aggregate share type not yet implemented!"
-#   endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+#   endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 			}
         }
-#  endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-# elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_WEIGHTED_MEAN)
-#  if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES) && defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+#  endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
+# elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_WEIGHTED_MEAN)
+#  if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES) && defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
         w = 1;
-#  else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+#  else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
         real_type w(1);
-#  endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+#  endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
         real_type excite_start_time(ctx.simulated_time()-this->sampling_time());
         if (ptr_req_info_impl->arr_time < excite_start_time)
         {
             w = ptr_req_info_impl->arr_time/excite_start_time;
         }
         (avg_rt_[tier_id])(rt, w);
-#  if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+#  if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
         for (resource_share_iterator res_it = resource_shares.begin(); res_it != res_end_it; ++res_it)
         {
 			for (uint_type tid = 0; tid < num_tiers; ++tid)
 			{
-#   if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+#   if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
             	(avg_shares_[tier_id][res_it->first][tid])(ptr_req_info_impl->share_map[res_it->first].at(tid).estimate());
-#   elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+#   elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
             	(avg_shares_[tier_id][res_it->first][tid])(ptr_req_info_impl->share_map[res_it->first].at(tid).estimate(), w);
-#   else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+#   else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 #    error "Aggregate share type not yet implemented!"
-#   endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+#   endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 			}
         }
-#  endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-# else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
+#  endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
+# else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
 #  error "Aggregate measure type not yet implemented!"
-# endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
-#endif //DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+# endif //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES_BY_SIMPLE_MEAN
+#endif //DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 
 //		ptr_sysid_state->req_info_maps[tier_id].erase(req.id());
 	}
@@ -5751,11 +5751,11 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		// - Aggregated Measures / Non-aggregated Shares: do nothing
 		// - Aggregated Measures / Aggregated Shares: update state information of each running request
 
-#if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES) || defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
+#if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES) || defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
 		uint_type num_tiers(ptr_app->num_tiers());
-#endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+#endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 
-#if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+#if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 		// For each tier, for each in-service request, for each resource category, update the mean share
 
 		typedef typename sysid_state_type::request_info_map request_info_map;
@@ -5801,38 +5801,38 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 				}
 
 				// Update resource share stats for this request
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
 				// empty
-# elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+# elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 				// Weights current shares by the time this request has seen changed these shares
 				real_type w(ctx.simulated_time()-ptr_req_info_impl->last_share_change_time);
 				ptr_req_info_impl->last_share_change_time = ctx.simulated_time();
-# else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+# else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 #  error "Aggregate share type not yet implemented!"
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 				for (resource_share_iterator res_it = resource_shares.begin(); res_it != res_end_it; ++res_it)
 				{
 					// Since we have a MISO system, we need to take care of share from all tiers
 					for (uint_type tid = 0; tid < num_tiers; ++tid)
 					{
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN)
 						(ptr_req_info_impl->share_map[res_it->first][tid])(res_it->second);
-# elif defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
+# elif defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_WEIGHTED_MEAN)
 						// Computer the weighted mean until the "old" share.
 						// We cannot take into consideration the new share here, because we
 						// cannot compute its weight.
 						(ptr_req_info_impl->share_map[res_it->first][tid])(ptr_req_info_impl->old_share_map[res_it->first][tid], w);
 						ptr_req_info_impl->old_share_map[res_it->first][tid] = res_it->second;
-# else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+# else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 #  error "Aggregate share type not yet implemented!"
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES_BY_SIMPLE_MEAN
 					}
 				}
 			}
 		}
-#endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+#endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 
-#if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
+#if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
 		for (uint_type tier_id = 0; tier_id < num_tiers; ++tier_id)
 		{
 			if (avg_rt_[tier_id].size() == 0)
@@ -5860,11 +5860,11 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 				::std::cout << "," << it->first;
 				for (uint_type tid = 0; tid < num_tiers; ++tid)
 				{
-# if !defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+# if !defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 					::std::cout << "," << it->second;
-# else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+# else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 					::std::cout << "," << avg_shares_[tier_id].at(it->first).at(tid).estimate(); // FIXME: ok!
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
 				}
 			}
 
@@ -5876,26 +5876,26 @@ class miso_system_identificator: public base_system_identificator<TraitsT>
 		}
 
 		avg_rt_ = measure_statistic_container(num_tiers+1);
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 		avg_shares_ = share_statistic_container(num_tiers+1);
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-#else // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
+#else // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( evt );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ctx );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_app );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sig_gen );
 		DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( ptr_sysid_state );
-#endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+#endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 	}
 
 
-#if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES)
+#if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES)
 	private: measure_statistic_container avg_rt_;
 	private: measure_container aggavg_rt_;
-# if defined(DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES)
+# if defined(DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES)
 	private: share_statistic_container avg_shares_;
-# endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_SHARES
-#endif // DCS_EESIM_EXP_OFFSYSID_AGGREGATE_MEASURES
+# endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_SHARES
+#endif // DCS_DES_CLOUD_EXP_OFFSYSID_AGGREGATE_MEASURES
 }; // miso_system_identificator
 #endif // if 0
 
@@ -5904,19 +5904,19 @@ int main(int argc, char* argv[])
 {
 	typedef dcs::shared_ptr<des_engine_type> des_engine_pointer;
 	typedef dcs::shared_ptr<random_generator_type> random_generator_pointer;
-	typedef dcs::shared_ptr< dcs::eesim::data_center<traits_type> > data_center_pointer;
-	typedef dcs::shared_ptr< dcs::eesim::data_center_manager<traits_type> > data_center_manager_pointer;
-	typedef dcs::eesim::config::configuration<real_type,uint_type> configuration_type;
+	typedef dcs::shared_ptr< dcs::des::cloud::data_center<traits_type> > data_center_pointer;
+	typedef dcs::shared_ptr< dcs::des::cloud::data_center_manager<traits_type> > data_center_manager_pointer;
+	typedef dcs::des::cloud::config::configuration<real_type,uint_type> configuration_type;
 	typedef dcs::shared_ptr<configuration_type> configuration_pointer;
 	typedef base_system_identificator<traits_type> system_identificator_type;
 	//typedef siso_system_identificator<traits_type> system_identificator_type;
 	//typedef miso_system_identificator<traits_type> system_identificator_type;
 	typedef configuration_type::data_center_config_type data_center_config_type;
 	typedef data_center_config_type::application_config_container::const_iterator app_iterator;
-//	typedef dcs::eesim::multi_tier_application<traits_type> application_type;
-	typedef dcs::eesim::physical_machine<traits_type> physical_machine_type;
+//	typedef dcs::des::cloud::multi_tier_application<traits_type> application_type;
+	typedef dcs::des::cloud::physical_machine<traits_type> physical_machine_type;
 	typedef dcs::shared_ptr<physical_machine_type> physical_machine_pointer;
-	typedef dcs::eesim::physical_resource<traits_type> physical_resource_type;
+	typedef dcs::des::cloud::physical_resource<traits_type> physical_resource_type;
 	typedef dcs::shared_ptr<physical_resource_type> physical_resource_pointer;
 	typedef application_type::reference_physical_resource_type reference_resource_type;
 
@@ -6006,9 +6006,9 @@ int main(int argc, char* argv[])
 			case yaml_configuration:
 
 				ptr_conf = dcs::make_shared<configuration_type>(
-							dcs::eesim::config::read_file(
+							dcs::des::cloud::config::read_file(
 								conf_fname,
-								::dcs::eesim::config::yaml_reader<real_type,uint_type>()
+								::dcs::des::cloud::config::yaml_reader<real_type,uint_type>()
 							)
 						);
 				break;
@@ -6031,14 +6031,14 @@ int main(int argc, char* argv[])
 //	ptr_des_eng = detail::make_des_engine<traits_type>();
 //	reg.des_engine(ptr_des_eng);
 //	random_generator_pointer ptr_rng;
-//	ptr_rng = dcs::eesim::config::make_random_number_generator(*ptr_conf);
+//	ptr_rng = dcs::des::cloud::config::make_random_number_generator(*ptr_conf);
 //	reg.uniform_random_generator(ptr_rng);
 
 //	// Build the Data Center
 //	data_center_pointer ptr_dc;
 //	data_center_manager_pointer ptr_dc_mngr;
-//	ptr_dc = dcs::eesim::config::make_data_center<traits_type>(*ptr_conf, ptr_rng, ptr_des_eng);
-//	ptr_dc_mngr = dcs::eesim::config::make_data_center_manager<traits_type>(*ptr_conf, ptr_dc);
+//	ptr_dc = dcs::des::cloud::config::make_data_center<traits_type>(*ptr_conf, ptr_rng, ptr_des_eng);
+//	ptr_dc_mngr = dcs::des::cloud::config::make_data_center_manager<traits_type>(*ptr_conf, ptr_dc);
 
 //	excite_sampling_time = 5;
 //	//sig_category = constant_signal;
@@ -6064,11 +6064,11 @@ int main(int argc, char* argv[])
 
 		// Build the random number generator
 		random_generator_pointer ptr_rng;
-		ptr_rng = dcs::eesim::config::make_random_number_generator(*ptr_conf);
+		ptr_rng = dcs::des::cloud::config::make_random_number_generator(*ptr_conf);
 		reg.uniform_random_generator(ptr_rng);
 
 		// Build the application
-		ptr_app = dcs::eesim::config::make_application<traits_type>(*app_it, *ptr_conf, ptr_rng, ptr_des_eng);
+		ptr_app = dcs::des::cloud::config::make_application<traits_type>(*app_it, *ptr_conf, ptr_rng, ptr_des_eng);
 
 		// Build the signal generator
 		switch (sig_category)

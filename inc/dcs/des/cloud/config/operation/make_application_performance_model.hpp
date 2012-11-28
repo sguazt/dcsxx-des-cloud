@@ -1,27 +1,27 @@
-#ifndef DCS_EESIM_CONFIG_OPERATION_MAKE_APPLICATION_PERFORMANCE_MODEL_HPP
-#define DCS_EESIM_CONFIG_OPERATION_MAKE_APPLICATION_PERFORMANCE_MODEL_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_APPLICATION_PERFORMANCE_MODEL_HPP
+#define DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_APPLICATION_PERFORMANCE_MODEL_HPP
 
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/variant.hpp>
-#include <dcs/eesim/application_performance_model_adaptor.hpp>
-//#include <dcs/eesim/application_performance_model_traits.hpp>
-#include <dcs/eesim/base_application_performance_model.hpp>
-#include <dcs/eesim/config/application_performance_model.hpp>
-#include <dcs/eesim/config/metric_category.hpp>
-#include <dcs/eesim/fixed_application_performance_model.hpp>
-#include <dcs/eesim/open_multi_bcmp_qn_application_performance_model.hpp>
+#include <dcs/des/cloud/application_performance_model_adaptor.hpp>
+//#include <dcs/des/cloud/application_performance_model_traits.hpp>
+#include <dcs/des/cloud/base_application_performance_model.hpp>
+#include <dcs/des/cloud/config/application_performance_model.hpp>
+#include <dcs/des/cloud/config/metric_category.hpp>
+#include <dcs/des/cloud/fixed_application_performance_model.hpp>
+#include <dcs/des/cloud/open_multi_bcmp_qn_application_performance_model.hpp>
 #include <dcs/perfeval/qn/open_multi_bcmp_network.hpp>
 #include <dcs/perfeval/qn/operation/visit_ratios.hpp>
 #include <dcs/memory.hpp>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 template <typename TraitsT, typename RealT, typename UIntT>
 ::dcs::shared_ptr<
-	::dcs::eesim::base_application_performance_model<TraitsT>
+	::dcs::des::cloud::base_application_performance_model<TraitsT>
 > make_application_performance_model(application_performance_model_config<RealT,UIntT> const& conf)
 {
 	typedef TraitsT traits_type;
@@ -37,7 +37,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 		case fixed_application_performance_model:
 			{
 				typedef typename config_type::fixed_config_type config_impl_type;
-				typedef ::dcs::eesim::fixed_application_performance_model<traits_type> model_impl_type;
+				typedef ::dcs::des::cloud::fixed_application_performance_model<traits_type> model_impl_type;
 				typedef typename config_impl_type::measure_map::const_iterator measure_iterator;
 				typedef typename config_impl_type::tier_measure_map::const_iterator tier_measure_iterator;
 
@@ -69,7 +69,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 			{
 				typedef typename config_type::open_multi_bcmp_qn_config_type config_impl_type;
 				typedef ::dcs::perfeval::qn::open_multi_bcmp_network<real_type, uint_type> model_impl_type;
-				typedef typename ::dcs::eesim::application_performance_model_adaptor<
+				typedef typename ::dcs::des::cloud::application_performance_model_adaptor<
 							TraitsT,
 							model_impl_type
 						> model_type;
@@ -112,7 +112,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 	return ptr_model;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_OPERATION_MAKE_APPLICATION_PERFORMANCE_MODEL_HPP
+#endif // DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_APPLICATION_PERFORMANCE_MODEL_HPP

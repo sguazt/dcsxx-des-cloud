@@ -1,5 +1,5 @@
-#ifndef DCS_EESIM_CONFIG_OPERATION_MAKE_APPLICATION_SIMULATION_MODEL_HPP
-#define DCS_EESIM_CONFIG_OPERATION_MAKE_APPLICATION_SIMULATION_MODEL_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_APPLICATION_SIMULATION_MODEL_HPP
+#define DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_APPLICATION_SIMULATION_MODEL_HPP
 
 
 #include <boost/variant.hpp>
@@ -25,16 +25,16 @@
 #include <dcs/des/model/qn/rr_service_strategy.hpp>
 #include <dcs/des/model/qn/sink_node.hpp>
 #include <dcs/des/model/qn/source_node.hpp>
-#include <dcs/eesim/base_application_simulation_model.hpp>
-#include <dcs/eesim/config/application.hpp>
-#include <dcs/eesim/config/configuration.hpp>
-#include <dcs/eesim/config/operation/make_output_statistic.hpp>
-#include <dcs/eesim/config/operation/make_probability_distribution.hpp>
-#include <dcs/eesim/config/statistic.hpp>
-#include <dcs/eesim/multi_tier_application.hpp>
-#include <dcs/eesim/performance_measure_category.hpp>
-#include <dcs/eesim/qn_application_simulation_model.hpp>
-#include <dcs/eesim/utility.hpp>
+#include <dcs/des/cloud/base_application_simulation_model.hpp>
+#include <dcs/des/cloud/config/application.hpp>
+#include <dcs/des/cloud/config/configuration.hpp>
+#include <dcs/des/cloud/config/operation/make_output_statistic.hpp>
+#include <dcs/des/cloud/config/operation/make_probability_distribution.hpp>
+#include <dcs/des/cloud/config/statistic.hpp>
+#include <dcs/des/cloud/multi_tier_application.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
+#include <dcs/des/cloud/qn_application_simulation_model.hpp>
+#include <dcs/des/cloud/utility.hpp>
 #include <dcs/math/stats/distribution/any_distribution.hpp>
 #include <dcs/memory.hpp>
 #include <map>
@@ -44,7 +44,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 template <
 	typename TraitsT,
@@ -52,9 +52,9 @@ template <
 	typename UIntT
 >
 ::dcs::shared_ptr<
-	::dcs::eesim::base_application_simulation_model<TraitsT>
+	::dcs::des::cloud::base_application_simulation_model<TraitsT>
 > make_application_simulation_model(application_config<RealT,UIntT> const& app_conf,
-									::dcs::eesim::multi_tier_application<TraitsT> const& app,
+									::dcs::des::cloud::multi_tier_application<TraitsT> const& app,
 									configuration<RealT,UIntT> const& conf,
 									::dcs::shared_ptr<typename TraitsT::uniform_random_generator_type> const& ptr_rng,
 									::dcs::shared_ptr<typename TraitsT::des_engine_type> const& ptr_engine)
@@ -65,7 +65,7 @@ template <
 	typedef typename traits_type::uint_type uint_type;
 	typedef typename traits_type::uniform_random_generator_type urng_type;
 	typedef typename traits_type::des_engine_type des_engine_type;
-	typedef ::dcs::eesim::base_application_simulation_model<traits_type> simulation_model_type;
+	typedef ::dcs::des::cloud::base_application_simulation_model<traits_type> simulation_model_type;
 
 	::dcs::shared_ptr<simulation_model_type> ptr_model;
 
@@ -83,8 +83,8 @@ template <
 				typedef ::dcs::des::model::qn::queueing_network<uint_type,real_type,urng_type,des_engine_type> model_impl_type;
 				typedef ::dcs::des::model::qn::queueing_network_traits<model_impl_type> model_impl_traits_type;
 				typedef ::dcs::shared_ptr<model_impl_type> model_impl_pointer;
-				//typedef ::dcs::eesim::application_simulation_model_adaptor<traits_type,model_impl_type> simulation_model_impl_type;
-				typedef ::dcs::eesim::qn_application_simulation_model<traits_type,uint_type,real_type,urng_type,des_engine_type> simulation_model_impl_type;
+				//typedef ::dcs::des::cloud::application_simulation_model_adaptor<traits_type,model_impl_type> simulation_model_impl_type;
+				typedef ::dcs::des::cloud::qn_application_simulation_model<traits_type,uint_type,real_type,urng_type,des_engine_type> simulation_model_impl_type;
 				typedef ::dcs::des::model::qn::network_node<model_impl_traits_type> node_type;
 				typedef ::std::map< ::std::string, typename node_type::identifier_type > name_to_id_container;
 				typedef ::std::map<uint_type, typename node_type::identifier_type> id_to_id_container;
@@ -104,7 +104,7 @@ template <
 
 					if (node_names_ids.count(node_it->name))
 					{
-						throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] The name of a node must be unique for a given model.");
+						throw ::std::runtime_error("[dcs::des::cloud::config::detail::make_application_simulation_model] The name of a node must be unique for a given model.");
 					}
 
 					switch (node_it->category)
@@ -206,26 +206,26 @@ template <
 								// Check for conf consistency
 								if (node_conf_impl.service_category == qn_infinite_server_service_strategy)
 								{
-									throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Service strategy for a queueing station node cannot be of type 'infinite-server'.");
+									throw ::std::runtime_error("[dcs::des::cloud::config::detail::make_application_simulation_model] Service strategy for a queueing station node cannot be of type 'infinite-server'.");
 								}
 								if (node_conf_impl.service_category != qn_processor_sharing_service_strategy
 									&&
 									node_conf_impl.policy_category == qn_processor_sharing_scheduling_policy)
 								{
-									throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Processor-Sharing scheduling policy can only be used with Processor-Sharing service strategy.");
+									throw ::std::runtime_error("[dcs::des::cloud::config::detail::make_application_simulation_model] Processor-Sharing scheduling policy can only be used with Processor-Sharing service strategy.");
 								}
 								if (node_conf_impl.service_category != qn_round_robin_service_strategy
 									&&
 									node_conf_impl.policy_category == qn_round_robin_scheduling_policy)
 								{
-										throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Round-Robin scheduling policy can only be used with Round-Robin service strategy.");
+										throw ::std::runtime_error("[dcs::des::cloud::config::detail::make_application_simulation_model] Round-Robin scheduling policy can only be used with Round-Robin service strategy.");
 								}
 
 								// Service strategy
 								switch (node_conf_impl.service_category)
 								{
 									case qn_infinite_server_service_strategy:
-										throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Service strategy for a queueing station node cannot be of type 'infinite-server'.");
+										throw ::std::runtime_error("[dcs::des::cloud::config::detail::make_application_simulation_model] Service strategy for a queueing station node cannot be of type 'infinite-server'.");
 									case qn_load_independent_service_strategy:
 										{
 											typedef typename node_config_impl_type::load_independent_service_strategy_config_type service_config_type;
@@ -262,7 +262,7 @@ template <
 
 											if (node_conf_impl.policy_category != qn_processor_sharing_scheduling_policy)
 											{
-												throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Processor-Sharing service strategy needs Processor-Sharing scheduling policy.");
+												throw ::std::runtime_error("[dcs::des::cloud::config::detail::make_application_simulation_model] Processor-Sharing service strategy needs Processor-Sharing scheduling policy.");
 											}
 
 											service_config_type const& service_conf = ::boost::get<service_config_type>(node_conf_impl.service_conf);
@@ -291,7 +291,7 @@ template <
 
 											if (node_conf_impl.policy_category != qn_round_robin_scheduling_policy)
 											{
-												throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Round-Robin service strategy needs Round-Robin scheduling policy.");
+												throw ::std::runtime_error("[dcs::des::cloud::config::detail::make_application_simulation_model] Round-Robin service strategy needs Round-Robin scheduling policy.");
 											}
 
 											service_config_type const& service_conf = ::boost::get<service_config_type>(node_conf_impl.service_conf);
@@ -404,7 +404,7 @@ template <
 											}
 											else
 											{
-												throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Finite capacity queues with Processor-Sharing policy are not handled yet.");
+												throw ::std::runtime_error("[dcs::des::cloud::config::detail::make_application_simulation_model] Finite capacity queues with Processor-Sharing policy are not handled yet.");
 											}
 										}
 										break;
@@ -418,7 +418,7 @@ template <
 											}
 											else
 											{
-												throw ::std::runtime_error("[dcs::eesim::config::detail::make_application_simulation_model] Finite capacity queues with Round-Robin policy are not handled yet.");
+												throw ::std::runtime_error("[dcs::des::cloud::config::detail::make_application_simulation_model] Finite capacity queues with Round-Robin policy are not handled yet.");
 											}
 										}
 										break;
@@ -639,7 +639,7 @@ template <
 				stat_conf.category_conf = mean_statistic_config();
 			}
 
-			if (::dcs::eesim::for_application(category))
+			if (::dcs::des::cloud::for_application(category))
 			{
 				ptr_model->statistic(
 						category,
@@ -656,7 +656,7 @@ template <
 					);
 			}
 
-			if (::dcs::eesim::for_application_tier(category))
+			if (::dcs::des::cloud::for_application_tier(category))
 			{
 				::std::size_t num_tiers = app.num_tiers();
 				for (::std::size_t tier_id = 0; tier_id < num_tiers; ++tier_id)
@@ -683,7 +683,7 @@ template <
 	return ptr_model;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_OPERATION_MAKE_APPLICATION_SIMULATION_MODEL_HPP
+#endif // DCS_DES_CLOUD_CONFIG_OPERATION_MAKE_APPLICATION_SIMULATION_MODEL_HPP

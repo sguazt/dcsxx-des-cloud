@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/workload.hpp
+ * \file dcs/des/cloud/workload.hpp
  *
  * \brief Forward declaration for workload classes.
  *
@@ -22,10 +22,10 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_WORKLOAD_HPP
-#define DCS_EESIM_WORKLOAD_HPP
+#ifndef DCS_DES_CLOUD_WORKLOAD_HPP
+#define DCS_DES_CLOUD_WORKLOAD_HPP
 
-#include <dcs/eesim/workload/mmpp.hpp>
-#include <dcs/eesim/workload/timed_step.hpp>
+#include <dcs/des/cloud/workload/mmpp.hpp>
+#include <dcs/des/cloud/workload/timed_step.hpp>
 
-#endif // DCS_EESIM_WORKLOAD_HPP
+#endif // DCS_DES_CLOUD_WORKLOAD_HPP

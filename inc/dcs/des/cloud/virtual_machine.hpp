@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/virtual_machine.hpp
+ * \file dcs/des/cloud/virtual_machine.hpp
  *
  * \brief Model for virtual machines.
  *
@@ -22,8 +22,8 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_VIRTUAL_MACHINE_HPP
-#define DCS_EESIM_VIRTUAL_MACHINE_HPP
+#ifndef DCS_DES_CLOUD_VIRTUAL_MACHINE_HPP
+#define DCS_DES_CLOUD_VIRTUAL_MACHINE_HPP
 
 
 #include <algorithm>
@@ -35,16 +35,16 @@
 #include <dcs/des/min_estimator.hpp>
 #include <dcs/des/quantile_estimator.hpp>
 #include <dcs/math/stats/function/rand.hpp>
-#include <dcs/eesim/application_tier.hpp>
-#include <dcs/eesim/fwd.hpp>
-#include <dcs/eesim/logging.hpp>
-#include <dcs/eesim/physical_machine.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-#include <dcs/eesim/physical_resource_view.hpp>
-#include <dcs/eesim/power_status.hpp>
-#include <dcs/eesim/registry.hpp>
-#include <dcs/eesim/utility.hpp>
-#include <dcs/eesim/virtual_machine_monitor.hpp>
+#include <dcs/des/cloud/application_tier.hpp>
+#include <dcs/des/cloud/fwd.hpp>
+#include <dcs/des/cloud/logging.hpp>
+#include <dcs/des/cloud/physical_machine.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+#include <dcs/des/cloud/physical_resource_view.hpp>
+#include <dcs/des/cloud/power_status.hpp>
+#include <dcs/des/cloud/registry.hpp>
+#include <dcs/des/cloud/utility.hpp>
+#include <dcs/des/cloud/virtual_machine_monitor.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
@@ -58,7 +58,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 //template <typename TraitsT>
 //class physical_machine;
@@ -66,7 +66,7 @@ namespace dcs { namespace eesim {
 template <typename TraitsT>
 class virtual_machine_monitor;
  
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 template <typename TraitsT>
 struct share_observer
 {
@@ -76,7 +76,7 @@ struct share_observer
 
 	virtual void resource_share_updated(physical_resource_category category, real_type share) = 0;
 };
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 /**
  * \brief Model for virtual machines.
@@ -218,7 +218,7 @@ class virtual_machine
 		// pre: application tier must already be set
 		DCS_ASSERT(
 			ptr_tier_,
-			throw ::std::logic_error("[dcs::eesim::virtual_machine::guest_system] Guest system has not been set yet.")
+			throw ::std::logic_error("[dcs::des::cloud::virtual_machine::guest_system] Guest system has not been set yet.")
 		);
 
 		return *ptr_tier_;
@@ -230,7 +230,7 @@ class virtual_machine
 		// pre: application tier must already be set
 		DCS_ASSERT(
 			ptr_tier_,
-			throw ::std::logic_error("[dcs::eesim::virtual_machine::guest_system] Guest system has not been set yet.")
+			throw ::std::logic_error("[dcs::des::cloud::virtual_machine::guest_system] Guest system has not been set yet.")
 		);
 
 		return *ptr_tier_;
@@ -248,7 +248,7 @@ class virtual_machine
 		// pre: VMM must already be set
 		DCS_ASSERT(
 			ptr_vmm_,
-			throw ::std::logic_error("[dcs::eesim::virtual_machine::vmm] Virtual Machine Monitor not set.")
+			throw ::std::logic_error("[dcs::des::cloud::virtual_machine::vmm] Virtual Machine Monitor not set.")
 		);
 
 		return *ptr_vmm_;
@@ -260,7 +260,7 @@ class virtual_machine
 		// pre: VMM must already be set
 		DCS_ASSERT(
 			ptr_vmm_,
-			throw ::std::logic_error("[dcs::eesim::virtual_machine::vmm] Virtual Machine Monitor not set.")
+			throw ::std::logic_error("[dcs::des::cloud::virtual_machine::vmm] Virtual Machine Monitor not set.")
 		);
 
 		return *ptr_vmm_;
@@ -297,9 +297,9 @@ class virtual_machine
 	public: void wanted_resource_share(physical_resource_category category, real_type fraction)
 	{
 		wanted_res_shares_[category] = fraction;
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 		notify_share_change(category, fraction, true);
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 		if (power_status_ == powered_on_power_status)
 		{
@@ -335,7 +335,7 @@ class virtual_machine
 	{
 		DCS_ASSERT(
 			wanted_res_shares_.count(category) > 0,
-			throw ::std::invalid_argument("[dcs::eesim::virtual_machine::wanted_resource_share] Unhandled resource category.")
+			throw ::std::invalid_argument("[dcs::des::cloud::virtual_machine::wanted_resource_share] Unhandled resource category.")
 		);
 
 		return wanted_res_shares_.at(category);
@@ -358,9 +358,9 @@ class virtual_machine
 	public: void resource_share(physical_resource_category category, real_type share)
 	{
 		res_shares_[category] = share;
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 		notify_share_change(category, share, false);
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 		if (this->guest_system_ptr() && this->deployed())
 		{
@@ -385,7 +385,7 @@ class virtual_machine
 			// method when a VM is still to be deployed.
 			::std::ostringstream oss;
 			oss << "Virtual Machine " << *this << " not correctly deployed.";
-			log_warn(DCS_EESIM_LOGGING_AT, oss.str());
+			log_warn(DCS_DES_CLOUD_LOGGING_AT, oss.str());
 		}
 	}
 
@@ -420,7 +420,7 @@ class virtual_machine
 	{
 		DCS_ASSERT(
 			res_shares_.count(category) > 0,
-			throw ::std::invalid_argument("[dcs::eesim::virtual_machine::resource_share] Unhandled resource category.")
+			throw ::std::invalid_argument("[dcs::des::cloud::virtual_machine::resource_share] Unhandled resource category.")
 		);
 
 		return res_shares_.at(category);
@@ -479,7 +479,7 @@ class virtual_machine
 		// precondition: power status must be POWERED-ON
 		DCS_ASSERT(
 			power_status_ == powered_on_power_status,
-			::std::logic_error("[dcs::eesim::virtual_machine::suspend] Cannot suspend a non-running virtual machine.")
+			::std::logic_error("[dcs::des::cloud::virtual_machine::suspend] Cannot suspend a non-running virtual machine.")
 		);
 
 		power_status_ = suspended_power_status;
@@ -491,7 +491,7 @@ class virtual_machine
 		// precondition: power status must be SUSPENDED
 		DCS_ASSERT(
 			power_status_ == suspended_power_status,
-			::std::logic_error("[dcs::eesim::virtual_machine::resume] Cannot resume a non-suspended virtual machine.")
+			::std::logic_error("[dcs::des::cloud::virtual_machine::resume] Cannot resume a non-suspended virtual machine.")
 		);
 
 		power_status_ = powered_on_power_status;
@@ -507,7 +507,7 @@ class virtual_machine
 	}
 
 
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 	public: typedef share_observer<traits_type> share_observer_type;
 	public: typedef ::dcs::shared_ptr<share_observer_type> share_observer_pointer;
 	public: typedef ::std::set<share_observer_pointer> share_observer_container;
@@ -549,7 +549,7 @@ class virtual_machine
 			}
 		}
 	}
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 
 
 	protected: application_tier_pointer guest_system_ptr() const
@@ -578,7 +578,7 @@ class virtual_machine
 
 	private: void create_share_stats(physical_resource_category category)
 	{
-		typedef ::dcs::eesim::registry<traits_type> registry_type;
+		typedef ::dcs::des::cloud::registry<traits_type> registry_type;
 		typedef typename registry_type::des_engine_type des_engine_type;
 
 		if (wanted_res_shares_stats_.count(category) && res_shares_stats_.count(category))
@@ -793,9 +793,9 @@ class virtual_machine
 	private: virtual_machine_monitor_pointer ptr_vmm_;
 	private: resource_share_stat_impl_container wanted_res_shares_stats_;
 	private: resource_share_stat_impl_container res_shares_stats_;
-#ifdef DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#ifdef DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 	private: share_observer_container share_obs_;
-#endif // DCS_EESIM_EXP_MIGR_CONTROLLER_MONITOR_VMS
+#endif // DCS_DES_CLOUD_EXP_MIGR_CONTROLLER_MONITOR_VMS
 };
 
 
@@ -820,7 +820,7 @@ template <typename CharT, typename CharTraitsT, typename TraitsT>
 	return os;
 }
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_VIRTUAL_MACHINE_HPP
+#endif // DCS_DES_CLOUD_VIRTUAL_MACHINE_HPP

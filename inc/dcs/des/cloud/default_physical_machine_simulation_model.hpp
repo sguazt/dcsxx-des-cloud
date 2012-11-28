@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/default_physical_machine_simulation_model.hpp
+ * \file dcs/des/cloud/default_physical_machine_simulation_model.hpp
  *
  * \brief Simulation model class for physical machines.
  *
@@ -22,8 +22,8 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DEFAULT_PHYSICAL_MACHINE_SIMULATION_MODEL_HPP
-#define DCS_EESIM_DEFAULT_PHYSICAL_MACHINE_SIMULATION_MODEL_HPP
+#ifndef DCS_DES_CLOUD_DEFAULT_PHYSICAL_MACHINE_SIMULATION_MODEL_HPP
+#define DCS_DES_CLOUD_DEFAULT_PHYSICAL_MACHINE_SIMULATION_MODEL_HPP
 
 
 #include <algorithm>
@@ -33,13 +33,13 @@
 #include <dcs/des/mean_estimator.hpp>
 #include <dcs/des/weighted_mean_estimator.hpp>
 #include <dcs/math/traits/float.hpp>
-#include <dcs/eesim/base_physical_machine_simulation_model.hpp>
-#include <dcs/eesim/logging.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-#include <dcs/eesim/power_status.hpp>
-#include <dcs/eesim/registry.hpp>
-#include <dcs/eesim/resource_utilization_profile.hpp>
-#include <dcs/eesim/user_request.hpp>
+#include <dcs/des/cloud/base_physical_machine_simulation_model.hpp>
+#include <dcs/des/cloud/logging.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+#include <dcs/des/cloud/power_status.hpp>
+#include <dcs/des/cloud/registry.hpp>
+#include <dcs/des/cloud/resource_utilization_profile.hpp>
+#include <dcs/des/cloud/user_request.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
@@ -50,7 +50,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class default_physical_machine_simulation_model: public base_physical_machine_simulation_model<TraitsT>
@@ -107,12 +107,12 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 	  ptr_uptime_stat_(new mean_estimator_statistic_type()), //FIXME: statistic type (mean) is hard-coded
 	  ptr_util_stat_(new mean_estimator_statistic_type()), //FIXME: statistic type (mean) is hard-coded
 	  ptr_share_stat_(registry_type::instance().des_engine().make_analyzable_statistic(weighted_mean_estimator_statistic_type())), //FIXME: statistic type (mean) is hard-coded
-#ifdef DDCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
+#ifdef DDCS_DES_CLOUD_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
 	  last_share_upd_time_(0),
 	  can_pm_auto_pow_off_(true)
-#else // DDCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
+#else // DDCS_DES_CLOUD_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
 	  last_share_upd_time_(0)
-#endif // DDCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
+#endif // DDCS_DES_CLOUD_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
 	{
 		init();
 	}
@@ -660,7 +660,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		}
 		else
 		{
-			log_warn(DCS_EESIM_LOGGING_AT, "Cannot power-on a non powered-off physical machine.");
+			log_warn(DCS_DES_CLOUD_LOGGING_AT, "Cannot power-on a non powered-off physical machine.");
 		}
 
 //::std::cerr << "[default_physical_machine_simulation] (" << this << ") END Do Power-On physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")" << ::std::endl;//XXX
@@ -678,9 +678,9 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 			// Power-off hosted VMs
 			typedef ::std::vector<virtual_machine_pointer> virtual_machine_container;
 			typedef typename virtual_machine_container::iterator virtual_machine_iterator;
-#ifdef DDCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
+#ifdef DDCS_DES_CLOUD_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
 	  		can_pm_auto_pow_off_ = false;
-#endif // DDCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
+#endif // DDCS_DES_CLOUD_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
 			virtual_machine_container vms(this->machine().vmm().virtual_machines());
 			virtual_machine_iterator vm_end_it(vms.end());
 			for (virtual_machine_iterator vm_it = vms.begin(); vm_it != vm_end_it; ++vm_it)
@@ -707,13 +707,13 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 					ptr_pwroff_evt_src_,
 					cur_time
 				);
-#ifdef DDCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
+#ifdef DDCS_DES_CLOUD_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
 	  		can_pm_auto_pow_off_ = true;
-#endif // DDCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
+#endif // DDCS_DES_CLOUD_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
 		}
 		else
 		{
-			log_warn(DCS_EESIM_LOGGING_AT, "Cannot power-off an already powered-off physical machine.");
+			log_warn(DCS_DES_CLOUD_LOGGING_AT, "Cannot power-off an already powered-off physical machine.");
 		}
 
 //::std::cerr << "[default_physical_machine_simulation] (" << this << ") END Do Power-Off physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")" << ::std::endl;//XXX
@@ -764,7 +764,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		}
 		else
 		{
-			log_warn(DCS_EESIM_LOGGING_AT, "Cannot power-on a non powered-off virtual machine.");
+			log_warn(DCS_DES_CLOUD_LOGGING_AT, "Cannot power-on a non powered-off virtual machine.");
 		}
 
 //::std::cerr << "[default_physical_machine_simulation_model] (" << this << ") END Do Power-On virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")" << ::std::endl;//XXX
@@ -813,10 +813,10 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		}
 		else
 		{
-			log_warn(DCS_EESIM_LOGGING_AT, "Cannot power-off an already powered-off virtual machine.");
+			log_warn(DCS_DES_CLOUD_LOGGING_AT, "Cannot power-off an already powered-off virtual machine.");
 		}
 
-#ifdef DDCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
+#ifdef DDCS_DES_CLOUD_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
 			if (can_pm_auto_pow_off_
 				&&
 				this->machine().vmm().virtual_machines(powered_on_power_status).size() == 0)
@@ -824,7 +824,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 //::std::cerr << "[default_physical_machine_simulation_model] Auto-powering off machine" << this->machine() << ::std::endl;//XXX
 				this->machine().power_off();
 			}
-#endif // DDCS_EESIM_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
+#endif // DDCS_DES_CLOUD_EXP_PHYSICAL_MACHINES_AUTO_POWER_OFF
 //::std::cerr << "(" << this << ") END Do Power-Off virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")" << ::std::endl;///XXX
 		DCS_DEBUG_TRACE("[default_physical_machine_simulation_model] (" << this << ") END Do Power-Off virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
 	}
@@ -870,7 +870,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		}
 		else
 		{
-			log_warn(DCS_EESIM_LOGGING_AT, "Cannot suspend an non powered-on virtual machine.");
+			log_warn(DCS_DES_CLOUD_LOGGING_AT, "Cannot suspend an non powered-on virtual machine.");
 		}
 
 		DCS_DEBUG_TRACE("(" << this << ") END Do Suspend virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
@@ -914,7 +914,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		}
 		else
 		{
-			log_warn(DCS_EESIM_LOGGING_AT, "Cannot resume an non suspended-on virtual machine.");
+			log_warn(DCS_DES_CLOUD_LOGGING_AT, "Cannot resume an non suspended-on virtual machine.");
 		}
 
 		DCS_DEBUG_TRACE("(" << this << ") END Do Resume virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
@@ -981,7 +981,7 @@ class default_physical_machine_simulation_model: public base_physical_machine_si
 		}
 		else
 		{
-			log_warn(DCS_EESIM_LOGGING_AT, "Cannot migrate a non powered-on virtual machine.");
+			log_warn(DCS_DES_CLOUD_LOGGING_AT, "Cannot migrate a non powered-on virtual machine.");
 		}
 
 		DCS_DEBUG_TRACE("(" << this << ") END Do Migrate virtual machine: " << *ptr_vm << " on physical machine: " << this->machine() << " (Clock: " << registry_type::instance().des_engine().simulated_time() << ")");
@@ -1393,6 +1393,6 @@ const ::std::string default_physical_machine_simulation_model<TraitsT>::vm_resum
 template <typename TraitsT>
 const ::std::string default_physical_machine_simulation_model<TraitsT>::vm_migration_event_source_name("Virtual Machine Migration");
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
-#endif // DCS_EESIM_DEFAULT_PHYSICAL_MACHINE_SIMULATION_MODEL_HPP
+#endif // DCS_DES_CLOUD_DEFAULT_PHYSICAL_MACHINE_SIMULATION_MODEL_HPP

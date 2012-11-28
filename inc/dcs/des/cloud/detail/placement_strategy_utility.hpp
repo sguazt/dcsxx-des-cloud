@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/detail/placement_strategy_utility.hpp
+ * \file dcs/des/cloud/detail/placement_strategy_utility.hpp
  *
  * \brief Utilities for VM placement strategies.
  *
@@ -22,18 +22,18 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DETAIL_PLACEMENT_STRATEGY_UTILITY_HPP
-#define DCS_EESIM_DETAIL_PLACEMENT_STRATEGY_UTILITY_HPP
+#ifndef DCS_DES_CLOUD_DETAIL_PLACEMENT_STRATEGY_UTILITY_HPP
+#define DCS_DES_CLOUD_DETAIL_PLACEMENT_STRATEGY_UTILITY_HPP
 
 
 #include <dcs/debug.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
 #include <dcs/memory.hpp>
 #include <functional>
 #include <map>
 
 
-namespace dcs { namespace eesim { namespace detail {
+namespace dcs { namespace des { namespace cloud { namespace detail {
 
 //FIXME: only the single-resource (CPU) case is handled
 template <typename PM>
@@ -597,7 +597,7 @@ class ptr_virtual_machine_greater_by_share_comparator: public ptr_virtual_machin
 	}
 }; // ptr_virtual_machine_greater_by_share_comparator
 
-}}} // Namespace dcs::eesim::detail
+}}}} // Namespace dcs::des::cloud::detail
 
 
-#endif // DCS_EESIM_DETAIL_PLACEMENT_STRATEGY_UTILITY_HPP
+#endif // DCS_DES_CLOUD_DETAIL_PLACEMENT_STRATEGY_UTILITY_HPP

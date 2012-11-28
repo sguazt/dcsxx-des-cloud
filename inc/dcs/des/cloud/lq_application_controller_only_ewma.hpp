@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/lq_application_controller.hpp
+ * \file dcs/des/cloud/lq_application_controller.hpp
  *
  * \brief Class modeling the application controller component using an LQ
  *  controller.
@@ -23,8 +23,8 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_LQ_APPLICATION_CONTROLLER_HPP
-#define DCS_EESIM_LQ_APPLICATION_CONTROLLER_HPP
+#ifndef DCS_DES_CLOUD_LQ_APPLICATION_CONTROLLER_HPP
+#define DCS_DES_CLOUD_LQ_APPLICATION_CONTROLLER_HPP
 
 
 #include <algorithm>
@@ -55,17 +55,17 @@
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/mean_estimator.hpp>
 //#include <dcs/des/quantile_estimator.hpp>//EXP
-#include <dcs/eesim/application_controller_triggers.hpp>
-#include <dcs/eesim/base_application_controller.hpp>
-#include <dcs/eesim/detail/system_identification_strategies.hpp>
-#include <dcs/eesim/detail/matlab/controller_proxies.hpp>
-#include <dcs/eesim/multi_tier_application.hpp>
-#include <dcs/eesim/performance_measure_category.hpp>
-#include <dcs/eesim/physical_machine.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-#include <dcs/eesim/registry.hpp>
-#include <dcs/eesim/system_identification_strategy_params.hpp>
-#include <dcs/eesim/utility.hpp>
+#include <dcs/des/cloud/application_controller_triggers.hpp>
+#include <dcs/des/cloud/base_application_controller.hpp>
+#include <dcs/des/cloud/detail/system_identification_strategies.hpp>
+#include <dcs/des/cloud/detail/matlab/controller_proxies.hpp>
+#include <dcs/des/cloud/multi_tier_application.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
+#include <dcs/des/cloud/physical_machine.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+#include <dcs/des/cloud/registry.hpp>
+#include <dcs/des/cloud/system_identification_strategy_params.hpp>
+#include <dcs/des/cloud/utility.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
@@ -83,7 +83,7 @@
 //
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 namespace detail { namespace /*<unnamed>*/ {
 
@@ -268,18 +268,18 @@ class lq_application_controller: public base_application_controller<TraitsT>,
 	private: typedef ::std::map<performance_measure_category,real_type> category_value_container;
 	private: typedef ::std::vector<category_value_container> category_value_container_container;
 	private: typedef physical_machine<traits_type> physical_machine_type;
-//#if defined(DCS_EESIM_USE_MATLAB_MCR)
+//#if defined(DCS_DES_CLOUD_USE_MATLAB_MCR)
 //	private: typedef detail::rls_ff_miso_matlab_mcr_proxy<traits_type> rls_proxy_type;
-//#elif defined(DCS_EESIM_USE_MATLAB_APP)
-//# if defined(DCS_EESIM_USE_MATLAB_APP_RLS)
+//#elif defined(DCS_DES_CLOUD_USE_MATLAB_APP)
+//# if defined(DCS_DES_CLOUD_USE_MATLAB_APP_RLS)
 //	private: typedef detail::rls_ff_miso_matlab_app_proxy<traits_type> rls_proxy_type;
-//# elif defined(DCS_EESIM_USE_MATLAB_APP_RPEM)
+//# elif defined(DCS_DES_CLOUD_USE_MATLAB_APP_RPEM)
 //	private: typedef detail::rpem_ff_miso_matlab_app_proxy<traits_type> rls_proxy_type;
-//#endif // DCS_EESIM_USE_MATLAB_APP_*
+//#endif // DCS_DES_CLOUD_USE_MATLAB_APP_*
 //#else
 ////	private: typedef detail::rls_ff_mimo_proxy<traits_type> rls_proxy_type;
 //	private: typedef detail::rls_ff_miso_proxy<traits_type> rls_proxy_type;
-//#endif // DCS_EESIM_USE_MATLAB_*
+//#endif // DCS_DES_CLOUD_USE_MATLAB_*
 	private: typedef base_system_identification_strategy<traits_type> system_identification_strategy_type;
 	private: typedef ::dcs::shared_ptr<system_identification_strategy_type> system_identification_strategy_pointer;
 	public: typedef base_system_identification_strategy_params<traits_type> system_identification_strategy_params_type;
@@ -676,7 +676,7 @@ class lq_application_controller: public base_application_controller<TraitsT>,
 //					}
 //					break;
 //				default:
-//					throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::process_request_departure] LQ application controller currently handles only the response-time category.");
+//					throw ::std::runtime_error("[dcs::des::cloud::lqr_application_controller::process_request_departure] LQ application controller currently handles only the response-time category.");
 //			}
 //		}
 //		DCS_DEBUG_TRACE("(" << this << ") END Processing REQUEST-TIER-ARRIVAL (Clock: " << ctx.simulated_time() << ")");
@@ -712,7 +712,7 @@ class lq_application_controller: public base_application_controller<TraitsT>,
 //					}
 //					break;
 //				default:
-//					throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::process_tier_request_departure] LQ application controller currently handles only the response-time category.");
+//					throw ::std::runtime_error("[dcs::des::cloud::lqr_application_controller::process_tier_request_departure] LQ application controller currently handles only the response-time category.");
 //			}
 //		}
 //
@@ -749,7 +749,7 @@ class lq_application_controller: public base_application_controller<TraitsT>,
 
 			// Actual-to-reference scaling factor
 //			real_type scale_factor(1);
-//			scale_factor = ::dcs::eesim::resource_scaling_factor(
+//			scale_factor = ::dcs::des::cloud::resource_scaling_factor(
 //					// Actual resource capacity and threshold
 //					actual_pm.resource(res_category)->capacity(),
 //					actual_pm.resource(res_category)->utilization_threshold(),
@@ -792,7 +792,7 @@ DCS_DEBUG_TRACE("HERE!!!!! tier: " << tier_id << " ==> rt: " << rt << " (aggrega
 						}
 						break;
 					default:
-						throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::process_request_departure] LQ application controller currently handles only the response-time category.");
+						throw ::std::runtime_error("[dcs::des::cloud::lqr_application_controller::process_request_departure] LQ application controller currently handles only the response-time category.");
 				}
 			}
 		}
@@ -824,7 +824,7 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << app_rt << " (aggregated: " << measur
 					}
 					break;
 				default:
-					throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::process_request_departure] LQ application controller currently handles only the response-time category.");
+					throw ::std::runtime_error("[dcs::des::cloud::lqr_application_controller::process_request_departure] LQ application controller currently handles only the response-time category.");
 			}
 		}
 
@@ -874,12 +874,12 @@ DCS_DEBUG_TRACE("HERE!!!!! app ==> rt: " << app_rt << " (aggregated: " << measur
 		DCS_DEBUG_TRACE("(" << this << ") BEGIN Do Process SYSTEM-INITIALIZATION event (Clock: " << ctx.simulated_time() << ")");
 
 		// Prepare the data structures for the RLS algorithm 
-//#ifdef DCS_EESIM_USE_MATLAB_APP_RPEM
+//#ifdef DCS_DES_CLOUD_USE_MATLAB_APP_RPEM
 ////		rls_proxy_ = rls_proxy_type(n_a_, n_b_, 2, d_, n_p_, n_s_, rls_ff_);
 //		ptr_ident_strategy_params_->noise_order(2);
 //#else
 ////		rls_proxy_ = rls_proxy_type(n_a_, n_b_, d_, n_p_, n_s_, rls_ff_);
-//#endif // DCS_EESIM_USE_MATLAB_APP_RPEM
+//#endif // DCS_DES_CLOUD_USE_MATLAB_APP_RPEM
 		ptr_ident_strategy_params_->output_order(n_a_);
 		ptr_ident_strategy_params_->input_order(n_b_);
 		ptr_ident_strategy_params_->input_delay(d_);
@@ -1026,7 +1026,7 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 							}
 							break;
 					default:
-						throw ::std::runtime_error("[dcs::eesim::lqr_application_controller::do_process_control] LQ application controller currently handles only the response-time category.");
+						throw ::std::runtime_error("[dcs::des::cloud::lqr_application_controller::do_process_control] LQ application controller currently handles only the response-time category.");
 				}
 			}
 		}
@@ -1047,7 +1047,7 @@ DCS_DEBUG_TRACE("APP " << app.id() << " - TIER " << tier_id << " OBSERVATION: re
 
 			// Get the actual resource share from the VM and scale w.r.t. the reference machine
 			real_type actual_share;
-			actual_share = ::dcs::eesim::scale_resource_share(actual_pm.resource(res_category)->capacity(),
+			actual_share = ::dcs::des::cloud::scale_resource_share(actual_pm.resource(res_category)->capacity(),
 															  actual_pm.resource(res_category)->utilization_threshold(),
 															  app.reference_resource(res_category).capacity(),
 															  app.reference_resource(res_category).utilization_threshold(),
@@ -1180,7 +1180,7 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 							physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
 							real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
 	//						real_type actual_share;
-	//						actual_share = ::dcs::eesim::scale_resource_share(pm.resource(res_category)->capacity(),
+	//						actual_share = ::dcs::des::cloud::scale_resource_share(pm.resource(res_category)->capacity(),
 	//																		  pm.resource(res_category)->utilization_threshold(),
 	//																		  app.reference_resource(res_category).capacity(),
 	//																		  app.reference_resource(res_category).utilization_threshold(),
@@ -1190,7 +1190,7 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 	//DCS_DEBUG_TRACE("Tier " << tier_id << " --> Actual share: " << actual_share);//XXX
 	DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Unscaled share: " << (ref_share*(opt_u(u_offset_+tier_id)+real_type(1))));//XXX
 							real_type new_share;
-							new_share = ::dcs::eesim::scale_resource_share(
+							new_share = ::dcs::des::cloud::scale_resource_share(
 											// Reference resource capacity and threshold
 											app.reference_resource(res_category).capacity(),
 											app.reference_resource(res_category).utilization_threshold(),
@@ -1213,7 +1213,7 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 //							DCS_DEBUG_TRACE("APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share);
 ::std::cerr << "APP: " << app.id() << " - Assigning new wanted share: VM: " << ptr_vm->name() << " (" << ptr_vm->id() << ") - Tier: " << tier_id << " - Category: " << res_category << " - Actual Share: " << ptr_vm->resource_share(res_category) << " ==> Share: " << new_share << ::std::endl;//XXX
 
-							new_share = ::dcs::eesim::scale_resource_share(
+							new_share = ::dcs::des::cloud::scale_resource_share(
 											// Actual resource capacity and threshold
 											pm.resource(res_category)->capacity(),
 											pm.resource(res_category)->utilization_threshold(),
@@ -1251,7 +1251,7 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 								real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
 
 								real_type new_share;
-								new_share = ::dcs::eesim::scale_resource_share(
+								new_share = ::dcs::des::cloud::scale_resource_share(
 												// Reference resource capacity and threshold
 												app.reference_resource(res_category).capacity(),
 												app.reference_resource(res_category).utilization_threshold(),
@@ -1284,7 +1284,7 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 							physical_machine_type const& pm(ptr_vm->vmm().hosting_machine());
 							real_type ref_share(ptr_vm->guest_system().resource_share(res_category));
 	//						real_type actual_share;
-	//						actual_share = ::dcs::eesim::scale_resource_share(pm.resource(res_category)->capacity(),
+	//						actual_share = ::dcs::des::cloud::scale_resource_share(pm.resource(res_category)->capacity(),
 	//																		  pm.resource(res_category)->utilization_threshold(),
 	//																		  app.reference_resource(res_category).capacity(),
 	//																		  app.reference_resource(res_category).utilization_threshold(),
@@ -1294,7 +1294,7 @@ DCS_DEBUG_TRACE("Applying optimal control");//XXX
 	//DCS_DEBUG_TRACE("Tier " << tier_id << " --> Actual share: " << actual_share);//XXX
 	DCS_DEBUG_TRACE("Tier " << tier_id << " --> New Unscaled share: " << (ref_share*(opt_u(u_offset_+tier_id)+real_type(1))));//XXX
 							real_type new_share;
-							new_share = ::dcs::eesim::scale_resource_share(
+							new_share = ::dcs::des::cloud::scale_resource_share(
 											// Reference resource capacity and threshold
 											app.reference_resource(res_category).capacity(),
 											app.reference_resource(res_category).utilization_threshold(),
@@ -1460,7 +1460,7 @@ const typename lq_application_controller<TraitsT>::real_type lq_application_cont
 template <typename TraitsT>
 const typename lq_application_controller<TraitsT>::real_type lq_application_controller<TraitsT>::default_ewma_smoothing_factor = 0.7;
 
-}} // Namespace detail::<unnamed>
+}}} // Namespace detail::<unnamed>
 
 
 /**
@@ -2202,7 +2202,7 @@ class matlab_lqry_application_controller: public detail::lq_application_controll
 	private: lq_controller_type controller_;
 }; // matlab_lqry_application_controller
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_LQ_APPLICATION_CONTROLLER_HPP
+#endif // DCS_DES_CLOUD_LQ_APPLICATION_CONTROLLER_HPP

@@ -1,14 +1,14 @@
-#ifndef DCS_EESIM_LOGGING_MINIMAL_LOGGER_HPP
-#define DCS_EESIM_LOGGING_MINIMAL_LOGGER_HPP
+#ifndef DCS_DES_CLOUD_LOGGING_MINIMAL_LOGGER_HPP
+#define DCS_DES_CLOUD_LOGGING_MINIMAL_LOGGER_HPP
 
 
 #include <dcs/des/engine_traits.hpp>
-#include <dcs/eesim/logging/base_logger.hpp>
+#include <dcs/des/cloud/logging/base_logger.hpp>
 #include <dcs/macro.hpp>
 #include <iostream>
 
 
-namespace dcs { namespace eesim { namespace logging {
+namespace dcs { namespace des { namespace cloud { namespace logging {
 
 template <typename TraitsT>
 class minimal_logger: public base_logger<TraitsT>
@@ -61,7 +61,7 @@ class minimal_logger: public base_logger<TraitsT>
 	}
 };
 
-}}} // Namespace dcs::eesim::logging
+}}}} // Namespace dcs::des::cloud::logging
 
 
-#endif // DCS_EESIM_LOGGING_MINIMAL_LOGGER_HPP
+#endif // DCS_DES_CLOUD_LOGGING_MINIMAL_LOGGER_HPP

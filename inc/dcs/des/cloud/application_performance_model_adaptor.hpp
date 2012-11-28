@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/application_performance_model_adapter.hpp
+ * \file dcs/des/cloud/application_performance_model_adapter.hpp
  *
  * \brief Adapter class for application performance model.
  *
@@ -22,20 +22,20 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_APPLICATION_PERFORMANCE_MODEL_ADAPTOR_HPP
-#define DCS_EESIM_APPLICATION_PERFORMANCE_MODEL_ADAPTOR_HPP
+#ifndef DCS_DES_CLOUD_APPLICATION_PERFORMANCE_MODEL_ADAPTOR_HPP
+#define DCS_DES_CLOUD_APPLICATION_PERFORMANCE_MODEL_ADAPTOR_HPP
 
 
-#include <dcs/eesim/application_performance_model_traits.hpp>
-#include <dcs/eesim/base_application_performance_model.hpp>
-#include <dcs/eesim/performance_measure_category.hpp>
+#include <dcs/des/cloud/application_performance_model_traits.hpp>
+#include <dcs/des/cloud/base_application_performance_model.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
 #include <dcs/exception.hpp>
 #include <stdexcept>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <
 	typename TraitsT,
@@ -95,7 +95,7 @@ class application_performance_model_adaptor: public base_application_performance
 	private: model_type model_;
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_APPLICATION_PERFORMANCE_MODEL_ADAPTOR_HPP
+#endif // DCS_DES_CLOUD_APPLICATION_PERFORMANCE_MODEL_ADAPTOR_HPP

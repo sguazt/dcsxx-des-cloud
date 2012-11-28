@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/performance_measure.hpp
+ * \file dcs/des/cloud/performance_measure.hpp
  *
  * \brief Class that reprsents a performance measure.
  *
@@ -22,15 +22,15 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_PERFORMANCE_MEASURE_HPP
-#define DCS_EESIM_PERFORMANCE_MEASURE_HPP
+#ifndef DCS_DES_CLOUD_PERFORMANCE_MEASURE_HPP
+#define DCS_DES_CLOUD_PERFORMANCE_MEASURE_HPP
 
 
-#include <dcs/eesim/performance_measure_category.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
 #include <limits>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class performance_measure
@@ -81,6 +81,6 @@ class performance_measure
 	private: real_type value_;
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
-#endif // DCS_EESIM_PERFORMANCE_MEASURE_HPP
+#endif // DCS_DES_CLOUD_PERFORMANCE_MEASURE_HPP

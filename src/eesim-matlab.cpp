@@ -1,7 +1,7 @@
 /**
- * \file src/eesim-matlab.cpp
+ * \file src/des/cloud-matlab.cpp
  *
- * \brief Application entry-point for MATLAB-based EESim.
+ * \brief Application entry-point for MATLAB-based DCS DES Cloud.
  *
  * Copyright (C) 2009-2011  Distributed Computing System (DCS) Group, Computer
  * Science Department - University of Piemonte Orientale, Alessandria (Italy).
@@ -22,25 +22,25 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifdef DCS_EESIM_USE_MATLAB_MCR
+#ifdef DCS_DES_CLOUD_USE_MATLAB_MCR
 
 #include <dcs/des/engine.hpp>
 #include <dcs/des/engine_traits.hpp>
-#include <dcs/eesim/config/configuration.hpp>
-#include <dcs/eesim/config/operation/make_data_center.hpp>
-#include <dcs/eesim/config/operation/make_data_center_manager.hpp>
-#include <dcs/eesim/config/operation/make_des_engine.hpp>
-#include <dcs/eesim/config/operation/make_logger.hpp>
-#include <dcs/eesim/config/operation/make_random_number_generator.hpp>
-#include <dcs/eesim/config/operation/read_file.hpp>
-#include <dcs/eesim/config/yaml.hpp>
-#include <dcs/eesim/data_center.hpp>
-#include <dcs/eesim/data_center_manager.hpp>
-#include <dcs/eesim/physical_resource_category.hpp>
-#include <dcs/eesim/performance_measure_category.hpp>
-#include <dcs/eesim/registry.hpp>
-#include <dcs/eesim/traits.hpp>
-#include <dcs/eesim/logging/base_logger.hpp>
+#include <dcs/des/cloud/config/configuration.hpp>
+#include <dcs/des/cloud/config/operation/make_data_center.hpp>
+#include <dcs/des/cloud/config/operation/make_data_center_manager.hpp>
+#include <dcs/des/cloud/config/operation/make_des_engine.hpp>
+#include <dcs/des/cloud/config/operation/make_logger.hpp>
+#include <dcs/des/cloud/config/operation/make_random_number_generator.hpp>
+#include <dcs/des/cloud/config/operation/read_file.hpp>
+#include <dcs/des/cloud/config/yaml.hpp>
+#include <dcs/des/cloud/data_center.hpp>
+#include <dcs/des/cloud/data_center_manager.hpp>
+#include <dcs/des/cloud/physical_resource_category.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
+#include <dcs/des/cloud/registry.hpp>
+#include <dcs/des/cloud/traits.hpp>
+#include <dcs/des/cloud/logging/base_logger.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
 //#include <dcs/math/random/any_generator.hpp>
@@ -87,14 +87,14 @@ typedef unsigned long uint_type;
 typedef long int_type;
 typedef dcs::des::engine<real_type> des_engine_type;
 typedef dcs::math::random::base_generator<uint_type> random_generator_type;
-typedef dcs::eesim::traits<
+typedef dcs::des::cloud::traits<
 			des_engine_type,
 			random_generator_type,
 			real_type,
 			uint_type,
 			int_type
 		> traits_type;
-typedef dcs::eesim::registry<traits_type> registry_type;
+typedef dcs::des::cloud::registry<traits_type> registry_type;
 typedef ::dcs::math::random::minstd_rand1 random_seeder_type;
 
 
@@ -124,17 +124,17 @@ void process_sys_init_sim_event(des_event_type const& evt, des_engine_context_ty
 }
 
 
-::std::string to_string(::dcs::eesim::performance_measure_category category)
+::std::string to_string(::dcs::des::cloud::performance_measure_category category)
 {
 	switch (category)
 	{
-		case ::dcs::eesim::busy_time_performance_measure:
+		case ::dcs::des::cloud::busy_time_performance_measure:
 			return ::std::string("Busy Time");
-		case ::dcs::eesim::response_time_performance_measure:
+		case ::dcs::des::cloud::response_time_performance_measure:
 			return ::std::string("Response Time");
-		case ::dcs::eesim::throughput_performance_measure:
+		case ::dcs::des::cloud::throughput_performance_measure:
 			return ::std::string("Throughput");
-		case ::dcs::eesim::utilization_performance_measure:
+		case ::dcs::des::cloud::utilization_performance_measure:
 			return ::std::string("Utilization");
 		default:
 			break;
@@ -149,12 +149,12 @@ template <
 	typename CharTraitsT,
 	typename TraitsT
 >
-void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr< ::dcs::eesim::data_center<TraitsT> > const& ptr_dc)
+void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr< ::dcs::des::cloud::data_center<TraitsT> > const& ptr_dc)
 {
 	typedef TraitsT traits_type;
 	typedef typename traits_type::uint_type uint_type;
 	typedef typename traits_type::real_type real_type;
-	typedef ::dcs::eesim::data_center<traits_type> data_center_type;
+	typedef ::dcs::des::cloud::data_center<traits_type> data_center_type;
 
 	::std::string indent("  ");
 
@@ -184,7 +184,7 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 			vm_share_iterator share_end_it = vm_placement.shares_end(place_it);
 			for (vm_share_iterator share_it = vm_placement.shares_begin(place_it); share_it != share_end_it; ++share_it)
 			{
-				::dcs::eesim::physical_resource_category category(vm_placement.resource_category(share_it));
+				::dcs::des::cloud::physical_resource_category category(vm_placement.resource_category(share_it));
 				real_type share(vm_placement.resource_share(share_it));
 
 				os << indent << indent
@@ -206,7 +206,7 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 		typedef typename application_type::application_tier_pointer application_tier_pointer;
 		typedef ::std::vector<application_tier_pointer> tier_container;
 		typedef typename tier_container::const_iterator tier_iterator;
-		typedef ::dcs::eesim::performance_measure_category statistic_category_type;
+		typedef ::dcs::des::cloud::performance_measure_category statistic_category_type;
 		typedef ::std::vector<statistic_category_type> statistic_category_container;
 		typedef typename statistic_category_container::const_iterator statistic_category_iterator;
 
@@ -234,16 +234,16 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 			statistic_category_container stat_categories;
 
 			//[FIXME] statistic categories are hard-coded
-			//stat_categories.push_back(::dcs::eesim::response_time_performance_measure);
+			//stat_categories.push_back(::dcs::des::cloud::response_time_performance_measure);
 			//[/FIXME]
 
-			stat_categories = ::dcs::eesim::performance_measure_categories();
+			stat_categories = ::dcs::des::cloud::performance_measure_categories();
 			statistic_category_iterator stat_cat_end_it = stat_categories.end();
 			for (statistic_category_iterator stat_cat_it = stat_categories.begin(); stat_cat_it != stat_cat_end_it; ++stat_cat_it)
 			{
 				statistic_category_type stat_category(*stat_cat_it);
 
-				if (::dcs::eesim::for_application(stat_category))
+				if (::dcs::des::cloud::for_application(stat_category))
 				{
 					os << indent << indent << indent
 					   << to_string(stat_category) << ": " << ::std::endl;
@@ -283,7 +283,7 @@ void report_stats(::std::basic_ostream<CharT,CharTraitsT>& os, ::dcs::shared_ptr
 				{
 					statistic_category_type stat_category(*stat_cat_it);
 
-					if (::dcs::eesim::for_application_tier(stat_category))
+					if (::dcs::des::cloud::for_application_tier(stat_category))
 					{
 						os << indent << indent << indent
 						   << to_string(stat_category) << ": " << ::std::endl;
@@ -340,19 +340,19 @@ int do_main(int argc, char* argv[])
 //	typedef dcs::des::engine<real_type> des_engine_type;
 ////	typedef dcs::math::random::base_generator<real_type> random_generator_type;
 //	typedef dcs::math::random::base_generator<uint_type> random_generator_type;
-//	typedef dcs::eesim::traits<
+//	typedef dcs::des::cloud::traits<
 //				des_engine_type,
 //				random_generator_type,
 //				real_type,
 //				uint_type,
 //				int_type
 //			> traits_type;
-//	typedef dcs::eesim::registry<traits_type> registry_type;
+//	typedef dcs::des::cloud::registry<traits_type> registry_type;
 	typedef dcs::shared_ptr<des_engine_type> des_engine_pointer;
 	typedef dcs::shared_ptr<random_generator_type> random_generator_pointer;
-	//typedef dcs::eesim::data_center<traits_type> data_center_type;
-	typedef dcs::shared_ptr< dcs::eesim::data_center<traits_type> > data_center_pointer;
-	typedef dcs::shared_ptr< dcs::eesim::data_center_manager<traits_type> > data_center_manager_pointer;
+	//typedef dcs::des::cloud::data_center<traits_type> data_center_type;
+	typedef dcs::shared_ptr< dcs::des::cloud::data_center<traits_type> > data_center_pointer;
+	typedef dcs::shared_ptr< dcs::des::cloud::data_center_manager<traits_type> > data_center_manager_pointer;
 
 
 	prog_name = argv[0];
@@ -369,15 +369,15 @@ int do_main(int argc, char* argv[])
 	std::string conf_fname(argv[1]);
 	configuration_category conf_cat = yaml_configuration;
 
-	dcs::eesim::config::configuration<real_type,uint_type> conf;
+	dcs::des::cloud::config::configuration<real_type,uint_type> conf;
 
 	switch (conf_cat)
 	{
 		case yaml_configuration:
 
-			conf = dcs::eesim::config::read_file(
+			conf = dcs::des::cloud::config::read_file(
 				conf_fname,
-				::dcs::eesim::config::yaml_reader<real_type,uint_type>()
+				::dcs::des::cloud::config::yaml_reader<real_type,uint_type>()
 			);
 			break;
 		default:
@@ -390,10 +390,10 @@ int do_main(int argc, char* argv[])
 
 	registry_type& reg(registry_type::instance());
 	des_engine_pointer ptr_des_eng;
-	ptr_des_eng = dcs::eesim::config::make_des_engine(conf);
+	ptr_des_eng = dcs::des::cloud::config::make_des_engine(conf);
 	reg.des_engine(ptr_des_eng);
 	random_generator_pointer ptr_rng;
-	ptr_rng = dcs::eesim::config::make_random_number_generator(conf);
+	ptr_rng = dcs::des::cloud::config::make_random_number_generator(conf);
 	reg.uniform_random_generator(ptr_rng);
 
 //	detail::test_rng(ptr_rng);//XXX
@@ -411,8 +411,8 @@ int do_main(int argc, char* argv[])
 	);
 
 	// Attach a simulation observer
-	dcs::shared_ptr< dcs::eesim::logging::base_logger<traits_type> > ptr_sim_log;
-	ptr_sim_log = dcs::eesim::config::make_logger<traits_type>(conf);
+	dcs::shared_ptr< dcs::des::cloud::logging::base_logger<traits_type> > ptr_sim_log;
+	ptr_sim_log = dcs::des::cloud::config::make_logger<traits_type>(conf);
 	//FIXME: makes it user configurable
 	//FIXME: makes sinks more flexible like:
 	//       ...->sink(text_file_sink("sim-obs.log"))
@@ -424,8 +424,8 @@ int do_main(int argc, char* argv[])
 	// Build the Data Center
 	data_center_pointer ptr_dc;
 	data_center_manager_pointer ptr_dc_mngr;
-	ptr_dc = dcs::eesim::config::make_data_center<traits_type>(conf, ptr_rng, ptr_des_eng);
-	ptr_dc_mngr = dcs::eesim::config::make_data_center_manager<traits_type>(conf, ptr_dc);
+	ptr_dc = dcs::des::cloud::config::make_data_center<traits_type>(conf, ptr_rng, ptr_des_eng);
+	ptr_dc_mngr = dcs::des::cloud::config::make_data_center_manager<traits_type>(conf, ptr_dc);
 
 	// Run the simulation
 	ptr_des_eng->run();
@@ -494,4 +494,4 @@ int main(int argc, const char** argv)
     return mclRunMain((mclMainFcnType)run_main,argc,argv);
 }
 
-#endif // DCS_EESIM_USE_MATLAB_MCR
+#endif // DCS_DES_CLOUD_USE_MATLAB_MCR

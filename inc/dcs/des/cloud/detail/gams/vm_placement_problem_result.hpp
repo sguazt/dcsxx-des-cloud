@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/detail/gams/vm_placement_problem_result.hpp
+ * \file dcs/des/cloud/detail/gams/vm_placement_problem_result.hpp
  *
  * \brief Result for VM placement problems in the GAMS mathematical
  *  environment.
@@ -23,23 +23,23 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DETAIL_GAMS_VM_PLACEMENT_PROBLEM_RESULT_HPP
-#define DCS_EESIM_DETAIL_GAMS_VM_PLACEMENT_PROBLEM_RESULT_HPP
+#ifndef DCS_DES_CLOUD_DETAIL_GAMS_VM_PLACEMENT_PROBLEM_RESULT_HPP
+#define DCS_DES_CLOUD_DETAIL_GAMS_VM_PLACEMENT_PROBLEM_RESULT_HPP
 
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <cstddef>
-#include <dcs/eesim/detail/gams/model_results.hpp>
-#include <dcs/eesim/detail/gams/solver_results.hpp>
-#include <dcs/eesim/detail/gams/utility.hpp>
+#include <dcs/des/cloud/detail/gams/model_results.hpp>
+#include <dcs/des/cloud/detail/gams/solver_results.hpp>
+#include <dcs/des/cloud/detail/gams/utility.hpp>
 #include <iosfwd>
 #include <limits>
 #include <sstream>
 #include <string>
 
 
-namespace dcs { namespace eesim { namespace detail { namespace gams {
+namespace dcs { namespace des { namespace cloud { namespace detail { namespace gams {
 
 class vm_placement_problem_result
 {
@@ -252,7 +252,7 @@ vm_placement_problem_result make_vm_placement_problem_result(::std::string const
 }
 
 
-}}}} // Namespace dcs::eesim::detail::gams
+}}}}} // Namespace dcs::des::cloud::detail::gams
 
 
-#endif // DCS_EESIM_DETAIL_GAMS_VM_PLACEMENT_PROBLEM_RESULT_HPP
+#endif // DCS_DES_CLOUD_DETAIL_GAMS_VM_PLACEMENT_PROBLEM_RESULT_HPP

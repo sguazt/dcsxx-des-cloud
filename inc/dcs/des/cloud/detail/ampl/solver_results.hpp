@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/detail/ampl/solver_result.hpp
+ * \file dcs/des/cloud/detail/ampl/solver_result.hpp
  *
  * \brief Categories for the results of optimal VM placement strategies
  *  based on the AMPL mathematical environment.
@@ -23,14 +23,14 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_DETAIL_AMPL_SOLVER_RESULTS_HPP
-#define DCS_EESIM_DETAIL_AMPL_SOLVER_RESULTS_HPP
+#ifndef DCS_DES_CLOUD_DETAIL_AMPL_SOLVER_RESULTS_HPP
+#define DCS_DES_CLOUD_DETAIL_AMPL_SOLVER_RESULTS_HPP
 
 
 #include <string>
 
 
-namespace dcs { namespace eesim { namespace detail { namespace ampl {
+namespace dcs { namespace des { namespace cloud { namespace detail { namespace ampl {
 
 enum solver_results
 {
@@ -74,7 +74,7 @@ solver_results solver_result_from_string(::std::string const& str)
 	return unknown_result;
 }
 
-}}}} // Namespace dcs::eesim::detail::ampl
+}}}}} // Namespace dcs::des::cloud::detail::ampl
 
 
-#endif // DCS_EESIM_DETAIL_AMPL_SOLVER_RESULTS_HPP
+#endif // DCS_DES_CLOUD_DETAIL_AMPL_SOLVER_RESULTS_HPP

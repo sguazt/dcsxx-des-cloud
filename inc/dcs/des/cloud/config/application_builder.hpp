@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/config/application_builder.hpp
+ * \file dcs/des/cloud/config/application_builder.hpp
  *
  * \brief Configuration for application builders.
  *
@@ -30,16 +30,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DCS_EESIM_CONFIG_APPLICATION_BUILDER_HPP
-#define DCS_EESIM_CONFIG_APPLICATION_BUILDER_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_APPLICATION_BUILDER_HPP
+#define DCS_DES_CLOUD_CONFIG_APPLICATION_BUILDER_HPP
 
 
-#include <dcs/eesim/config/probability_distribution.hpp>
+#include <dcs/des/cloud/config/probability_distribution.hpp>
 #include <iomanip>
 #include <iosfwd>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 template <typename RealT, typename UIntT>
 struct application_builder_config
@@ -72,7 +72,7 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 	return os;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_APPLICATION_BUILDER_HPP
+#endif // DCS_DES_CLOUD_CONFIG_APPLICATION_BUILDER_HPP

@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/system_identification_strategy_params.hpp
+ * \file dcs/des/cloud/system_identification_strategy_params.hpp
  *
  * \brief Class for parameterizing system identification strategies.
  *
@@ -22,14 +22,14 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_SYSTEM_IDENTIFICATION_STRATEGY_PARAMS_HPP
-#define DCS_EESIM_SYSTEM_IDENTIFICATION_STRATEGY_PARAMS_HPP
+#ifndef DCS_DES_CLOUD_SYSTEM_IDENTIFICATION_STRATEGY_PARAMS_HPP
+#define DCS_DES_CLOUD_SYSTEM_IDENTIFICATION_STRATEGY_PARAMS_HPP
 
 
 #include <cstddef>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 enum system_identification_strategy_category
 {
@@ -424,7 +424,7 @@ class rls_park1991_system_identification_strategy_params: public rls_system_iden
 }; // rls_park1991_system_identification_strategy_params
 
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_SYSTEM_IDENTIFICATION_STRATEGY_PARAMS_HPP
+#endif // DCS_DES_CLOUD_SYSTEM_IDENTIFICATION_STRATEGY_PARAMS_HPP

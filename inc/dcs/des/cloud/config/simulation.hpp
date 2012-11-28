@@ -1,12 +1,12 @@
-#ifndef DCS_EESIM_CONFIG_SIMULATION_HPP
-#define DCS_EESIM_CONFIG_SIMULATION_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_SIMULATION_HPP
+#define DCS_DES_CLOUD_CONFIG_SIMULATION_HPP
 
 
 #include <boost/variant.hpp>
 #include <iosfwd>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 enum output_analysis_category
 {
@@ -208,7 +208,7 @@ template <typename CharT, typename CharTraitsT, typename RealT, typename UIntT>
 	return os;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_SIMULATION_HPP
+#endif // DCS_DES_CLOUD_CONFIG_SIMULATION_HPP

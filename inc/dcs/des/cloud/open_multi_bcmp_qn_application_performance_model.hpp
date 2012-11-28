@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/application_performance_model_traits.hpp
+ * \file dcs/des/cloud/application_performance_model_traits.hpp
  *
  * \brief Traits class for application performance models.
  *
@@ -22,18 +22,18 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_OPEN_MULTI_BCMP_QN_APPLICATION_PERFORMANCE_MODEL_HPP
-#define DCS_EESIM_OPEN_MULTI_BCMP_QN_APPLICATION_PERFORMANCE_MODEL_HPP
+#ifndef DCS_DES_CLOUD_OPEN_MULTI_BCMP_QN_APPLICATION_PERFORMANCE_MODEL_HPP
+#define DCS_DES_CLOUD_OPEN_MULTI_BCMP_QN_APPLICATION_PERFORMANCE_MODEL_HPP
 
 
-#include <dcs/eesim/application_performance_model_traits.hpp>
-#include <dcs/eesim/performance_measure_category.hpp>
+#include <dcs/des/cloud/application_performance_model_traits.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
 #include <dcs/perfeval/qn/open_multi_bcmp_network.hpp>
 #include <limits>
 #include <stdexcept>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT, typename RealT, typename UIntT>
 class application_performance_model_traits<
@@ -52,13 +52,13 @@ class application_performance_model_traits<
 		switch (category)
 		{
 			case busy_time_performance_measure:
-				throw ::std::runtime_error("[dcs::eesim::open_multi_bcmp_qn_application_performance_model::application_measure] Busy time measure has not been implemented yet.");
+				throw ::std::runtime_error("[dcs::des::cloud::open_multi_bcmp_qn_application_performance_model::application_measure] Busy time measure has not been implemented yet.");
 			case response_time_performance_measure:
 				return model.system_response_time();
 			case throughput_performance_measure:
 				return model.system_throughput();
 			case utilization_performance_measure:
-				throw ::std::runtime_error("[dcs::eesim::open_multi_bcmp_qn_application_performance_model::application_measure] Utilization measure not defined for the whole application.");
+				throw ::std::runtime_error("[dcs::des::cloud::open_multi_bcmp_qn_application_performance_model::application_measure] Utilization measure not defined for the whole application.");
 			case queue_length_performance_measure:
 				return model.system_queue_length();
 //			case customers_number_performance_measure:
@@ -78,7 +78,7 @@ class application_performance_model_traits<
 		switch (category)
 		{
 			case busy_time_performance_measure:
-				throw ::std::runtime_error("[dcs::eesim::open_multi_bcmp_qn_application_performance_model::tier_measure] Busy time measure has not been implemented yet.");//FIXME
+				throw ::std::runtime_error("[dcs::des::cloud::open_multi_bcmp_qn_application_performance_model::tier_measure] Busy time measure has not been implemented yet.");//FIXME
 			case response_time_performance_measure:
 				return model.station_response_times()(tier_id);
 			case throughput_performance_measure:
@@ -99,7 +99,7 @@ class application_performance_model_traits<
 	}
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_OPEN_MULTI_BCMP_QN_APPLICATION_PERFORMANCE_MODEL_HPP
+#endif // DCS_DES_CLOUD_OPEN_MULTI_BCMP_QN_APPLICATION_PERFORMANCE_MODEL_HPP

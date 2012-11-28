@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/config/energy_model.hpp
+ * \file dcs/des/cloud/config/energy_model.hpp
  *
  * \brief Configuration for energy models.
  *
@@ -30,14 +30,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DCS_EESIM_CONFIG_ENERGY_MODEL_HPP
-#define DCS_EESIM_CONFIG_ENERGY_MODEL_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_ENERGY_MODEL_HPP
+#define DCS_DES_CLOUD_CONFIG_ENERGY_MODEL_HPP
 
 
 #include <iosfwd>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 enum energy_model_category
 {
@@ -87,7 +87,7 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 			  << ">";
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
 
-#endif // DCS_EESIM_CONFIG_ENERGY_MODEL_HPP
+#endif // DCS_DES_CLOUD_CONFIG_ENERGY_MODEL_HPP

@@ -1,18 +1,18 @@
-#ifndef DCS_EESIM_CONFIG_PROBABILITY_DISTRIBUTION_HPP
-#define DCS_EESIM_CONFIG_PROBABILITY_DISTRIBUTION_HPP
+#ifndef DCS_DES_CLOUD_CONFIG_PROBABILITY_DISTRIBUTION_HPP
+#define DCS_DES_CLOUD_CONFIG_PROBABILITY_DISTRIBUTION_HPP
 
 
 #include <algorithm>
 #include <boost/variant.hpp>
 #include <cstddef>
-#include <dcs/eesim/config/numeric_matrix.hpp>
+#include <dcs/des/cloud/config/numeric_matrix.hpp>
 #include <dcs/functional/bind.hpp>
 #include <iosfwd>
 #include <iterator>
 #include <utility>
 
 
-namespace dcs { namespace eesim { namespace config {
+namespace dcs { namespace des { namespace cloud { namespace config {
 
 enum probability_distribution_category
 {
@@ -336,6 +336,6 @@ template <typename CharT, typename CharTraitsT, typename RealT>
 	return os;
 }
 
-}}} // Namespace dcs::eesim::config
+}}}} // Namespace dcs::des::cloud::config
 
-#endif // DCS_EESIM_CONFIG_PROBABILITY_DISTRIBUTION_HPP
+#endif // DCS_DES_CLOUD_CONFIG_PROBABILITY_DISTRIBUTION_HPP

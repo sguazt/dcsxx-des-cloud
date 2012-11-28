@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/any_virtual_machine_monitor.hpp
+ * \file dcs/des/cloud/any_virtual_machine_monitor.hpp
  *
  * \brief Generic (type-erased) class for virtual machine monitors.
  *
@@ -22,13 +22,13 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_ANY_VIRTUAL_MACHINE_MONITOR_HPP
-#define DCS_EESIM_ANY_VIRTUAL_MACHINE_MONITOR_HPP
+#ifndef DCS_DES_CLOUD_ANY_VIRTUAL_MACHINE_MONITOR_HPP
+#define DCS_DES_CLOUD_ANY_VIRTUAL_MACHINE_MONITOR_HPP
 
 
-#include <dcs/eesim/base_virtual_machine_monitor.hpp>
-#include <dcs/eesim/virtual_machine_monitor_adaptor.hpp>
-#include <dcs/eesim/virtual_machine.hpp>
+#include <dcs/des/cloud/base_virtual_machine_monitor.hpp>
+#include <dcs/des/cloud/virtual_machine_monitor_adaptor.hpp>
+#include <dcs/des/cloud/virtual_machine.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/macro.hpp>
 #include <dcs/memory.hpp>
@@ -37,7 +37,7 @@
 #include <stdexcept>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class any_virtual_machine_monitor
@@ -222,7 +222,7 @@ template <
 	return os;
 }
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_ANY_VIRTUAL_MACHINE_MONITOR_HPP
+#endif // DCS_DES_CLOUD_ANY_VIRTUAL_MACHINE_MONITOR_HPP

@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/application_simulation_model_adaptor.hpp
+ * \file dcs/des/cloud/application_simulation_model_adaptor.hpp
  *
  * \brief Adaptor class for application simulation model.
  *
@@ -22,17 +22,17 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_APPLICATION_SIMULATION_MODEL_ADAPTOR_HPP
-#define DCS_EESIM_APPLICATION_SIMULATION_MODEL_ADAPTOR_HPP
+#ifndef DCS_DES_CLOUD_APPLICATION_SIMULATION_MODEL_ADAPTOR_HPP
+#define DCS_DES_CLOUD_APPLICATION_SIMULATION_MODEL_ADAPTOR_HPP
 
 
 #include <dcs/debug.hpp>
 #include <dcs/des/engine_traits.hpp>
 #include <dcs/des/mean_estimator.hpp>
-#include <dcs/eesim/application_simulation_model_traits.hpp>
-#include <dcs/eesim/base_application_simulation_model.hpp>
-#include <dcs/eesim/performance_measure_category.hpp>
-#include <dcs/eesim/registry.hpp>
+#include <dcs/des/cloud/application_simulation_model_traits.hpp>
+#include <dcs/des/cloud/base_application_simulation_model.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
+#include <dcs/des/cloud/registry.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/functional/bind.hpp>
 #include <dcs/macro.hpp>
@@ -46,7 +46,7 @@
 //   maybe we want to handles some other kind of stats.
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <
 	typename TraitsT,
@@ -354,7 +354,7 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 		// pre: tier_id is a valid tier identifier.
 		DCS_ASSERT(
 			tier_id < tier_num_arrs_stats_.size(),
-			throw ::std::invalid_argument("[dcs::eesim::application_simulation_model_adaptor::do_tier_num_arrivals] Invalid tier identifier.")
+			throw ::std::invalid_argument("[dcs::des::cloud::application_simulation_model_adaptor::do_tier_num_arrivals] Invalid tier identifier.")
 		);
 
 		return *tier_num_arrs_stats_[tier_id];
@@ -366,7 +366,7 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 		// pre: tier_id is a valid tier identifier.
 		DCS_ASSERT(
 			tier_id < tier_num_arrs_stats_.size(),
-			throw ::std::invalid_argument("[dcs::eesim::application_simulation_model_adaptor::do_tier_num_departures] Invalid tier identifier.")
+			throw ::std::invalid_argument("[dcs::des::cloud::application_simulation_model_adaptor::do_tier_num_departures] Invalid tier identifier.")
 		);
 
 		return *tier_num_deps_stats_[tier_id];
@@ -455,7 +455,7 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 	{
 		if (!tier_map_.count(tier_id))
 		{
-			throw ::std::logic_error("[dcs::eesim::application_simulation_model_adaptor::do_tier_statistic] Tier not mapped.");
+			throw ::std::logic_error("[dcs::des::cloud::application_simulation_model_adaptor::do_tier_statistic] Tier not mapped.");
 		}
 
 		return model_traits_type::tier_statistic(model_, tier_map_.at(tier_id), category);
@@ -552,9 +552,9 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 			switch (*it)
 			{
 				case busy_time_performance_measure:
-					throw ::std::runtime_error("[dcs::eesim::application_simulation_model_adaptor::process_request_departure] Busy time as SLO category has not been implemented yet.");//FIXME
+					throw ::std::runtime_error("[dcs::des::cloud::application_simulation_model_adaptor::process_request_departure] Busy time as SLO category has not been implemented yet.");//FIXME
 				case queue_length_performance_measure:
-					throw ::std::runtime_error("[dcs::eesim::application_simulation_model_adaptor::process_request_departure] Queue length as SLO category has not been implemented yet.");//FIXME
+					throw ::std::runtime_error("[dcs::des::cloud::application_simulation_model_adaptor::process_request_departure] Queue length as SLO category has not been implemented yet.");//FIXME
 				case response_time_performance_measure:
 					{
 						real_type rt = req.departure_time()-req.arrival_time();
@@ -567,7 +567,7 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 					////measures.push_back(tp);
 					break;
 				case utilization_performance_measure:
-					throw ::std::runtime_error("[dcs::eesim::application_simulation_model_adaptor::process_request_departure] Utilization as SLO category has not been implemented yet.");//FIXME
+					throw ::std::runtime_error("[dcs::des::cloud::application_simulation_model_adaptor::process_request_departure] Utilization as SLO category has not been implemented yet.");//FIXME
 			}
 		}
 
@@ -599,7 +599,7 @@ class application_simulation_model_adaptor: public base_application_simulation_m
 	//@} Data Members
 };
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_APPLICATION_SIMULATION_MODEL_ADAPTOR_HPP
+#endif // DCS_DES_CLOUD_APPLICATION_SIMULATION_MODEL_ADAPTOR_HPP

@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/optimal_initial_placement_strategy.hpp
+ * \file dcs/des/cloud/optimal_initial_placement_strategy.hpp
  *
  * \brief Optimal initial placement strategy based on mathematical programming. 
  *
@@ -22,18 +22,18 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_OPTIMAL_INITIAL_PLACEMENT_STRATEGY_HPP
-#define DCS_EESIM_OPTIMAL_INITIAL_PLACEMENT_STRATEGY_HPP
+#ifndef DCS_DES_CLOUD_OPTIMAL_INITIAL_PLACEMENT_STRATEGY_HPP
+#define DCS_DES_CLOUD_OPTIMAL_INITIAL_PLACEMENT_STRATEGY_HPP
 
 
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
-#include <dcs/eesim/base_initial_placement_strategy.hpp>
-#include <dcs/eesim/data_center.hpp>
-//#include <dcs/eesim/detail/neos/vm_placement_minlp_solver.hpp>
-#include <dcs/eesim/detail/initial_vm_placement_optimal_solvers.hpp>
-#include <dcs/eesim/performance_measure_category.hpp>
-#include <dcs/eesim/virtual_machines_placement.hpp>
+#include <dcs/des/cloud/base_initial_placement_strategy.hpp>
+#include <dcs/des/cloud/data_center.hpp>
+//#include <dcs/des/cloud/detail/neos/vm_placement_minlp_solver.hpp>
+#include <dcs/des/cloud/detail/initial_vm_placement_optimal_solvers.hpp>
+#include <dcs/des/cloud/performance_measure_category.hpp>
+#include <dcs/des/cloud/virtual_machines_placement.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/macro.hpp>
 ///#include <dcs/memory.hpp>
@@ -42,7 +42,7 @@
 #include <vector>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class optimal_initial_placement_strategy: public base_initial_placement_strategy<TraitsT>
@@ -147,7 +147,7 @@ DCS_DEBUG_TRACE("BEGIN Initial Placement");//XXX
 
 					vm_util_map[ptr_vm->id()] = ptr_vm->guest_system().application().performance_model().tier_measure(
 													ptr_vm->guest_system().id(),
-													::dcs::eesim::utilization_performance_measure
+													::dcs::des::cloud::utilization_performance_measure
 						);
 ::std::cerr << "[optimal_initial_placement] VM: " << *ptr_vm << " - U: " << vm_util_map.at(ptr_vm->id()) << ::std::endl;//XXX
 				}
@@ -166,7 +166,7 @@ DCS_DEBUG_TRACE("BEGIN Initial Placement");//XXX
 
 		if (!ptr_solver_->result().solved())
 		{
-			throw ::std::runtime_error("[dcs::eesim::optimal_initial_placement_strategy] Unable to solve optimal problem.");
+			throw ::std::runtime_error("[dcs::des::cloud::optimal_initial_placement_strategy] Unable to solve optimal problem.");
 		}
 
 		virtual_machines_placement<traits_type> deployment;
@@ -213,7 +213,7 @@ const typename TraitsT::real_type optimal_initial_placement_strategy<TraitsT>::d
 template <typename TraitsT>
 const typename TraitsT::real_type optimal_initial_placement_strategy<TraitsT>::default_sla_cost_weight(1);
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_OPTIMAL_INITIAL_PLACEMENT_STRATEGY_HPP
+#endif // DCS_DES_CLOUD_OPTIMAL_INITIAL_PLACEMENT_STRATEGY_HPP

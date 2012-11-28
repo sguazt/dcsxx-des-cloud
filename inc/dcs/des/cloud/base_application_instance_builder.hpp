@@ -1,5 +1,5 @@
 /**
- * \file dcs/eesim/base_application_instance_builder.hpp
+ * \file dcs/des/cloud/base_application_instance_builder.hpp
  *
  * \brief Base class for application instance builders.
  *
@@ -22,19 +22,19 @@
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
 
-#ifndef DCS_EESIM_BASE_APPLICATION_INSTANCE_BUILDER_HPP
-#define DCS_EESIM_BASE_APPLICATION_INSTANCE_BUILDER_HPP
+#ifndef DCS_DES_CLOUD_BASE_APPLICATION_INSTANCE_BUILDER_HPP
+#define DCS_DES_CLOUD_BASE_APPLICATION_INSTANCE_BUILDER_HPP
 
 
 #include <dcs/debug.hpp>
-#include <dcs/eesim/application_instance.hpp>
-#include <dcs/eesim/base_application_controller.hpp>
-#include <dcs/eesim/multi_tier_application.hpp>
+#include <dcs/des/cloud/application_instance.hpp>
+#include <dcs/des/cloud/base_application_controller.hpp>
+#include <dcs/des/cloud/multi_tier_application.hpp>
 #include <dcs/math/stats/distribution/any_distribution.hpp>
 #include <dcs/math/stats/function/rand.hpp>
 
 
-namespace dcs { namespace eesim {
+namespace dcs { namespace des { namespace cloud {
 
 template <typename TraitsT>
 class base_application_instance_builder
@@ -192,7 +192,7 @@ class base_application_instance_builder
 }; // base_application_instance_builder
 
 
-}} // Namespace dcs::eesim
+}}} // Namespace dcs::des::cloud
 
 
-#endif // DCS_EESIM_BASE_APPLICATION_INSTANCE_BUILDER_HPP
+#endif // DCS_DES_CLOUD_BASE_APPLICATION_INSTANCE_BUILDER_HPP
