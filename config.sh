@@ -14,7 +14,7 @@
 dtnow=$(date +'%F %T (%Z)')
 logfile="$0.log"
 basedir=$1
-prjsubdir=dcs/eesim
+prjsubdir=dcs/des/cloud
 
 CC=${CC:=cc}
 CXX=${CXX:=c++}
@@ -217,7 +217,7 @@ if [ -z "$basedir" ]; then
 	basedir=.
 fi
 if [ -z "$basesrcdir" ]; then
-	basesrcdir=$basedir/src
+	basesrcdir=$basedir/inc
 fi
 
 
@@ -333,7 +333,7 @@ LDFLAGS_xmp+=$USR_LDFLAGS
 EOT
 
 cat > $basesrcdir/$prjsubdir/detail/config.hpp <<EOT
-/** \file dcs/eesim/config.hpp
+/** \file dcs/des/cloud/config.hpp
  *
  * \brief Configuration for this library.
  *
@@ -355,7 +355,7 @@ cat > $basesrcdir/$prjsubdir/detail/config.hpp <<EOT
 EOT
 
 cat > $basesrcdir/$prjsubdir/detail/version.hpp <<EOT
-/** \file dcs/eesim/version.hpp
+/** \file dcs/des/cloud/version.hpp
  *
  * \brief Version of this library.
  *
