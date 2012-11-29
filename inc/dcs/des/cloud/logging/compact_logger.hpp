@@ -43,7 +43,7 @@ namespace detail { namespace /*<unnamed>*/ {
 	return ::std::string(buf);
 }
 
-}}} // Namespace detail::<unnamed>
+}} // Namespace detail::<unnamed>
 
 
 template <typename TraitsT>

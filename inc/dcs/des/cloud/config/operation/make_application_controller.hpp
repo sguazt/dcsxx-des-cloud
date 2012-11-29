@@ -129,7 +129,7 @@ template <typename TraitsT, typename ControllerConfigT>
 	return ptr_strategy_params;
 }
 
-}}} // Namespace detail::<unnamed>
+}} // Namespace detail::<unnamed>
 
 
 template <typename TraitsT, typename RealT, typename UIntT>

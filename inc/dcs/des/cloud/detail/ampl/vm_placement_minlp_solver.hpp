@@ -83,7 +83,7 @@ class minlp_output_consumer: public ::dcs::des::cloud::detail::ampl::vm_placemen
 	public: typedef typename base_type::real_matrix_type real_matrix_type;
 }; // minlp_input_consumer
 
-}}} // Namespace detail::<unnamed>
+}} // Namespace detail::<unnamed>
 
 
 template <typename TraitsT>

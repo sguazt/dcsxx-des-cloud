@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <dcs/des/cloud/config/numeric_matrix.hpp>
 #include <dcs/functional/bind.hpp>
+#include <dcs/memory.hpp>
 #include <iosfwd>
 #include <iterator>
 #include <utility>
@@ -149,7 +150,7 @@ struct timed_step_probability_distribution_config
 {
 	typedef RealT real_type;
 	typedef probability_distribution_config<real_type> distribution_type;
-	typedef ::std::pair<real_type,dcs::shared_ptr<distribution_type> > phase_type;
+	typedef ::std::pair<real_type,::dcs::shared_ptr<distribution_type> > phase_type;
 	typedef ::std::vector<phase_type> phase_container;
 
 	phase_container phases;

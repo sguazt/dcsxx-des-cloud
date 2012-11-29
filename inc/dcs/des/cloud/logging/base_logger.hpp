@@ -19,7 +19,7 @@ struct empty_deleter
 	void operator()(volatile void const*) const {}
 };
 
-}}} // Namespace detail::<unnamed>
+}} // Namespace detail::<unnamed>
 
 
 template <typename TraitsT>

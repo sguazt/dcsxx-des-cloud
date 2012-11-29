@@ -1150,7 +1150,7 @@ optimal_solver_proxies text_to_optimal_solver_proxy(::std::string const& str)
 	throw ::std::runtime_error("[dcs::des::cloud::config::detail::text_to_optimal_solver_proxy] Unknown optimal solver proxy.");
 }
 
-}}} // Namespace detail::<unnamed>
+}} // Namespace detail::<unnamed>
 
 
 template <typename T>

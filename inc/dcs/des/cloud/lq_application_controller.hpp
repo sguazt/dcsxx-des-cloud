@@ -2971,7 +2971,7 @@ const typename lq_application_controller<TraitsT>::real_type lq_application_cont
 template <typename TraitsT>
 const typename lq_application_controller<TraitsT>::real_type lq_application_controller<TraitsT>::default_ewma_smoothing_factor = 0.7;
 
-}}} // Namespace detail::<unnamed>
+}} // Namespace detail::<unnamed>
 
 
 /**

@@ -398,7 +398,7 @@ class lpsolve_migration_controller
 
 #endif // DCS_DES_CLOUD_CONFIG_USE_LPSOLVE
 
-}}} // Namespace detail::<unnamed>
+}} // Namespace detail::<unnamed>
 
 
 template <typename TraitsT>

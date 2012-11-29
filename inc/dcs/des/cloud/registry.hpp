@@ -30,22 +30,12 @@
 //#undef DCS_DES_CLOUD_REGISTRY_USE_ABRAHAMS_SINGLETON
 
 
-#include <dcs/config/boost.hpp>
-
 #if defined(DCS_DES_CLOUD_REGISTRY_USE_ABRAHAMS_SINGLETON)
-
-# if !DCS_CONFIG_BOOST_CHECK_VERSION(103200) // 1.32
-#  error "Required Boost libraries >= 1.32."
-# endif
 
 # include <boost/serialization/singleton.hpp>
 
 #else // DCS_DES_CLOUD_REGISTRY_USE_ABRAHAMS_SINGLETON
 
-
-# if !DCS_CONFIG_BOOST_CHECK_VERSION(102500) // 1.25
-#  error "Required Boost libraries >= 1.25."
-# endif
 
 # include <boost/scoped_ptr.hpp>
 # include <boost/thread/once.hpp>
@@ -128,7 +118,7 @@ template <typename T>
 template <typename T>
 ::boost::scoped_ptr<T> singleton<T>::ptr_t_(0);
 
-}}} // Namespace detail::<unnamed>
+}} // Namespace detail::<unnamed>
 
 #endif // DCS_DES_CLOUD_REGISTRY_USE_ABRAHAMS_SINGLETON
 

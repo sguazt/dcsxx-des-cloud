@@ -59,8 +59,8 @@
 ## - srcdirs: list of source paths (relative to $(srcdir)).
 ## - targets: targets executable's filename.
 
-#export targets := des_cloud offline_sys_ident offline_bench
-export targets := des_cloud
+#export targets := des_cloud_sim offline_sys_ident offline_bench
+export targets := des_cloud_sim
 #export targets := offline_bench
 #export targets := offline_sys_ident
 export docdir := ./docs
@@ -242,6 +242,7 @@ $(bindir_release)/% : $(buildtmpdir)/%.$(obj_ext) $(buildtmpdir)/boost/iostreams
 
 
 $(bindir_debug)/% : $(buildtmpdir)/%.$(obj_ext) $(buildtmpdir)/boost/iostreams/src/file_descriptor.$(obj_ext) $(HEADERS)
+#$(bindir_debug)/des_cloud_sim : $(buildtmpdir)/des_cloud_sim.$(obj_ext) $(buildtmpdir)/boost/iostreams/src/file_descriptor.$(obj_ext) $(HEADERS)
 	@echo "=== Building Target: $@ ==="
 	$(CXX) -o $@ $<  $(buildtmpdir)/boost/iostreams/src/file_descriptor.$(obj_ext) $(LDFLAGS)
 

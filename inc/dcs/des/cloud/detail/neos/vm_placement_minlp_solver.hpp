@@ -92,7 +92,7 @@ inline
 	return "";
 }
 
-}}} // Namespace detail::<unnamed>
+}} // Namespace detail::<unnamed>
 
 
 template <typename TraitsT>

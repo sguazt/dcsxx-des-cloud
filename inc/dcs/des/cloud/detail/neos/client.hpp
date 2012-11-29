@@ -1281,7 +1281,7 @@ static submitted_job_info make_submitted_job_info(::std::string const& s)
 	return info;
 }
 
-}}} // Namespace detail::<unnamed>
+}} // Namespace detail::<unnamed>
 
 
 /**

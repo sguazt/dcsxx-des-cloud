@@ -636,7 +636,7 @@ inline
 										  vm_ids);
 }
 
-}}} // Namespace detail::<unnamed>
+}} // Namespace detail::<unnamed>
 
 
 template <typename TraitsT>

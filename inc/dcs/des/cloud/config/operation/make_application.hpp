@@ -111,7 +111,7 @@ template <typename TraitsT, typename RealT, typename UIntT>
 	return ptr_app;
 }
 
-}}} // Namespace detail::<unnamed>
+}} // Namespace detail::<unnamed>
 
 
 template <typename TraitsT, typename RealT, typename UIntT>

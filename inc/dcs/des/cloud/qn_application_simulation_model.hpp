@@ -220,7 +220,7 @@ void dump_tier_measure(typename TraitsT::uint_type app_id, typename TraitsT::uin
 
 #endif // DCS_DES_CLOUD_EXP_OUTPUT_VM_MEASURES
 
-}}} // Namespace detail::<unnamed>
+}} // Namespace detail::<unnamed>
 
 
 template <

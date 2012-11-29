@@ -10,6 +10,7 @@
 #include <dcs/des/cloud/base_application_performance_model.hpp>
 #include <dcs/des/cloud/config/application_performance_model.hpp>
 #include <dcs/des/cloud/config/metric_category.hpp>
+#include <dcs/des/cloud/config/operation/make_algebraic_type.hpp>
 #include <dcs/des/cloud/fixed_application_performance_model.hpp>
 #include <dcs/des/cloud/open_multi_bcmp_qn_application_performance_model.hpp>
 #include <dcs/perfeval/qn/open_multi_bcmp_network.hpp>

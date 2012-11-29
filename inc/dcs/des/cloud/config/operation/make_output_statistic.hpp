@@ -5,11 +5,13 @@
 #include <boost/variant.hpp>
 #include <dcs/des/base_statistic.hpp>
 #include <dcs/des/base_analyzable_statistic.hpp>
+#include <dcs/des/cloud/base_application_simulation_model.hpp>
+#include <dcs/des/cloud/config/statistic.hpp>
 #include <dcs/des/max_estimator.hpp>
 #include <dcs/des/mean_estimator.hpp>
 #include <dcs/des/min_estimator.hpp>
-#include <dcs/des/quantile_estimator.hpp>
 #include <dcs/des/null_transient_detector.hpp>
+#include <dcs/des/quantile_estimator.hpp>
 #include <dcs/des/replications/banks2005_num_replications_detector.hpp>
 #include <dcs/des/replications/constant_num_replications_detector.hpp>
 #include <dcs/des/replications/dummy_num_replications_detector.hpp>
@@ -18,7 +20,6 @@
 #include <dcs/des/replications/fixed_duration_replication_size_detector.hpp>
 #include <dcs/des/replications/fixed_num_obs_replication_size_detector.hpp>
 #include <dcs/des/statistic_categories.hpp>
-#include <dcs/des/cloud/base_application_simulation_model.hpp>
 #include <dcs/math/constants.hpp>
 #include <dcs/memory.hpp>
 #include <stdexcept>
@@ -729,7 +730,7 @@ template <
 	return ptr_stat;
 }
 
-}}} // Namespace detail::<unnamed>
+}} // Namespace detail::<unnamed>
 
 
 template <

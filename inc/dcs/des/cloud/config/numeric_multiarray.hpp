@@ -57,7 +57,7 @@ void print_container(ForwardIterT first, ForwardIterT last)
 	::std::cerr << "]";
 }
 
-}}} // Namespace detail::<unnamed>
+}} // Namespace detail::<unnamed>
 
 
 template <typename T>
@@ -830,7 +830,7 @@ void print_array(::std::basic_ostream<CharT,CharTraitsT>& os, numeric_multiarray
 	}
 }
 
-}}} // Namespace detail::<unnamed>
+}} // Namespace detail::<unnamed>
 
 template <typename CharT, typename CharTraitsT, typename ValueT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, numeric_multiarray<ValueT> const& a)

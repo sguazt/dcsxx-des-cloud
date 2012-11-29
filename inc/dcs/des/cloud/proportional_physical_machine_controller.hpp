@@ -78,7 +78,7 @@ void dump_vm_share(typename TraitsT::uint_type vm_id, typename TraitsT::uint_typ
 
 #endif // DCS_DES_CLOUD_EXP_OUTPUT_VM_SHARES
 
-}}} // Namespace detail::<unnamed>
+}} // Namespace detail::<unnamed>
 
 
 /**
